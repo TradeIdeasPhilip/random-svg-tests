@@ -4,6 +4,7 @@ import "./style.css";
 import { pick } from "phil-lib/misc";
 
 import { getById } from "phil-lib/client-misc";
+import { AnimationLoop } from "./utility";
 
 /**
  * Basically these objects are __read-only__ and that's the main point of this class.
@@ -171,6 +172,9 @@ class Circle extends Object {
         return undefined;
       }
       const attached = original.attached;
+      if (typeof attached != "boolean") {
+        return undefined;
+      }
       const result = new this();
       result.center = center;
       result.color = color;
@@ -193,4 +197,63 @@ class Circle extends Object {
   }
 }
 
+class InertiaAndBounce {
+  /**
+   * SVG units / millisecond.  Positive for left.
+   */
+  xSpeed = Math.random() / 1000;
+  /**
+   * SVG units / millisecond.  Positive for down.
+   */
+  ySpeed = Math.random() / 1000;
+  #previousTimestamp: number | undefined;
+  constructor(readonly circle: Circle = new Circle()) {
+    this.paused = false;
+  }
+  private update(timestamp: DOMHighResTimeStamp) {
+    if (this.#previousTimestamp !== undefined) {
+      const msPassed = timestamp - this.#previousTimestamp;
+      const min = this.circle.radius;
+      const max = 1 - min;
+      let { x, y } = this.circle.center;
+      x += this.xSpeed * msPassed;
+      if (x <= min) {
+        x = min;
+        this.xSpeed = Math.abs(this.xSpeed);
+      } else if (x >= max) {
+        x = max;
+        this.xSpeed = -Math.abs(this.xSpeed);
+      }
+      y += this.ySpeed * msPassed;
+      if (y <= min) {
+        y = min;
+        this.ySpeed = Math.abs(this.ySpeed);
+      } else if (y >= max) {
+        y = max;
+        this.ySpeed = -Math.abs(this.ySpeed);
+      }
+      this.circle.center = new Point(x, y);
+    }
+    this.#previousTimestamp = timestamp;
+  }
+  #animationLoop: AnimationLoop | undefined;
+  get paused() {
+    return !this.#animationLoop;
+  }
+  set paused(newValue) {
+    if (newValue != this.paused) {
+      if (newValue) {
+        this.#animationLoop!.cancel();
+        this.#animationLoop = undefined;
+      } else {
+        this.#animationLoop = new AnimationLoop(this.update.bind(this));
+      }
+    }
+    if (newValue != this.paused) {
+      console.error("wtf");
+    }
+  }
+}
+
 (window as any).Circle = Circle;
+(window as any).InertiaAndBounce = InertiaAndBounce;

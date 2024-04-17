@@ -2,10 +2,10 @@
 import "./style.css";
 
 import { pick } from "phil-lib/misc";
-
 import { getById } from "phil-lib/client-misc";
 import { AnimationLoop } from "./utility";
 
+// MARK: Point
 /**
  * Basically these objects are __read-only__ and that's the main point of this class.
  * If someone gives you a point you can hold onto it.  You don't have to make a copy.
@@ -20,11 +20,11 @@ class Point {
    */
   static readonly CENTER = new Point(0.5, 0.5);
   /**
-   * Randomly create a new point.
+   * Randomly create a new Point.
    * @param radius Leave at least this much distance from the edge.
    *
    * The idea is the the output of this function will become the
-   * center of a circle with the given `radius`.  The circle will
+   * center of a Circle with the given `radius`.  The circle will
    * be completely within the drawing area.
    * @returns A random point in the drawing area.
    */
@@ -60,6 +60,7 @@ class Point {
   }
 }
 
+// MARK: Circle
 /**
  * A simple wrapper around an `SVGCircleElement`.
  */
@@ -68,11 +69,22 @@ class Circle extends Object {
   /**
    * The underlying SVG element.
    */
-  readonly #element = document.createElementNS(
+  readonly #colorElement = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "circle"
   );
-  #radius = Math.random() * 0.25 + 0.125;
+  readonly #shapeElement = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "circle"
+  );
+  readonly #allElements: ReadonlyArray<SVGCircleElement> = [
+    this.#colorElement,
+    this.#shapeElement,
+  ];
+  get elements(): ReadonlyArray<SVGElement> {
+    return this.#allElements;
+  }
+  #radius = Math.random() * (1 / 8) + 1 / 16;
   #color = pick([
     "red",
     "orange",
@@ -85,11 +97,15 @@ class Circle extends Object {
   #center = Point.random(this.#radius);
   constructor() {
     super();
-    this.#element.classList.add("simple");
+    this.#colorElement.classList.add("simple");
+    this.#shapeElement.classList.add("sphere");
     this.radius = this.#radius;
     this.color = this.#color;
     this.center = this.#center;
     this.attached = true;
+    this.#allElements.forEach((element) =>
+      Circle.#byElement.set(element, this)
+    );
   }
   #attached = false;
   /**
@@ -108,11 +124,13 @@ class Circle extends Object {
     // This test is more than an optimization.
     // Appending an element that is already a child will move that element to the end.
     if (shouldBeAttached != this.#attached) {
-      if (shouldBeAttached) {
-        Circle.#parent.appendChild(this.#element);
-      } else {
-        this.#element.remove();
-      }
+      this.#allElements.forEach((element) => {
+        if (shouldBeAttached) {
+          Circle.#parent.appendChild(element);
+        } else {
+          element.remove();
+        }
+      });
       this.#attached = shouldBeAttached;
     }
   }
@@ -121,23 +139,26 @@ class Circle extends Object {
   }
   set center(newValue: Point) {
     this.#center = newValue;
-    const element = this.#element;
-    element.cx.baseVal.value = newValue.x;
-    element.cy.baseVal.value = newValue.y;
+    this.#allElements.forEach((element) => {
+      element.cx.baseVal.value = newValue.x;
+      element.cy.baseVal.value = newValue.y;
+    });
   }
   get radius() {
     return this.#radius;
   }
   set radius(newValue: number) {
     this.#radius = newValue;
-    this.#element.r.baseVal.value = newValue;
+    this.#allElements.forEach((element) => {
+      element.r.baseVal.value = newValue;
+    });
   }
   get color() {
     return this.#color;
   }
   set color(newValue) {
     this.#color = newValue;
-    this.#element.style.fill = this.#color;
+    this.#colorElement.style.fill = this.#color;
   }
   /**
    * See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify
@@ -195,8 +216,13 @@ class Circle extends Object {
       this.radius
     }" fill=${JSON.stringify(this.color)} \\>`;
   }
+  static #byElement = new WeakMap<SVGElement, Circle>();
+  static for(element: SVGElement) {
+    return this.#byElement.get(element);
+  }
 }
 
+// MARK: InertiaAndBounce
 class InertiaAndBounce {
   /**
    * SVG units / millisecond.  Positive for left.
@@ -209,6 +235,9 @@ class InertiaAndBounce {
   #previousTimestamp: number | undefined;
   constructor(readonly circle: Circle = new Circle()) {
     this.paused = false;
+    circle.elements.forEach((element) =>
+      InertiaAndBounce.#byElement.set(element, this)
+    );
   }
   private update(timestamp: DOMHighResTimeStamp) {
     if (this.#previousTimestamp !== undefined) {
@@ -253,7 +282,12 @@ class InertiaAndBounce {
       console.error("wtf");
     }
   }
+  static #byElement = new WeakMap<SVGElement, InertiaAndBounce>();
+  static for(element: SVGElement) {
+    return this.#byElement.get(element);
+  }
 }
 
+// MARK: Export to Console
 (window as any).Circle = Circle;
 (window as any).InertiaAndBounce = InertiaAndBounce;

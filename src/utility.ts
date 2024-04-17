@@ -1,5 +1,3 @@
-
-
 // TODO stop copying this and move it to phil-lib.
 export class AnimationLoop {
   constructor(private readonly onWake: (time: DOMHighResTimeStamp) => void) {
@@ -17,4 +15,3 @@ export class AnimationLoop {
     }
   }
 }
-

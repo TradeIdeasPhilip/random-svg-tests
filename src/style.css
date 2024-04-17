@@ -7,3 +7,8 @@ body {
 circle.simple {
   stroke: none;
 }
+
+circle.sphere {
+  stroke: none;
+  fill: url(#sphere);
+}

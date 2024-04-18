@@ -15,6 +15,9 @@ class Point {
   equals(other: Point) {
     return this.x == other.x && this.y == other.y;
   }
+  distanceTo(other: Point) {
+    return Math.hypot(this.x - other.x, this.y - other.y);
+  }
   /**
    * The center of the drawing area.
    */
@@ -61,10 +64,85 @@ class Point {
 }
 
 // MARK: Circle
+
+/**
+ * All of the publicly modifiable properties of Circle are listed here.
+ * This is for use with Circle.configure().
+ */
+type CircleConfig = {
+  attached?: boolean;
+  color?: string;
+  center?: Point;
+  radius?: number;
+};
+
 /**
  * A simple wrapper around an `SVGCircleElement`.
  */
 class Circle extends Object {
+  /**
+   *
+   * @param other
+   * @returns True if the two circles overlap.
+   */
+  overlaps(other: Circle): boolean {
+    const distance = this.center.distanceTo(other.center);
+    return distance < this.radius || distance < other.radius;
+  }
+  /**
+   *
+   * @param universe A list of circles to compare.
+   * @returns A list of each pair of overlapping circles.
+   * Each pair is only listed once.
+   */
+  static overlapping(universe: ReadonlyArray<Circle>) {
+    const result: [Circle, Circle][] = [];
+    universe.forEach((secondCircle, secondIndex) => {
+      for (var firstIndex = 0; firstIndex < secondIndex; firstIndex++) {
+        const firstCircle = universe[firstIndex];
+        if (firstCircle.overlaps(secondCircle)) {
+          result.push([firstCircle, secondCircle]);
+        }
+      }
+    });
+    return result;
+  }
+  /**
+   *
+   * @returns A list of all circles currently attached to the background.
+   */
+  static allAttached() {
+    const result = new Set<Circle>();
+    document.querySelectorAll("circle").forEach((element) => {
+      const circle = this.for(element);
+      if (circle) {
+        result.add(circle);
+      }
+    });
+    return result;
+  }
+  /**
+   * This is a way to set the properties of this object.
+   * This is a convenience allowing you to create and configure an object without creating a temporary value.
+   * Mostly I use it for one-liners in the console. 
+   * @param param0 A collection of property names and their desired values.
+   * @returns this
+   */
+  configure({ attached, center, color, radius }: CircleConfig) {
+    if (attached !== undefined) {
+      this.attached = attached;
+    }
+    if (center !== undefined) {
+      this.center = center;
+    }
+    if (color !== undefined) {
+      this.color = color;
+    }
+    if (radius !== undefined) {
+      this.radius = radius;
+    }
+    return this;
+  }
   static readonly #parent = getById("circle-parent", SVGElement);
   /**
    * The underlying SVG element.
@@ -153,6 +231,18 @@ class Circle extends Object {
       element.r.baseVal.value = newValue;
     });
   }
+  /**
+   * The apparent size of the sphere.  this.volume == this.radius³
+   */
+  get volume() {
+    return Math.pow(this.radius, 3);
+  }
+  set volume(newValue) {
+    this.radius = Math.pow(newValue, 1 / 3);
+  }
+  /**
+   * I hand this directly to the `fill` css property of an `SVGElement`.
+   */
   get color() {
     return this.#color;
   }
@@ -223,6 +313,11 @@ class Circle extends Object {
 }
 
 // MARK: InertiaAndBounce
+/**
+ * This object adds *simple* physics to the circle.
+ * It goes as a constant speed until it bounces off a wall.
+ * Other parts of the software can change the speed as required. 
+ */
 class InertiaAndBounce {
   /**
    * SVG units / millisecond.  Positive for left.

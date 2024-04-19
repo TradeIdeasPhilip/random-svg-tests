@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title></title>
     <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
-    <script type="module" crossorigin src="./assets/main-yrkdnzNy.js"></script>
+    <script type="module" crossorigin src="./assets/main-CUiM3vD6.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/main-BU9DGPdU.css">
   </head>
   <body>
@@ -43,6 +43,11 @@
       Or <code>exponentialFollower = new ExponentialFollower()</code>, then
       <code>inertiaAndBounce = new InertiaAndBounce()</code>, then n ⨉
       <code>exponentialFollower.goal = inertiaAndBounce.circle.center</code>
+    </p>
+    <p>
+      Or <code>circle = new InertiaAndBounce().circle</code>, then n ⨉
+      <code>circle = new ExponentialFollower().followCircle(circle).circle</code
+      >.
     </p>
   </body>
 </html>

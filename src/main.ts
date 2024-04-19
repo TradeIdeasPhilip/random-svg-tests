@@ -466,6 +466,10 @@ class ExponentialFollower extends Animation {
   constructor(public readonly circle = new Circle()) {
     super();
   }
+  followCircle(toFollow: Circle) {
+    this.beforeUpdate = () => (this.goal = toFollow.center);
+    return this;
+  }
 }
 
 // MARK: Export to Console

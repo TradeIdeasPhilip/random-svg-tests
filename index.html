@@ -43,5 +43,10 @@
       <code>inertiaAndBounce = new InertiaAndBounce()</code>, then n ⨉
       <code>exponentialFollower.goal = inertiaAndBounce.circle.center</code>
     </p>
+    <p>
+      Or <code>circle = new InertiaAndBounce().circle</code>, then n ⨉
+      <code>circle = new ExponentialFollower().followCircle(circle).circle</code
+      >.
+    </p>
   </body>
 </html>

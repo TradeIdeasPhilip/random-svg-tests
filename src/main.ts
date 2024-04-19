@@ -161,7 +161,7 @@ class Circle extends Object {
     }
     return this;
   }
-  static readonly #parent = getById("circle-parent", SVGElement);
+  static readonly parent = getById("circle-parent", SVGElement);
   /**
    * The underlying SVG element.
    */
@@ -222,7 +222,7 @@ class Circle extends Object {
     if (shouldBeAttached != this.#attached) {
       this.#allElements.forEach((element) => {
         if (shouldBeAttached) {
-          Circle.#parent.appendChild(element);
+          Circle.parent.appendChild(element);
         } else {
           element.remove();
         }
@@ -472,8 +472,75 @@ class ExponentialFollower extends Animation {
   }
 }
 
+// MARK: Pointer Control
+
+/**
+ * Translate from mouse coordinates to SVG drawing coordinates.
+ * So you can draw something right under the mouse.
+ * @param coordinates This is presumably a PointerEvent.
+ * You can't just ask for the mouse position any time you want.
+ * It only comes from an event.
+ * @returns A new Point that can be used to draw on the SVG surface.
+ */
+function translateCoordinates(coordinates: {
+  clientX: number;
+  clientY: number;
+}) {
+  // I'm assuming that the client rectangle can change all the time.
+  // I think that includes resizing and scrolling.
+  const rect = Circle.parent.getBoundingClientRect();
+  // I'm assuming that SVG coordinates will always go from (0,0) to (1,1).
+  // I have full control over that and I've decided to focus on this fixed
+  // size to keep things simple.
+  const x = (coordinates.clientX - rect.left) / rect.width;
+  const y = (coordinates.clientY - rect.top) / rect.height;
+  return new Point(x, y);
+}
+
+/**
+ * Any time you have the left mouse button down the given Circle
+ * will immediately move to the mouse location.  Or the
+ * ExponentialFollower will adjust it's goal and start moving
+ * toward the mouse.
+ * @param follower This is the thing that you want to follow the mouse.
+ * @returns A function you can call to stop following the mouse.
+ */
+function followMouse(follower: Circle | ExponentialFollower) {
+  function update(pointerEvent: PointerEvent) {
+    const svgCoordinates = translateCoordinates(pointerEvent);
+    if (follower instanceof Circle) {
+      follower.center = svgCoordinates;
+    } else {
+      follower.goal = svgCoordinates;
+    }
+  }
+  const abortController = new AbortController();
+  Circle.parent.addEventListener(
+    "pointerdown",
+    (pointerEvent) => {
+      if (pointerEvent.button == 0) {
+        // The user just pressed button 1.
+        update(pointerEvent);
+      }
+    },
+    { signal: abortController.signal }
+  );
+  Circle.parent.addEventListener(
+    "pointermove",
+    (pointerEvent) => {
+      if (pointerEvent.buttons & 1) {
+        // The user is moving the mouse while button 1 is down.
+        update(pointerEvent);
+      }
+    },
+    { signal: abortController.signal }
+  );
+  return abortController.abort.bind(abortController);
+}
+
 // MARK: Export to Console
 const SHARE = window as any;
 SHARE.Circle = Circle;
 SHARE.InertiaAndBounce = InertiaAndBounce;
 SHARE.ExponentialFollower = ExponentialFollower;
+SHARE.followMouse = followMouse;

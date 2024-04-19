@@ -3,7 +3,7 @@ import "./style.css";
 
 import { pick } from "phil-lib/misc";
 import { getById } from "phil-lib/client-misc";
-import { AnimationLoop } from "./utility";
+import { AnimationLoop, polarToRectangular } from "./utility";
 
 // MARK: Point
 /**
@@ -17,6 +17,24 @@ class Point {
   }
   distanceTo(other: Point) {
     return Math.hypot(this.x - other.x, this.y - other.y);
+  }
+  /**
+   *
+   * @param destination Start by considering a vector from `this` to `destination`
+   * @param ratio How far to stretch the vector.
+   * A ratio of 0 will return `this`.
+   * A ratio of 1 will return `destination`.
+   * A ratio 0.5 will return a new `Point` halfway between `this` and `destination`.
+   * Etc.
+   * @returns A new `Point` on the line connecting `this` and `destination`.  `ratio` picks which point on that line.
+   */
+  extendPast(destination: Point, ratio: number) {
+    const angle = Math.atan2(destination.y - this.y, destination.x - this.x);
+    const initialDistance = this.distanceTo(destination);
+    const finalDistance = initialDistance * ratio;
+    const finalVector = polarToRectangular(finalDistance, angle);
+    const result = new Point(this.x + finalVector.x, this.y + finalVector.y);
+    return result;
   }
   /**
    * The center of the drawing area.
@@ -124,7 +142,7 @@ class Circle extends Object {
   /**
    * This is a way to set the properties of this object.
    * This is a convenience allowing you to create and configure an object without creating a temporary value.
-   * Mostly I use it for one-liners in the console. 
+   * Mostly I use it for one-liners in the console.
    * @param param0 A collection of property names and their desired values.
    * @returns this
    */
@@ -312,13 +330,71 @@ class Circle extends Object {
   }
 }
 
+// MARK: Animation
+/**
+ * This is a wrapper around AnimationLoop.
+ * AnimationLoop was written for use with unnamed functions.
+ * Animation is a nice base class if you want to add a lot of properties.
+ */
+abstract class Animation {
+  #previousTimestamp: number | undefined;
+
+  private onAnimationFrame(timestamp: DOMHighResTimeStamp) {
+    const msSinceLastUpdate =
+      this.#previousTimestamp == undefined
+        ? undefined
+        : timestamp - this.#previousTimestamp;
+    // Interesting.  Sometimes msSinceLastUpdate is negative!  Seems to only happen on the first try and only sometimes.
+    this.#previousTimestamp = timestamp;
+    this.beforeUpdate?.(msSinceLastUpdate);
+    this.update(msSinceLastUpdate);
+  }
+
+  #animationLoop: AnimationLoop | undefined;
+  get paused() {
+    return !this.#animationLoop;
+  }
+  set paused(newValue) {
+    if (newValue != this.paused) {
+      if (newValue) {
+        this.#animationLoop!.cancel();
+        this.#animationLoop = undefined;
+        this.#previousTimestamp = undefined;
+      } else {
+        this.#animationLoop = new AnimationLoop(
+          this.onAnimationFrame.bind(this)
+        );
+      }
+    }
+    if (newValue != this.paused) {
+      console.error("wtf");
+    }
+  }
+
+  protected abstract update(
+    msSinceLastUpdate: DOMHighResTimeStamp | undefined
+  ): void;
+  /**
+   * Call this callback each animation frame immediately before doing any work.
+   *
+   * This gives someone the ability to update the goal every animation frame.
+   */
+  beforeUpdate:
+    | ((msSinceLastUpdate: DOMHighResTimeStamp | undefined) => void)
+    | undefined;
+
+  constructor(initiallyPaused = false) {
+    this.paused = initiallyPaused;
+  }
+}
+
 // MARK: InertiaAndBounce
 /**
  * This object adds *simple* physics to the circle.
  * It goes as a constant speed until it bounces off a wall.
- * Other parts of the software can change the speed as required. 
+ * Other parts of the software can change the speed as required.
  */
-class InertiaAndBounce {
+class InertiaAndBounce extends Animation {
   /**
    * SVG units / millisecond.  Positive for left.
    */
@@ -327,16 +403,14 @@ class InertiaAndBounce {
    * SVG units / millisecond.  Positive for down.
    */
   ySpeed = Math.random() / 1000;
-  #previousTimestamp: number | undefined;
   constructor(readonly circle: Circle = new Circle()) {
-    this.paused = false;
+    super();
     circle.elements.forEach((element) =>
       InertiaAndBounce.#byElement.set(element, this)
     );
   }
-  private update(timestamp: DOMHighResTimeStamp) {
-    if (this.#previousTimestamp !== undefined) {
-      const msPassed = timestamp - this.#previousTimestamp;
+  override update(msPassed: DOMHighResTimeStamp | undefined) {
+    if (msPassed !== undefined) {
       const min = this.circle.radius;
       const max = 1 - min;
       let { x, y } = this.circle.center;
@@ -358,24 +432,6 @@ class InertiaAndBounce {
       }
       this.circle.center = new Point(x, y);
     }
-    this.#previousTimestamp = timestamp;
-  }
-  #animationLoop: AnimationLoop | undefined;
-  get paused() {
-    return !this.#animationLoop;
-  }
-  set paused(newValue) {
-    if (newValue != this.paused) {
-      if (newValue) {
-        this.#animationLoop!.cancel();
-        this.#animationLoop = undefined;
-      } else {
-        this.#animationLoop = new AnimationLoop(this.update.bind(this));
-      }
-    }
-    if (newValue != this.paused) {
-      console.error("wtf");
-    }
   }
   static #byElement = new WeakMap<SVGElement, InertiaAndBounce>();
   static for(element: SVGElement) {
@@ -383,6 +439,37 @@ class InertiaAndBounce {
   }
 }
 
+// MARK: ExponentialFollower
+class ExponentialFollower extends Animation {
+  protected override update(
+    msSinceLastUpdate: DOMHighResTimeStamp | undefined
+  ): void {
+    if (msSinceLastUpdate !== undefined) {
+      const skipRatio = Math.pow(0.5, msSinceLastUpdate / this.halflife);
+      const newCenter = this.circle.center.extendPast(this.goal, 1 - skipRatio);
+      this.circle.center = newCenter;
+    }
+  }
+  goal = Point.random();
+  /**
+   * Update the `goal`.  This is convenience aimed at using the console.
+   * @param x
+   * @param y
+   */
+  goto(x: number, y: number) {
+    this.goal = new Point(x, y);
+  }
+  /**
+   * If the `goal` doesn't move, `this.circle` will move half way to the `goal` every `halfLife` milliseconds.
+   */
+  halflife = 250;
+  constructor(public readonly circle = new Circle()) {
+    super();
+  }
+}
+
 // MARK: Export to Console
-(window as any).Circle = Circle;
-(window as any).InertiaAndBounce = InertiaAndBounce;
+const SHARE = window as any;
+SHARE.Circle = Circle;
+SHARE.InertiaAndBounce = InertiaAndBounce;
+SHARE.ExponentialFollower = ExponentialFollower;

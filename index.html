@@ -23,6 +23,7 @@
       id="circle-parent"
     >
       <defs>
+        <!-- https://doodad.dev/gradient-generator/ -->
         <radialGradient
           id="sphere"
           gradientTransform="translate(-0.37,-0.37) scale(1.5, 1.5)"
@@ -34,8 +35,13 @@
       </defs>
     </svg>
     <p>
-      Try <code>new Circle()</code> or <code>new InertiaAndBounce()</code> in
-      the JavaScript console.
+      Try <code>new Circle()</code>, <code>new InertiaAndBounce()</code>, or
+      <code>new ExponentialFollower()</code> in the JavaScript console.
+    </p>
+    <p>
+      Or <code>exponentialFollower = new ExponentialFollower()</code>, then
+      <code>inertiaAndBounce = new InertiaAndBounce()</code>, then n ⨉
+      <code>exponentialFollower.goal = inertiaAndBounce.circle.center</code>
     </p>
   </body>
 </html>

@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap");
+
 body {
   font-family: fantasy;
   padding: 0;
@@ -11,4 +13,17 @@ circle.simple {
 circle.sphere {
   stroke: none;
   fill: url(#sphere);
+}
+
+/**
+ * This is a common style for code.
+ *
+ */
+code {
+  background-color: lightblue;
+  border-radius: 0.25em;
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+  color: blue;
+  font-family: "Courier Prime", monospace;
 }

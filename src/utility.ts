@@ -15,3 +15,9 @@ export class AnimationLoop {
     }
   }
 }
+
+// This is dead wrong in phil-lib/misc.ts!!!
+export function polarToRectangular(r: number, θ: number) {
+  return { x: Math.cos(θ) * r, y: Math.sin(θ) * r };
+}
+

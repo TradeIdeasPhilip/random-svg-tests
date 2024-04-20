@@ -127,7 +127,7 @@ class Circle extends Object {
   }
   /**
    *
-   * @returns A list of all circles currently attached to the background.
+   * @returns A set of all circles currently attached to the background.
    */
   static allAttached() {
     const result = new Set<Circle>();

@@ -55,5 +55,32 @@
         >followMouse(new ExponentialFollower()); followMouse(new Circle())</code
       >. These will follow the mouse but only when the left button is down.
     </p>
+    <p style="margin-bottom: 0">Or</p>
+    <ul style="margin-top: 0">
+      <li>
+        <code
+          >followMouse( new ExponentialFollower().<b>configure</b>({ halflife:
+          2000, circle: { color: "#0F0", radius: 0.14 }, }) );</code
+        >
+      </li>
+      <li>
+        <code
+          >followMouse( new ExponentialFollower().<b>configure</b>({ halflife:
+          500, circle: { color: "#0C0", radius: 0.11 }, }) );</code
+        >
+      </li>
+      <li>
+        <code
+          >followMouse( new ExponentialFollower().<b>configure</b>({ halflife:
+          125, circle: { color: "#080", radius: 0.08 }, }) );
+        </code>
+      </li>
+      <li>
+        <code
+          >followMouse(new Circle().<b>configure</b>({ color: "#040", radius:
+          0.05 }));</code
+        >
+      </li>
+    </ul>
   </body>
 </html>

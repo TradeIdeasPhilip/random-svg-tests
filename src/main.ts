@@ -389,12 +389,52 @@ abstract class Animation {
 }
 
 // MARK: InertiaAndBounce
+
+/**
+ * For use with InertiaAndBounce.configure()
+ */
+type InertiaAndBounceConfig = {
+  paused?: boolean;
+  /**
+   * This gets passed directly to this.circle.config().
+   */
+  circle?: CircleConfig;
+  /**
+   * SVG units / millisecond.  Positive for left.
+   */
+  xSpeed?: number;
+  /**
+   * SVG units / millisecond.  Positive for down.
+   */
+  ySpeed?: number;
+};
+
 /**
  * This object adds *simple* physics to the circle.
  * It goes as a constant speed until it bounces off a wall.
  * Other parts of the software can change the speed as required.
  */
 class InertiaAndBounce extends Animation {
+  /**
+   * This is an alternative syntax for setting the properties.
+   * @param param0 A collection of property names and their desired values.
+   * @returns this
+   */
+  configure({ paused, circle, xSpeed, ySpeed }: InertiaAndBounceConfig) {
+    if (paused !== undefined) {
+      this.paused = paused;
+    }
+    if (circle) {
+      this.circle.configure(circle);
+    }
+    if (xSpeed !== undefined) {
+      this.xSpeed = xSpeed;
+    }
+    if (ySpeed !== undefined) {
+      this.ySpeed = ySpeed;
+    }
+    return this;
+  }
   /**
    * SVG units / millisecond.  Positive for left.
    */
@@ -440,7 +480,41 @@ class InertiaAndBounce extends Animation {
 }
 
 // MARK: ExponentialFollower
+
+type ExponentialFollowerConfig = {
+  paused?: boolean;
+  /**
+   * This gets passed directly to this.circle.config().
+   */
+  circle?: CircleConfig;
+  goal?: Point;
+  /**
+   * If the `goal` doesn't move, the `Circle` will move half way to the `goal` every `halfLife` milliseconds.
+   */
+  halflife?: number;
+};
+
 class ExponentialFollower extends Animation {
+  /**
+   * This is an alternate syntax for setting this object's properties.
+   * @param param0 A list of names and desired values for each property to change.
+   * @returns this
+   */
+  configure({ paused, circle, goal, halflife }: ExponentialFollowerConfig) {
+    if (paused !== undefined) {
+      this.paused = paused;
+    }
+    if (circle) {
+      this.circle.configure(circle);
+    }
+    if (goal) {
+      this.goal = goal;
+    }
+    if (halflife !== undefined) {
+      this.halflife = halflife;
+    }
+    return this;
+  }
   protected override update(
     msSinceLastUpdate: DOMHighResTimeStamp | undefined
   ): void {

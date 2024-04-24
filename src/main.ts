@@ -26,16 +26,19 @@ class Point {
    * A ratio of 1 will return `destination`.
    * A ratio 0.5 will return a new `Point` halfway between `this` and `destination`.
    * Etc.
-   * @returns A new `Point` on the line connecting `this` and `destination`.  `ratio` picks which point on that line.
+   * @param maxLength The maximum distance to travel from `this`.  Defaults to Infinity for unlimited.
+   * @returns A new `Point` on the line connecting `this` and `destination`.  `ratio` and maxLength pick which point on that line.
    */
-  extendPast(destination: Point, ratio: number) {
+  extendPast(destination: Point, ratio: number, maxLength = Infinity) {
+    // I hate the name "extendPast"!
     const angle = Math.atan2(destination.y - this.y, destination.x - this.x);
     const initialDistance = this.distanceTo(destination);
-    const finalDistance = initialDistance * ratio;
+    const finalDistance = Math.min(initialDistance * ratio, maxLength);
     const finalVector = polarToRectangular(finalDistance, angle);
     const result = new Point(this.x + finalVector.x, this.y + finalVector.y);
     return result;
   }
+  static readonly ZERO = new Point(0, 0);
   /**
    * The center of the drawing area.
    */
@@ -479,6 +482,23 @@ class InertiaAndBounce extends Animation {
   }
 }
 
+// MARK: Follower
+
+abstract class SmartFollower extends Animation {
+  goal = Point.random();
+  /**
+   * Update the `goal`.  This is convenience aimed at using the console.
+   * @param x
+   * @param y
+   */
+  moveTo(x: number, y: number) {
+    this.goal = new Point(x, y);
+  }
+  followCircle(toFollow: Circle) {
+    this.beforeUpdate = () => (this.goal = toFollow.center);
+  }
+}
+
 // MARK: ExponentialFollower
 
 type ExponentialFollowerConfig = {
@@ -494,7 +514,7 @@ type ExponentialFollowerConfig = {
   halflife?: number;
 };
 
-class ExponentialFollower extends Animation {
+class ExponentialFollower extends SmartFollower {
   /**
    * This is an alternate syntax for setting this object's properties.
    * @param param0 A list of names and desired values for each property to change.
@@ -524,25 +544,12 @@ class ExponentialFollower extends Animation {
       this.circle.center = newCenter;
     }
   }
-  goal = Point.random();
-  /**
-   * Update the `goal`.  This is convenience aimed at using the console.
-   * @param x
-   * @param y
-   */
-  goto(x: number, y: number) {
-    this.goal = new Point(x, y);
-  }
   /**
    * If the `goal` doesn't move, `this.circle` will move half way to the `goal` every `halfLife` milliseconds.
    */
   halflife = 250;
   constructor(public readonly circle = new Circle()) {
     super();
-  }
-  followCircle(toFollow: Circle) {
-    this.beforeUpdate = () => (this.goal = toFollow.center);
-    return this;
   }
 }
 
@@ -612,9 +619,80 @@ function followMouse(follower: Circle | ExponentialFollower) {
   return abortController.abort.bind(abortController);
 }
 
+// MARK: Physics
+/**
+ * This uses physics to limit the changes you can make to a circle.
+ * Instead of directly setting the position or velocity, you should only set the acceleration.
+ * I.e. apply a force, like in real life.
+ */
+class Physics extends SmartFollower {
+  /**
+   * This applies the immutable laws of physics.
+   * See `beforeUpdate` for the strategies for updating the forces.
+   * @param msSinceLastUpdate
+   */
+  protected override update(
+    msSinceLastUpdate: DOMHighResTimeStamp | undefined
+  ): void {
+    if (msSinceLastUpdate !== undefined) {
+      const ms = msSinceLastUpdate;
+      function addScaled(startFrom: Point, direction: Point) {
+        const x = startFrom.x + direction.x * ms;
+        const y = startFrom.y + direction.y * ms;
+        return new Point(x, y);
+      }
+      this.circle.center = addScaled(this.circle.center, this.velocity);
+      this.velocity = addScaled(this.velocity, this.acceleration);
+    }
+  }
+  /**
+   * SVG Units / millisecond².
+   */
+  maxAcceleration = 0.000003;
+  #acceleration = new Point(0, 0);
+  get acceleration() {
+    return this.#acceleration;
+  }
+  set acceleration(requestedValue) {
+    // TODO this is totally wrong.
+    this.#acceleration = Point.ZERO.extendPast(
+      requestedValue,
+      1,
+      this.maxAcceleration
+    );
+  }
+  /**
+   * SVG Units / millisecond.
+   */
+  maxSpeed = 0.001;
+  #velocity = new Point(0, 0);
+  get velocity() {
+    return this.#velocity;
+  }
+  set velocity(requestedValue) {
+    this.#velocity = Point.ZERO.extendPast(requestedValue, 1, this.maxSpeed);
+  }
+  constructor(public readonly circle = new Circle()) {
+    super();
+    // This default algorithm is very dumb.
+    // It aims directly at the goal and applies maximum throttle.
+    // In practice this usually leads to the circle orbiting around the goal.
+    this.beforeUpdate = (
+      msSinceLastUpdate: DOMHighResTimeStamp | undefined
+    ) => {
+      if (msSinceLastUpdate !== undefined) {
+        const Δx = this.goal.x - this.circle.center.x;
+        const Δy = this.goal.y - this.circle.center.y;
+        this.acceleration = new Point(Δx, Δy);
+      }
+    };
+  }
+}
+
 // MARK: Export to Console
 const SHARE = window as any;
 SHARE.Circle = Circle;
 SHARE.InertiaAndBounce = InertiaAndBounce;
 SHARE.ExponentialFollower = ExponentialFollower;
+SHARE.Physics = Physics;
 SHARE.followMouse = followMouse;

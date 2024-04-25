@@ -1,7 +1,7 @@
 // This is the preferred way to include a css file.
 import "./style.css";
 
-import { pick } from "phil-lib/misc";
+import { LinearFunction, makeLinear, pick } from "phil-lib/misc";
 import { getById } from "phil-lib/client-misc";
 import { AnimationLoop, polarToRectangular } from "./utility";
 
@@ -689,6 +689,44 @@ class Physics extends SmartFollower {
   }
 }
 
+// MARK: 3D
+
+class ThreeDFlattener {
+  readonly ratio: number;
+  readonly #convert: LinearFunction;
+  constructor(public readonly z: number) {
+    // This is the heart of the algorithm.
+    // The rest all depends on this.
+    // There are other algorithms out there, I just did this because it was simple.
+    // An interesting discussion on perspective:  https://webglfundamentals.org/webgl/lessons/webgl-3d-perspective.html
+    this.ratio = 1 - z / 2;
+    this.#convert = makeLinear(0.5, 0.5, 1, 0.5 + this.ratio * 0.5);
+  }
+  flatten({ x, y }: { readonly x: number; readonly y: number }): Point {
+    return new Point(this.#convert(x), this.#convert(y));
+  }
+  static demo(n = 5) {
+    const lf = makeLinear(0, 0, n - 1, 1);
+    const y = 0.75;
+    const baseRadius = 1 / n / 3;
+    for (let zIndex = n - 1; zIndex >= 0; zIndex--) {
+      const z = lf(zIndex);
+      const flattener = new ThreeDFlattener(z);
+      const radius = baseRadius * flattener.ratio;
+      for (let xIndex = 0; xIndex < n; xIndex++) {
+        const x = lf(xIndex);
+        const flattened = flattener.flatten({ x, y });
+        const circle = new Circle();
+        circle.center = flattened;
+        circle.radius = radius;
+        const color = ["#004", "#00F"][(zIndex + xIndex) % 2];
+        //console.log({color,x,y,z, circle});
+        circle.color = color;
+      }
+    }
+  }
+}
+
 // MARK: Export to Console
 const SHARE = window as any;
 SHARE.Circle = Circle;
@@ -696,3 +734,4 @@ SHARE.InertiaAndBounce = InertiaAndBounce;
 SHARE.ExponentialFollower = ExponentialFollower;
 SHARE.Physics = Physics;
 SHARE.followMouse = followMouse;
+SHARE.ThreeDFlattener = ThreeDFlattener;

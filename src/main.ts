@@ -689,17 +689,34 @@ class Physics extends SmartFollower {
   }
 }
 
-// MARK: 3D
+// MARK: ThreeDFlattener
 
+/**
+ * You can convert a 3d point to a 2d point in two steps.
+ * First create a `ThreeDFlattener` with the z from the original point.
+ * The call `flatten()` with the x and y from the original point.
+ */
 class ThreeDFlattener {
+  /**
+   * Use `ratio` to convert a _vector_  from 3d space to 2d space.
+   * (ΔX, ΔY) in 3d space becomes (`ratio`*ΔX, `ratio`*ΔY) in 2d space.
+   * Use `flatten()` to convert a _point_ from 3d space to 2d space.
+   */
   readonly ratio: number;
   readonly #convert: LinearFunction;
-  constructor(public readonly z: number) {
+  /**
+   *
+   * @param z The axis in and out of the screen.  Reasonable values are [0,1].  Larger values are further from the user.
+   * @param perspective 0 will completely ignore the value of z.  Large values will make the perspective more obvious.
+   */
+  constructor(public readonly z: number, public readonly perspective = 0.5) {
     // This is the heart of the algorithm.
     // The rest all depends on this.
     // There are other algorithms out there, I just did this because it was simple.
     // An interesting discussion on perspective:  https://webglfundamentals.org/webgl/lessons/webgl-3d-perspective.html
-    this.ratio = 1 - z / 2;
+    // https://stackoverflow.com/questions/53245632/general-formula-for-perspective-projection-matrix
+    // This is currently a *very* crude approximation.
+    this.ratio = 1 - z * this.perspective;
     this.#convert = makeLinear(0.5, 0.5, 1, 0.5 + this.ratio * 0.5);
   }
   flatten({ x, y }: { readonly x: number; readonly y: number }): Point {
@@ -722,6 +739,28 @@ class ThreeDFlattener {
         const color = ["#004", "#00F"][(zIndex + xIndex) % 2];
         //console.log({color,x,y,z, circle});
         circle.color = color;
+      }
+    }
+  }
+  static demo3(n = 5) {
+    const lf = makeLinear(0, 0, n - 1, 1);
+    const baseRadius = 1 / n / 3;
+    for (let zIndex = n - 1; zIndex >= 0; zIndex--) {
+      const z = lf(zIndex);
+      const flattener = new ThreeDFlattener(z);
+      const radius = baseRadius * flattener.ratio;
+      for (let yIndex = 0; yIndex < n; yIndex++) {
+        const y = lf(yIndex);
+        for (let xIndex = 0; xIndex < n; xIndex++) {
+          const x = lf(xIndex);
+          const flattened = flattener.flatten({ x, y });
+          const circle = new Circle();
+          circle.center = flattened;
+          circle.radius = radius;
+          const color = ["#004", "#00F"][(zIndex + yIndex + xIndex) % 2];
+          //console.log({color,x,y,z, circle});
+          circle.color = color;
+        }
       }
     }
   }

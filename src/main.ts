@@ -1,7 +1,7 @@
 // This is the preferred way to include a css file.
 import "./style.css";
 
-import { LinearFunction, makeLinear, pick } from "phil-lib/misc";
+import { LinearFunction, makeLinear, pick, sleep } from "phil-lib/misc";
 import { getById } from "phil-lib/client-misc";
 import { AnimationLoop, polarToRectangular } from "./utility";
 
@@ -232,6 +232,14 @@ class Circle extends Object {
       });
       this.#attached = shouldBeAttached;
     }
+  }
+  sendToBack() {
+    this.attached = true;
+    this.elements
+      .toReversed()
+      .forEach((element) =>
+        Circle.parent.insertBefore(element, Circle.parent.firstChild)
+      );
   }
   get center() {
     return this.#center;
@@ -762,6 +770,30 @@ class ThreeDFlattener {
           circle.color = color;
         }
       }
+    }
+  }
+  static async tunnelDemo() {
+    const drawCircle = (
+      center: { readonly x: number; readonly y: number },
+      z: number
+    ) => {
+      const flattener = new this(z);
+      const result = new Circle();
+      result.center = flattener.flatten(center);
+      result.radius = flattener.ratio * 0.09;
+      return result;
+    };
+    const getCenter = (numberOfTurns: number) => {
+      const angle = numberOfTurns * (2 * Math.PI);
+      const radius = 0.4;
+      const center = polarToRectangular(radius, angle);
+      center.x += Point.CENTER.x;
+      center.y += Point.CENTER.y;
+      return center;
+    };
+    for (let n = 0; n < 50; n++) {
+      drawCircle(getCenter(n / 17.5), n / 30).sendToBack();
+      await sleep(550);
     }
   }
 }

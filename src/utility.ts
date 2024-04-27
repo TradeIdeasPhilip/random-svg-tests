@@ -21,3 +21,4 @@ export function polarToRectangular(r: number, θ: number) {
   return { x: Math.cos(θ) * r, y: Math.sin(θ) * r };
 }
 
+export const phi = (1 + Math.sqrt(5)) / 2;

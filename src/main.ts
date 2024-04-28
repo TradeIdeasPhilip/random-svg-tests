@@ -724,7 +724,7 @@ class ThreeDFlattener {
     // An interesting discussion on perspective:  https://webglfundamentals.org/webgl/lessons/webgl-3d-perspective.html
     // https://stackoverflow.com/questions/53245632/general-formula-for-perspective-projection-matrix
     // This is currently a *very* crude approximation.
-    this.ratio = 1 - z * this.perspective;
+    this.ratio = (this.perspective / (1 + z)) * 2;
     this.#convert = makeLinear(0.5, 0.5, 1, 0.5 + this.ratio * 0.5);
   }
   flatten({ x, y }: { readonly x: number; readonly y: number }): Point {

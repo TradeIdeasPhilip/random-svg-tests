@@ -715,16 +715,21 @@ class ThreeDFlattener {
   /**
    *
    * @param z The axis in and out of the screen.  Reasonable values are [0,1].  Larger values are further from the user.
-   * @param perspective 0 will completely ignore the value of z.  Large values will make the perspective more obvious.
+   * @param perspective Very large values will completely ignore the value of z.  Small values will make the perspective more obvious.
+   *
+   * I always zoom in so that the square (0≤x≤1, 0≤y≤1, z=0) completely fills the SVG.
+   * `perspective` says how far the camera is from the z=0 plane.
+   *
+   * This value is often presented as the field of view, an angle.
+   * A larger `perspective` leads to a smaller field of view.
+   * You could do some trig and do the same thing here.
+   * But there's no point because in practice this value is just tweaked until it looks good.
    */
-  constructor(public readonly z: number, public readonly perspective = 0.5) {
+  constructor(public readonly z: number, perspective?: number) {
+    perspective ??= 1;
     // This is the heart of the algorithm.
     // The rest all depends on this.
-    // There are other algorithms out there, I just did this because it was simple.
-    // An interesting discussion on perspective:  https://webglfundamentals.org/webgl/lessons/webgl-3d-perspective.html
-    // https://stackoverflow.com/questions/53245632/general-formula-for-perspective-projection-matrix
-    // This is currently a *very* crude approximation.
-    this.ratio = (this.perspective / (1 + z)) * 2;
+    this.ratio = perspective / (perspective + z);
     this.#convert = makeLinear(0.5, 0.5, 1, 0.5 + this.ratio * 0.5);
   }
   flatten({ x, y }: { readonly x: number; readonly y: number }): Point {
@@ -772,12 +777,12 @@ class ThreeDFlattener {
       }
     }
   }
-  static async tunnelDemo() {
+  static async tunnelDemo(perspective?: number) {
     const drawCircle = (
       center: { readonly x: number; readonly y: number },
       z: number
     ) => {
-      const flattener = new this(z);
+      const flattener = new this(z, perspective);
       const result = new Circle();
       result.center = flattener.flatten(center);
       result.radius = flattener.ratio * 0.09;
@@ -793,7 +798,7 @@ class ThreeDFlattener {
     };
     for (let n = 0; n < 50; n++) {
       drawCircle(getCenter(n / 17.5), n / 30).sendToBack();
-      await sleep(550);
+      await sleep(333);
     }
   }
 }

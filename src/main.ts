@@ -3,7 +3,7 @@ import "./style.css";
 
 import { LinearFunction, makeLinear, pick, sleep } from "phil-lib/misc";
 import { getById } from "phil-lib/client-misc";
-import { AnimationLoop, polarToRectangular } from "./utility";
+import { AnimationLoop, phi, polarToRectangular } from "./utility";
 
 // MARK: Point
 /**
@@ -142,6 +142,9 @@ class Circle extends Object {
     });
     return result;
   }
+  static removeAll() {
+    [...Circle.allAttached()].forEach((c) => (c.attached = false));
+  }
   /**
    * This is a way to set the properties of this object.
    * This is a convenience allowing you to create and configure an object without creating a temporary value.
@@ -240,6 +243,7 @@ class Circle extends Object {
       .forEach((element) =>
         Circle.parent.insertBefore(element, Circle.parent.firstChild)
       );
+    return this;
   }
   get center() {
     return this.#center;
@@ -735,13 +739,13 @@ class ThreeDFlattener {
   flatten({ x, y }: { readonly x: number; readonly y: number }): Point {
     return new Point(this.#convert(x), this.#convert(y));
   }
-  static demo(n = 5) {
+  static demo(n = 5, perspective?: number) {
     const lf = makeLinear(0, 0, n - 1, 1);
     const y = 0.75;
     const baseRadius = 1 / n / 3;
     for (let zIndex = n - 1; zIndex >= 0; zIndex--) {
       const z = lf(zIndex);
-      const flattener = new ThreeDFlattener(z);
+      const flattener = new ThreeDFlattener(z, perspective);
       const radius = baseRadius * flattener.ratio;
       for (let xIndex = 0; xIndex < n; xIndex++) {
         const x = lf(xIndex);
@@ -755,12 +759,12 @@ class ThreeDFlattener {
       }
     }
   }
-  static demo3(n = 5) {
+  static demo3(n = 5, perspective?: number) {
     const lf = makeLinear(0, 0, n - 1, 1);
     const baseRadius = 1 / n / 3;
     for (let zIndex = n - 1; zIndex >= 0; zIndex--) {
       const z = lf(zIndex);
-      const flattener = new ThreeDFlattener(z);
+      const flattener = new ThreeDFlattener(z, perspective);
       const radius = baseRadius * flattener.ratio;
       for (let yIndex = 0; yIndex < n; yIndex++) {
         const y = lf(yIndex);
@@ -777,12 +781,22 @@ class ThreeDFlattener {
       }
     }
   }
-  static async tunnelDemo(perspective?: number) {
+  static async tunnelDemo(
+    options: {
+      readonly count?: number;
+      readonly perspective?: number;
+      readonly perRevolution?: number;
+      readonly periodMS?: number;
+    } = {}
+  ) {
+    const count = options.count ?? 50;
+    const perRevolution = options.perRevolution ?? 17.5;
+    const periodMS = options.periodMS ?? 10;
     const drawCircle = (
       center: { readonly x: number; readonly y: number },
       z: number
     ) => {
-      const flattener = new this(z, perspective);
+      const flattener = new this(z, options.perspective);
       const result = new Circle();
       result.center = flattener.flatten(center);
       result.radius = flattener.ratio * 0.09;
@@ -796,9 +810,13 @@ class ThreeDFlattener {
       center.y += Point.CENTER.y;
       return center;
     };
-    for (let n = 0; n < 50; n++) {
-      drawCircle(getCenter(n / 17.5), n / 30).sendToBack();
-      await sleep(333);
+    for (let n = 0; n < count; n++) {
+      drawCircle(getCenter(n / perRevolution), n / 30)
+        .sendToBack()
+        .configure({ color: `hsl(none 0% ${100 - n * (100 / count)}%)` });
+      if (periodMS > 0) {
+        await sleep(periodMS);
+      }
     }
   }
 }
@@ -811,3 +829,4 @@ SHARE.ExponentialFollower = ExponentialFollower;
 SHARE.Physics = Physics;
 SHARE.followMouse = followMouse;
 SHARE.ThreeDFlattener = ThreeDFlattener;
+SHARE.phi = phi;

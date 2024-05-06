@@ -819,6 +819,61 @@ class ThreeDFlattener {
       }
     }
   }
+  static readonly #standardColors: readonly string[] = [
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "indigo",
+    "violet",
+    "pink",
+    "darkblue",
+    "black",
+    "gray",
+    "brown",
+    "chartreuse",
+    "aqua",
+    "chocolate",
+    "turquoise",
+    "cadetblue",
+    "coral",
+    "darkgoldenrod",
+    "darkgray",
+    "fuchsia",
+    "darkorchid"
+  ];
+  static async fibonacciSpiral(
+    input: number | readonly string[],
+    initialColor = "white"
+  ) {
+    const [count, colors] =
+      typeof input == "number"
+        ? [input, this.#standardColors]
+        : [input.length, input];
+    if (count < 2 || count != (count | 0)) {
+      throw new Error("count must be an integer > 1");
+    }
+    Circle.removeAll();
+    ThreeDFlattener.tunnelDemo({
+      count: 600,
+      periodMS: 0,
+      perRevolution: phi,
+      perspective: 10,
+    });
+    const all = [...Circle.allAttached()].reverse();
+    all.forEach((circle) => (circle.color = initialColor));
+    const totalDelay = 3000;
+    const eachDelay = totalDelay / count;
+    for (let remainder = 0; remainder < count; remainder++) {
+      await sleep(eachDelay);
+      all.forEach((circle, index) => {
+        if (index % count == remainder) {
+          circle.color = colors[remainder];
+        }
+      });
+
+    }
+  }
 }
 
 // MARK: Export to Console

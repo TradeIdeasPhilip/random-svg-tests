@@ -1,4 +1,3 @@
-// This is the preferred way to include a css file.
 import "./style.css";
 
 import { LinearFunction, makeLinear, pick, sleep } from "phil-lib/misc";
@@ -168,9 +167,6 @@ class Circle extends Object {
     return this;
   }
   static readonly parent = getById("circle-parent", SVGElement);
-  /**
-   * The underlying SVG element.
-   */
   readonly #colorElement = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "circle"
@@ -183,6 +179,9 @@ class Circle extends Object {
     this.#colorElement,
     this.#shapeElement,
   ];
+  /**
+   * The underlying SVG elements.
+   */
   get elements(): ReadonlyArray<SVGElement> {
     return this.#allElements;
   }
@@ -385,7 +384,6 @@ abstract class Animation {
       console.error("wtf");
     }
   }
-
   protected abstract update(
     msSinceLastUpdate: DOMHighResTimeStamp | undefined
   ): void;
@@ -739,6 +737,12 @@ class ThreeDFlattener {
   flatten({ x, y }: { readonly x: number; readonly y: number }): Point {
     return new Point(this.#convert(x), this.#convert(y));
   }
+  /**
+   * Draw a bunch of circles laid out like a square near the bottom of the viewing area.
+   * @param n The number of circles on each side of the square.
+   * The total number of circles drawn is n².
+   * @param perspective
+   */
   static demo(n = 5, perspective?: number) {
     const lf = makeLinear(0, 0, n - 1, 1);
     const y = 0.75;
@@ -759,6 +763,13 @@ class ThreeDFlattener {
       }
     }
   }
+  /**
+   * Draw a bunch of circles laid out like a cube.
+   * `demo()` will only draw the bottom layer of this cube.
+   * @param n The number of circles on each edge of the cube.
+   * This will create a total of n³ circles.
+   * @param perspective
+   */
   static demo3(n = 5, perspective?: number) {
     const lf = makeLinear(0, 0, n - 1, 1);
     const baseRadius = 1 / n / 3;
@@ -840,38 +851,47 @@ class ThreeDFlattener {
     "darkgoldenrod",
     "darkgray",
     "fuchsia",
-    "darkorchid"
+    "darkorchid",
   ];
   static async fibonacciSpiral(
-    input: number | readonly string[],
-    initialColor = "white"
+    input: {
+      stripeCount?: number;
+      colors?: readonly string[];
+      initialColor?: string;
+      circleCount?: number;
+      perspective?: number;
+      msBetweenStripes?: number;
+    } = {}
   ) {
-    const [count, colors] =
-      typeof input == "number"
-        ? [input, this.#standardColors]
-        : [input.length, input];
-    if (count < 2 || count != (count | 0)) {
-      throw new Error("count must be an integer > 1");
+    const colors = input.colors ?? this.#standardColors;
+    const stripeCount = input.stripeCount ?? input.colors?.length ?? 8;
+    const initialColor = input.initialColor ?? "white";
+    if (stripeCount < 2 || stripeCount != (stripeCount | 0)) {
+      throw new Error("stripeCount must be an integer > 1");
+    }
+    const circleCount = input.circleCount ?? 600;
+    if (circleCount < stripeCount || circleCount != (circleCount | 0)) {
+      throw new Error("circleCount must be an integer ≥ stripeCount");
     }
     Circle.removeAll();
     ThreeDFlattener.tunnelDemo({
-      count: 600,
+      count: circleCount,
       periodMS: 0,
       perRevolution: phi,
-      perspective: 10,
+      perspective: input.perspective,
     });
     const all = [...Circle.allAttached()].reverse();
     all.forEach((circle) => (circle.color = initialColor));
-    const totalDelay = 3000;
-    const eachDelay = totalDelay / count;
-    for (let remainder = 0; remainder < count; remainder++) {
-      await sleep(eachDelay);
+    const msBetweenStripes = input.msBetweenStripes ?? 3000 / stripeCount;
+    for (let remainder = 0; remainder < stripeCount; remainder++) {
+      if (msBetweenStripes > 0) {
+        await sleep(msBetweenStripes);
+      }
       all.forEach((circle, index) => {
-        if (index % count == remainder) {
+        if (index % stripeCount == remainder) {
           circle.color = colors[remainder];
         }
       });
-
     }
   }
 }

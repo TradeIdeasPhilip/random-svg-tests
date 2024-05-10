@@ -6,15 +6,6 @@ body {
   margin: 0;
 }
 
-circle.simple {
-  stroke: none;
-}
-
-circle.sphere {
-  stroke: none;
-  fill: url(#sphere);
-}
-
 /**
  * This is a common style for code.
  *

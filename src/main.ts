@@ -1,6 +1,12 @@
 import "./style.css";
 
-import { LinearFunction, makeLinear, pick, sleep } from "phil-lib/misc";
+import {
+  assertClass,
+  LinearFunction,
+  makeLinear,
+  pick,
+  sleep,
+} from "phil-lib/misc";
 import { getById } from "phil-lib/client-misc";
 import { AnimationLoop, phi, polarToRectangular } from "./utility";
 
@@ -895,6 +901,28 @@ class ThreeDFlattener {
     }
   }
 }
+
+// MARK: Buttons
+const workingSvg = getById("circle-parent", SVGSVGElement);
+const previewIframe = getById("preview", HTMLIFrameElement);
+console.warn({
+  workingSvg,
+  previewSvg: previewIframe.contentDocument?.firstElementChild,
+});
+const previewSvg = assertClass(
+  previewIframe.contentDocument?.firstElementChild,
+  previewIframe.contentWindow!.window.SVGSVGElement
+);
+getById("copyToIFrame", HTMLButtonElement).addEventListener("click", () => {
+  //const getById()
+  previewSvg.innerHTML = workingSvg.innerHTML;
+});
+getById("downloadFromIFrame", HTMLButtonElement).addEventListener(
+  "click",
+  () => {
+    alert("coming soon");
+  }
+);
 
 // MARK: Export to Console
 const SHARE = window as any;

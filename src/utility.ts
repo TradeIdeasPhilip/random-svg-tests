@@ -22,3 +22,28 @@ export function polarToRectangular(r: number, θ: number) {
 }
 
 export const phi = (1 + Math.sqrt(5)) / 2;
+
+// I copied dateToFileName() from ../../tournament-bracket/src/main.ts
+
+/**
+ *
+ * @param date To convert to a string.
+ * @returns Like the MySQL format, but avoids the colon because that's not valid in a file name.
+ */
+export function dateToFileName(date: Date) {
+  if (isNaN(date.getTime())) {
+    return "0000⸱00⸱00 00⦂00⦂00";
+  } else {
+    return `${date.getFullYear().toString().padStart(4, "0")}⸱${(
+      date.getMonth() + 1
+    )
+      .toString()
+      .padStart(2, "0")}⸱${date.getDate().toString().padStart(2, "0")} ${date
+      .getHours()
+      .toString()
+      .padStart(2, "0")}⦂${date.getMinutes().toString().padStart(2, "0")}⦂${date
+      .getSeconds()
+      .toString()
+      .padStart(2, "0")}`;
+  }
+}

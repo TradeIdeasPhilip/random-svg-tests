@@ -8,7 +8,12 @@ import {
   sleep,
 } from "phil-lib/misc";
 import { getById } from "phil-lib/client-misc";
-import { AnimationLoop, phi, polarToRectangular } from "./utility";
+import {
+  AnimationLoop,
+  dateToFileName,
+  phi,
+  polarToRectangular,
+} from "./utility";
 
 // MARK: Point
 /**
@@ -503,7 +508,7 @@ class InertiaAndBounce extends Animation {
 abstract class SmartFollower extends Animation {
   goal = Point.random();
   /**
-   * Update the `goal`.  This is convenience aimed at using the console.
+   * Update the `goal`.  This is a convenience aimed at using the console.
    * @param x
    * @param y
    */
@@ -512,6 +517,7 @@ abstract class SmartFollower extends Animation {
   }
   followCircle(toFollow: Circle) {
     this.beforeUpdate = () => (this.goal = toFollow.center);
+    return this;
   }
 }
 
@@ -651,15 +657,33 @@ class Physics extends SmartFollower {
     msSinceLastUpdate: DOMHighResTimeStamp | undefined
   ): void {
     if (msSinceLastUpdate !== undefined) {
-      const ms = msSinceLastUpdate;
-      function addScaled(startFrom: Point, direction: Point) {
-        const x = startFrom.x + direction.x * ms;
-        const y = startFrom.y + direction.y * ms;
-        return new Point(x, y);
-      }
-      this.circle.center = addScaled(this.circle.center, this.velocity);
-      this.velocity = addScaled(this.velocity, this.acceleration);
+      this.updateControls();
+      this.updatePhysics(msSinceLastUpdate);
     }
+  }
+  /**
+   * This applies the immutable laws of physics.
+   * @param msSinceLastUpdate
+   */
+  private updatePhysics(msSinceLastUpdate: DOMHighResTimeStamp) {
+    function addScaled(startFrom: Point, direction: Point) {
+      const x = startFrom.x + direction.x * msSinceLastUpdate;
+      const y = startFrom.y + direction.y * msSinceLastUpdate;
+      return new Point(x, y);
+    }
+    this.circle.center = addScaled(this.circle.center, this.velocity);
+    this.velocity = addScaled(this.velocity, this.acceleration);
+  }
+  /**
+   * Hit the accelerator, brakes, or whatever to try to move toward the goal.
+   */
+  private updateControls() {
+    // This default algorithm is very dumb.
+    // It aims directly at the goal and applies maximum throttle.
+    // In practice this usually leads to the circle orbiting around the goal.
+    const Δx = this.goal.x - this.circle.center.x;
+    const Δy = this.goal.y - this.circle.center.y;
+    this.acceleration = new Point(Δx, Δy);
   }
   /**
    * SVG Units / millisecond².
@@ -690,18 +714,6 @@ class Physics extends SmartFollower {
   }
   constructor(public readonly circle = new Circle()) {
     super();
-    // This default algorithm is very dumb.
-    // It aims directly at the goal and applies maximum throttle.
-    // In practice this usually leads to the circle orbiting around the goal.
-    this.beforeUpdate = (
-      msSinceLastUpdate: DOMHighResTimeStamp | undefined
-    ) => {
-      if (msSinceLastUpdate !== undefined) {
-        const Δx = this.goal.x - this.circle.center.x;
-        const Δy = this.goal.y - this.circle.center.y;
-        this.acceleration = new Point(Δx, Δy);
-      }
-    };
   }
 }
 
@@ -905,10 +917,6 @@ class ThreeDFlattener {
 // MARK: Buttons
 const workingSvg = getById("circle-parent", SVGSVGElement);
 const previewIframe = getById("preview", HTMLIFrameElement);
-console.warn({
-  workingSvg,
-  previewSvg: previewIframe.contentDocument?.firstElementChild,
-});
 const previewSvg = assertClass(
   previewIframe.contentDocument?.firstElementChild,
   previewIframe.contentWindow!.window.SVGSVGElement
@@ -917,10 +925,26 @@ getById("copyToIFrame", HTMLButtonElement).addEventListener("click", () => {
   //const getById()
   previewSvg.innerHTML = workingSvg.innerHTML;
 });
+const previewImg = getById("previewImg", HTMLImageElement);
 getById("downloadFromIFrame", HTMLButtonElement).addEventListener(
   "click",
   () => {
-    alert("coming soon");
+    const asString =
+      previewIframe.contentDocument!.firstElementChild!.outerHTML;
+    const asBlob = new Blob([asString]);
+    const asObjectURL = URL.createObjectURL(asBlob);
+    // The following line does not work.  It will set the src property to the correct string.
+    // But it shows me an broken image icon.  I don't get any feedback on the problem.
+    // tried commenting out URL.revokeObjectURL() but that didn't help.
+    // x = fetch ($0.src) gives me the data I expect.  But I think I need to set the file type to SVG.
+    // Currently fetch says the type is "basic".
+    previewImg.src = asObjectURL;
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.href = asObjectURL;
+    const baseDate = dateToFileName(new Date());
+    downloadAnchor.download = "Spheres " + baseDate;
+    downloadAnchor.click();
+    URL.revokeObjectURL(asObjectURL);
   }
 );
 

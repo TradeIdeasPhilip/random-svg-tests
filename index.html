@@ -13,13 +13,7 @@
     <svg
       viewBox="0 0 1 1"
       xmlns="http://www.w3.org/2000/svg"
-      style="
-        stroke-width: 0.01px;
-        stroke: blue;
-        width: 100vmin;
-        height: 100vmin;
-        background-color: powderblue;
-      "
+      style="width: 100vmin; height: 100vmin;border: dashed black 0.5em; box-sizing: border-box;"
       id="circle-parent"
     >
       <style>
@@ -136,7 +130,7 @@
       the SVG (like at the top of this page) but also have to option to save the
       image as a standalone SVG file.
     </p>
-    <img style="width: 50vmin; height: 50vmin" src="link.svg" />
+    <img id="previewImg" style="width: 50vmin; height: 50vmin" src="./src/template.svg" />
     <p>
       I had to create an svg file on the local web server as a template to
       modify. If I start from a blank document, the browser will create an HTML
@@ -156,7 +150,7 @@
         transform: scale(2);
         box-sizing: border-box;
       "
-      src="link.svg"
+      src="./src/template.svg"
       >您的瀏覽器不支援iframe。</iframe
     >
   </body>

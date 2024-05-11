@@ -7,22 +7,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title></title>
     <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
-    <script type="module" crossorigin src="./assets/main-BGjq-QQJ.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/main-BU9DGPdU.css">
+    <script type="module" crossorigin src="./assets/main-Bm3GHm9M.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/main-ZJwZslSJ.css">
   </head>
   <body>
     <svg
       viewBox="0 0 1 1"
       xmlns="http://www.w3.org/2000/svg"
-      style="
-        stroke-width: 0.01px;
-        stroke: blue;
-        width: 100vmin;
-        height: 100vmin;
-        background-color: chocolate;
-      "
+      style="width: 100vmin; height: 100vmin;border: dashed black 0.5em; box-sizing: border-box;"
       id="circle-parent"
     >
+      <style>
+        circle.simple {
+          stroke: none;
+        }
+        circle.sphere {
+          stroke: none;
+          fill: url(#sphere);
+        }
+      </style>
       <defs>
         <!-- https://doodad.dev/gradient-generator/ -->
         <radialGradient
@@ -119,5 +122,37 @@
         >https://github.com/TradeIdeasPhilip/random-svg-tests/</a
       >.
     </p>
+    <hr />
+    <p>
+      These are different ways to display an SVG. The &lt;IFRAME&gt; allows me
+      to view the SVG exactly the same as if the SVG were not part of this page.
+      However, I can manipulate the SVG almost as easily as if the SVG were
+      directly embedded in this page. This can be helpful if I want to display
+      the SVG (like at the top of this page) but also have to option to save the
+      image as a standalone SVG file.
+    </p>
+    <img id="previewImg" style="width: 50vmin; height: 50vmin" src="data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiDQogIHZpZXdCb3g9IjAgMCAxIDEiPg0KICA8Y2lyY2xlIHI9IjAuNSIgZmlsbD0ibGltZSIgc3Ryb2tlLXdpZHRoPSIwLjEiIHN0cm9rZT0iZ3JlZW4iIGN4PSIwLjUiIGN5PSIwLjUiPjwvY2lyY2xlPg0KICA8dGV4dCBzdHlsZT0iZm9udC1zaXplOjAuMTgiIHk9IjAuNSIgeD0iMC41IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBhbGlnbm1lbnQtYmFzZWxpbmU9Im1pZGRsZSINCiAgICBmaWxsPSJjcmltc29uIj5QbGFjZWhvbGRlcjwvdGV4dD4NCiAgPCEtLSBJdCBpcyBoYXJkIHRvIGNyZWF0ZSBhIG5ldyBTVkcgZnJvbSBzY3JhdGNoIGluIEphdmFTY3JpcHQuICBJdCdzIGVhc2llciB0byBzdGFydCBmcm9tIGENCiAgdGVtcGxhdGUgYW5kIGFkanVzdCBpdCBhcyBuZWVkZWQuIC0tPg0KPC9zdmc+" />
+    <p>
+      I had to create an svg file on the local web server as a template to
+      modify. If I start from a blank document, the browser will create an HTML
+      document and embed my svg file in it. A data URL will have the wrong
+      permissions, so the main document will have limited access to the
+      &lt;IFRAME&gt;.
+    </p>
+    <div>
+      <button id="copyToIFrame">Copy to IFRAME</button
+      ><button id="downloadFromIFrame">Download from IFRAME</button>
+    </div>
+    <iframe
+      id="preview"
+      style="
+        width: 50%;
+        transform-origin: top left;
+        transform: scale(2);
+        box-sizing: border-box;
+      "
+      src="./src/template.svg"
+      >您的瀏覽器不支援iframe。</iframe
+    >
   </body>
 </html>

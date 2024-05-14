@@ -7,14 +7,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title></title>
     <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
-    <script type="module" crossorigin src="./assets/main-Bm3GHm9M.js"></script>
+    <script type="module" crossorigin src="./assets/main-ilq5i3Yg.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/main-ZJwZslSJ.css">
   </head>
   <body>
     <svg
       viewBox="0 0 1 1"
       xmlns="http://www.w3.org/2000/svg"
-      style="width: 100vmin; height: 100vmin;border: dashed black 0.5em; box-sizing: border-box;"
+      style="
+        width: 100vmin;
+        height: 100vmin;
+        border: dashed black 0.5em;
+        box-sizing: border-box;
+      "
       id="circle-parent"
     >
       <style>
@@ -38,6 +43,14 @@
         </radialGradient>
       </defs>
     </svg>
+    <p>
+      <code>ThreeDFlattener.animateDemo3(n?: number): AnimationLoop</code> shows
+      off my current direction. This is my first serious attempt at animating
+      these "simple" images. I am happy with the results. My next plan is a
+      version of the tunnel where the tunnel is completely off the edge of the
+      screen shortly before `z` gets to 0. I.e. the balls will disappear off the
+      screen rather than smacking into it.
+    </p>
     <p>
       Try <code>new Circle()</code>, <code>new InertiaAndBounce()</code>,
       <code>new Physics()</code>, <code>new ExponentialFollower()</code>,
@@ -131,7 +144,11 @@
       the SVG (like at the top of this page) but also have to option to save the
       image as a standalone SVG file.
     </p>
-    <img id="previewImg" style="width: 50vmin; height: 50vmin" src="data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiDQogIHZpZXdCb3g9IjAgMCAxIDEiPg0KICA8Y2lyY2xlIHI9IjAuNSIgZmlsbD0ibGltZSIgc3Ryb2tlLXdpZHRoPSIwLjEiIHN0cm9rZT0iZ3JlZW4iIGN4PSIwLjUiIGN5PSIwLjUiPjwvY2lyY2xlPg0KICA8dGV4dCBzdHlsZT0iZm9udC1zaXplOjAuMTgiIHk9IjAuNSIgeD0iMC41IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBhbGlnbm1lbnQtYmFzZWxpbmU9Im1pZGRsZSINCiAgICBmaWxsPSJjcmltc29uIj5QbGFjZWhvbGRlcjwvdGV4dD4NCiAgPCEtLSBJdCBpcyBoYXJkIHRvIGNyZWF0ZSBhIG5ldyBTVkcgZnJvbSBzY3JhdGNoIGluIEphdmFTY3JpcHQuICBJdCdzIGVhc2llciB0byBzdGFydCBmcm9tIGENCiAgdGVtcGxhdGUgYW5kIGFkanVzdCBpdCBhcyBuZWVkZWQuIC0tPg0KPC9zdmc+" />
+    <img
+      id="previewImg"
+      style="width: 50vmin; height: 50vmin"
+      src="data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiDQogIHZpZXdCb3g9IjAgMCAxIDEiPg0KICA8Y2lyY2xlIHI9IjAuNSIgZmlsbD0ibGltZSIgc3Ryb2tlLXdpZHRoPSIwLjEiIHN0cm9rZT0iZ3JlZW4iIGN4PSIwLjUiIGN5PSIwLjUiPjwvY2lyY2xlPg0KICA8dGV4dCBzdHlsZT0iZm9udC1zaXplOjAuMTgiIHk9IjAuNSIgeD0iMC41IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBhbGlnbm1lbnQtYmFzZWxpbmU9Im1pZGRsZSINCiAgICBmaWxsPSJjcmltc29uIj5QbGFjZWhvbGRlcjwvdGV4dD4NCiAgPCEtLSBJdCBpcyBoYXJkIHRvIGNyZWF0ZSBhIG5ldyBTVkcgZnJvbSBzY3JhdGNoIGluIEphdmFTY3JpcHQuICBJdCdzIGVhc2llciB0byBzdGFydCBmcm9tIGENCiAgdGVtcGxhdGUgYW5kIGFkanVzdCBpdCBhcyBuZWVkZWQuIC0tPg0KPC9zdmc+"
+    />
     <p>
       I had to create an svg file on the local web server as a template to
       modify. If I start from a blank document, the browser will create an HTML

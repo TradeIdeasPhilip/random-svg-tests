@@ -13,7 +13,12 @@
     <svg
       viewBox="0 0 1 1"
       xmlns="http://www.w3.org/2000/svg"
-      style="width: 100vmin; height: 100vmin;border: dashed black 0.5em; box-sizing: border-box;"
+      style="
+        width: 100vmin;
+        height: 100vmin;
+        border: dashed black 0.5em;
+        box-sizing: border-box;
+      "
       id="circle-parent"
     >
       <style>
@@ -37,6 +42,14 @@
         </radialGradient>
       </defs>
     </svg>
+    <p>
+      <code>ThreeDFlattener.animateDemo3(n?: number): AnimationLoop</code> shows
+      off my current direction. This is my first serious attempt at animating
+      these "simple" images. I am happy with the results. My next plan is a
+      version of the tunnel where the tunnel is completely off the edge of the
+      screen shortly before `z` gets to 0. I.e. the balls will disappear off the
+      screen rather than smacking into it.
+    </p>
     <p>
       Try <code>new Circle()</code>, <code>new InertiaAndBounce()</code>,
       <code>new Physics()</code>, <code>new ExponentialFollower()</code>,
@@ -130,7 +143,11 @@
       the SVG (like at the top of this page) but also have to option to save the
       image as a standalone SVG file.
     </p>
-    <img id="previewImg" style="width: 50vmin; height: 50vmin" src="./src/template.svg" />
+    <img
+      id="previewImg"
+      style="width: 50vmin; height: 50vmin"
+      src="./src/template.svg"
+    />
     <p>
       I had to create an svg file on the local web server as a template to
       modify. If I start from a blank document, the browser will create an HTML

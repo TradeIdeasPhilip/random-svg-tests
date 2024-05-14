@@ -2,6 +2,9 @@
 export class AnimationLoop {
   constructor(private readonly onWake: (time: DOMHighResTimeStamp) => void) {
     this.callback = this.callback.bind(this);
+    // This next line isn't quite right.
+    // Sometimes this timestamp is greater than the timestamp of the first requestAnimationFrame() callback.
+    // TODO fix it.
     this.callback(performance.now());
   }
   #cancelled = false;

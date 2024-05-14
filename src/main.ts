@@ -2,6 +2,7 @@ import "./style.css";
 
 import {
   assertClass,
+  initializedArray,
   LinearFunction,
   makeLinear,
   pick,
@@ -722,7 +723,7 @@ class Physics extends SmartFollower {
 /**
  * You can convert a 3d point to a 2d point in two steps.
  * First create a `ThreeDFlattener` with the z from the original point.
- * The call `flatten()` with the x and y from the original point.
+ * Then call `flatten()` with the x and y from the original point.
  */
 class ThreeDFlattener {
   /**
@@ -787,28 +788,79 @@ class ThreeDFlattener {
    * @param n The number of circles on each edge of the cube.
    * This will create a total of n³ circles.
    * @param perspective
+   * @returns A controller object.  Use this to change the distance or perspective.
+   * Setting the distance or perspective properties of the controller is like calling demo3() again with the new parameters.
+   * The difference is that the controller will change the existing SVG objects rather than creating new ones.
+   * You can also read the current values from the controller.
    */
-  static demo3(n = 5, perspective?: number) {
+  static demo3(n = 4, distance = 0, perspective?: number) {
     const lf = makeLinear(0, 0, n - 1, 1);
     const baseRadius = 1 / n / 3;
-    for (let zIndex = n - 1; zIndex >= 0; zIndex--) {
-      const z = lf(zIndex);
-      const flattener = new ThreeDFlattener(z, perspective);
-      const radius = baseRadius * flattener.ratio;
-      for (let yIndex = 0; yIndex < n; yIndex++) {
-        const y = lf(yIndex);
-        for (let xIndex = 0; xIndex < n; xIndex++) {
-          const x = lf(xIndex);
-          const flattened = flattener.flatten({ x, y });
-          const circle = new Circle();
-          circle.center = flattened;
-          circle.radius = radius;
-          const color = ["#004", "#00F"][(zIndex + yIndex + xIndex) % 2];
-          //console.log({color,x,y,z, circle});
-          circle.color = color;
+    const circles: ReadonlyArray<ReadonlyArray<ReadonlyArray<Circle>>> =
+      initializedArray(n, (zIndex) =>
+        initializedArray(n, (yIndex) =>
+          initializedArray(n, (xIndex) =>
+            new Circle().configure({
+              color: ["#004", "#00F"][(zIndex + yIndex + xIndex) % 2],
+            })
+          )
+        )
+      ).reverse();
+    function reposition() {
+      circles.forEach((plane, zIndex) => {
+        const z = lf(zIndex + distance);
+        const flattener = new ThreeDFlattener(z, perspective);
+        const radius = baseRadius * flattener.ratio;
+        plane.forEach((line, yIndex) => {
+          const y = lf(yIndex);
+          line.forEach((circle, xIndex) => {
+            const x = lf(xIndex);
+            const flattened = flattener.flatten({ x, y });
+            circle.center = flattened;
+            circle.radius = radius;
+          });
+        });
+      });
+    }
+    reposition();
+    return {
+      get distance() {
+        return distance;
+      },
+      set distance(newValue) {
+        if (newValue != distance) {
+          distance = newValue;
+          reposition();
         }
+      },
+      get perspective() {
+        return perspective;
+      },
+      set perspective(newValue) {
+        if (newValue != perspective) {
+          perspective = newValue;
+          reposition();
+        }
+      },
+    };
+  }
+  static animateDemo3(n = 4) {
+    Circle.removeAll();
+    const controller = this.demo3(n);
+    let getZOffset: LinearFunction | undefined;
+    let animationLoop: AnimationLoop;
+    function doUpdate(timestamp: DOMHighResTimeStamp) {
+      getZOffset ??= makeLinear(timestamp, 20, timestamp + 10000, 0);
+      const zOffset = getZOffset(timestamp);
+      if (zOffset < 0) {
+        controller.distance = 0;
+        animationLoop.cancel();
+      } else {
+        controller.distance = zOffset;
       }
     }
+    animationLoop = new AnimationLoop(doUpdate);
+    return animationLoop;
   }
   static async tunnelDemo(
     options: {

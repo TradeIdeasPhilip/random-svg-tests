@@ -732,6 +732,11 @@ class ThreeDFlattener {
    * Use `flatten()` to convert a _point_ from 3d space to 2d space.
    */
   readonly ratio: number;
+  static ratio(objectToScreen: number, viewerToScreen: number): number {
+    // This is the heart of the algorithm.
+    // The rest all depends on this.
+    return viewerToScreen / (objectToScreen + viewerToScreen);
+  }
   readonly #convert: LinearFunction;
   /**
    *
@@ -748,9 +753,7 @@ class ThreeDFlattener {
    */
   constructor(public readonly z: number, perspective?: number) {
     perspective ??= 1;
-    // This is the heart of the algorithm.
-    // The rest all depends on this.
-    this.ratio = perspective / (perspective + z);
+    this.ratio = ThreeDFlattener.ratio(z, perspective);
     this.#convert = makeLinear(0.5, 0.5, 1, 0.5 + this.ratio * 0.5);
   }
   flatten({ x, y }: { readonly x: number; readonly y: number }): Point {
@@ -963,6 +966,82 @@ class ThreeDFlattener {
         }
       });
     }
+  }
+  static animateSpiral() {
+    const toCleanUp: Circle[] = [];
+    const cleanUp = () => {
+      toCleanUp.forEach((circle) => (circle.attached = false));
+      toCleanUp.length = 0;
+    };
+    const colors = [
+      "red",
+      "orange",
+      "yellow",
+      "green",
+      "indigo",
+      "violet",
+      "pink",
+      "darkblue",
+      "black",
+      "gray",
+      "brown",
+      "chartreuse",
+      "aqua",
+    ];
+    const getColor = (n: number) => {
+      return colors[n % colors.length];
+    };
+    const setPosition = (circle: Circle, n: number, z: number): void => {
+      const perspectiveRatio = this.ratio(z, 1);
+      const angleInRadians = (n / phi) * 2 * Math.PI;
+      const tubeBaseRadius = 1;
+      const tubeRadius = tubeBaseRadius * perspectiveRatio;
+      const center = polarToRectangular(tubeRadius, angleInRadians);
+      center.x += Point.CENTER.x;
+      center.y += Point.CENTER.y;
+      circle.center = new Point(center.x, center.y);
+      const sphereBaseRadius = 0.1;
+      circle.radius = sphereBaseRadius * perspectiveRatio;
+    };
+    /**
+     * Units:  circles created / millisecond
+     */
+    const frequency = 5 / 1000;
+    /**
+     * How many balls to display at once.
+     * This does not have to be an integer.
+     */
+    const visibleAtOnce = 400;
+    /**
+     * When did this demo begin?  This will be set to the
+     * timestamp of our first animation frame then it will
+     * never change again.
+     */
+    let startTime: DOMHighResTimeStamp | undefined;
+    const animationLoop = new AnimationLoop((time: DOMHighResTimeStamp) => {
+      cleanUp();
+      startTime ??= time;
+      /**
+       * Total time elapsed since the demo started.
+       */
+      const elapsed = time - startTime;
+      const maxN = elapsed * frequency;
+      const maxBallShouldBeVisible = Math.floor(maxN);
+      const minN = maxN - visibleAtOnce;
+      const minBallShouldBeVisible = Math.max(0, Math.ceil(minN));
+      const getZ = makeLinear(minN, 0, maxN, visibleAtOnce / 25);
+      for (let n = maxBallShouldBeVisible; n >= minBallShouldBeVisible; n--) {
+        const circle = new Circle();
+        toCleanUp.push(circle);
+        circle.color = getColor(n);
+        setPosition(circle, n, getZ(n));
+      }
+    });
+    function stopAndCleanUp() {
+      animationLoop.cancel();
+      cleanUp();
+    }
+    return stopAndCleanUp;
   }
 }
 

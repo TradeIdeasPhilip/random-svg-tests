@@ -1025,10 +1025,10 @@ class ThreeDFlattener {
        * Total time elapsed since the demo started.
        */
       const elapsed = time - startTime;
-      const maxN = elapsed * frequency;
+      const minN = elapsed * frequency;
+      const maxN = minN + visibleAtOnce;
       const maxBallShouldBeVisible = Math.floor(maxN);
-      const minN = maxN - visibleAtOnce;
-      const minBallShouldBeVisible = Math.max(0, Math.ceil(minN));
+      const minBallShouldBeVisible = Math.ceil(minN);
       const getZ = makeLinear(minN, 0, maxN, visibleAtOnce / 25);
       for (let n = maxBallShouldBeVisible; n >= minBallShouldBeVisible; n--) {
         const circle = new Circle();

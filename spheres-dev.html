@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- vite.svg was located in ./public/ -->
+    <!-- <link rel="icon" type="image/svg+xml" href="/vite.svg" /> -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title></title>
+    <script type="module" src="/src/spheres-dev.ts"></script>
+    <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
+  </head>
+  <body>
+    <svg
+      viewBox="0 0 1 1"
+      xmlns="http://www.w3.org/2000/svg"
+      style="
+        width: 100vmin;
+        height: 100vmin;
+        border: dashed black 0.5em;
+        box-sizing: border-box;
+      "
+      id="circle-parent"
+    >
+      <style>
+        circle.simple {
+          stroke: none;
+        }
+        circle.sphere {
+          stroke: none;
+          fill: url(#sphere);
+        }
+      </style>
+      <defs>
+        <!-- https://doodad.dev/gradient-generator/ -->
+        <radialGradient
+          id="sphere"
+          gradientTransform="translate(-0.37,-0.37) scale(1.5, 1.5)"
+        >
+          <stop offset="0%" stop-color="rgba(255, 245, 245, 0.5)" />
+          <stop offset="50%" stop-color="rgba(128, 128, 128, 0.5)" />
+          <stop offset="100%" stop-color="rgba(0, 0, 26, 0.5)" />
+        </radialGradient>
+      </defs>
+    </svg>
+    <p>
+      <code>ThreeDFlattener.animateSpiral()</code> shows a nice infinite tunnel
+      animation. The colors are based on the fibonacciSpiral. This needs some
+      tweaking and could use a GUI to configure it. But I'm committing now
+      because this is the first really good looking animation.
+      <code>ThreeDFlattener.animateDemo3(n?: number): AnimationLoop</code> shows
+      a previous 3d animation.
+    </p>
+    <p>
+      Try <code>new Circle()</code>, <code>new InertiaAndBounce()</code>,
+      <code>new Physics()</code>, <code>new ExponentialFollower()</code>,
+      <code>ThreeDFlattener.demo()</code>,
+      <code>ThreeDFlattener.demo3(7)</code>, or
+      <code>Circle.removeAll()</code> in the JavaScript console.
+    </p>
+    <p>
+      Or
+      <code
+        >ThreeDFlattener.tunnelDemo({count: 600, periodMS: 8, perRevolution:
+        phi, perspective: 2})</code
+      >. All options have reasonable defaults. Use
+      <code>ThreeDFlattener.tunnelDemo({})</code> or
+      <code>ThreeDFlattener.tunnelDemo()</code> to get all defaults.
+    </p>
+    <p>
+      Or <code>ThreeDFlattener.fibonacciSpiral({stripeCount: 13})</code>. Or
+      <code
+        >ThreeDFlattener.fibonacciSpiral({initialColor: "black", circleCount:
+        100, colors: ["lime", "yellow", "blue", "magenta", "red"], perspective:
+        2/3, msBetweenStripes: 900})</code
+      >. All options have reasonable defaults. Use
+      <code>ThreeDFlattener.fibonacciSpiral({})</code> or
+      <code>ThreeDFlattener.fibonacciSpiral()</code> to get all defaults.
+    </p>
+    <p>
+      Or <code>followMouse(new Physics())</code> then
+      <code
+        >followMouse(new
+        Circle().configure({radius:0.025,color:"CornflowerBlue"}))</code
+      >
+      then click your mouse to move the target.
+    </p>
+    <p>
+      Or <code>exponentialFollower = new ExponentialFollower()</code>, then
+      <code>inertiaAndBounce = new InertiaAndBounce()</code>, then n ⨉
+      <code>exponentialFollower.goal = inertiaAndBounce.circle.center</code>
+    </p>
+    <p>
+      Or <code>circle = new InertiaAndBounce().circle</code>, then n ⨉
+      <code>circle = new ExponentialFollower().followCircle(circle).circle</code
+      >.
+    </p>
+    <p>Or <code>Circle.overlapping([...Circle.allAttached()])</code>.</p>
+    <p>
+      Or
+      <code
+        >followMouse(new ExponentialFollower()); followMouse(new Circle())</code
+      >. These will follow the mouse but only when the left button is down.
+    </p>
+    <p style="margin-bottom: 0">Or</p>
+    <ul style="margin-top: 0">
+      <li>
+        <code
+          >followMouse( new ExponentialFollower().<b>configure</b>({ halflife:
+          2000, circle: { color: "#0F0", radius: 0.14 }, }) );</code
+        >
+      </li>
+      <li>
+        <code
+          >followMouse( new ExponentialFollower().<b>configure</b>({ halflife:
+          500, circle: { color: "#0C0", radius: 0.11 }, }) );</code
+        >
+      </li>
+      <li>
+        <code
+          >followMouse( new ExponentialFollower().<b>configure</b>({ halflife:
+          125, circle: { color: "#080", radius: 0.08 }, }) );
+        </code>
+      </li>
+      <li>
+        <code
+          >followMouse(new Circle().<b>configure</b>({ color: "#040", radius:
+          0.05 }));</code
+        >
+      </li>
+    </ul>
+    <p>
+      The source code is available at
+      <a href="https://github.com/TradeIdeasPhilip/random-svg-tests/"
+        >https://github.com/TradeIdeasPhilip/random-svg-tests/</a
+      >.
+    </p>
+    <hr />
+    <p>
+      These are different ways to display an SVG. The &lt;IFRAME&gt; allows me
+      to view the SVG exactly the same as if the SVG were not part of this page.
+      However, I can manipulate the SVG almost as easily as if the SVG were
+      directly embedded in this page. This can be helpful if I want to display
+      the SVG (like at the top of this page) but also have to option to save the
+      image as a standalone SVG file.
+    </p>
+    <img
+      id="previewImg"
+      style="width: 50vmin; height: 50vmin"
+      src="./template.svg"
+    />
+    <p>
+      I had to create an svg file on the local web server as a template to
+      modify. If I start from a blank document, the browser will create an HTML
+      document and embed my svg file in it. A data URL will have the wrong
+      permissions, so the main document will have limited access to the
+      &lt;IFRAME&gt;.
+    </p>
+    <div>
+      <button id="copyToIFrame">Copy to IFRAME</button
+      ><button id="downloadFromIFrame">Download from IFRAME</button>
+    </div>
+    <iframe
+      id="preview"
+      style="
+        width: 50%;
+        transform-origin: top left;
+        transform: scale(2);
+        box-sizing: border-box;
+      "
+      src="./template.svg"
+      >您的瀏覽器不支援iframe。</iframe
+    >
+  </body>
+</html>

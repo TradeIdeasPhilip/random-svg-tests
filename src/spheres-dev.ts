@@ -1073,7 +1073,7 @@ getById("downloadFromIFrame", HTMLButtonElement).addEventListener(
     const downloadAnchor = document.createElement("a");
     downloadAnchor.href = asObjectURL;
     const baseDate = dateToFileName(new Date());
-    downloadAnchor.download = "Spheres " + baseDate;
+    downloadAnchor.download = "Spheres " + baseDate + ".svg";
     downloadAnchor.click();
     URL.revokeObjectURL(asObjectURL);
   }

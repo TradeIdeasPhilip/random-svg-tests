@@ -11,7 +11,9 @@ export default defineConfig({
     outDir: "docs",
     rollupOptions: {
       input: {
-        main: resolve(__dirname, "index.html"),/*
+        main: resolve(__dirname, "index.html"),
+        spheresDev: resolve(__dirname, "spheres-dev.html"),
+        spheresStarfield: resolve(__dirname, "spheres-starfield.html"),/*
         scratch: resolve(__dirname, "scratch.html"),
         topLevel: resolve(__dirname, "top-level.html"),
         internalTableOfContents: resolve(

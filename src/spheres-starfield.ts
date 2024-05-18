@@ -1,11 +1,10 @@
+import "./spheres-starfield.css";
+
 import { getById } from "phil-lib/client-misc";
 import { AnimationLoop, phi, polarToRectangular } from "./utility";
 import { makeLinear } from "phil-lib/misc";
 
-console.log("spheres-starfield.ts")
-
 const svg = getById("main", SVGElement);
-
 
 function ratio(objectToScreen: number, viewerToScreen: number): number {
   // This is the heart of the algorithm.
@@ -13,29 +12,44 @@ function ratio(objectToScreen: number, viewerToScreen: number): number {
   return viewerToScreen / (objectToScreen + viewerToScreen);
 }
 
-function animateSpiral() { 
-  const colors = [
-    "red",
-    "orange",
-    "yellow",
-    "green",
-    "indigo",
-    "violet",
-    "pink",
-    "darkblue",
-    "black",
-    "gray",
-    "brown",
-    "chartreuse",
-    "aqua",
-  ];
+const allColors: readonly string[] = [
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "indigo",
+  "violet",
+  "pink",
+  "darkblue",
+  "black",
+  "gray",
+  "brown",
+  "chartreuse",
+  "aqua",
+  "chocolate",
+  "turquoise",
+  "cadetblue",
+  "coral",
+  "darkgoldenrod",
+  "darkgray",
+  "fuchsia",
+  "darkorchid",
+];
+
+let colors: string[] = [];
+
+function animateSpiral() {
   const getColor = (n: number) => {
     return colors[n % colors.length];
   };
   function cleanUp() {
-    svg.innerHTML="";
+    svg.innerHTML = "";
   }
-  const setPosition = (elements: readonly SVGCircleElement[], n: number, z: number): void => {
+  const setPosition = (
+    elements: readonly SVGCircleElement[],
+    n: number,
+    z: number
+  ): void => {
     const perspectiveRatio = ratio(z, 1);
     const angleInRadians = (n / phi) * 2 * Math.PI;
     const tubeBaseRadius = 1;
@@ -43,7 +57,7 @@ function animateSpiral() {
     const center = polarToRectangular(tubeRadius, angleInRadians);
     const sphereBaseRadius = 0.1;
     const sphereRadius = sphereBaseRadius * perspectiveRatio;
-    elements.forEach(element => {
+    elements.forEach((element) => {
       element.cx.baseVal.value = center.x;
       element.cy.baseVal.value = center.y;
       element.r.baseVal.value = sphereRadius;
@@ -97,3 +111,38 @@ function animateSpiral() {
 }
 
 console.log(animateSpiral());
+
+const colorChoices: ReadonlyArray<number> = [1, 2, 3, 7, 8, 13, 17, 21];
+
+const controlsDiv = getById("controls", HTMLDivElement);
+
+const allButtonInfo = colorChoices.map((colorCount) => {
+  const element = document.createElement("button");
+  controlsDiv.appendChild(element);
+  element.innerText = colorCount.toString();
+  return { element, colorCount };
+});
+
+function selectButton(n: number) {
+  allButtonInfo.forEach((buttonInfo, index) => {
+    if (n == index) {
+      buttonInfo.element.classList.add("selected");
+      const available = [...allColors];
+      colors.length = 0;
+      while (colors.length < buttonInfo.colorCount) {
+        const [taken] = available.splice(
+          (Math.random() * available.length) | 0,
+          1
+        );
+        colors.push(taken);
+      }
+    } else {
+      buttonInfo.element.classList.remove("selected");
+    }
+  });
+}
+selectButton(2);
+
+allButtonInfo.forEach((buttonInfo, index) => {
+  buttonInfo.element.addEventListener("click", () => selectButton(index));
+});

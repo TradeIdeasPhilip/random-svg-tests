@@ -34,6 +34,19 @@ const allColors: readonly string[] = [
   "darkgray",
   "fuchsia",
   "darkorchid",
+  "#FF8080",
+  "#80FF80",
+  "#8080FF",
+  "#FFFF80",
+  "#FF80FF",
+  "#80FFFF",
+  "#C84",
+  "#C48",
+  "#8C4",
+  "#84C",
+  "#48C",
+  "#4C8",
+  "#046ABB",
 ];
 
 let colors: string[] = [];
@@ -110,9 +123,9 @@ function animateSpiral() {
   return animationLoop.cancel.bind(animationLoop);
 }
 
-console.log(animateSpiral());
+animateSpiral();
 
-const colorChoices: ReadonlyArray<number> = [1, 2, 3, 7, 8, 13, 17, 21];
+const colorChoices: ReadonlyArray<number> = [1, 2, 3, 7, 8, 13, 17, 21, 34];
 
 const controlsDiv = getById("controls", HTMLDivElement);
 

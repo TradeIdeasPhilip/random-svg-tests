@@ -2,7 +2,7 @@ import "./spheres-starfield.css";
 
 import { getById } from "phil-lib/client-misc";
 import { AnimationLoop, phi, polarToRectangular } from "./utility";
-import { makeLinear } from "phil-lib/misc";
+import { makeBoundedLinear, makeLinear } from "phil-lib/misc";
 
 const svg = getById("main", SVGElement);
 
@@ -94,7 +94,7 @@ const allColors: readonly string[] = [
  */
 const colors: string[] = [];
 
-let userToScreen = 1;
+let timeToUserPosition = (_time: DOMHighResTimeStamp) => 1;
 
 /**
  * This is the main() program.
@@ -109,15 +109,16 @@ function animateSpiral() {
   const setPosition = (
     elements: readonly SVGCircleElement[],
     n: number,
-    z: number
+    z: number,
+    userToScreen: number
   ): void => {
     const perspectiveRatio = ratio(z, userToScreen);
-    const angleInRadians = (n / phi) * 2 * Math.PI;
-    const tubeBaseRadius = 1;
-    const tubeRadius = tubeBaseRadius * perspectiveRatio;
-    const center = polarToRectangular(tubeRadius, angleInRadians);
     const sphereBaseRadius = 0.1;
     const sphereRadius = sphereBaseRadius * perspectiveRatio;
+    const angleInRadians = (n / phi) * 2 * Math.PI;
+    const tubeBaseRadius = Math.SQRT1_2 + sphereBaseRadius;
+    const tubeRadius = tubeBaseRadius * perspectiveRatio;
+    const center = polarToRectangular(tubeRadius, angleInRadians);
     elements.forEach((element) => {
       element.cx.baseVal.value = center.x;
       element.cy.baseVal.value = center.y;
@@ -151,6 +152,7 @@ function animateSpiral() {
     const maxBallShouldBeVisible = Math.floor(maxN);
     const minBallShouldBeVisible = Math.ceil(minN);
     const getZ = makeLinear(minN, 0, maxN, visibleAtOnce / 25);
+    const userToScreen = timeToUserPosition(time);
     for (let n = maxBallShouldBeVisible; n >= minBallShouldBeVisible; n--) {
       const colorElement = document.createElementNS(
         "http://www.w3.org/2000/svg",
@@ -165,35 +167,77 @@ function animateSpiral() {
       shapeElement.classList.add("sphere");
       svg.appendChild(shapeElement);
       colorElement.style.fill = getColor(n);
-      setPosition([colorElement, shapeElement], n, getZ(n));
+      setPosition([colorElement, shapeElement], n, getZ(n), userToScreen);
     }
   });
 }
 
 animateSpiral();
 
-//5,11,55
-//4,8 -- zoom in, 0.5
-const colorChoices: ReadonlyArray<number> = [1, 2, 3, 7, 8, 13, 17, 21, 34];
+//5,11,55????? zoom to 10
+//2,4,8 -- zoom in, 1/5
+// 17,34 (2) -- zoom to 2.5
+// 3,7,21 -- zoom = 1
+// 5 works at 1/5 ❌
+//13?
+
+type ButtonAction = "blank" | { colorCount: number; perspective?: number };
+const colorChoices: ReadonlyArray<ButtonAction> = [
+  "blank",
+  { colorCount: 1 },
+  { colorCount: 13 },
+  "blank",
+  { colorCount: 2, perspective: 1 / 7 },
+  { colorCount: 4, perspective: 1 / 7 },
+  { colorCount: 8, perspective: 1 / 7 },
+  "blank",
+  { colorCount: 2, perspective: 2.5 },
+  { colorCount: 17, perspective: 2.5 },
+  { colorCount: 34, perspective: 2.5 },
+  "blank",
+  { colorCount: 3, perspective: 1 },
+  { colorCount: 7, perspective: 1 },
+  { colorCount: 21, perspective: 1 },
+  "blank",
+  { colorCount: 5, perspective: 10 },
+  { colorCount: 11, perspective: 10 },
+  { colorCount: 55, perspective: 10 },
+];
 
 const controlsDiv = getById("controls", HTMLDivElement);
 
-const allButtonInfo = colorChoices.map((colorCount) => {
-  const element = document.createElement("button");
-  controlsDiv.appendChild(element);
-  element.innerText = colorCount.toString();
-  return { element, colorCount };
+const allButtonInfo = colorChoices.flatMap((buttonAction) => {
+  if (buttonAction == "blank") {
+    const element = document.createElement("div");
+    element.classList.add("spacer");
+    element.appendChild(document.createComment("spacer"));
+    controlsDiv.appendChild(element);
+    return [];
+  } else {
+    const element = document.createElement("button");
+    controlsDiv.appendChild(element);
+    element.innerText = buttonAction.colorCount.toString();
+    return { element, ...buttonAction };
+  }
 });
 
+function setUserToScreen(newValue: number) {
+  const now = performance.now();
+  const currentValue = timeToUserPosition(now);
+  const duration = 3000;
+  timeToUserPosition = makeBoundedLinear(
+    now,
+    currentValue,
+    now + duration,
+    newValue
+  );
+}
 
-function showNColors(colorCount : number) {
+function showNColors(colorCount: number) {
   const available = [...allColors];
   colors.length = 0;
   while (colors.length < colorCount) {
-    const [taken] = available.splice(
-      (Math.random() * available.length) | 0,
-      1
-    );
+    const [taken] = available.splice((Math.random() * available.length) | 0, 1);
     colors.push(taken);
   }
 }
@@ -202,13 +246,16 @@ function selectButton(n: number) {
   allButtonInfo.forEach((buttonInfo, index) => {
     if (n == index) {
       buttonInfo.element.classList.add("selected");
-      showNColors(buttonInfo.colorCount)
+      showNColors(buttonInfo.colorCount);
+      if (buttonInfo.perspective !== undefined) {
+        setUserToScreen(buttonInfo.perspective);
+      }
     } else {
       buttonInfo.element.classList.remove("selected");
     }
   });
 }
-selectButton(2);
+selectButton(1);
 
 allButtonInfo.forEach((buttonInfo, index) => {
   buttonInfo.element.addEventListener("click", () => selectButton(index));
@@ -216,4 +263,4 @@ allButtonInfo.forEach((buttonInfo, index) => {
 
 const GLOBAL = window as any;
 GLOBAL.showNColors = showNColors;
-GLOBAL.setUserToScreen = (n:number) => { userToScreen = n;}
+GLOBAL.setUserToScreen = setUserToScreen;

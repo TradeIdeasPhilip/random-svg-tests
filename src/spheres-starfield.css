@@ -49,12 +49,20 @@ svg {
   }
 }
 
+#controls div.spacer {
+  height: 0.14em;
+  width: 0.14em;
+  background-color: black;
+  margin: 0.05em;
+  align-self: center;
+}
+
 button {
   user-select: none;
 }
 
 #controls button {
-  outline-color: black;
+  outline-color: blue;
   outline-style: solid;
   outline-width: 0;
   outline-offset: 0.05rem;

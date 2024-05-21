@@ -19,7 +19,7 @@ If an object's `z` = 0 then the object is right at the screen.
 In that case `ratio` will be 1.
 
 I'm using 1 for my default `perspective`.
-As the `perspective` gets closer 0 the difference between the near and far objects gets more obvious.
+As the `perspective` gets closer to 0 the difference between the near and far objects gets more obvious.
 As the `perspective` grows without bound, the near and far objects look more similar.
 I usually tweak the number by hand until the result looks good.
 

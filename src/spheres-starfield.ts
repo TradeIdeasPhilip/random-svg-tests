@@ -6,12 +6,49 @@ import { makeLinear } from "phil-lib/misc";
 
 const svg = getById("main", SVGElement);
 
+/**
+ * We want to __draw__ an object __on__ the screen.
+ * We want to __pretend__ that the object is __behind__ the screen.
+ * This function tells you how to adjust the object on the screen to make it look like it's further away.
+ * @param objectToScreen How far the object is behind the screen.
+ *
+ * 0 means that the pretend object is touching the screen, so no adjustment is necessary.
+ * Larger numbers mean that the pretend object is further away, and will need to be scaled down more to look right.
+ * Negative numbers are invalid.
+ * A negative number would mean that the pretend object is on the wrong side of the screen!
+ *
+ * I usually position some objects right at z=0, so I know objectToScreen will be 0.
+ * That way I know exactly how some of my objects will be laid out on the screen.
+ * Then I use the same scale for x, y, and z because that's convenient.
+ * @param viewerToScreen How far the simulated viewer is from the screen.
+ * The number must be positive.
+ * 0 would mean that the viewer's eye is pressed against the monitor
+ * and negative numbers would mean that the viewer is on the wrong side of the screen.
+ *
+ * Smaller numbers make the perspective more obvious.
+ * I usually start with 1 for this value.
+ * If I don't like the result, I tweak this number.
+ *
+ * `objectToScreen` and `viewerToScreen` use the same units as each other.
+ * @returns A ratio describing how to draw the object.
+ * 1 means to ignore the z and draw everything in its nominal size and position.
+ * Smaller numbers mean to scale the result down.
+ * I.e. `svgRadius = pretend3DRadius * ratio`.
+ * This result should never be negative.
+ */
 function ratio(objectToScreen: number, viewerToScreen: number): number {
+  /**
+   * This is a common and useful __approximation__.
+   */
+  const viewerToObject = objectToScreen + viewerToScreen;
   // This is the heart of the algorithm.
   // The rest all depends on this.
-  return viewerToScreen / (objectToScreen + viewerToScreen);
+  return viewerToScreen / viewerToObject;
 }
 
+/**
+ * The balls' colors are randomly selected from this list.
+ */
 const allColors: readonly string[] = [
   "red",
   "orange",
@@ -49,8 +86,19 @@ const allColors: readonly string[] = [
   "#046ABB",
 ];
 
-let colors: string[] = [];
+/**
+ * These are the colors that will be used for drawing the spheres.
+ *
+ * Each frame we redraw everything from scratch.
+ * All you hve to do is change the contents of this list.
+ */
+const colors: string[] = [];
 
+let userToScreen = 1;
+
+/**
+ * This is the main() program.
+ */
 function animateSpiral() {
   const getColor = (n: number) => {
     return colors[n % colors.length];
@@ -63,7 +111,7 @@ function animateSpiral() {
     n: number,
     z: number
   ): void => {
-    const perspectiveRatio = ratio(z, 1);
+    const perspectiveRatio = ratio(z, userToScreen);
     const angleInRadians = (n / phi) * 2 * Math.PI;
     const tubeBaseRadius = 1;
     const tubeRadius = tubeBaseRadius * perspectiveRatio;
@@ -91,7 +139,7 @@ function animateSpiral() {
    * never change again.
    */
   let startTime: DOMHighResTimeStamp | undefined;
-  const animationLoop = new AnimationLoop((time: DOMHighResTimeStamp) => {
+  new AnimationLoop((time: DOMHighResTimeStamp) => {
     cleanUp();
     startTime ??= time;
     /**
@@ -120,11 +168,12 @@ function animateSpiral() {
       setPosition([colorElement, shapeElement], n, getZ(n));
     }
   });
-  return animationLoop.cancel.bind(animationLoop);
 }
 
 animateSpiral();
 
+//5,11,55
+//4,8 -- zoom in, 0.5
 const colorChoices: ReadonlyArray<number> = [1, 2, 3, 7, 8, 13, 17, 21, 34];
 
 const controlsDiv = getById("controls", HTMLDivElement);
@@ -136,19 +185,24 @@ const allButtonInfo = colorChoices.map((colorCount) => {
   return { element, colorCount };
 });
 
+
+function showNColors(colorCount : number) {
+  const available = [...allColors];
+  colors.length = 0;
+  while (colors.length < colorCount) {
+    const [taken] = available.splice(
+      (Math.random() * available.length) | 0,
+      1
+    );
+    colors.push(taken);
+  }
+}
+
 function selectButton(n: number) {
   allButtonInfo.forEach((buttonInfo, index) => {
     if (n == index) {
       buttonInfo.element.classList.add("selected");
-      const available = [...allColors];
-      colors.length = 0;
-      while (colors.length < buttonInfo.colorCount) {
-        const [taken] = available.splice(
-          (Math.random() * available.length) | 0,
-          1
-        );
-        colors.push(taken);
-      }
+      showNColors(buttonInfo.colorCount)
     } else {
       buttonInfo.element.classList.remove("selected");
     }
@@ -159,3 +213,7 @@ selectButton(2);
 allButtonInfo.forEach((buttonInfo, index) => {
   buttonInfo.element.addEventListener("click", () => selectButton(index));
 });
+
+const GLOBAL = window as any;
+GLOBAL.showNColors = showNColors;
+GLOBAL.setUserToScreen = (n:number) => { userToScreen = n;}

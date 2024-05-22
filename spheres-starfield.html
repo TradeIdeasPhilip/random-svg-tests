@@ -10,39 +10,40 @@
     <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
   </head>
   <body>
-    <svg
-      viewBox="-0.5 -0.5 1 1"
-      xmlns="http://www.w3.org/2000/svg"
-      style="width: 100vmin; height: 100vmin"
-      preserveAspectRatio="xMidYMid slice"
-    >
-      <style>
-        circle.simple {
-          stroke: none;
-        }
-        circle.sphere {
-          stroke: none;
-          fill: url(#sphere);
-        }
-      </style>
-      <defs>
-        <!-- https://doodad.dev/gradient-generator/ -->
-        <radialGradient
-          id="sphere"
-          gradientTransform="translate(-0.37,-0.37) scale(1.5, 1.5)"
-        >
-          <stop offset="0%" stop-color="rgba(255, 245, 245, 0.5)" />
-          <stop offset="50%" stop-color="rgba(128, 128, 128, 0.5)" />
-          <stop offset="100%" stop-color="rgba(0, 0, 26, 0.5)" />
-        </radialGradient>
-      </defs>
-      <g id="main"></g>
-    </svg>
-    <div id="controls">
-      <a
-        href="https://github.com/TradeIdeasPhilip/random-svg-tests?tab=readme-ov-file#random-svg-tests"
-        ><button>⁉️</button></a
+    <div id="topContainer">
+      <svg
+        viewBox="-0.5 -0.5 1 1"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="xMidYMid slice"
       >
+        <style>
+          circle.simple {
+            stroke: none;
+          }
+          circle.sphere {
+            stroke: none;
+            fill: url(#sphere);
+          }
+        </style>
+        <defs>
+          <!-- https://doodad.dev/gradient-generator/ -->
+          <radialGradient
+            id="sphere"
+            gradientTransform="translate(-0.37,-0.37) scale(1.5, 1.5)"
+          >
+            <stop offset="0%" stop-color="rgba(255, 245, 245, 0.5)" />
+            <stop offset="50%" stop-color="rgba(128, 128, 128, 0.5)" />
+            <stop offset="100%" stop-color="rgba(0, 0, 26, 0.5)" />
+          </radialGradient>
+        </defs>
+        <g id="main"></g>
+      </svg>
+      <div id="controls">
+        <a
+          href="https://github.com/TradeIdeasPhilip/random-svg-tests?tab=readme-ov-file#random-svg-tests"
+          ><button>⁉️</button></a
+        >
+      </div>
     </div>
   </body>
 </html>

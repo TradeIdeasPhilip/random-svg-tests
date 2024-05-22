@@ -1,44 +1,46 @@
 body {
   padding: 0;
   margin: 0;
-  overflow: clip;
+  overflow: auto;
   display: flex;
   flex-wrap: nowrap;
   height: 100vh;
 }
 
-@media (orientation: landscape) {
-  body {
-    flex-direction: row;
-  }
-}
-
-@media (orientation: portrait) {
-  body {
-    flex-direction: column;
-  }
+#topContainer {
+  overflow: clip;
+  display: grid;
+  height: 100vh;
+  width: 100vw;
+  justify-items: stretch;
+  align-items: stretch;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: "main";
 }
 
 svg {
-  flex-grow: 1;
-  flex-shrink: 1;
-  overflow: visible;
+  grid-area: main;
 }
 
 #controls {
+  max-height: 100vh;
   margin: 0.333em;
   display: flex;
-  flex-wrap: nowrap;
-  gap: 0.333em;
+  flex-wrap: wrap;
+  row-gap: 0.333em;
   align-content: flex-start;
-  flex-grow: 0;
-  flex-shrink: 0;
+  grid-area: main;
 }
 
 @media (orientation: landscape) {
   #controls {
     flex-direction: column;
     align-items: stretch;
+    justify-self: end;
+  }
+  #controls button {
+    margin-left: 0.6em;
   }
 }
 
@@ -46,19 +48,24 @@ svg {
   #controls {
     flex-direction: row;
     align-items: baseline;
+    align-self: end;
+  }
+  #controls button {
+    margin-left: 0.3em;
   }
 }
 
 #controls div.spacer {
-  height: 0.14em;
-  width: 0.14em;
-  background-color: black;
+  height: 0.3em;
+  width: 0.3em;
+  /*background-color: black;*/
   margin: 0.05em;
   align-self: center;
 }
 
 button {
   user-select: none;
+  font-size: 15pt;
 }
 
 #controls button {
@@ -69,5 +76,5 @@ button {
 }
 
 #controls button.selected {
-  outline-width: 0.233rem;
+  outline-width: 0.233em;
 }

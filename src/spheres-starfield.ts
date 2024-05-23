@@ -94,30 +94,87 @@ const allColors: readonly string[] = [
  */
 const colors: string[] = [];
 
+/**
+ * Use this to control the perspective.  This is a function so it can
+ * be animated.  The default function returns 1, a good default.  Replace
+ * this with a different function to change the perspective.
+ * @param _time The current animation time and/or `performance.now()`
+ * @returns A value appropriate for the `viewerToScreen` parameter to
+ * `ratio()`
+ */
 let timeToUserPosition = (_time: DOMHighResTimeStamp) => 1;
 
 /**
  * This is the main() program.
  */
 function animateSpiral() {
+  /**
+   *
+   * @param n 0 refers to the first ball, the one that is closest to the screen when we first start.
+   * This ball will be the first ball to disappear off the screen as the animation starts.  Depending
+   * on your perspective and your window's aspect ratio, that ball might not actually appear on the
+   * screen at all.  1 is the second ball, etc.  There is no end.
+   * @returns
+   */
   const getColor = (n: number) => {
     return colors[n % colors.length];
   };
+  /**
+   * Remove all of the balls from the screen.
+   * Each frame will remove all of the old objects and start fresh.
+   */
   function cleanUp() {
     svg.innerHTML = "";
   }
-  const setPosition = (
+  /**
+   *
+   * @param elements A single ball is implemented by two SVG elements.
+   * They will need identical sizes and positions.
+   * @param n 0 for the first ball in the series, which might nor might not be currently visible.
+   * @param z How far behind the screen to draw the ball.
+   * @param userToScreen How far in front of the screen the user is.
+   */
+  const setSizeAndPosition = (
     elements: readonly SVGCircleElement[],
     n: number,
     z: number,
     userToScreen: number
   ): void => {
+    /**
+     * How much to adjust an item's size and position to make the scene appear 3d.
+     *
+     * 1.0 means to keep the "base" or "nominal" size.
+     * 0.5 means to draw the item half as tall, half as wide, and half as far
+     * from the vanishing point.
+     */
     const perspectiveRatio = ratio(z, userToScreen);
+    /**
+     * As a sphere gets close to the screen, the sphere's radius will get close to this size.
+     */
     const sphereBaseRadius = 0.1;
+    /**
+     * Use this radius on the 2d circles.
+     */
     const sphereRadius = sphereBaseRadius * perspectiveRatio;
+    /**
+     * Each sphere is located on the surface on a tube.
+     * `angleInRadians` and `z` are enough to specify a position on the tube.
+     */
     const angleInRadians = (n / phi) * 2 * Math.PI;
+    /**
+     * If the screen is a square it should fit perfectly within the tube.
+     * I.e. if a ball is heading for a corner of the screen, we should stop
+     * drawing the ball just after it goes off screen.  So the user
+     * sees balls flying off screen, never just disappearing.
+     */
     const tubeBaseRadius = Math.SQRT1_2 + sphereBaseRadius;
+    /**
+     * This is the radius of the tube after we flatten it to 2d.
+     */
     const tubeRadius = tubeBaseRadius * perspectiveRatio;
+    /**
+     * This is the position of the sphere in 2d coordinates.
+     */
     const center = polarToRectangular(tubeRadius, angleInRadians);
     elements.forEach((element) => {
       element.cx.baseVal.value = center.x;
@@ -147,11 +204,33 @@ function animateSpiral() {
      * Total time elapsed since the demo started.
      */
     const elapsed = time - startTime;
+    /**
+     * What's the lowest numbered ball that we need to display.
+     * This is __not__ an integer.  The balls move smoothly and continuously.
+     */
     const minN = elapsed * frequency;
+    /**
+     * What's the highest numbered ball that we need to display.
+     * This is __not__ an integer.  The balls move smoothly and continuously.
+     */
     const maxN = minN + visibleAtOnce;
+    /**
+     * What's the lowest numbered ball that we need to display.
+     * This __is__ an integer.  This refers to a specific object.
+     */
     const maxBallShouldBeVisible = Math.floor(maxN);
+    /**
+     * What's the lowest numbered ball that we need to display.
+     * This __is__ an integer.  This refers to a specific object.
+     */
     const minBallShouldBeVisible = Math.ceil(minN);
+    /**
+     * This function maps between the ball number and the ball's z position.
+     */
     const getZ = makeLinear(minN, 0, maxN, visibleAtOnce / 25);
+    /**
+     * Perspective (camera position)
+     */
     const userToScreen = timeToUserPosition(time);
     for (let n = maxBallShouldBeVisible; n >= minBallShouldBeVisible; n--) {
       const colorElement = document.createElementNS(
@@ -167,19 +246,17 @@ function animateSpiral() {
       shapeElement.classList.add("sphere");
       svg.appendChild(shapeElement);
       colorElement.style.fill = getColor(n);
-      setPosition([colorElement, shapeElement], n, getZ(n), userToScreen);
+      setSizeAndPosition(
+        [colorElement, shapeElement],
+        n,
+        getZ(n),
+        userToScreen
+      );
     }
   });
 }
 
 animateSpiral();
-
-//5,11,55????? zoom to 10
-//2,4,8 -- zoom in, 1/5
-// 17,34 (2) -- zoom to 2.5
-// 3,7,21 -- zoom = 1
-// 5 works at 1/5 ❌
-//13?
 
 type ButtonAction = "blank" | { colorCount: number; perspective?: number };
 const colorChoices: ReadonlyArray<ButtonAction> = [
@@ -221,6 +298,12 @@ const allButtonInfo = colorChoices.flatMap((buttonAction) => {
   }
 });
 
+/**
+ *
+ * @param newValue The new userToScreen (a.k.a. perspective) value.
+ * This will start an animation which will smoothly move between the
+ * current value and this value.
+ */
 function setUserToScreen(newValue: number) {
   const now = performance.now();
   const currentValue = timeToUserPosition(now);
@@ -233,6 +316,11 @@ function setUserToScreen(newValue: number) {
   );
 }
 
+/**
+ * Select a new set of colors for the display.
+ * These are selected and ordered randomly randomly with different results every time.
+ * @param colorCount The number colors to use.
+ */
 function showNColors(colorCount: number) {
   const available = [...allColors];
   colors.length = 0;
@@ -242,6 +330,12 @@ function showNColors(colorCount: number) {
   }
 }
 
+/**
+ * If you click on a button it will call this function.
+ * You can call this at other times,
+ * like setting the default before the user hits any button.
+ * @param n Which button.
+ */
 function selectButton(n: number) {
   allButtonInfo.forEach((buttonInfo, index) => {
     if (n == index) {
@@ -255,12 +349,24 @@ function selectButton(n: number) {
     }
   });
 }
+/**
+ * Start with the second button selected.  This is 13 colors, which is one
+ * of the better views.  Also, this option doesn't try to change the perspective.
+ * It looked weird to me when the visual tried to zoom in or out as soon as
+ * the page was displayed.  I could have disabled that just for the initial
+ * setting, but it seemed like unnecessary work.
+ */
 selectButton(1);
 
 allButtonInfo.forEach((buttonInfo, index) => {
   buttonInfo.element.addEventListener("click", () => selectButton(index));
 });
 
+/**
+ * Share these things with the console.
+ *
+ * These are only for debugging.
+ */
 const GLOBAL = window as any;
 GLOBAL.showNColors = showNColors;
 GLOBAL.setUserToScreen = setUserToScreen;

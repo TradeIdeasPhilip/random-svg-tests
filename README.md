@@ -25,6 +25,9 @@ Click on a button to change the colors.
 The number on the button says how many colors to use before repeating.
 Sometimes the button will also change the perspective to make the spiral patterns more obvious.
 
+See [The fabulous Fibonacci flower formula](https://youtu.be/_GkxCIW46to?si=0YaVMvuLCt6Q19UG&t=48) for a mathy explanation of those spirals.
+That video was a big inspiration for this demo.
+
 This example includes some of the nicest [source code](./src/spheres-starfield.ts) if you want to learn how to add 3d perspective to your code.
 I started with a copy of [the console demo](./src/spheres-dev.ts), then I removed a lot of unnecessary code.
 (For example I replaces a custom class with an extra `<g>` object.)

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- vite.svg was located in ./public/ -->
+    <!-- <link rel="icon" type="image/svg+xml" href="/vite.svg" /> -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>𝔐𝔬𝔯𝔭𝔥</title>
+    <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
+    <script type="module" crossorigin src="./assets/modulepreload-polyfill-B5Qt9EMX.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/style-FGzvypKX.css">
+  </head>
+  <body>
+    <h1>Morph</h1>
+    <svg
+      id="main"
+      viewBox="0 0 1 1"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid slice"
+      style="
+        --initial: path('M0.25,0.25 H 0.5');
+        --final: path('M0.25,0.25 V 0.5');
+      "
+    >
+      <style>
+        path {
+          fill: none;
+          stroke-width: 0.01;
+          stroke-linecap: round;
+          stroke: darkseagreen;
+        }
+        #initial {
+          d: var(--initial);
+          stroke: blue;
+        }
+        #final {
+          d: var(--final);
+          stroke: lightblue;
+          stroke-dasharray: 0.015 0.02;
+        }
+        #animated {
+          /* d: path("M0.25,0.25 L0.75,0.75"); */
+          animation: morph 1s linear 0s infinite alternate-reverse;
+          stroke: aqua;
+          stroke-width: 0.02;
+          stroke-dasharray: 0 0.03;
+        }
+        @keyframes colors {
+          0% {
+            stroke: lightgrey;
+          }
+          100% {
+            stroke: black;
+          }
+        }
+        @keyframes morph {
+          0% {
+            d: var(--initial);
+          }
+          100% {
+            d: var(--final);
+          }
+        }
+      </style>
+      <path id="initial"></path>
+      <path id="final"></path>
+      <path id="animated"></path>
+    </svg>
+    <a href=".">More Info</a>
+  </body>
+</html>

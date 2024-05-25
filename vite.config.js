@@ -13,7 +13,8 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "index.html"),
         spheresDev: resolve(__dirname, "spheres-dev.html"),
-        spheresStarfield: resolve(__dirname, "spheres-starfield.html"),/*
+        spheresStarfield: resolve(__dirname, "spheres-starfield.html"),
+        morph: resolve(__dirname, "morph.html"),/*
         scratch: resolve(__dirname, "scratch.html"),
         topLevel: resolve(__dirname, "top-level.html"),
         internalTableOfContents: resolve(

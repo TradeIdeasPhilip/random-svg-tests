@@ -11,6 +11,25 @@ See it running at https://tradeideasphilip.github.io/random-svg-tests/.
 Since then I've added a [simple physics engine](https://github.com/TradeIdeasPhilip/random-svg-tests/commit/7edfc00b4d33ed860063ceae97172ab9438529f1).
 The physics works, but my [first attempt at goal seeking](https://github.com/TradeIdeasPhilip/random-svg-tests/blob/7edfc00b4d33ed860063ceae97172ab9438529f1/src/main.ts#L677) is better at orbiting a goal than actually touching it.
 
+I've moved most of these JavaScript **console** experiments: [Live](https://tradeideasphilip.github.io/random-svg-tests/spheres-dev.html),
+[Source](./spheres-dev.html).
+
+## Simple Complete Example
+
+The [starfield demo](https://tradeideasphilip.github.io/random-svg-tests/spheres-starfield.html) is easy to run and doesn't need any programmerring.
+Just click the link and watch the stars fly by you.
+
+![A tunnel made of individual balls.  There are 13 colors spiraling around the tunnel.](./for-readme/starfield.png)
+
+Click on a button to change the colors.
+The number on the button says how many colors to use before repeating.
+Sometimes the button will also change the perspective to make the spiral patterns more obvious.
+
+This example includes some of the nicest [source code](./src/spheres-starfield.ts) if you want to learn how to add 3d perspective to your code.
+I started with a copy of [the console demo](./src/spheres-dev.ts), then I removed a lot of unnecessary code.
+(For example I replaces a custom class with an extra `<g>` object.)
+And I separated out the 3d tools from the specific things that I'm animating in this particular demo.
+
 ## Perspective
 
 ![The result of calling ThreeDFlattener.tunnelDemo().](./for-readme/tunnel-with-bad-z.png)

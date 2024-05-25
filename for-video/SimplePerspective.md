@@ -1,7 +1,14 @@
+So you want to add a little 3d to your program, and you're looking for something simple.
+
 Here's a __really__ _easy_ formula for 3d perspective.
 This example is in TypeScript but the formula will work anywhere.
 
 Here's the heart of the formula: `ratio = perspective / (perspective + z)`.
+
+Imagine your computer screen is a window, and there's a whole 3d world hiding behind it.
+Your job is to draw on the screen so you will see exactly what the window would have shown you.
+To do this you need to know where each object is in relation to the screen.
+And you need to know where the viewer is in relation to the screen.
 
 `z` says how far an object is behind the screen.
 `perspective` says how far the viewer is from the screen.

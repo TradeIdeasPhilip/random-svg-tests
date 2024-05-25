@@ -47,6 +47,62 @@ function ratio(objectToScreen: number, viewerToScreen: number): number {
 }
 
 /**
+ * Start with something that would look good drawn in normal 2d.
+ * This will adjust the size and position of the item to send it into the background.
+ *
+ * This does __not__ adjust the z-order.
+ * That should be handled elsewhere.
+ * @param element The item to adjust.  Typically that's a `<g>` but it could be almost anything.
+ * @param ratio Typically the result of `ratio()`
+ */
+function addPerspective(element: SVGElement | HTMLElement, ratio: number) {
+  element.style.transform = `scale(${ratio})`;
+}
+
+/**
+ * If we draw a sphere touching the screen, this will be its radius.
+ */
+const sphereBaseRadius = 0.1;
+
+/**
+ * Draw something like there was no 3d and this item was in the foreground.
+ *
+ * Currently this draws a single sphere on each call.
+ * But this is just a placeholder.
+ * You can draw any shape you want here.
+ * @param color The base color, before adding the shading.
+ * @param x Where it should appear when z = 0, i.e. drawing right on the screen, i.e drawing without any 3d.
+ * @param y Where it should appear when z = 0, i.e. drawing right on the screen, i.e drawing without any 3d.
+ * @returns A `<g>` containing the sphere.
+ */
+function createSimpleSphere(color: string, x: number, y: number): SVGElement {
+  const groupElement = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "g"
+  );
+  svg.appendChild(groupElement);
+  const colorElement = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "circle"
+  );
+  colorElement.classList.add("simple");
+  groupElement.appendChild(colorElement);
+  const shapeElement = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "circle"
+  );
+  shapeElement.classList.add("sphere");
+  groupElement.appendChild(shapeElement);
+  colorElement.style.fill = color;
+  [colorElement, shapeElement].forEach((element) => {
+    element.r.baseVal.value = sphereBaseRadius;
+    element.cx.baseVal.value = x;
+    element.cy.baseVal.value = y;
+  });
+  return groupElement;
+}
+
+/**
  * The balls' colors are randomly selected from this list.
  */
 const allColors: readonly string[] = [
@@ -134,28 +190,7 @@ function animateSpiral() {
    * @param z How far behind the screen to draw the ball.
    * @param userToScreen How far in front of the screen the user is.
    */
-  const setSizeAndPosition = (
-    elements: readonly SVGCircleElement[],
-    n: number,
-    z: number,
-    userToScreen: number
-  ): void => {
-    /**
-     * How much to adjust an item's size and position to make the scene appear 3d.
-     *
-     * 1.0 means to keep the "base" or "nominal" size.
-     * 0.5 means to draw the item half as tall, half as wide, and half as far
-     * from the vanishing point.
-     */
-    const perspectiveRatio = ratio(z, userToScreen);
-    /**
-     * As a sphere gets close to the screen, the sphere's radius will get close to this size.
-     */
-    const sphereBaseRadius = 0.1;
-    /**
-     * Use this radius on the 2d circles.
-     */
-    const sphereRadius = sphereBaseRadius * perspectiveRatio;
+  const getFlatPosition = (n: number): { x: number; y: number } => {
     /**
      * Each sphere is located on the surface on a tube.
      * `angleInRadians` and `z` are enough to specify a position on the tube.
@@ -167,20 +202,9 @@ function animateSpiral() {
      * drawing the ball just after it goes off screen.  So the user
      * sees balls flying off screen, never just disappearing.
      */
-    const tubeBaseRadius = Math.SQRT1_2 + sphereBaseRadius;
-    /**
-     * This is the radius of the tube after we flatten it to 2d.
-     */
-    const tubeRadius = tubeBaseRadius * perspectiveRatio;
-    /**
-     * This is the position of the sphere in 2d coordinates.
-     */
-    const center = polarToRectangular(tubeRadius, angleInRadians);
-    elements.forEach((element) => {
-      element.cx.baseVal.value = center.x;
-      element.cy.baseVal.value = center.y;
-      element.r.baseVal.value = sphereRadius;
-    });
+    const tubeRadius = Math.SQRT1_2 + sphereBaseRadius;
+    const position2d = polarToRectangular(tubeRadius, angleInRadians);
+    return position2d;
   };
   /**
    * Units:  circles created / millisecond
@@ -197,7 +221,7 @@ function animateSpiral() {
    * never change again.
    */
   let startTime: DOMHighResTimeStamp | undefined;
-  new AnimationLoop((time: DOMHighResTimeStamp) => {
+  const animationLoop = new AnimationLoop((time: DOMHighResTimeStamp) => {
     cleanUp();
     startTime ??= time;
     /**
@@ -233,27 +257,25 @@ function animateSpiral() {
      */
     const userToScreen = timeToUserPosition(time);
     for (let n = maxBallShouldBeVisible; n >= minBallShouldBeVisible; n--) {
-      const colorElement = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "circle"
-      );
-      colorElement.classList.add("simple");
-      svg.appendChild(colorElement);
-      const shapeElement = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "circle"
-      );
-      shapeElement.classList.add("sphere");
-      svg.appendChild(shapeElement);
-      colorElement.style.fill = getColor(n);
-      setSizeAndPosition(
-        [colorElement, shapeElement],
-        n,
-        getZ(n),
-        userToScreen
-      );
+      /**
+       * How much to adjust an item's size and position to make the scene appear 3d.
+       *
+       * 1.0 means to keep the "base" or "nominal" size.
+       * 0.5 means to draw the item half as tall, half as wide, and half as far
+       * from the vanishing point.
+       */
+      const perspectiveRatio = ratio(getZ(n), userToScreen);
+      const color = getColor(n);
+      const { x, y } = getFlatPosition(n);
+      const element = createSimpleSphere(color, x, y);
+      addPerspective(element, perspectiveRatio);
     }
   });
+  /**
+   * Type animationLoop.cancel() at the console to stop the animation.
+   * This will leave the current spheres on the screen.
+   */
+  (window as any).animationLoop = animationLoop;
 }
 
 animateSpiral();

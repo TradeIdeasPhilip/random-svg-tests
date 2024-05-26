@@ -18,8 +18,14 @@
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid slice"
       style="
-        --initial: path('M0.25,0.25 H 0.5');
-        --final: path('M0.25,0.25 V 0.5');
+        --initialX: path('M0.25,0.25 L 0.5,0.25 M0.25,0.40 L 0.5,0.40');
+        --finalX: path('M0.15,0.30 L 0.4,0.30 m0,0 L 0.6,0.45');
+        --initial: path(
+          'M0.5,0.05 L 0.95,0.05 L 0.95,0.95 L 0.05,0.95 L 0.05,0.05 Z'
+        );
+        --final: path(
+          'M0.5,0.1 L 0.8,0.85 L 0.1,0.375 L 0.9,0.375 L 0.2,0.85 Z'
+        );
       "
     >
       <style>
@@ -32,18 +38,18 @@
         #initial {
           d: var(--initial);
           stroke: blue;
+          stroke-width: 0.02;
         }
         #final {
           d: var(--final);
-          stroke: lightblue;
-          stroke-dasharray: 0.015 0.02;
+          stroke: green;
+          stroke-width: 0.015;
         }
         #animated {
           /* d: path("M0.25,0.25 L0.75,0.75"); */
           animation: morph 1s linear 0s infinite alternate-reverse;
-          stroke: aqua;
-          stroke-width: 0.02;
-          stroke-dasharray: 0 0.03;
+          stroke: goldenrod;
+          stroke-width: 0.005;
         }
         @keyframes colors {
           0% {

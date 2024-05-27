@@ -7,7 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>𝔐𝔬𝔯𝔭𝔥</title>
     <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
-    <script type="module" crossorigin src="./assets/modulepreload-polyfill-B5Qt9EMX.js"></script>
+    <script type="module" crossorigin src="./assets/morph-CiZh1wbL.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
+    <link rel="modulepreload" crossorigin href="./assets/client-misc-D4G10V_G.js">
     <link rel="stylesheet" crossorigin href="./assets/style-FGzvypKX.css">
   </head>
   <body>
@@ -18,6 +20,9 @@
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid slice"
       style="
+        max-width: 100vmin;
+        max-height: 100vmin;
+        overflow: visible;
         --initialX: path('M0.25,0.25 L 0.5,0.25 M0.25,0.40 L 0.5,0.40');
         --finalX: path('M0.15,0.30 L 0.4,0.30 m0,0 L 0.6,0.45');
         --initial: path(
@@ -37,19 +42,19 @@
         }
         #initial {
           d: var(--initial);
-          stroke: blue;
-          stroke-width: 0.02;
+          stroke: red;
+          stroke-width: 0.002;
         }
         #final {
           d: var(--final);
           stroke: green;
-          stroke-width: 0.015;
+          stroke-width: 0.002;
         }
         #animated {
           /* d: path("M0.25,0.25 L0.75,0.75"); */
-          animation: morph 1s linear 0s infinite alternate-reverse;
-          stroke: goldenrod;
-          stroke-width: 0.005;
+          animation: morph 1.5s infinite reverse;
+          stroke: blue;
+          stroke-width: 0.02;
         }
         @keyframes colors {
           0% {
@@ -68,10 +73,15 @@
           }
         }
       </style>
+      <path id="animated"></path>
       <path id="initial"></path>
       <path id="final"></path>
-      <path id="animated"></path>
     </svg>
-    <a href=".">More Info</a>
+    <p>
+      <a
+        href="https://github.com/TradeIdeasPhilip/random-svg-tests?tab=readme-ov-file#morph"
+        >More Info</a
+      >
+    </p>
   </body>
 </html>

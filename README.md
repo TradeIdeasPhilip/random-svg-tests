@@ -4,6 +4,29 @@ I'm having fun.
 It's nice to have a place to doodle.
 See it running at https://tradeideasphilip.github.io/random-svg-tests/.
 
+## Morph
+
+[This](https://tradeideasphilip.github.io/random-svg-tests/morph.html) is my current focus.
+
+I like the idea of a an arbitrary svg doodle morphing into another svg doodle.
+I'm focused on only strokes and no fills.
+
+Currently I'm focused on what CSS gives me.
+The first version of this demo was written completely in HTML and CSS.
+Now I'm using typescript, but only to automate the process of creating complicated paths.
+
+The rule seems pretty clear.
+If you want CSS to smoothly animate the change between two path strings:
+
+- The paths must both have the same number of commands.
+- The commands must be the same.
+- Switching between a capital and a lower case letters is okay, both nothing else.
+
+There are a lot of ways to potentially deal with this.
+However, it's not a problem for my current plans.
+I've got functions creating the paths and its outputs are vey consistent from one call to the next.
+And the functions are highly configurable so I can create more or fewer segments if I need to.
+
 ## Quick Simple Fun JavaScript Animations
 
 [This video](https://www.youtube.com/watch?v=PW7AGXQocTU) will show you my initial progress.

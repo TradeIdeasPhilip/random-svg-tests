@@ -64,9 +64,50 @@ function makeLineFont(fontSize: number) {
   };
   const x0 = 0;
   const y0 = 0;
+  const { aWidth, mHeight, xHeight } = fontMetrics;
   {
-    // A
-    const { aWidth, mHeight, xHeight } = fontMetrics;
+    // MARK: 0
+    const advance = mHeight / 2;
+    const radius = advance / 2;
+    const x1 = radius;
+    const x2 = advance;
+    const y1 = -radius;
+    const y2 = -(mHeight - radius);
+    const y3 = -mHeight;
+    const d = `M ${x1},${y3} Q ${x2},${y3} ${x2},${y2} L ${x2},${y1} Q ${x2},${y0} ${x1},${y0} Q ${x0},${y0} ${x0},${y1} L ${x0},${y2} Q ${x0},${y3} ${x1},${y3}`;
+    add("0", d, advance);
+  }
+  {
+    // MARK: 1
+    const advance = mHeight / 2;
+    const radius = advance / 2;
+    const x1 = radius;
+    const x2 = advance;
+    const y1 = -(mHeight - radius);
+    const y2 = -mHeight;
+    const d = `M ${x0},${y1} Q ${x1},${y1} ${x1},${y2} L ${x1},${y0} M ${x0},${y0} L ${x2},${y0}`;
+    add("1", d, advance);
+  }
+  {
+    // MARK: 2
+    //const advance = mHeight / 2;
+    //const radius = advance / 2;
+  }
+  {
+    // MARK: 8
+    const advance = mHeight / 2;
+    const radius = advance / 2;
+    const x1 = radius;
+    const x2 = advance;
+    const y1 = -radius;
+    const y2 = -2 * radius;
+    const y3 = -3 * radius;
+    const y4 = -mHeight;
+    const d = `M ${x1},${y4} Q ${x2},${y4} ${x2},${y3} Q ${x2},${y2} ${x1},${y2} Q ${x0},${y2} ${x0},${y1} Q ${x0},${y0} ${x1},${y0} Q ${x2},${y0} ${x2},${y1} Q ${x2},${y2} ${x1},${y2} Q ${x0},${y2} ${x0},${y3} Q ${x0},${y4} ${x1},${y4}`;
+    add("8", d, advance);
+  }
+  {
+    // MARK: A
     const d = `M ${x0},${y0} L ${x0 + aWidth / 2},${y0 - mHeight} L ${
       x0 + aWidth
     },${y0} M ${x0 + aWidth / 4},${y0 - xHeight} L ${x0 + aWidth * 0.75},${
@@ -75,8 +116,7 @@ function makeLineFont(fontSize: number) {
     add("A", d, aWidth);
   }
   {
-    // B
-    const { mHeight, xHeight } = fontMetrics;
+    // MARK: B
     const advance = mHeight / 2;
     const topRadius = (mHeight - xHeight) / 2;
     const topLineLength = (advance - topRadius) * (2 / 3);
@@ -103,7 +143,6 @@ function makeLineFont(fontSize: number) {
   }
   {
     // MARK: C
-    const { aWidth, mHeight } = fontMetrics;
     const advance = Math.min(aWidth, mHeight * 0.5);
     const radius = advance / 2;
     const x1 = x0 + radius;
@@ -116,7 +155,6 @@ function makeLineFont(fontSize: number) {
   }
   {
     // MARK: D
-    const { aWidth, mHeight } = fontMetrics;
     const advance = Math.min(aWidth, mHeight * 0.5);
     const radius = advance / 2;
     const x1 = x0 + radius;
@@ -129,7 +167,6 @@ function makeLineFont(fontSize: number) {
   }
   {
     // MARK: E
-    const { mHeight, xHeight } = fontMetrics;
     const advance = mHeight / 2;
     const x1 = x0 + advance * (2 / 3);
     const x2 = x0 + advance;
@@ -140,7 +177,6 @@ function makeLineFont(fontSize: number) {
   }
   {
     // MARK: F
-    const { mHeight, xHeight } = fontMetrics;
     const advance = mHeight / 2;
     const x1 = x0 + advance * (2 / 3);
     const x2 = x0 + advance;
@@ -151,7 +187,6 @@ function makeLineFont(fontSize: number) {
   }
   {
     // MARK: G
-    const { mHeight, xHeight } = fontMetrics;
     const advance = mHeight * 0.5;
     const radius = advance / 2;
     const x1 = x0 + radius;
@@ -165,7 +200,6 @@ function makeLineFont(fontSize: number) {
   }
   {
     // MARK: H
-    const { mHeight, xHeight } = fontMetrics;
     const advance = mHeight / 2;
     const x1 = x0 + advance;
     const y1 = y0 - xHeight;
@@ -175,7 +209,6 @@ function makeLineFont(fontSize: number) {
   }
   {
     // MARK: I
-    const { mHeight } = fontMetrics;
     const advance = mHeight / 3;
     const x1 = x0 + advance / 2;
     const x2 = x0 + advance;
@@ -185,7 +218,6 @@ function makeLineFont(fontSize: number) {
   }
   {
     // MARK: J
-    const { mHeight } = fontMetrics;
     const advance = mHeight / 2;
     const radius = advance / 2;
     const x1 = x0 + radius;
@@ -221,5 +253,8 @@ function makeLineFont(fontSize: number) {
     }
   }
 
-  show("AB😎CDE😎FG😎HIJ");
+  //show("AB😎CDE😎FG😎HIJ");
+  for (const char of font.keys()) {
+    show(char);
+  }
 }

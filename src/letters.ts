@@ -19,212 +19,207 @@ class FontMetrics {
   }
 }
 
-const fontMetrics = new FontMetrics(5);
-
 function cssifyPath(path: string) {
   return `path('${path}')`;
 }
 
-type Drawing = { element: SVGElement; advance: number };
-
-function drawA(x: number, y: number): Drawing {
-  const { aWidth, mHeight, xHeight } = fontMetrics;
-  const d = `M ${x},${y} L ${x + aWidth / 2},${y - mHeight} L ${
-    x + aWidth
-  },${y} M ${x + aWidth / 4},${y - xHeight} L ${x + aWidth * 0.75},${
-    y - xHeight
-  }`;
-  const pathElement = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "path"
-  );
-  pathElement.style.d = cssifyPath(d);
-  return { element: pathElement, advance: aWidth };
+class DescriptionOfLetter {
+  constructor(
+    public readonly letter: string,
+    public readonly d: string,
+    public readonly advance: number,
+    public readonly fontMetrics: FontMetrics
+  ) {}
+  get cssPath() {
+    return cssifyPath(this.d);
+  }
+  makeElement(): SVGElement {
+    const pathElement = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "path"
+    );
+    pathElement.style.d = this.cssPath;
+    return pathElement;
+  }
 }
 
-function drawB(x: number, y: number): Drawing {
-  const { mHeight, xHeight } = fontMetrics;
-  const advance = mHeight / 2;
-  const topRadius = (mHeight - xHeight) / 2;
-  const topLineLength = (advance - topRadius) * (2 / 3);
-  const bottomRadius = xHeight / 2;
-  const bottomLineLength = advance - bottomRadius;
-  const d = `M ${x},${y - mHeight} L ${x},${y} L ${
-    x + bottomLineLength
-  },${y} M ${x + Math.max(bottomLineLength, topLineLength)},${
-    y - xHeight
-  } L ${x},${y - xHeight} M ${x},${y - mHeight} L ${x + topLineLength},${
-    y - mHeight
-  } Q ${x + topLineLength + topRadius},${y - mHeight} ${
-    x + topLineLength + topRadius
-  },${y - mHeight + topRadius} Q ${x + topLineLength + topRadius},${
-    y - xHeight
-  } ${x + topLineLength},${y - xHeight} M ${x + bottomLineLength},${
-    y - xHeight
-  } Q ${x + bottomLineLength + bottomRadius},${y - xHeight} ${
-    x + bottomLineLength + bottomRadius
-  },${y - bottomRadius} Q ${x + bottomLineLength + bottomRadius},${y} ${
-    x + bottomLineLength
-  },${y}`;
-  const pathElement = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "path"
-  );
-  pathElement.style.d = cssifyPath(d);
-  return { element: pathElement, advance };
+/**
+ * This seems silly.  Is size really the only input?
+ * I'm not sure that the size should be fixed at this time.
+ * And it seems like fontMetrics should be the input.
+ * @param fontSize The M height in svg units.
+ * @returns A new font.
+ */
+function makeLineFont(fontSize: number) {
+  const result = new Map<string, DescriptionOfLetter>();
+  const fontMetrics = new FontMetrics(fontSize);
+  const add = (letter: string, d: string, advance: number) => {
+    const description = new DescriptionOfLetter(
+      letter,
+      d,
+      advance,
+      fontMetrics
+    );
+    result.set(description.letter, description);
+  };
+  const x0 = 0;
+  const y0 = 0;
+  {
+    // A
+    const { aWidth, mHeight, xHeight } = fontMetrics;
+    const d = `M ${x0},${y0} L ${x0 + aWidth / 2},${y0 - mHeight} L ${
+      x0 + aWidth
+    },${y0} M ${x0 + aWidth / 4},${y0 - xHeight} L ${x0 + aWidth * 0.75},${
+      y0 - xHeight
+    }`;
+    add("A", d, aWidth);
+  }
+  {
+    // B
+    const { mHeight, xHeight } = fontMetrics;
+    const advance = mHeight / 2;
+    const topRadius = (mHeight - xHeight) / 2;
+    const topLineLength = (advance - topRadius) * (2 / 3);
+    const bottomRadius = xHeight / 2;
+    const bottomLineLength = advance - bottomRadius;
+    const d = `M ${x0},${y0 - mHeight} L ${x0},${y0} L ${
+      x0 + bottomLineLength
+    },${y0} M ${x0 + Math.max(bottomLineLength, topLineLength)},${
+      y0 - xHeight
+    } L ${x0},${y0 - xHeight} M ${x0},${y0 - mHeight} L ${x0 + topLineLength},${
+      y0 - mHeight
+    } Q ${x0 + topLineLength + topRadius},${y0 - mHeight} ${
+      x0 + topLineLength + topRadius
+    },${y0 - mHeight + topRadius} Q ${x0 + topLineLength + topRadius},${
+      y0 - xHeight
+    } ${x0 + topLineLength},${y0 - xHeight} M ${x0 + bottomLineLength},${
+      y0 - xHeight
+    } Q ${x0 + bottomLineLength + bottomRadius},${y0 - xHeight} ${
+      x0 + bottomLineLength + bottomRadius
+    },${y0 - bottomRadius} Q ${x0 + bottomLineLength + bottomRadius},${y0} ${
+      x0 + bottomLineLength
+    },${y0}`;
+    add("B", d, advance);
+  }
+  {
+    // MARK: C
+    const { aWidth, mHeight } = fontMetrics;
+    const advance = Math.min(aWidth, mHeight * 0.5);
+    const radius = advance / 2;
+    const x1 = x0 + radius;
+    const x2 = x0 + advance;
+    const y1 = y0 - radius;
+    const y3 = y0 - mHeight;
+    const y2 = y3 + radius;
+    const d = `M ${x2},${y2} Q ${x2},${y3} ${x1},${y3} Q ${x0},${y3} ${x0},${y2} L ${x0},${y1} Q ${x0},${y0} ${x1},${y0} Q ${x2},${y0} ${x2},${y1}`;
+    add("C", d, advance);
+  }
+  {
+    // MARK: D
+    const { aWidth, mHeight } = fontMetrics;
+    const advance = Math.min(aWidth, mHeight * 0.5);
+    const radius = advance / 2;
+    const x1 = x0 + radius;
+    const x2 = x0 + advance;
+    const y1 = y0 - radius;
+    const y3 = y0 - mHeight;
+    const y2 = y3 + radius;
+    const d = `M ${x0},${y3} L ${x0},${y0} L ${x1},${y0} Q ${x2},${y0} ${x2},${y1} L ${x2},${y2} Q ${x2},${y3} ${x1},${y3} L ${x0},${y3}`;
+    add("D", d, advance);
+  }
+  {
+    // MARK: E
+    const { mHeight, xHeight } = fontMetrics;
+    const advance = mHeight / 2;
+    const x1 = x0 + advance * (2 / 3);
+    const x2 = x0 + advance;
+    const y1 = y0 - xHeight;
+    const y2 = y0 - mHeight;
+    const d = `M ${x2},${y2} L ${x0},${y2} L ${x0},${y0} L ${x2},${y0} M ${x1},${y1} L ${x0},${y1}`;
+    add("E", d, advance);
+  }
+  {
+    // MARK: F
+    const { mHeight, xHeight } = fontMetrics;
+    const advance = mHeight / 2;
+    const x1 = x0 + advance * (2 / 3);
+    const x2 = x0 + advance;
+    const y1 = y0 - xHeight;
+    const y2 = y0 - mHeight;
+    const d = `M ${x2},${y2} L ${x0},${y2} L ${x0},${y0} M ${x1},${y1} L ${x0},${y1}`;
+    add("F", d, advance);
+  }
+  {
+    // MARK: G
+    const { mHeight, xHeight } = fontMetrics;
+    const advance = mHeight * 0.5;
+    const radius = advance / 2;
+    const x1 = x0 + radius;
+    const x2 = x0 + advance;
+    const y1 = y0 - radius;
+    const y2 = y0 - xHeight;
+    const y4 = y0 - mHeight;
+    const y3 = y4 + radius;
+    const d = `M ${x2},${y3} Q ${x2},${y4} ${x1},${y4} Q ${x0},${y4} ${x0},${y3} L ${x0},${y1} Q ${x0},${y0} ${x1},${y0} Q ${x2},${y0} ${x2},${y1} L ${x2},${y2} L ${x1},${y2}`;
+    add("G", d, advance);
+  }
+  {
+    // MARK: H
+    const { mHeight, xHeight } = fontMetrics;
+    const advance = mHeight / 2;
+    const x1 = x0 + advance;
+    const y1 = y0 - xHeight;
+    const y2 = y0 - mHeight;
+    const d = `M ${x0},${y2} L ${x0},${y0} M ${x1},${y2} L ${x1},${y0} M ${x0},${y1} L ${x1},${y1}`;
+    add("H", d, advance);
+  }
+  {
+    // MARK: I
+    const { mHeight } = fontMetrics;
+    const advance = mHeight / 3;
+    const x1 = x0 + advance / 2;
+    const x2 = x0 + advance;
+    const y1 = y0 - mHeight;
+    const d = `M ${x0},${y1} L ${x2},${y1} M ${x0},${y0} L ${x2},${y0} M ${x1},${y1} L ${x1},${y0}`;
+    add("I", d, advance);
+  }
+  {
+    // MARK: J
+    const { mHeight } = fontMetrics;
+    const advance = mHeight / 2;
+    const radius = advance / 2;
+    const x1 = x0 + radius;
+    const x2 = x0 + advance;
+    const y1 = y0 - radius;
+    const y2 = y0 - mHeight;
+    const d = `M ${x2},${y2} L ${x2},${y1} Q ${x2},${y0} ${x1},${y0} Q ${x0},${y0} ${x0},${y1}`;
+    add("J", d, advance);
+  }
+  return result;
 }
 
-function drawC(x: number, y: number): Drawing {
-  const { aWidth, mHeight } = fontMetrics;
-  const advance = Math.min(aWidth, mHeight * 0.5);
-  const radius = advance / 2;
-  const x1 = x + radius;
-  const x2 = x + advance;
-  const y1 = y - radius;
-  const y3 = y - mHeight;
-  const y2 = y3 + radius;
-  const d = `M ${x2},${y2} Q ${x2},${y3} ${x1},${y3} Q ${x},${y3} ${x},${y2} L ${x},${y1} Q ${x},${y} ${x1},${y} Q ${x2},${y} ${x2},${y1}`;
-  const element = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "path"
-  );
-  element.style.d = cssifyPath(d);
-  return { element, advance };
-}
+{
+  const font = makeLineFont(5);
 
-function drawD(x: number, y: number): Drawing {
-  const { aWidth, mHeight } = fontMetrics;
-  const advance = Math.min(aWidth, mHeight * 0.5);
-  const radius = advance / 2;
-  const x1 = x + radius;
-  const x2 = x + advance;
-  const y1 = y - radius;
-  const y3 = y - mHeight;
-  const y2 = y3 + radius;
-  const d = `M ${x},${y3} L ${x},${y} L ${x1},${y} Q ${x2},${y} ${x2},${y1} L ${x2},${y2} Q ${x2},${y3} ${x1},${y3} L ${x},${y3}`;
-  const element = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "path"
-  );
-  element.style.d = cssifyPath(d);
-  return { element, advance };
-}
+  let x = 5;
+  const baseLine = 10;
+  function show(message: string) {
+    const invalid = new Set<string>();
+    for (const char of message) {
+      const description = font.get(char);
+      if (description === undefined) {
+        invalid.add(char);
+      } else {
+        const element = description.makeElement();
+        svg.appendChild(element);
+        element.style.transform = `translate(${x}px,${baseLine}px)`;
+        x += description.advance + description.fontMetrics.defaultKerning;
+      }
+    }
+    if (invalid.size > 0) {
+      console.warn(invalid);
+    }
+  }
 
-function drawE(x: number, y: number): Drawing {
-  const { mHeight, xHeight } = fontMetrics;
-  const advance = mHeight / 2;
-  const x1 = x + advance * (2 / 3);
-  const x2 = x + advance;
-  const y1 = y - xHeight;
-  const y2 = y - mHeight;
-  const d = `M ${x2},${y2} L ${x},${y2} L ${x},${y} L ${x2},${y} M ${x1},${y1} L ${x},${y1}`;
-  const pathElement = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "path"
-  );
-  pathElement.style.d = cssifyPath(d);
-  return { element: pathElement, advance };
+  show("AB😎CDE😎FG😎HIJ");
 }
-
-function drawF(x: number, y: number): Drawing {
-  const { mHeight, xHeight } = fontMetrics;
-  const advance = mHeight / 2;
-  const x1 = x + advance * (2 / 3);
-  const x2 = x + advance;
-  const y1 = y - xHeight;
-  const y2 = y - mHeight;
-  const d = `M ${x2},${y2} L ${x},${y2} L ${x},${y} M ${x1},${y1} L ${x},${y1}`;
-  const pathElement = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "path"
-  );
-  pathElement.style.d = cssifyPath(d);
-  return { element: pathElement, advance };
-}
-
-function drawG(x: number, y: number): Drawing {
-  const { mHeight, xHeight } = fontMetrics;
-  const advance = mHeight * 0.5;
-  const radius = advance / 2;
-  const x1 = x + radius;
-  const x2 = x + advance;
-  const y1 = y - radius;
-  const y2 = y - xHeight;
-  const y4 = y - mHeight;
-  const y3 = y4 + radius;
-  const d = `M ${x2},${y3} Q ${x2},${y4} ${x1},${y4} Q ${x},${y4} ${x},${y3} L ${x},${y1} Q ${x},${y} ${x1},${y} Q ${x2},${y} ${x2},${y1} L ${x2},${y2} L ${x1},${y2}`;
-  const element = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "path"
-  );
-  element.style.d = cssifyPath(d);
-  return { element, advance };
-}
-
-function drawH(x: number, y: number): Drawing {
-  const { mHeight, xHeight } = fontMetrics;
-  const advance = mHeight / 2;
-  const x1 = x + advance;
-  const y1 = y - xHeight;
-  const y2 = y - mHeight;
-  const d = `M ${x},${y2} L ${x},${y} M ${x1},${y2} L ${x1},${y} M ${x},${y1} L ${x1},${y1}`;
-  const element = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "path"
-  );
-  element.style.d = cssifyPath(d);
-  return { element, advance };
-}
-
-function drawI(x: number, y: number): Drawing {
-  const { mHeight } = fontMetrics;
-  const advance = mHeight / 3;
-  const x1 = x + advance / 2;
-  const x2 = x + advance;
-  const y1 = y - mHeight;
-  const d = `M ${x},${y1} L ${x2},${y1} M ${x},${y} L ${x2},${y} M ${x1},${y1} L ${x1},${y}`;
-  const element = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "path"
-  );
-  element.style.d = cssifyPath(d);
-  return { element, advance };
-}
-
-function drawJ(x: number, y: number): Drawing {
-  const { mHeight } = fontMetrics;
-  const advance = mHeight / 2;
-  const radius = advance / 2;
-  const x1 = x + radius;
-  const x2 = x + advance;
-  const y1 = y - radius;
-  const y2 = y - mHeight;
-  const d = `M ${x2},${y2} L ${x2},${y1} Q ${x2},${y} ${x1},${y} Q ${x},${y} ${x},${y1}`;
-  const element = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "path"
-  );
-  element.style.d = cssifyPath(d);
-  return { element, advance };
-}
-
-let x = 5;
-function show(drawing: Drawing) {
-  svg.appendChild(drawing.element);
-  x += drawing.advance + fontMetrics.defaultKerning;
-}
-const baseLine = 10;
-
-show(drawA(x, baseLine));
-show(drawA(x, baseLine));
-show(drawB(x, baseLine));
-show(drawC(x, baseLine));
-show(drawD(x, baseLine));
-show(drawE(x, baseLine));
-show(drawE(x, baseLine));
-show(drawF(x, baseLine));
-show(drawG(x, baseLine));
-show(drawH(x, baseLine));
-show(drawI(x, baseLine));
-show(drawJ(x, baseLine));
-show(drawJ(x, baseLine));

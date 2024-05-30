@@ -82,14 +82,87 @@ class FontMetrics {
   }
 }
 
-function cssifyPath(path: string) {
-  return `path('${path}')`;
+/**
+ * This is a way to manipulate a path shape.
+ * I.e. to create a string like "path('M 1,2 L 3,5')".
+ *
+ * The only real output is that string.
+ * However, there will be other ways to
+ */
+class PathShape {
+  #x = NaN;
+  #y = NaN;
+  #soFar = "";
+  get x() {
+    return this.#x;
+  }
+  get y() {
+    return this.#y;
+  }
+  constructor(x: number, y: number) {
+    this.M(x, y);
+  }
+  M(x: number, y: number) {
+    if (!(isFinite(x) && isFinite(y))) {
+      throw new Error("wtf");
+    }
+    this.#x = x;
+    this.#y = y;
+    this.#soFar += `M${x},${y}`;
+    return this;
+  }
+  L(x: number, y: number) {
+    if (!(isFinite(x) && isFinite(y))) {
+      throw new Error("wtf");
+    }
+    this.#x = x;
+    this.#y = y;
+    this.#soFar += `L${x},${y}`;
+    return this;
+  }
+  Q(x1: number, y1: number, x2: number, y2: number) {
+    if (!(isFinite(x1) && isFinite(y1) && isFinite(x2) && isFinite(y2))) {
+      throw new Error("wtf");
+    }
+    this.#x = x2;
+    this.#y = y2;
+    this.#soFar += `Q${x1},${y1} ${x2},${y2}`;
+    return this;
+  }
+  /**
+   * This adds a new Q command to the shape.
+   * The caller explicitly supplies the second control point.
+   * This automatically computes the first control point.
+   * This assumes the incoming angle is horizontal and the outgoing angle is vertical.
+   * @param x The x for both control points.
+   * @param y The y for the final control point.
+   */
+  Q90XFirst(x: number, y: number) {
+    return this.Q(x, this.y, x, y);
+  }
+  /**
+   * This adds a new Q command to the shape.
+   * The caller explicitly supplies the second control point.
+   * This automatically computes the first control point.
+   * This assumes the incoming angle is horizontal and the outgoing angle is vertical.
+   * @param x The x for the final control point.
+   * @param y The y for both control points.
+   */
+  Q90YFirst(x: number, y: number) {
+    return this.Q(this.x, y, x, y);
+  }
+  static cssifyPath(path: string) {
+    return `path('${path}')`;
+  }
+  get cssPath() {
+    return PathShape.cssifyPath(this.#soFar);
+  }
 }
 
 class DescriptionOfLetter {
   constructor(
     public readonly letter: string,
-    public readonly d: string,
+    public readonly shape: PathShape,
     /**
      * How far to advance the print head after printing this character.
      * In SVG units.
@@ -104,7 +177,7 @@ class DescriptionOfLetter {
    * If you are planning to set the d _attribute_ of an element, use this.d instead.
    */
   get cssPath() {
-    return cssifyPath(this.d);
+    return this.shape.cssPath;
   }
   /**
    * Create a new element to draw this letter.
@@ -131,10 +204,10 @@ class DescriptionOfLetter {
 function makeLineFont(fontSize: number) {
   const result = new Map<string, DescriptionOfLetter>();
   const fontMetrics = new FontMetrics(fontSize);
-  const add = (letter: string, d: string, advance: number) => {
+  const add = (letter: string, shape: PathShape, advance: number) => {
     const description = new DescriptionOfLetter(
       letter,
-      d,
+      shape,
       advance,
       fontMetrics
     );
@@ -149,94 +222,98 @@ function makeLineFont(fontSize: number) {
     capitalBottomMiddle,
     baseline,
   } = fontMetrics;
-  {
-    // MARK: 0
-    const advance = digitWidth;
-    const radius = advance / 2;
-    const x1 = radius;
-    const x2 = advance;
-    const y1 = -radius;
-    const d = `M ${x1},${capitalTop} Q ${x2},${capitalTop} ${x2},${capitalTopMiddle} L ${x2},${y1} Q ${x2},${baseline} ${x1},${baseline} Q 0,${baseline} 0,${y1} L 0,${capitalTopMiddle} Q 0,${capitalTop} ${x1},${capitalTop}`;
-    add("0", d, advance);
-  }
-  {
-    // MARK: 1
-    const advance = digitWidth;
-    const radius = advance / 2;
-    const x1 = radius;
-    const x2 = advance;
-    const d = `M 0,${capitalTopMiddle} Q ${x1},${capitalTopMiddle} ${x1},${capitalTop} L ${x1},${baseline} M 0,${baseline} L ${x2},${baseline}`;
-    add("1", d, advance);
-  }
-  {
-    // MARK: 2
-    //const advance = digitWidth;
-    //const radius = advance / 2;
-  }
-  {
-    // MARK: 8
-    const advance = digitWidth;
-    const radius = advance / 2;
-    const x1 = radius;
-    const x2 = advance;
-    const y1 = -radius;
-    const y2 = -2 * radius;
-    const y3 = -3 * radius;
-    const d = `M ${x1},${capitalTop} Q ${x2},${capitalTop} ${x2},${y3} Q ${x2},${y2} ${x1},${y2} Q 0,${y2} 0,${y1} Q 0,${baseline} ${x1},${baseline} Q ${x2},${baseline} ${x2},${y1} Q ${x2},${y2} ${x1},${y2} Q 0,${y2} 0,${y3} Q 0,${capitalTop} ${x1},${capitalTop}`;
-    add("8", d, advance);
-  }
-  {
-    // MARK: 9
-    const advance = digitWidth;
-    const radius = advance / 2;
-    const x1 = radius;
-    const x2 = advance;
-    //const y1 = -radius;
-    const y2 = -2 * radius;
-    const y3 = -3 * radius;
-    const d = `M ${x2}, ${y3} Q ${x2},${capitalTop} ${x1},${capitalTop} Q 0,${capitalTop} 0,${y3} Q 0,${y2} ${x1},${y2} Q ${x2},${y2} ${x2},${y3} Q ${x2},${baseline} 0,${baseline}`;
-    add("9", d, advance);
-  }
+  const left = 0;
   {
     const advance = digitWidth;
     const radius = advance / 2;
-    const x1 = radius;
-    const x2 = advance;
-    const y1 = -2 * radius;
-    const y2 = -3 * radius;
-    const d = `M ${x2}, ${y2} Q ${x2},${capitalTop} ${x1},${capitalTop} Q 0,${capitalTop} 0,${y2} Q 0,${y1} ${x1},${y1} Q ${x2},${y1} ${x2},${y2} L ${x2},${baseline}`;
-    add("9a", d, advance);
+    const center = radius;
+    const right = advance;
+    {
+      // MARK: 0
+      const shape = new PathShape(center, capitalTop)
+        .Q(right, capitalTop, right, capitalTopMiddle)
+        .L(right, capitalBottomMiddle)
+        .Q(right, baseline, center, baseline)
+        .Q(left, baseline, left, capitalBottomMiddle)
+        .L(left, capitalTopMiddle)
+        .Q(left, capitalTop, center, capitalTop);
+      add("0", shape, advance);
+    }
+    {
+      // MARK: 1
+      const shape = new PathShape(left, capitalTopMiddle)
+        .Q(center, capitalTopMiddle, center, capitalTop)
+        .L(center, baseline)
+        .M(left, baseline)
+        .L(right, baseline);
+      add("1", shape, advance);
+    }
+    {
+      // MARK: 2
+    }
+    {
+      // MARK: 8
+      const shape = new PathShape(center, capitalTop)
+        .Q(right, capitalTop, right, capitalTopMiddle)
+        .Q(right, capitalMiddle, center, capitalMiddle)
+        .Q(left, capitalMiddle, left, capitalBottomMiddle)
+        .Q(left, baseline, center, baseline)
+        .Q(right, baseline, right, capitalBottomMiddle)
+        .Q(right, capitalMiddle, center, capitalMiddle)
+        .Q(left, capitalMiddle, left, capitalTopMiddle)
+        .Q(left, capitalTop, center, capitalTop);
+      add("8", shape, advance);
+    }
+    {
+      // MARK: 9
+      const shape = new PathShape(right, capitalTopMiddle)
+        .Q(right, capitalTop, center, capitalTop)
+        .Q(left, capitalTop, left, capitalTopMiddle)
+        .Q(left, capitalMiddle, center, capitalMiddle)
+        .Q(right, capitalMiddle, right, capitalTopMiddle)
+        .Q(right, baseline, left, baseline);
+      add("9", shape, advance);
+    }
+    {
+      const shape = new PathShape(right, capitalTopMiddle)
+        .Q(right, capitalTop, center, capitalTop)
+        .Q(left, capitalTop, left, capitalTopMiddle)
+        .Q(left, capitalMiddle, center, capitalMiddle)
+        .Q(right, capitalMiddle, right, capitalTopMiddle)
+        .L(right, baseline);
+      add("9a", shape, advance);
+    }
+    {
+      const shape = new PathShape(right, capitalTopMiddle)
+        .Q(right, capitalTop, center, capitalTop)
+        .Q(left, capitalTop, left, capitalTopMiddle)
+        .Q(left, capitalMiddle, center, capitalMiddle)
+        .Q(right, capitalMiddle, right, capitalTopMiddle)
+        .L(right, capitalBottomMiddle)
+        .Q(right, baseline, center, baseline)
+        .Q(left, baseline, left, capitalBottomMiddle);
+      add("9b", shape, advance);
+    }
+    {
+      const shape = new PathShape(right, capitalTopMiddle)
+        .Q(right, capitalTop, center, capitalTop)
+        .Q(left, capitalTop, left, capitalTopMiddle)
+        .Q(left, capitalMiddle, center, capitalMiddle)
+        .Q(right, capitalMiddle, right, capitalTopMiddle)
+        .Q(right, baseline, center, baseline)
+        .Q(left, baseline, left, capitalBottomMiddle);
+      add("9c", shape, advance);
+    }
   }
-  {
-    const advance = digitWidth;
-    const radius = advance / 2;
-    const x1 = radius;
-    const x2 = advance;
-    const y1 = -radius;
-    const y2 = -2 * radius;
-    const y3 = -3 * radius;
-    const d = `M ${x2}, ${y3} Q ${x2},${capitalTop} ${x1},${capitalTop} Q 0,${capitalTop} 0,${y3} Q 0,${y2} ${x1},${y2} Q ${x2},${y2} ${x2},${y3} L ${x2},${y1} Q ${x2},${baseline} ${x1},${baseline} Q 0,${baseline} 0,${y1}`;
-    add("9b", d, advance);
-  }
-  {
-    const advance = digitWidth;
-    const radius = advance / 2;
-    const x1 = radius;
-    const x2 = advance;
-    const y1 = -radius;
-    const y2 = -2 * radius;
-    const y3 = -3 * radius;
-    const d = `M ${x2}, ${y3} Q ${x2},${capitalTop} ${x1},${capitalTop} Q 0,${capitalTop} 0,${y3} Q 0,${y2} ${x1},${y2} Q ${x2},${y2} ${x2},${y3} Q ${x2},${baseline} ${x1},${baseline} Q 0,${baseline} 0,${y1}`;
-    add("9c", d, advance);
-  }
+
   {
     // MARK: A
-    const d = `M 0,${baseline} L ${fontMetrics.aWidth / 2},${capitalTop} L ${
-      fontMetrics.aWidth
-    },${baseline} M ${fontMetrics.aWidth / 4},${capitalMiddle} L ${
-      fontMetrics.aWidth * 0.75
-    },${capitalMiddle}`;
-    add("A", d, aWidth);
+    const shape = new PathShape(left, baseline)
+      .L(aWidth / 2, capitalTop)
+      .L(fontMetrics.aWidth, baseline)
+      .M(fontMetrics.aWidth / 4, capitalMiddle)
+      .L(fontMetrics.aWidth * 0.75, capitalMiddle);
+    add("A", shape, aWidth);
   }
   {
     // MARK: B
@@ -251,21 +328,29 @@ function makeLineFont(fontSize: number) {
       throw new Error("wtf");
     }
     const bottomLineLength = advance - bottomRadius;
-    const d = `M 0,${capitalTop} L 0,${baseline} L ${bottomLineLength},${baseline} M ${Math.max(
-      bottomLineLength,
-      topLineLength
-    )},${capitalMiddle} L 0,${capitalMiddle} M 0,${capitalTop} L ${topLineLength},${capitalTop} Q ${
-      topLineLength + topRadius
-    },${capitalTop} ${topLineLength + topRadius},${capitalTop + topRadius} Q ${
-      topLineLength + topRadius
-    },${capitalMiddle} ${topLineLength},${capitalMiddle} M ${bottomLineLength},${capitalMiddle} Q ${
-      bottomLineLength + bottomRadius
-    },${capitalMiddle} ${bottomLineLength + bottomRadius},${
-      baseline - bottomRadius
-    } Q ${
-      bottomLineLength + bottomRadius
-    },${baseline} ${bottomLineLength},${baseline}`;
-    add("B", d, advance);
+    const shape = new PathShape(left, capitalTop)
+      .L(left, baseline)
+      .L(bottomLineLength, baseline)
+      .M(Math.max(bottomLineLength, topLineLength), capitalMiddle)
+      .L(left, capitalMiddle)
+      .M(left, capitalTop)
+      .L(topLineLength, capitalTop)
+      .Q(
+        topLineLength + topRadius,
+        capitalTop,
+        topLineLength + topRadius,
+        capitalTop + topRadius
+      )
+      .Q(topLineLength + topRadius, capitalMiddle, topLineLength, capitalMiddle)
+      .M(bottomLineLength, capitalMiddle)
+      .Q(
+        bottomLineLength + bottomRadius,
+        capitalMiddle,
+        bottomLineLength + bottomRadius,
+        baseline - bottomRadius
+      )
+      .Q(bottomLineLength + bottomRadius, baseline, bottomLineLength, baseline);
+    add("B", shape, advance);
   }
   {
     // MARK: C
@@ -273,8 +358,13 @@ function makeLineFont(fontSize: number) {
     const radius = advance / 2;
     const x1 = radius;
     const x2 = advance;
-    const d = `M ${x2},${capitalTopMiddle} Q ${x2},${capitalTop} ${x1},${capitalTop} Q 0,${capitalTop} 0,${capitalTopMiddle} L 0,${capitalBottomMiddle} Q 0,${baseline} ${x1},${baseline} Q ${x2},${baseline} ${x2},${capitalBottomMiddle}`;
-    add("C", d, advance);
+    const shape = new PathShape(x2, capitalTopMiddle)
+      .Q(x2, capitalTop, x1, capitalTop)
+      .Q(left, capitalTop, left, capitalTopMiddle)
+      .L(left, capitalBottomMiddle)
+      .Q(left, baseline, x1, baseline)
+      .Q(x2, baseline, x2, capitalBottomMiddle);
+    add("C", shape, advance);
   }
   {
     // MARK: D
@@ -282,24 +372,39 @@ function makeLineFont(fontSize: number) {
     const radius = advance / 2;
     const x1 = radius;
     const x2 = advance;
-    const d = `M 0,${capitalTop} L 0,${baseline} L ${x1},${baseline} Q ${x2},${baseline} ${x2},${capitalBottomMiddle} L ${x2},${capitalTopMiddle} Q ${x2},${capitalTop} ${x1},${capitalTop} L 0,${capitalTop}`;
-    add("D", d, advance);
+    const shape = new PathShape(left, capitalTop)
+      .L(left, baseline)
+      .L(x1, baseline)
+      .Q(x2, baseline, x2, capitalBottomMiddle)
+      .L(x2, capitalTopMiddle)
+      .Q(x2, capitalTop, x1, capitalTop)
+      .L(left, capitalTop);
+    add("D", shape, advance);
   }
   {
     // MARK: E
     const advance = digitWidth;
     const x1 = advance * (2 / 3);
     const x2 = advance;
-    const d = `M ${x2},${capitalTop} L 0,${capitalTop} L 0,${baseline} L ${x2},${baseline} M ${x1},${capitalMiddle} L 0,${capitalMiddle}`;
-    add("E", d, advance);
+    const shape = new PathShape(x2, capitalTop)
+      .L(left, capitalTop)
+      .L(left, baseline)
+      .L(x2, baseline)
+      .M(x1, capitalMiddle)
+      .L(left, capitalMiddle);
+    add("E", shape, advance);
   }
   {
     // MARK: F
     const advance = digitWidth;
     const x1 = advance * (2 / 3);
     const x2 = advance;
-    const d = `M ${x2},${capitalTop} L 0,${capitalTop} L 0,${baseline} M ${x1},${capitalMiddle} L 0,${capitalMiddle}`;
-    add("F", d, advance);
+    const shape = new PathShape(x2, capitalTop)
+      .L(left, capitalTop)
+      .L(left, baseline)
+      .M(x1, capitalMiddle)
+      .L(left, capitalMiddle);
+    add("F", shape, advance);
   }
   {
     // MARK: G
@@ -307,23 +412,40 @@ function makeLineFont(fontSize: number) {
     const radius = advance / 2;
     const x1 = radius;
     const x2 = advance;
-    const d = `M ${x2},${capitalTopMiddle} Q ${x2},${capitalTop} ${x1},${capitalTop} Q 0,${capitalTop} 0,${capitalTopMiddle} L 0,${capitalBottomMiddle} Q 0,${baseline} ${x1},${baseline} Q ${x2},${baseline} ${x2},${capitalBottomMiddle} L ${x2},${capitalMiddle} L ${x1},${capitalMiddle}`;
-    add("G", d, advance);
+    const shape = new PathShape(x2, capitalTopMiddle)
+      .Q(x2, capitalTop, x1, capitalTop)
+      .Q(left, capitalTop, left, capitalTopMiddle)
+      .L(left, capitalBottomMiddle)
+      .Q(left, baseline, x1, baseline)
+      .Q(x2, baseline, x2, capitalBottomMiddle)
+      .L(x2, capitalMiddle)
+      .L(x1, capitalMiddle);
+    add("G", shape, advance);
   }
   {
     // MARK: H
     const advance = digitWidth;
     const x1 = advance;
-    const d = `M 0,${capitalTop} L 0,${baseline} M ${x1},${capitalTop} L ${x1},${baseline} M 0,${capitalMiddle} L ${x1},${capitalMiddle}`;
-    add("H", d, advance);
+    const shape = new PathShape(left, capitalTop)
+      .L(left, baseline)
+      .M(x1, capitalTop)
+      .L(x1, baseline)
+      .M(left, capitalMiddle)
+      .L(x1, capitalMiddle);
+    add("H", shape, advance);
   }
   {
     // MARK: I
     const advance = fontMetrics.mHeight / 3;
     const x1 = advance / 2;
     const x2 = advance;
-    const d = `M 0,${capitalTop} L ${x2},${capitalTop} M 0,${baseline} L ${x2},${baseline} M ${x1},${capitalTop} L ${x1},${baseline}`;
-    add("I", d, advance);
+    const shape = new PathShape(left, capitalTop)
+      .L(x2, capitalTop)
+      .M(left, baseline)
+      .L(x2, baseline)
+      .M(x1, capitalTop)
+      .L(x1, baseline);
+    add("I", shape, advance);
   }
   {
     // MARK: J
@@ -331,8 +453,11 @@ function makeLineFont(fontSize: number) {
     const radius = advance / 2;
     const x1 = radius;
     const x2 = advance;
-    const d = `M ${x2},${capitalTop} L ${x2},${capitalBottomMiddle} Q ${x2},${baseline} ${x1},${baseline} Q 0,${baseline} 0,${capitalBottomMiddle}`;
-    add("J", d, advance);
+    const shape = new PathShape(x2, capitalTop)
+      .L(x2, capitalBottomMiddle)
+      .Q(x2, baseline, x1, baseline)
+      .Q(left, baseline, left, capitalBottomMiddle);
+    add("J", shape, advance);
   }
   return result;
 }

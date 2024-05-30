@@ -250,6 +250,22 @@ function makeLineFont(fontSize: number) {
     }
     {
       // MARK: 2
+      const shape = new PathShape(left, capitalTopMiddle)
+        .Q90YFirst(center, capitalTop)
+        .Q90XFirst(right, capitalTopMiddle)
+        .Q90YFirst(center, capitalMiddle)
+        .Q90XFirst(left, baseline)
+        .L(right, baseline);
+      add("2", shape, advance);
+    }
+    {
+      const shape = new PathShape(left, capitalTopMiddle)
+        .Q90YFirst(center, capitalTop)
+        .Q90XFirst(right, capitalTopMiddle)
+        .Q90YFirst(center, capitalBottomMiddle)
+        .Q90XFirst(left, baseline)
+        .L(right, baseline);
+      add("2a", shape, advance);
     }
     {
       // MARK: 8
@@ -466,7 +482,7 @@ function makeLineFont(fontSize: number) {
   const font = makeLineFont(5);
 
   let x = 5;
-  const baseLine = 10;
+  let baseLine = 10;
 
   // the is the only way to see 9a
   function show1(char: string) {
@@ -495,9 +511,31 @@ function makeLineFont(fontSize: number) {
     }
   }
 
-  show(""); // Show something specific or
-  // Show everything that's available.
-  for (const char of font.keys()) {
-    show1(char);
+  /**
+   *
+   * @param s Something printable.  I.e. a key in a font.
+   * @returns true for normal things like `2` or `9` or `A`,
+   * false for special things like `9b` or `2a`.
+   */
+  function isNormalChar(s: string) {
+    // This is not great.  Remember that s.length doesn't always equal [...s].length.
+    // This will work for ASCII, so it's good enough for now.
+    return s.length == 1;
   }
+
+  let normal = "";
+  let special: string[] = [];
+  font.forEach((_value, key) => {
+    if (isNormalChar(key)) {
+      normal += key;
+    } else {
+      special.push(key);
+    }
+  });
+  show(normal);
+  x = 5;
+  baseLine = 20;
+  special.forEach((char) => {
+    show1(char);
+  });
 }

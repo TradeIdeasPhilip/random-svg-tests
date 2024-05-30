@@ -282,11 +282,11 @@ function makeLineFont(fontSize: number) {
       // MARK: 4
       const centerRight = (center + right) / 2;
       const centerLeft = (center + left) / 2;
-      const shape = new PathShape(centerRight, baseline)
-        .L(centerRight, capitalTop)
-        .M(centerLeft, capitalTop)
+      const shape = new PathShape(right, capitalMiddle)
         .L(left, capitalMiddle)
-        .L(right, capitalMiddle);
+        .L(centerLeft, capitalTop)
+        .M(centerRight, capitalTop)
+        .L(centerRight, baseline);
       add("4", shape, advance);
     }
     {
@@ -536,33 +536,37 @@ function makeLineFont(fontSize: number) {
   const font = makeLineFont(5);
 
   let x = 5;
-  let baseLine = 10;
+  let baseline = 10;
 
   // the is the only way to see 9a
   function show1(char: string) {
     const description = font.get(char);
     if (description === undefined) {
-      return false;
+      return undefined;
     } else {
       const element = description.makeElement();
       svg.appendChild(element);
-      element.style.transform = `translate(${x}px,${baseLine}px)`;
+      element.style.transform = `translate(${x}px,${baseline}px)`;
       x += description.advance + description.fontMetrics.defaultKerning;
-      return true;
+      return element;
     }
   }
 
   function show(message: string) {
     const invalid = new Set<string>();
-    for (const char of message) {
-      const success = show1(char);
-      if (!success) {
+    const result = [...message].flatMap((char) => {
+      const element = show1(char);
+      if (element) {
+        return element;
+      } else {
         invalid.add(char);
+        return [];
       }
-    }
+    });
     if (invalid.size > 0) {
       console.warn(invalid);
     }
+    return result;
   }
 
   /**
@@ -588,8 +592,13 @@ function makeLineFont(fontSize: number) {
   });
   show(normal);
   x = 5;
-  baseLine = 20;
+  baseline = 20;
   special.forEach((char) => {
     show1(char);
+  });
+  x = 5;
+  baseline = 30;
+  show(normal).forEach((element) => {
+    element.classList.add("lights");
   });
 }

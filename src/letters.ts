@@ -268,6 +268,17 @@ function makeLineFont(fontSize: number) {
       add("2a", shape, advance);
     }
     {
+      // MARK: 3
+      const shape = new PathShape(left, capitalTopMiddle)
+        .Q90YFirst(center, capitalTop)
+        .Q90XFirst(right, capitalTopMiddle)
+        .Q90YFirst(center, capitalMiddle)
+        .Q90XFirst(right, capitalBottomMiddle)
+        .Q90YFirst(center, baseline)
+        .Q90XFirst(left, capitalBottomMiddle);
+      add("3", shape, advance);
+    }
+    {
       // MARK: 8
       const shape = new PathShape(center, capitalTop)
         .Q(right, capitalTop, right, capitalTopMiddle)

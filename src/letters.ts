@@ -142,18 +142,18 @@ class PathShape {
    * @param x The x for both control points.
    * @param y The y for the final control point.
    */
-  Q90XFirst(x: number, y: number) {
+  Q_HV(x: number, y: number) {
     return this.Q(x, this.y, x, y);
   }
   /**
    * This adds a new Q command to the shape.
    * The caller explicitly supplies the second control point.
    * This automatically computes the first control point.
-   * This assumes the incoming angle is horizontal and the outgoing angle is vertical.
+   * This assumes the incoming angle is vertical and the outgoing angle is horizontal.
    * @param x The x for the final control point.
    * @param y The y for both control points.
    */
-  Q90YFirst(x: number, y: number) {
+  Q_VH(x: number, y: number) {
     return this.Q(this.x, y, x, y);
   }
   static cssifyPath(path: string) {
@@ -256,31 +256,31 @@ function makeLineFont(fontSize: number) {
     {
       // MARK: 2
       const shape = new PathShape(left, capitalTopMiddle)
-        .Q90YFirst(center, capitalTop)
-        .Q90XFirst(right, capitalTopMiddle)
-        .Q90YFirst(center, capitalMiddle)
-        .Q90XFirst(left, baseline)
+        .Q_VH(center, capitalTop)
+        .Q_HV(right, capitalTopMiddle)
+        .Q_VH(center, capitalMiddle)
+        .Q_HV(left, baseline)
         .L(right, baseline);
       add("2", shape, advance);
     }
     {
       const shape = new PathShape(left, capitalTopMiddle)
-        .Q90YFirst(center, capitalTop)
-        .Q90XFirst(right, capitalTopMiddle)
-        .Q90YFirst(center, capitalBottomMiddle)
-        .Q90XFirst(left, baseline)
+        .Q_VH(center, capitalTop)
+        .Q_HV(right, capitalTopMiddle)
+        .Q_VH(center, capitalBottomMiddle)
+        .Q_HV(left, baseline)
         .L(right, baseline);
       add("2a", shape, advance);
     }
     {
       // MARK: 3
       const shape = new PathShape(left, capitalTopMiddle)
-        .Q90YFirst(center, capitalTop)
-        .Q90XFirst(right, capitalTopMiddle)
-        .Q90YFirst(center, capitalMiddle)
-        .Q90XFirst(right, capitalBottomMiddle)
-        .Q90YFirst(center, baseline)
-        .Q90XFirst(left, capitalBottomMiddle);
+        .Q_VH(center, capitalTop)
+        .Q_HV(right, capitalTopMiddle)
+        .Q_VH(center, capitalMiddle)
+        .Q_HV(right, capitalBottomMiddle)
+        .Q_VH(center, baseline)
+        .Q_HV(left, capitalBottomMiddle);
       add("3", shape, advance);
     }
     {
@@ -299,7 +299,7 @@ function makeLineFont(fontSize: number) {
         .L(right, baseline)
         .M(right, capitalMiddle)
         .L(left, capitalMiddle)
-        .Q90XFirst(center, capitalTop);
+        .Q_HV(center, capitalTop);
       add("4a", shape, advance);
     }
     {
@@ -334,20 +334,20 @@ function makeLineFont(fontSize: number) {
       const shape = new PathShape(centerRight, capitalTop)
         .L(centerLeft, capitalTop)
         .L(left, capitalMiddle)
-        .Q90YFirst(center, capitalTopMiddle)
-        .Q90XFirst(right, curveMiddle)
-        .Q90YFirst(center, baseline)
-        .Q90XFirst(left, capitalBottomMiddle);
+        .Q_VH(center, capitalTopMiddle)
+        .Q_HV(right, curveMiddle)
+        .Q_VH(center, baseline)
+        .Q_HV(left, capitalBottomMiddle);
       add("5", shape, advance);
     }
     {
       // MARK: 6
       const shape = new PathShape(right, capitalTop)
-        .Q90XFirst(left, capitalBottomMiddle)
-        .Q90YFirst(center, baseline)
-        .Q90XFirst(right, capitalBottomMiddle)
-        .Q90YFirst(center, capitalMiddle)
-        .Q90XFirst(left, capitalBottomMiddle);
+        .Q_HV(left, capitalBottomMiddle)
+        .Q_VH(center, baseline)
+        .Q_HV(right, capitalBottomMiddle)
+        .Q_VH(center, capitalMiddle)
+        .Q_HV(left, capitalBottomMiddle);
       add("6", shape, advance);
     }
     {
@@ -610,11 +610,28 @@ function makeLineFont(fontSize: number) {
     const center = advance / 2;
     const middle = (capitalTop + baseline) / 2;
     const shape = new PathShape(center, capitalTop)
-      .Q90XFirst(advance, middle)
-      .Q90YFirst(center, baseline)
-      .Q90XFirst(left, middle)
-      .Q90YFirst(center, capitalTop);
+      .Q_HV(advance, middle)
+      .Q_VH(center, baseline)
+      .Q_HV(left, middle)
+      .Q_VH(center, capitalTop);
     add("O", shape, advance);
+  }
+  {
+    // MARK: P
+    const advance = digitWidth;
+    const radius = capitalMiddle - capitalTopMiddle;
+    if (radius <= 0) {
+      throw new Error("wtf");
+    }
+    const x1 = advance - radius;
+    const shape = new PathShape(left, capitalTop)
+      .L(left, baseline)
+      .M(left, capitalTop)
+      .L(x1, capitalTop)
+      .Q_HV(advance, capitalTopMiddle)
+      .Q_VH(x1, capitalMiddle)
+      .L(left, capitalMiddle);
+    add("P", shape, advance);
   }
   return result;
 }

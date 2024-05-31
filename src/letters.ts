@@ -633,6 +633,82 @@ function makeLineFont(fontSize: number) {
       .L(left, capitalMiddle);
     add("P", shape, advance);
   }
+  {
+    // MARK: Q
+    const advance = digitWidth * 1.5;
+    const center = advance / 2;
+    const middle = (capitalTop + baseline) / 2;
+    const shape = new PathShape(center, capitalTop)
+      .Q_HV(advance, middle)
+      .Q_VH(center, baseline)
+      .Q_HV(left, middle)
+      .Q_VH(center, capitalTop)
+      .M(advance - center * 0.75, baseline - center * 0.75)
+      .L(advance + center / 6, baseline + center / 6);
+    add("Q", shape, advance);
+  }
+  {
+    // MARK: R
+    const advance = digitWidth;
+    const radius = capitalMiddle - capitalTopMiddle;
+    if (radius <= 0) {
+      throw new Error("wtf");
+    }
+    const x1 = advance - radius;
+    const shape = new PathShape(left, capitalTop)
+      .L(left, baseline)
+      .M(left, capitalTop)
+      .L(x1, capitalTop)
+      .Q_HV(advance, capitalTopMiddle)
+      .Q_VH(x1, capitalMiddle)
+      .L(left, capitalMiddle)
+      .M(x1, capitalMiddle)
+      .L(advance, baseline);
+    add("R", shape, advance);
+  }
+  {
+    const advance = digitWidth;
+    const radius = capitalMiddle - capitalTopMiddle;
+    if (radius <= 0) {
+      throw new Error("wtf");
+    }
+    const x1 = advance - radius;
+    const shape = new PathShape(left, capitalTop)
+      .L(left, baseline)
+      .M(left, capitalTop)
+      .L(x1, capitalTop)
+      .Q_HV(advance, capitalTopMiddle)
+      .Q_VH(x1, capitalMiddle)
+      .L(left, capitalMiddle)
+      .L(advance, baseline);
+    add("Ra", shape, advance);
+  }
+  {
+    // MARK: S
+    // This is basically a subset of the 8.
+    // The direction is reversed from the 8.
+    const advance = digitWidth;
+    const center = digitWidth / 2;
+    const right = digitWidth;
+    const shape = new PathShape(right, capitalTopMiddle)
+      .Q_VH(center, capitalTop)
+      .Q_HV(left, capitalTopMiddle)
+      .Q_VH(center, capitalMiddle)
+      .Q_HV(right, capitalBottomMiddle)
+      .Q_VH(center, baseline)
+      .Q_HV(left, capitalBottomMiddle);
+    add("S", shape, advance);
+  }
+  {
+    // MARK: T
+    const advance = digitWidth;
+    const center = advance / 2;
+    const shape = new PathShape(advance, capitalTop)
+      .L(left, capitalTop)
+      .M(center, capitalTop)
+      .L(center, baseline);
+    add("T", shape, advance);
+  }
   return result;
 }
 

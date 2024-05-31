@@ -584,6 +584,38 @@ function makeLineFont(fontSize: number) {
       .L(advance, baseline);
     add("L", shape, advance);
   }
+  {
+    // MARK: M
+    const advance = digitWidth * 1.5;
+    const center = advance / 2;
+    const shape = new PathShape(left, baseline)
+      .L(left, capitalTop)
+      .L(center, capitalMiddle)
+      .L(advance, capitalTop)
+      .L(advance, baseline);
+    add("M", shape, advance);
+  }
+  {
+    // MARK: N
+    const advance = digitWidth * 1.2;
+    const shape = new PathShape(left, baseline)
+      .L(left, capitalTop)
+      .L(advance, baseline)
+      .L(advance, capitalTop);
+    add("N", shape, advance);
+  }
+  {
+    // MARK: O
+    const advance = digitWidth * 1.5;
+    const center = advance / 2;
+    const middle = (capitalTop + baseline) / 2;
+    const shape = new PathShape(center, capitalTop)
+      .Q90XFirst(advance, middle)
+      .Q90YFirst(center, baseline)
+      .Q90XFirst(left, middle)
+      .Q90YFirst(center, capitalTop);
+    add("O", shape, advance);
+  }
   return result;
 }
 

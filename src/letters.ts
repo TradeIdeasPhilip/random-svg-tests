@@ -34,7 +34,7 @@ class FontMetrics {
    * Put this much space between adjacent characters.
    */
   get defaultKerning() {
-    return this.fontSize * 0.25;
+    return this.strokeWidth * 2.5;
   }
   /**
    * The y coordinate for the top of most capital letters.
@@ -74,8 +74,13 @@ class FontMetrics {
    * @param fontSize How tall to make the font.
    * This is measured in svg units.
    * This is typically (but not always) the same as the mHeight.
+   * @param strokeWidth The expected stroke width.
+   * This is mostly ignored, by choice, but that's not always possible.
    */
-  constructor(public readonly fontSize: number) {
+  constructor(
+    public readonly fontSize: number,
+    public readonly strokeWidth = fontSize / 10
+  ) {
     if (fontSize <= 0 || !isFinite(fontSize)) {
       throw new Error("wtf");
     }
@@ -559,6 +564,25 @@ function makeLineFont(fontSize: number) {
       .Q(x2, baseline, x1, baseline)
       .Q(left, baseline, left, capitalBottomMiddle);
     add("J", shape, advance);
+  }
+  {
+    // MARK: K
+    const advance = digitWidth + fontMetrics.strokeWidth;
+    const middle = (capitalTop + baseline) / 2;
+    const shape = new PathShape(left, capitalTop)
+      .L(left, baseline)
+      .M(advance, capitalTop)
+      .L(left + 0.5, middle)
+      .L(advance, baseline);
+    add("K", shape, advance);
+  }
+  {
+    // MARK: L
+    const advance = digitWidth;
+    const shape = new PathShape(left, capitalTop)
+      .L(left, baseline)
+      .L(advance, baseline);
+    add("L", shape, advance);
   }
   return result;
 }

@@ -322,6 +322,37 @@ function makeLineFont(fontSize: number) {
       add("4d", shape, advance);
     }
     {
+      // MARK: 5
+      const centerLeft = left + digitWidth / 5;
+      const centerRight = right - digitWidth / 5;
+      const curveMiddle = (capitalMiddle + capitalBottomMiddle) / 2;
+      const shape = new PathShape(centerRight, capitalTop)
+        .L(centerLeft, capitalTop)
+        .L(left, capitalMiddle)
+        .Q90YFirst(center, capitalTopMiddle)
+        .Q90XFirst(right, curveMiddle)
+        .Q90YFirst(center, baseline)
+        .Q90XFirst(left, capitalBottomMiddle);
+      add("5", shape, advance);
+    }
+    {
+      // MARK: 6
+      const shape = new PathShape(right, capitalTop)
+        .Q90XFirst(left, capitalBottomMiddle)
+        .Q90YFirst(center, baseline)
+        .Q90XFirst(right, capitalBottomMiddle)
+        .Q90YFirst(center, capitalMiddle)
+        .Q90XFirst(left, capitalBottomMiddle);
+      add("6", shape, advance);
+    }
+    {
+      // MARK: 7
+      const shape = new PathShape(left, capitalTop)
+        .L(right, capitalTop)
+        .L(left, baseline);
+      add("7", shape, advance);
+    }
+    {
       // MARK: 8
       const shape = new PathShape(center, capitalTop)
         .Q(right, capitalTop, right, capitalTopMiddle)

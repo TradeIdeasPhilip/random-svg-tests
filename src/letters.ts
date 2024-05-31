@@ -116,6 +116,22 @@ class PathShape {
     this.#soFar += `M${x},${y}`;
     return this;
   }
+  H(x: number) {
+    if (!isFinite(x)) {
+      throw new Error("wtf");
+    }
+    this.#x = x;
+    this.#soFar += `H${x}`;
+    return this;
+  }
+  V(y: number) {
+    if (!isFinite(y)) {
+      throw new Error("wtf");
+    }
+    this.#y = y;
+    this.#soFar += `V${y}`;
+    return this;
+  }
   L(x: number, y: number) {
     if (!(isFinite(x) && isFinite(y))) {
       throw new Error("wtf");
@@ -685,8 +701,7 @@ function makeLineFont(fontSize: number) {
   }
   {
     // MARK: S
-    // This is basically a subset of the 8.
-    // The direction is reversed from the 8.
+    // This is basically a subset of the 8 with he direction is reversed.
     const advance = digitWidth;
     const center = digitWidth / 2;
     const right = digitWidth;
@@ -703,11 +718,73 @@ function makeLineFont(fontSize: number) {
     // MARK: T
     const advance = digitWidth;
     const center = advance / 2;
-    const shape = new PathShape(advance, capitalTop)
-      .L(left, capitalTop)
-      .M(center, capitalTop)
-      .L(center, baseline);
+    const shape = new PathShape(center, capitalTop)
+      .L(center, baseline)
+      .M(advance, capitalTop)
+      .L(left, capitalTop);
+    // Down then back.  That's how I do it every time.
     add("T", shape, advance);
+  }
+  // MARK: U
+  {
+    const advance = digitWidth;
+    const center = advance / 2;
+    const shape = new PathShape(left, capitalTop)
+      .V(capitalBottomMiddle)
+      .Q_VH(center, baseline)
+      .Q_HV(advance, capitalBottomMiddle)
+      .V(capitalTop);
+    add("U", shape, advance);
+  }
+  // MARK: V
+  {
+    const advance = aWidth;
+    const center = advance / 2;
+    const shape = new PathShape(left, capitalTop)
+      .L(center, baseline)
+      .L(advance, capitalTop);
+    add("V", shape, advance);
+  }
+  // MARK: W
+  {
+    const advance = aWidth * 1.5;
+    const x1 = advance / 3;
+    const x2 = advance / 2;
+    const x3 = x1 * 2;
+    const shape = new PathShape(left, capitalTop)
+      .L(x1, baseline)
+      .L(x2, capitalMiddle)
+      .L(x3, baseline)
+      .L(advance, capitalTop);
+    add("W", shape, advance);
+  }
+  // MARK: X
+  {
+    const advance = digitWidth;
+    const shape = new PathShape(advance, capitalTop)
+      .L(left, baseline)
+      .M(left, capitalTop)
+      .L(advance, baseline);
+    add("X", shape, advance);
+  }
+  // MARK: Y
+  {
+    const extra = fontMetrics.strokeWidth;
+    const advance = digitWidth + extra;
+    const shape = new PathShape(advance, capitalTop)
+      .L(extra, baseline)
+      .M(left, capitalTop)
+      .L(advance / 2, capitalMiddle);
+    add("Y", shape, advance);
+  }
+  // MARK: Z
+  {
+    const advance = digitWidth;
+    const shape = new PathShape(left, capitalTop)
+      .H(advance)
+      .L(left, baseline)
+      .H(advance);
+    add("Z", shape, advance);
   }
   return result;
 }

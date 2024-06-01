@@ -68,6 +68,9 @@ class FontMetrics {
   get baseline() {
     return 0;
   }
+  get descender() {
+    return this.mHeight / 4;
+  }
 
   /**
    *
@@ -242,6 +245,8 @@ function makeLineFont(fontSize: number) {
     capitalMiddle,
     capitalBottomMiddle,
     baseline,
+    descender,
+    strokeWidth,
   } = fontMetrics;
   const left = 0;
   {
@@ -583,7 +588,7 @@ function makeLineFont(fontSize: number) {
   }
   {
     // MARK: K
-    const advance = digitWidth + fontMetrics.strokeWidth;
+    const advance = digitWidth + strokeWidth;
     const middle = (capitalTop + baseline) / 2;
     const shape = new PathShape(left, capitalTop)
       .L(left, baseline)
@@ -769,7 +774,7 @@ function makeLineFont(fontSize: number) {
   }
   // MARK: Y
   {
-    const extra = fontMetrics.strokeWidth;
+    const extra = strokeWidth;
     const advance = digitWidth + extra;
     const shape = new PathShape(advance, capitalTop)
       .L(extra, baseline)
@@ -789,7 +794,7 @@ function makeLineFont(fontSize: number) {
   // MARK: a
   {
     const base = digitWidth;
-    const extra = fontMetrics.strokeWidth / 2;
+    const extra = strokeWidth / 2;
     const advance = base + extra;
     const center = base / 2;
     const shape = new PathShape(center, capitalMiddle)
@@ -804,7 +809,7 @@ function makeLineFont(fontSize: number) {
   // MARK: b
   {
     const base = digitWidth;
-    const extra = fontMetrics.strokeWidth / 2;
+    const extra = strokeWidth / 2;
     const advance = base + extra;
     const circleLeft = extra;
     const circleCenter = extra + base / 2;
@@ -885,17 +890,99 @@ function makeLineFont(fontSize: number) {
       .Q_HV(circleRight, yEnd);
     add("cd", shape, advance);
   }
+  // MARK: d
+  {
+    const base = digitWidth;
+    const extra = strokeWidth / 2;
+    const advance = base + extra;
+    const center = base / 2;
+    const shape = new PathShape(center, capitalMiddle)
+      .Q_HV(left, capitalBottomMiddle)
+      .Q_VH(center, baseline)
+      .Q_HV(base, capitalBottomMiddle)
+      .Q_VH(center, capitalMiddle)
+      .M(advance, capitalTop)
+      .L(advance, baseline);
+    add("d", shape, advance);
+  }
+  // MARK: e
+  const offsetForSmallCurves = digitWidth / 8;
+  {
+    const advance = digitWidth;
+    const center = digitWidth / 2;
+    const right = advance;
+    const xEnd = right - offsetForSmallCurves;
+    const shape = new PathShape(left, capitalBottomMiddle)
+      .H(right)
+      .Q_VH(center, capitalMiddle)
+      .Q_HV(left, capitalBottomMiddle)
+      .Q_VH(center, baseline)
+      .H(xEnd);
+    add("e", shape, advance);
+  }
+  {
+    const advance = digitWidth;
+    const center = digitWidth / 2;
+    const right = advance;
+    const yEnd = (capitalBottomMiddle + baseline) / 2;
+    const shape = new PathShape(left, capitalBottomMiddle)
+      .H(right)
+      .Q_VH(center, capitalMiddle)
+      .Q_HV(left, capitalBottomMiddle)
+      .Q_VH(center, baseline)
+      .Q_HV(right, yEnd);
+    add("ea", shape, advance);
+  }
   // MARK: f
   {
     const advance = digitWidth * 0.75;
     const center = advance / 2;
     const right = advance;
-    const shape = new PathShape(right, capitalTopMiddle)
-      .Q_HV(center, capitalMiddle)
+    const shape = new PathShape(right, capitalTop)
+      .Q_HV(center, capitalTopMiddle)
       .V(baseline)
       .M(right, capitalMiddle)
       .H(left);
     add("f", shape, advance);
+  }
+  // MARK: g
+  {
+    const base = digitWidth;
+    const extra = strokeWidth / 2;
+    const advance = base + extra;
+    const center = base / 2;
+    const shape = new PathShape(center, capitalMiddle)
+      .Q_HV(left, capitalBottomMiddle)
+      .Q_VH(center, baseline)
+      .Q_HV(base, capitalBottomMiddle)
+      .Q_VH(center, capitalMiddle)
+      .M(advance, capitalMiddle)
+      .V(baseline)
+      .Q_VH(center, descender)
+      .H(left + offsetForSmallCurves);
+    add("g", shape, advance);
+  }
+  // MARK: h
+  {
+    const advance = digitWidth;
+    const center = advance / 2;
+    const shape = new PathShape(left, capitalTop)
+      .V(baseline)
+      .Q_VH(center, capitalMiddle)
+      .Q_HV(advance, capitalBottomMiddle)
+      .V(baseline);
+    add("h", shape, advance);
+  }
+  // MARK: n
+  {
+    const advance = digitWidth;
+    const center = advance / 2;
+    const shape = new PathShape(left, capitalMiddle)
+      .V(baseline)
+      .Q_VH(center, capitalMiddle)
+      .Q_HV(advance, capitalBottomMiddle)
+      .V(baseline);
+    add("n", shape, advance);
   }
   // MARK: o
   {
@@ -921,6 +1008,55 @@ function makeLineFont(fontSize: number) {
       .M(right, capitalMiddle)
       .H(left);
     add("t", shape, advance);
+  }
+  // MARK: u
+  {
+    const advance = digitWidth;
+    const center = advance / 2;
+    const shape = new PathShape(left, capitalMiddle)
+      .V(capitalBottomMiddle)
+      .Q_VH(center, baseline)
+      .Q_HV(advance, capitalMiddle)
+      .L(advance, baseline);
+    add("u", shape, advance);
+  }
+  // MARK: v
+  {
+    const advance = digitWidth;
+    const center = advance / 2;
+    const shape = new PathShape(left, capitalMiddle)
+      .L(center, baseline)
+      .L(advance, capitalMiddle);
+    add("v", shape, advance);
+  }
+  // MARK: x
+  {
+    const advance = digitWidth;
+    const shape = new PathShape(advance, capitalMiddle)
+      .L(left, baseline)
+      .M(left, capitalMiddle)
+      .L(advance, baseline);
+    add("x", shape, advance);
+  }
+  // MARK: y
+  {
+    const advance = digitWidth;
+    const meetingX = advance / 2;
+    const meetingY = (capitalMiddle + descender) / 2;
+    const shape = new PathShape(advance, capitalMiddle)
+      .L(left, descender)
+      .M(left, capitalMiddle)
+      .L(meetingX, meetingY);
+    add("y", shape, advance);
+  }
+  // MARK: z
+  {
+    const advance = digitWidth;
+    const shape = new PathShape(left, capitalMiddle)
+      .H(advance)
+      .L(left, baseline)
+      .H(advance);
+    add("z", shape, advance);
   }
   return result;
 }

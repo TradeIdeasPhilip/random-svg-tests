@@ -818,6 +818,85 @@ function makeLineFont(fontSize: number) {
       .Q_HV(circleLeft, capitalBottomMiddle);
     add("b", shape, advance);
   }
+  // MARK: c
+  {
+    const advance = digitWidth * 0.875;
+    const circleLeft = 0;
+    const circleCenter = digitWidth / 2;
+    const circleRight = advance;
+    const yStart = (capitalMiddle + capitalBottomMiddle) / 2;
+    const yEnd = (capitalBottomMiddle + baseline) / 2;
+    const shape = new PathShape(circleRight, yStart)
+      .Q_VH(circleCenter, capitalMiddle)
+      .Q_HV(circleLeft, capitalBottomMiddle)
+      .Q_VH(circleCenter, baseline)
+      .Q_HV(circleRight, yEnd);
+    add("c", shape, advance);
+  }
+  {
+    const advance = digitWidth;
+    const circleLeft = 0;
+    const circleCenter = advance / 2;
+    const circleRight = advance;
+    const shape = new PathShape(circleRight, capitalMiddle)
+      .H(circleCenter)
+      .Q_HV(circleLeft, capitalBottomMiddle)
+      .Q_VH(circleCenter, baseline)
+      .H(circleRight);
+    add("ca", shape, advance);
+  }
+  {
+    const advance = digitWidth * 0.75;
+    const circleLeft = 0;
+    const circleCenter = digitWidth / 2;
+    const circleRight = advance;
+    const shape = new PathShape(circleRight, capitalMiddle)
+      .H(circleCenter)
+      .Q_HV(circleLeft, capitalBottomMiddle)
+      .Q_VH(circleCenter, baseline)
+      .H(circleRight);
+    add("cb", shape, advance);
+  }
+  {
+    const advance = digitWidth * 0.75;
+    const circleLeft = 0;
+    const circleCenter = digitWidth / 2;
+    const circleRight = advance;
+    const yStart = (capitalMiddle + capitalBottomMiddle) / 2;
+    const yEnd = (capitalBottomMiddle + baseline) / 2;
+    const shape = new PathShape(circleRight, yStart)
+      .Q_VH(circleCenter, capitalMiddle)
+      .Q_HV(circleLeft, capitalBottomMiddle)
+      .Q_VH(circleCenter, baseline)
+      .Q_HV(circleRight, yEnd);
+    add("cc", shape, advance);
+  }
+  {
+    const advance = digitWidth;
+    const circleLeft = 0;
+    const circleCenter = digitWidth / 2;
+    const circleRight = advance;
+    const yStart = (capitalMiddle + capitalBottomMiddle) / 2;
+    const yEnd = (capitalBottomMiddle + baseline) / 2;
+    const shape = new PathShape(circleRight, yStart)
+      .Q_VH(circleCenter, capitalMiddle)
+      .Q_HV(circleLeft, capitalBottomMiddle)
+      .Q_VH(circleCenter, baseline)
+      .Q_HV(circleRight, yEnd);
+    add("cd", shape, advance);
+  }
+  // MARK: f
+  {
+    const advance = digitWidth * 0.75;
+    const center = advance / 2;
+    const right = advance;
+    const shape = new PathShape(right, capitalTopMiddle)
+      .Q_HV(center, capitalMiddle)
+      .V(baseline)
+      .M(right, capitalMiddle)
+      .H(left);
+    add("f", shape, advance);
+  }
   // MARK: o
   {
     const advance = digitWidth;
@@ -830,6 +909,18 @@ function makeLineFont(fontSize: number) {
       .Q_HV(circleLeft, capitalBottomMiddle)
       .Q_VH(circleCenter, capitalMiddle);
     add("o", shape, advance);
+  }
+  // MARK: t
+  {
+    const advance = digitWidth * 0.75;
+    const center = advance / 2;
+    const right = advance;
+    const shape = new PathShape(center, capitalTopMiddle)
+      .V(capitalBottomMiddle)
+      .Q_VH(right, baseline)
+      .M(right, capitalMiddle)
+      .H(left);
+    add("t", shape, advance);
   }
   return result;
 }

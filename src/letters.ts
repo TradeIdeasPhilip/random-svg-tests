@@ -786,45 +786,107 @@ function makeLineFont(fontSize: number) {
       .H(advance);
     add("Z", shape, advance);
   }
+  // MARK: a
+  {
+    const base = digitWidth;
+    const extra = fontMetrics.strokeWidth / 2;
+    const advance = base + extra;
+    const center = base / 2;
+    const shape = new PathShape(center, capitalMiddle)
+      .Q_HV(left, capitalBottomMiddle)
+      .Q_VH(center, baseline)
+      .Q_HV(base, capitalBottomMiddle)
+      .Q_VH(center, capitalMiddle)
+      .M(advance, capitalMiddle)
+      .L(advance, baseline);
+    add("a", shape, advance);
+  }
+  // MARK: b
+  {
+    const base = digitWidth;
+    const extra = fontMetrics.strokeWidth / 2;
+    const advance = base + extra;
+    const circleLeft = extra;
+    const circleCenter = extra + base / 2;
+    const circleRight = advance;
+    const shape = new PathShape(left, capitalTop)
+      .V(baseline)
+      .M(circleLeft, capitalBottomMiddle)
+      .Q_VH(circleCenter, baseline)
+      .Q_HV(circleRight, capitalBottomMiddle)
+      .Q_VH(circleCenter, capitalMiddle)
+      .Q_HV(circleLeft, capitalBottomMiddle);
+    add("b", shape, advance);
+  }
+  // MARK: o
+  {
+    const advance = digitWidth;
+    const circleLeft = 0;
+    const circleCenter = advance / 2;
+    const circleRight = advance;
+    const shape = new PathShape(circleCenter, capitalMiddle)
+      .Q_HV(circleRight, capitalBottomMiddle)
+      .Q_VH(circleCenter, baseline)
+      .Q_HV(circleLeft, capitalBottomMiddle)
+      .Q_VH(circleCenter, capitalMiddle);
+    add("o", shape, advance);
+  }
   return result;
 }
 
 {
-  const font = makeLineFont(5);
-
-  let x = 5;
-  let baseline = 10;
-
-  // the is the only way to see 9a
-  function show1(char: string) {
-    const description = font.get(char);
-    if (description === undefined) {
-      return undefined;
-    } else {
+  class Writer {
+    leftMargin = 5;
+    rightMargin = 95;
+    x = this.leftMargin;
+    baseline = 10;
+    lineHeight = 7.5;
+    carriageReturn() {
+      this.x = this.leftMargin;
+    }
+    lineFeed(lineCount = 1) {
+      this.baseline += this.lineHeight * lineCount;
+    }
+    CRLF() {
+      this.carriageReturn();
+      this.lineFeed(4 / 3);
+    }
+    font = makeLineFont(5);
+    getDescription(key: string) {
+      return this.font.get(key);
+    }
+    show1(description: DescriptionOfLetter) {
+      const advance = description.advance;
+      if (this.x + advance > this.rightMargin && this.x > this.leftMargin) {
+        this.carriageReturn();
+        this.lineFeed();
+      }
       const element = description.makeElement();
       svg.appendChild(element);
-      element.style.transform = `translate(${x}px,${baseline}px)`;
-      x += description.advance + description.fontMetrics.defaultKerning;
+      element.style.transform = `translate(${this.x}px,${this.baseline}px)`;
+      this.x += advance + description.fontMetrics.defaultKerning;
       return element;
+    }
+    show(message: string) {
+      const invalid = new Set<string>();
+      const result = [...message].flatMap((char) => {
+        const description = this.getDescription(char);
+        if (description) {
+          const element = this.show1(description);
+          return element;
+        } else {
+          invalid.add(char);
+          return [];
+        }
+      });
+      if (invalid.size > 0) {
+        console.warn(invalid);
+      }
+      return result;
     }
   }
 
-  function show(message: string) {
-    const invalid = new Set<string>();
-    const result = [...message].flatMap((char) => {
-      const element = show1(char);
-      if (element) {
-        return element;
-      } else {
-        invalid.add(char);
-        return [];
-      }
-    });
-    if (invalid.size > 0) {
-      console.warn(invalid);
-    }
-    return result;
-  }
+  const writer = new Writer();
 
   /**
    *
@@ -839,23 +901,21 @@ function makeLineFont(fontSize: number) {
   }
 
   let normal = "";
-  let special: string[] = [];
-  font.forEach((_value, key) => {
+  let special: DescriptionOfLetter[] = [];
+  writer.font.forEach((value, key) => {
     if (isNormalChar(key)) {
       normal += key;
     } else {
-      special.push(key);
+      special.push(value);
     }
   });
-  show(normal);
-  x = 5;
-  baseline = 20;
-  special.forEach((char) => {
-    show1(char);
+  writer.show(normal);
+  writer.CRLF();
+  special.forEach((description) => {
+    writer.show1(description);
   });
-  x = 5;
-  baseline = 30;
-  show(normal).forEach((element) => {
+  writer.CRLF();
+  writer.show(normal).forEach((element) => {
     element.classList.add("lights");
   });
 }

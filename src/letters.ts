@@ -1,5 +1,6 @@
 import { getById } from "phil-lib/client-misc";
 import "./style.css";
+import { sleep } from "phil-lib/misc";
 
 const svg = getById("main", SVGSVGElement);
 
@@ -181,6 +182,16 @@ class PathShape {
   get cssPath() {
     return PathShape.cssifyPath(this.#soFar);
   }
+  /**
+   * Like css path, but broken each time the pen is lifted.
+   * Each string in the result is a valid path where all of the parts are connected.
+   */
+  get cssPaths(): string[] {
+    return [...this.#soFar.matchAll(/M[^M]*/g)].map((array) => {
+      const pathSegment = array[0];
+      return PathShape.cssifyPath(pathSegment);
+    });
+  }
 }
 
 class DescriptionOfLetter {
@@ -203,18 +214,30 @@ class DescriptionOfLetter {
   get cssPath() {
     return this.shape.cssPath;
   }
+  private static makeElement(cssPath: string) {
+    const pathElement = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "path"
+    );
+    pathElement.style.d = cssPath;
+    return pathElement;
+  }
   /**
    * Create a new element to draw this letter.
    * @returns Currently this is always a <path> element.
    * I might or might not want to change that to be a <g> element.
    */
   makeElement(): SVGElement {
-    const pathElement = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "path"
+    return DescriptionOfLetter.makeElement(this.cssPath);
+  }
+  /**
+   *
+   * @returns One element part continuous part of the path.
+   */
+  makeElements(): SVGGeometryElement[] {
+    return this.shape.cssPaths.map((path) =>
+      DescriptionOfLetter.makeElement(path)
     );
-    pathElement.style.d = this.cssPath;
-    return pathElement;
   }
 }
 
@@ -1352,17 +1375,41 @@ function makeLineFont(fontSize: number) {
     getDescription(key: string) {
       return this.font.get(key);
     }
-    show1(description: DescriptionOfLetter) {
-      const advance = description.advance;
-      if (this.x + advance > this.rightMargin && this.x > this.leftMargin) {
+    /**
+     * __Before__ drawing the letter.
+     */
+    makeRoom(description: DescriptionOfLetter) {
+      if (
+        this.x + description.advance > this.rightMargin &&
+        this.x > this.leftMargin
+      ) {
         this.carriageReturn();
         this.lineFeed();
       }
+    }
+    /**
+     * __After__ drawing the letter.
+     */
+    advance(description: DescriptionOfLetter) {
+      this.x += description.advance + description.fontMetrics.defaultKerning;
+    }
+    show1(description: DescriptionOfLetter) {
+      this.makeRoom(description);
       const element = description.makeElement();
       svg.appendChild(element);
       element.style.transform = `translate(${this.x}px,${this.baseline}px)`;
-      this.x += advance + description.fontMetrics.defaultKerning;
+      this.advance(description);
       return element;
+    }
+    splitAndShow1(description: DescriptionOfLetter) {
+      this.makeRoom(description);
+      const elements = description.makeElements();
+      elements.forEach((element) => {
+        svg.appendChild(element);
+        element.style.transform = `translate(${this.x}px,${this.baseline}px)`;
+      });
+      this.advance(description);
+      return elements;
     }
     show(message: string) {
       const invalid = new Set<string>();
@@ -1371,6 +1418,23 @@ function makeLineFont(fontSize: number) {
         if (description) {
           const element = this.show1(description);
           return element;
+        } else {
+          invalid.add(char);
+          return [];
+        }
+      });
+      if (invalid.size > 0) {
+        console.warn(invalid);
+      }
+      return result;
+    }
+    splitAndShow(message: string) {
+      const invalid = new Set<string>();
+      const result = [...message].flatMap((char) => {
+        const description = this.getDescription(char);
+        if (description) {
+          const elements = this.splitAndShow1(description);
+          return elements;
         } else {
           invalid.add(char);
           return [];
@@ -1415,4 +1479,56 @@ function makeLineFont(fontSize: number) {
   writer.show(normal).forEach((element) => {
     element.classList.add("lights");
   });
+
+  writer.CRLF();
+  const elements = writer.splitAndShow(normal);
+  const { totalLength, maxLength } = elements.reduce(
+    ({ totalLength, maxLength }, element) => {
+      const elementLength = element.getTotalLength();
+      totalLength += elementLength;
+      maxLength = Math.max(maxLength, elementLength);
+      return { totalLength, maxLength };
+    },
+    { totalLength: 0, maxLength: 0 }
+  );
+
+  // Draw the letters as if a person were writing with a pen.
+  // I.e. animate it to look like someone is writing.
+  const lineLength = Math.ceil(maxLength) + 1;
+  const strokeDasharray = `0 ${lineLength} ${lineLength} 0`;
+  async function loopIt() {
+    while (true) {
+      /**
+       * Number of MS while the screen is blank before we start drawing the text each time.
+       */
+      const initialDelay = 1000;
+      /**
+       * Number of ms that it takes to do the writing.
+       */
+      const writeTime = 20000;
+      // const totalTime = 12000;
+      let lengthSoFar = 0;
+      let lastAnimation: Animation;
+      elements.forEach((element, _index) => {
+        const elementLength = element.getTotalLength();
+        /**
+         * start delay
+         */
+        const delay = initialDelay + (lengthSoFar / totalLength) * writeTime;
+        lengthSoFar += elementLength;
+        const duration = (elementLength / totalLength) * writeTime;
+        lastAnimation = element.animate(
+          [
+            { strokeDasharray, strokeDashoffset: 0.00001 },
+            { strokeDasharray, strokeDashoffset: -elementLength },
+          ],
+          { delay, duration, fill: "backwards" }
+        );
+      });
+      await lastAnimation!.finished;
+      // Wait this long with everything visible before restarting the loop and clearing the screen.
+      await sleep(3000);
+    }
+  }
+  loopIt();
 }

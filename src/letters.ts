@@ -1006,6 +1006,18 @@ function makeLineFont(fontSize: number) {
     add("ja", shape, advance);
   }
   // MARK: k
+  {
+    const slashHeight = (fontMetrics.xHeight * 2) / 3;
+    const bottomSticksOutBy = digitWidth / 10;
+    const advance = slashHeight + bottomSticksOutBy;
+    const shape = new PathShape(left, capitalTop)
+      .V(baseline)
+      .M(slashHeight, capitalMiddle)
+      .L(left, capitalMiddle + slashHeight)
+      .M(slashHeight / 2, baseline - slashHeight)
+      .L(advance, baseline);
+    add("k", shape, advance);
+  }
   // MARK: l
   {
     const advance = 0;
@@ -1188,6 +1200,60 @@ function makeLineFont(fontSize: number) {
     // .V(baseline);
     add("rb", shape, advance);
   }
+  // MARK: s
+  {
+    const advance = (fontMetrics.xHeight * 2) / 3;
+    const center = advance / 2;
+    const y0 = baseline;
+    const y2 = capitalBottomMiddle;
+    const y4 = capitalMiddle;
+    const y1 = (y0 + y2) / 2;
+    const y3 = (y2 + y4) / 2;
+    const yStart = (y3 + y4) / 2;
+    const yEnd = (y0 + y1) / 2;
+    const shape = new PathShape(advance, yStart)
+      .Q_VH(center, y4)
+      .Q_HV(left, y3)
+      .Q_VH(center, y2)
+      .Q_HV(advance, y1)
+      .Q_VH(center, y0)
+      .Q_HV(left, yEnd);
+    add("s", shape, advance);
+  }
+  {
+    const advance = (fontMetrics.xHeight * 2) / 3;
+    const center = advance / 2;
+    const y0 = baseline;
+    const y2 = capitalBottomMiddle;
+    const y4 = capitalMiddle;
+    const y1 = (y0 + y2) / 2;
+    const y3 = (y2 + y4) / 2;
+    const shape = new PathShape(advance, y3)
+      .Q_VH(center, y4)
+      .Q_HV(left, y3)
+      .Q_VH(center, y2)
+      .Q_HV(advance, y1)
+      .Q_VH(center, y0)
+      .Q_HV(left, y1);
+    add("sb", shape, advance);
+  }
+  {
+    const advance = (fontMetrics.xHeight * 2) / 3;
+    const center = advance / 2;
+    const y0 = baseline;
+    const y2 = capitalBottomMiddle;
+    const y4 = capitalMiddle;
+    const y1 = (y0 + y2) / 2;
+    const y3 = (y2 + y4) / 2;
+    const shape = new PathShape(advance - offsetForSmallCurves, y4)
+      .H(center)
+      .Q_HV(left, y3)
+      .Q_VH(center, y2)
+      .Q_HV(advance, y1)
+      .Q_VH(center, y0)
+      .H(offsetForSmallCurves);
+    add("sa", shape, advance);
+  }
   // MARK: t
   {
     const advance = digitWidth * 0.75;
@@ -1343,7 +1409,7 @@ function makeLineFont(fontSize: number) {
   writer.show(normal);
   writer.CRLF();
   special.forEach((description) => {
-    writer.show1(description);
+    writer.show1(description).classList.add("historical");
   });
   writer.CRLF();
   writer.show(normal).forEach((element) => {

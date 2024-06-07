@@ -138,15 +138,27 @@ export class DescriptionOfLetter {
    * @returns One element part continuous part of the path.
    */
   makeElements() {
-    return this.shape
-      .splitOnMove()
-      .map((innerShape) => ({
-        innerShape,
-        element: DescriptionOfLetter.makeElement(innerShape.cssPath),
-      }));
+    return this.shape.splitOnMove().map((innerShape) => ({
+      innerShape,
+      element: DescriptionOfLetter.makeElement(innerShape.cssPath),
+    }));
   }
 }
 
+function makeSmallCaps(
+  capitalSize: number,
+  smallSize: number = capitalSize * 0.75
+) {
+  const bigFont = makeLineFont(capitalSize);
+  const smallFont = makeLineFont(smallSize);
+  smallFont.forEach((descriptionOfLetter, letter) => {
+    const lowerCase = letter.toLowerCase();
+    if (lowerCase != letter) {
+      bigFont.set(lowerCase, descriptionOfLetter);
+    }
+  });
+  return bigFont;
+}
 
 {
   class Writer {
@@ -338,4 +350,8 @@ export class DescriptionOfLetter {
     }
   }
   loopIt();
+
+  writer.CRLF();
+  writer.font = makeSmallCaps(5);
+  writer.show("Small  Caps");
 }

@@ -3,6 +3,8 @@ import "./style.css";
 import { sleep } from "phil-lib/misc";
 import { PathShape } from "./path-shape";
 import { makeLineFont } from "./line-font";
+import rough from "roughjs";
+import { Config } from "roughjs/bin/core";
 
 const svg = getById("main", SVGSVGElement);
 
@@ -71,6 +73,9 @@ export class FontMetrics {
   get baseline() {
     return 0;
   }
+  /**
+   * The y coordinate for the bottom of letters like g, y, p, q, and j.
+   */
   get descender() {
     return this.mHeight / 4;
   }
@@ -112,6 +117,9 @@ export class DescriptionOfLetter {
    */
   get cssPath() {
     return this.shape.cssPath;
+  }
+  get d() {
+    return this.shape.rawPath;
   }
   private static makeElement(cssPath: string) {
     const pathElement = document.createElementNS(
@@ -158,6 +166,33 @@ function makeSmallCaps(
     }
   });
   return bigFont;
+}
+
+/**
+ *
+ * @param size This will be passed to makeLineFont()
+ * @param config This will be passed to Rough.js
+ * https://github.com/rough-stuff/rough/wiki#options
+ * @returns The requested font.
+ */
+function makeRoughFont(size: number, config: Config) {
+  const baseFont = makeLineFont(size);
+  const generator = rough.generator(config);
+  const result = new Map<string, DescriptionOfLetter>();
+  baseFont.forEach((baseDescription, key) => {
+    const drawable = generator.path(baseDescription.d);
+    const allPathInfo = generator.toPaths(drawable);
+    const pathStrings = allPathInfo.map((pathInfo) => pathInfo.d);
+    const shape = PathShape.fromStrings(...pathStrings);
+    const newDescription = new DescriptionOfLetter(
+      baseDescription.letter,
+      shape,
+      baseDescription.advance,
+      baseDescription.fontMetrics
+    );
+    result.set(key, newDescription);
+  });
+  return result;
 }
 
 {
@@ -354,4 +389,11 @@ function makeSmallCaps(
   writer.CRLF();
   writer.font = makeSmallCaps(5);
   writer.show("Small  Caps");
+
+  writer.font = makeRoughFont(14, {
+    options: { roughness: 0.5, bowing: 3, disableMultiStroke: true },
+  });
+  writer.lineHeight *= 3;
+  writer.CRLF();
+  writer.show("Rough Font");
 }

@@ -11,6 +11,8 @@ const svg = getById("main", SVGSVGElement);
  * @returns A value appropriate for the _CSS_ `d` _property_ of a `<path>` element.
  * This value will also work in a lot of other _CSS properties_.
  * This uses a slightly different format than the `d` _attribute_ of a `<path>` element.
+ * @deprecated Look for `rough.generator` in letters.ts or
+ * https://github.com/rough-stuff/rough/wiki/RoughGenerator for a better approach.
  */
 function getPath(element: SVGElement) {
   const elements = element.querySelectorAll("path");

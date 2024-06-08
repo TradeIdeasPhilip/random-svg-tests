@@ -2,11 +2,20 @@
 
 I'm having fun.
 It's nice to have a place to doodle.
-See it running at https://tradeideasphilip.github.io/random-svg-tests/.
+See these running at https://tradeideasphilip.github.io/random-svg-tests/.
+
+## Status and Testing
+
+I've heard some complaints from an iPhone user.
+Some pages worked and others didn't.
+
+I do most of my testing on Chrome on a Mac.
+I occasionally test on an Android phone.
 
 ## Morph
 
 [This](https://tradeideasphilip.github.io/random-svg-tests/morph.html) is my current focus.
+[Here](https://youtu.be/oiSRroma5dA?si=VsztEUqX8jwz1qg3&t=440) is a video showing off this and other recent work.
 
 I like the idea of a an arbitrary svg doodle morphing into another svg doodle.
 I'm focused on only strokes and no fills.

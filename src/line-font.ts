@@ -14,16 +14,11 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
     fontMetrics = new FontMetrics(fontMetrics);
   }
   const add = (letter: string, shape: PathShape, advance: number) => {
-    const description = new DescriptionOfLetter(
-      letter,
-      shape,
-      advance,
-      fontMetrics
-    );
+    const description = new DescriptionOfLetter(shape, advance, fontMetrics);
     if (result.has(letter)) {
       throw new Error("wtf");
     }
-    result.set(description.letter, description);
+    result.set(letter, description);
   };
   const {
     aWidth,

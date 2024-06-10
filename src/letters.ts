@@ -12,14 +12,9 @@ const svg = getById("main", SVGSVGElement);
 function convertToCubics(original: Font): Font {
   const result = new Map<string, DescriptionOfLetter>();
   original.forEach((originalDescription, key) => {
-    const { letter, advance, fontMetrics } = originalDescription;
+    const { advance, fontMetrics } = originalDescription;
     const shape = originalDescription.shape.convertToCubics();
-    const newDescription = new DescriptionOfLetter(
-      letter,
-      shape,
-      advance,
-      fontMetrics
-    );
+    const newDescription = new DescriptionOfLetter(shape, advance, fontMetrics);
     result.set(key, newDescription);
   });
   return result;
@@ -51,12 +46,13 @@ function makeRoughFont(baseFont: Font, config: Config): Font {
   const generator = rough.generator(config);
   const result = new Map<string, DescriptionOfLetter>();
   baseFont.forEach((baseDescription, key) => {
-    const drawable = generator.path(baseDescription.d);
-    const allPathInfo = generator.toPaths(drawable);
-    const pathStrings = allPathInfo.map((pathInfo) => pathInfo.d);
-    const shape = PathShape.fromStrings(...pathStrings);
+    const shape = () => {
+      const drawable = generator.path(baseDescription.d);
+      const allPathInfo = generator.toPaths(drawable);
+      const pathStrings = allPathInfo.map((pathInfo) => pathInfo.d);
+      return PathShape.fromStrings(...pathStrings);
+    };
     const newDescription = new DescriptionOfLetter(
-      baseDescription.letter,
       shape,
       baseDescription.advance,
       baseDescription.fontMetrics

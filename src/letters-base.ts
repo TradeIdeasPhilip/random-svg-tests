@@ -97,9 +97,12 @@ export class FontMetrics {
 }
 
 export class DescriptionOfLetter {
+  readonly #shapeFactory: () => PathShape;
+  get shape() {
+    return this.#shapeFactory();
+  }
   constructor(
-    public readonly letter: string,
-    public readonly shape: PathShape,
+    shape: PathShape | (() => PathShape),
     /**
      * How far to advance the print head after printing this character.
      * In SVG units.
@@ -107,7 +110,13 @@ export class DescriptionOfLetter {
      */
     public readonly advance: number,
     public readonly fontMetrics: FontMetrics
-  ) {}
+  ) {
+    if (shape instanceof PathShape) {
+      this.#shapeFactory = () => shape;
+    } else {
+      this.#shapeFactory = shape;
+    }
+  }
   /**
    * This is in the right format for a lot of _css properties_.
    *

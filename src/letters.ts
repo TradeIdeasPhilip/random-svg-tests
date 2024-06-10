@@ -266,44 +266,36 @@ function makeRoughFont(baseFont: Font, config: Config): Font {
   writer.font = makeSmallCaps(5);
   writer.show("Small  Caps");
 
-  writer.lineHeight *= 1.2;
+  writer.lineHeight *= 1.125;
   const baseFont = makeLineFont(new FontMetrics(6, 0.5));
   const cubicFont = convertToCubics(baseFont);
-  writer.CRLF();
-  writer.font = cubicFont;
   //const strokeWidth = cubicFont.get("0")!.fontMetrics.strokeWidth.toString();
-  writer.show("Cubic Line 6"); //.forEach(element => element.style.strokeWidth = strokeWidth);
   const roughOptions = {
     options: {
       roughness: 0.5,
       bowing: 3,
-      disableMultiStroke: false,
+      disableMultiStroke: true,
       preserveVertices: true,
     },
   };
-  writer.font = makeRoughFont(baseFont, roughOptions);
-  writer.CRLF();
-  writer
-    .show("Rough Font 1")
-    .forEach((element) => (element.style.strokeWidth = "0.25"));
-  writer.font = makeRoughFont(cubicFont, roughOptions);
-  writer.CRLF();
-  writer
-    .show("Rough Font 2")
-    .forEach((element) => (element.style.strokeWidth = "0.25"));
-  roughOptions.options.disableMultiStroke = true;
-  writer.font = makeRoughFont(cubicFont, roughOptions);
-  writer.CRLF();
-  writer.show("Rough Font 3");
-  roughOptions.options.preserveVertices = false;
-  roughOptions.options.roughness = 0.3;
-  writer.font = makeRoughFont(cubicFont, roughOptions);
-  writer.CRLF();
-  writer.show("Rough Font 4");
-  roughOptions.options.disableMultiStroke = false;
-  writer.font = makeRoughFont(cubicFont, roughOptions);
-  writer.CRLF();
-  writer
-    .show("Rough Font 5")
-    .forEach((element) => (element.style.strokeWidth = "0.25"));
+  const rowsOfElements = [0.24, 0.34, 0.4, 0.44, 0.5, 0.54, 0.64].map(
+    (roughness) => {
+      roughOptions.options.roughness = roughness;
+      writer.font = makeRoughFont(cubicFont, roughOptions);
+      writer.CRLF();
+      return writer.show(`Rough Font ${Math.round(roughness * 100)}  (4XxYyZ)`);
+    }
+  );
+  rowsOfElements;
+  /*
+  {
+    const elements = rowsOfElements.flat();
+    (async () => {
+      while (true) {
+        await sleep(1000);
+        const element = pick(elements);
+        const element = pick()
+      }
+    })()
+  }*/
 }

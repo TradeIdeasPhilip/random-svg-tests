@@ -12,6 +12,32 @@ Some pages worked and others didn't.
 I do most of my testing on Chrome on a Mac.
 I occasionally test on an Android phone.
 
+## Letters 
+[This](https://tradeideasphilip.github.io/random-svg-tests/letters.html) shows some some productive work I've done with SVG and text.
+
+This shows a snapshot of some work in progress:
+![Several samples of text with various special effects, described below.](./for-readme/RoughFont.png)
+
+* The first row shows an animation in progress.
+* The second row shows a Small Caps font that I synthesized from the default font.
+* The third row shows what happens when I convert all of the lines and parabolas in my drawings into cubics.  As intended, there are no changes visible in the font on this line.
+* Rough Font 1 shows what happens when I feed my line font directly into rough.js.  It looks strange where the straight lines run into the curved lines.
+* Rough Font 2 shows what happens when I convert my line font into cubics _then_ feed it to rough.js.  This is a huge improvement.  As intended, this fixed the problem in the previous line.
+* #3 is my favorite of the rough fonts.  I will remove the others.  I got rid of the multi-stroke because I think it looks a little better this way.
+* #4 is similar to #3, but with `preserveVertices` to false.  I never liked this the results of that setting.
+* And last row shows a 5th variation of the rough font.  While it looks like fun it seems way too rough and hard to read for my needs.
+
+I will be removing a lot of the irrelevant lines from here to make room for new experiments.
+Most of these have already served their purpose.
+
+I really like the way the the number 4 appears after it has been roughed.
+I like almost every version that appears.
+
+There is a lot of room to optimize the font to look better with rough.js.
+However, this was an amazing proof of concept.
+For now I want to do more interesting things.
+I can circle back after I see how I'm actually planning to use rough.js.
+
 ## Morph
 
 [This](https://tradeideasphilip.github.io/random-svg-tests/morph.html) is my current focus.
@@ -32,9 +58,8 @@ If you want CSS to smoothly animate the change between two path strings:
 - Switching between a capital and a lower case letters is okay, both nothing else.
 
 There are a lot of ways to potentially deal with this.
-However, it's not a problem for my current plans.
-I've got functions creating the paths and its outputs are vey consistent from one call to the next.
-And the functions are highly configurable so I can create more or fewer segments if I need to.
+Notice `toCubic()` and `covertToCubics()`.
+Coming soon: `removeIrrelevantMoves()` because rough.js sometimes adds moves when it doesn't need to.
 
 ## Quick Simple Fun JavaScript Animations
 

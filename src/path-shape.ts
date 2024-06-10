@@ -1,4 +1,5 @@
 import { parseFloatX } from "phil-lib/misc";
+import { lerp } from "./utility";
 
 function assertFinite(...values: number[]): void {
   values.forEach((value) => {
@@ -25,6 +26,13 @@ type PathCommand = {
    * @param destination Add the modified command to this.
    */
   translate(destination: PathShape, Δx: number, Δy: number): void;
+  /**
+   * Convert a command into a C command.
+   * L, H, V, and Q commands can all be expressed as C commands with no loss.
+   * This can be useful when animating a transition between two paths.
+   * @param destination Add the modified command to this.
+   */
+  toCubic(destination: PathShape): void;
   readonly reversed?: string;
 };
 
@@ -34,10 +42,10 @@ const between = " *[, ] *";
 const mCommand = new RegExp(
   `^M${afterCommand}${number}${between}${number}(.*)$`
 );
-const qCommand  = new RegExp(
+const qCommand = new RegExp(
   `^Q${afterCommand}${number}${between}${number}${between}${number}${between}${number}(.*)$`
 );
-const cCommand  = new RegExp(
+const cCommand = new RegExp(
   `^C${afterCommand}${number}${between}${number}${between}${number}${between}${number}${between}${number}${between}${number}(.*)$`
 );
 
@@ -75,19 +83,19 @@ export class PathShape {
     }
   }
   /**
-   * 
+   *
    * @param strings Each is a path string, e.g "M1,2 L3,4".
    * @returns A new PathShape based on the path strings.
    */
   static fromStrings(...strings: string[]) {
     const result = new this();
-    strings.forEach(s=>result.fromString(s));
+    strings.forEach((s) => result.fromString(s));
     result.checkInvariants();
     return result;
   }
   /**
    * Add new commands from the given string to this `PathShape`.
-   * 
+   *
    * This does not understand all valid commands.
    * This is currently aimed at parsing a string from rough.js.
    * @param s A path string, e.g "M1,2 L3,4".
@@ -104,10 +112,10 @@ export class PathShape {
         const x = parseFloatX(result[1]);
         const y = parseFloatX(result[2]);
         if (x === undefined || y === undefined) {
-          console.error(result,x,y,this);
+          console.error(result, x, y, this);
           throw new Error("wtf");
         }
-        this.M(x,y);
+        this.M(x, y);
         s = result[3];
         continue;
       }
@@ -117,11 +125,16 @@ export class PathShape {
         const y1 = parseFloatX(result[2]);
         const x2 = parseFloatX(result[3]);
         const y2 = parseFloatX(result[4]);
-        if (x1 === undefined || y1 === undefined || x2 === undefined || y2 === undefined) {
-          console.error(result,x1,y1,x2,y2,this);
+        if (
+          x1 === undefined ||
+          y1 === undefined ||
+          x2 === undefined ||
+          y2 === undefined
+        ) {
+          console.error(result, x1, y1, x2, y2, this);
           throw new Error("wtf");
         }
-        this.Q(x1,y1,x2,y2);
+        this.Q(x1, y1, x2, y2);
         s = result[5];
         continue;
       }
@@ -133,11 +146,18 @@ export class PathShape {
         const y2 = parseFloatX(result[4]);
         const x3 = parseFloatX(result[5]);
         const y3 = parseFloatX(result[6]);
-        if (x1 === undefined || y1 === undefined || x2 === undefined || y2 === undefined || x3 === undefined || y3 === undefined) {
-          console.error(result,x1,y1,x2,y2,x3,y3,this);
+        if (
+          x1 === undefined ||
+          y1 === undefined ||
+          x2 === undefined ||
+          y2 === undefined ||
+          x3 === undefined ||
+          y3 === undefined
+        ) {
+          console.error(result, x1, y1, x2, y2, x3, y3, this);
           throw new Error("wtf");
         }
-        this.C(x1,y1,x2,y2,x3,y3);
+        this.C(x1, y1, x2, y2, x3, y3);
         s = result[7];
         continue;
       }
@@ -153,11 +173,15 @@ export class PathShape {
     function translate(destination: PathShape, Δx: number, Δy: number): void {
       destination.M(x + Δx, y + Δy);
     }
+    function toCubic(destination: PathShape): void {
+      destination.M(x, y);
+    }
     this.#commands.push({
       endX: x,
       endY: y,
       asString: `M ${x},${y}`,
       translate,
+      toCubic,
     });
     return this;
   }
@@ -167,11 +191,24 @@ export class PathShape {
     function translate(destination: PathShape, Δx: number, _Δy: number): void {
       destination.H(x + Δx);
     }
+    const initialX = this.endX;
+    const initialY = this.endY;
+    function toCubic(destination: PathShape): void {
+      destination.C(
+        lerp(initialX, x, 1 / 3),
+        initialY,
+        lerp(initialX, x, 2 / 3),
+        initialY,
+        x,
+        initialY
+      );
+    }
     this.#commands.push({
       endX: x,
-      endY: this.endY,
+      endY: initialY,
       asString: `H ${x}`,
       translate,
+      toCubic,
     });
     return this;
   }
@@ -181,11 +218,24 @@ export class PathShape {
     function translate(destination: PathShape, _Δx: number, Δy: number): void {
       destination.V(y + Δy);
     }
+    const initialX = this.endX;
+    const initialY = this.endY;
+    function toCubic(destination: PathShape): void {
+      destination.C(
+        initialX,
+        lerp(initialY, y, 1 / 3),
+        initialX,
+        lerp(initialY, y, 2 / 3),
+        initialX,
+        y
+      );
+    }
     this.#commands.push({
       endX: this.endX,
       endY: y,
       asString: `V ${y}`,
       translate,
+      toCubic,
     });
     return this;
   }
@@ -195,11 +245,24 @@ export class PathShape {
     function translate(destination: PathShape, Δx: number, Δy: number): void {
       destination.L(x + Δx, y + Δy);
     }
+    const initialX = this.endX;
+    const initialY = this.endY;
+    function toCubic(destination: PathShape): void {
+      destination.C(
+        lerp(initialX, x, 1 / 3),
+        lerp(initialY, y, 1 / 3),
+        lerp(initialX, x, 2 / 3),
+        lerp(initialY, y, 2 / 3),
+        x,
+        y
+      );
+    }
     this.#commands.push({
       endX: x,
       endY: y,
       asString: `L ${x},${y}`,
       translate,
+      toCubic,
     });
     return this;
   }
@@ -209,11 +272,25 @@ export class PathShape {
     function translate(destination: PathShape, Δx: number, Δy: number): void {
       destination.Q(x1 + Δx, y1 + Δy, x2 + Δx, y2 + Δy);
     }
+    const initialX = this.endX;
+    const initialY = this.endY;
+    function toCubic(destination: PathShape): void {
+      // https://fontforge.org/docs/techref/bezier.html#converting-truetype-to-postscript
+      destination.C(
+        lerp(initialX, x1, 2 / 3),
+        lerp(initialY, y1, 2 / 3),
+        lerp(x2, x1, 2 / 3),
+        lerp(y2, y1, 2 / 3),
+        x2,
+        y2
+      );
+    }
     this.#commands.push({
       endX: x2,
       endY: y2,
       asString: `Q ${x1},${y1} ${x2},${y2}`,
       translate,
+      toCubic,
     });
     return this;
   }
@@ -245,11 +322,15 @@ export class PathShape {
     function translate(destination: PathShape, Δx: number, Δy: number): void {
       destination.C(x1 + Δx, y1 + Δy, x2 + Δx, y2 + Δy, x3 + Δx, y3 + Δy);
     }
+    function toCubic(destination: PathShape): void {
+      destination.C(x1, y1, x2, y2, x3, y3);
+    }
     this.#commands.push({
       endX: x3,
       endY: y3,
       asString: `C ${x1},${y1} ${x2},${y2} ${x3},${y3}`,
       translate,
+      toCubic,
     });
     return this;
   }
@@ -288,5 +369,17 @@ export class PathShape {
       path.#commands.push(...commands);
       return path;
     });
+  }
+  convertToCubics(): PathShape {
+    const result = new PathShape();
+    this.#commands.forEach((command) => command.toCubic(result));
+    result.checkInvariants();
+    return result;
+  }
+  translate(Δx: number, Δy: number): PathShape {
+    const result = new PathShape();
+    this.#commands.forEach((command) => command.translate(result, Δx, Δy));
+    result.checkInvariants();
+    return result;
   }
 }

@@ -50,3 +50,7 @@ export function dateToFileName(date: Date) {
       .padStart(2, "0")}`;
   }
 }
+
+export function lerp(at0: number, at1: number, where: number) {
+  return at0 + (at1 - at0) * where;
+}

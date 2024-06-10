@@ -1,4 +1,4 @@
-import { DescriptionOfLetter, FontMetrics } from "./letters";
+import { DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
 import { PathShape } from "./path-shape";
 
 /**
@@ -8,9 +8,11 @@ import { PathShape } from "./path-shape";
  * @param fontSize The M height in svg units.
  * @returns A new font.
  */
-export function makeLineFont(fontSize: number) {
+export function makeLineFont(fontMetrics: number | FontMetrics): Font {
   const result = new Map<string, DescriptionOfLetter>();
-  const fontMetrics = new FontMetrics(fontSize);
+  if (typeof fontMetrics === "number") {
+    fontMetrics = new FontMetrics(fontMetrics);
+  }
   const add = (letter: string, shape: PathShape, advance: number) => {
     const description = new DescriptionOfLetter(
       letter,
@@ -18,6 +20,9 @@ export function makeLineFont(fontSize: number) {
       advance,
       fontMetrics
     );
+    if (result.has(letter)) {
+      throw new Error("wtf");
+    }
     result.set(description.letter, description);
   };
   const {
@@ -37,6 +42,50 @@ export function makeLineFont(fontSize: number) {
     const radius = advance / 2;
     const center = radius;
     const right = advance;
+    {
+      const curveHeight = (descender - baseline) * 2;
+      const y0 = descender;
+      const y1 = y0 - curveHeight;
+      const y3 = capitalTop - curveHeight / 4;
+      const y2 = y3 + curveHeight;
+      if (curveHeight <= 0 || y0 <= y1 || y1 <= y2 || y2 <= y3) {
+        throw new Error("wtf");
+      }
+      const advance = digitWidth * 0.5;
+      {
+        // MARK: (
+        const shape = PathShape.M(advance, y3);
+        shape.Q_HV(0, y2);
+        shape.V(y1);
+        shape.Q_VH(advance, y0);
+        add("(", shape, advance);
+      }
+      {
+        // MARK: )
+        const advance = digitWidth * 0.5;
+        const shape = PathShape.M(0, y3);
+        shape.Q_HV(advance, y2);
+        shape.V(y1);
+        shape.Q_VH(0, y0);
+        add(")", shape, advance);
+      }
+      {
+        // MARK: [
+        const shape = PathShape.M(advance, y3);
+        shape.H(0);
+        shape.V(y0);
+        shape.H(advance);
+        add("[", shape, advance);
+      }
+      {
+        // MARK: ]
+        const shape = PathShape.M(0, y3);
+        shape.H(advance);
+        shape.V(y0);
+        shape.H(0);
+        add("]", shape, advance);
+      }
+    }
     {
       // MARK: 0
       const shape = PathShape.M(center, capitalTop)
@@ -359,7 +408,7 @@ export function makeLineFont(fontSize: number) {
   }
   {
     // MARK: J
-    const advance = digitWidth;
+    const advance = digitWidth * 0.85;
     const radius = advance / 2;
     const x1 = radius;
     const x2 = advance;
@@ -515,12 +564,13 @@ export function makeLineFont(fontSize: number) {
   }
   // MARK: U
   {
-    const advance = digitWidth;
-    const center = advance / 2;
+    const topOfCurve = (capitalBottomMiddle + capitalMiddle) / 2;
+    const center = Math.abs(topOfCurve - baseline) * 0.85;
+    const advance = center * 2;
     const shape = PathShape.M(left, capitalTop)
-      .V(capitalBottomMiddle)
+      .V(topOfCurve)
       .Q_VH(center, baseline)
-      .Q_HV(advance, capitalBottomMiddle)
+      .Q_HV(advance, topOfCurve)
       .V(capitalTop);
     add("U", shape, advance);
   }
@@ -747,7 +797,7 @@ export function makeLineFont(fontSize: number) {
   }
   // MARK: h
   {
-    const advance = digitWidth;
+    const advance = digitWidth * 0.85;
     const center = advance / 2;
     const shape = PathShape.M(left, capitalTop)
       .V(baseline)
@@ -827,7 +877,7 @@ export function makeLineFont(fontSize: number) {
   }
   // MARK: n
   {
-    const advance = digitWidth;
+    const advance = digitWidth * 0.85;
     const center = advance / 2;
     const shape = PathShape.M(left, capitalMiddle)
       .V(baseline)
@@ -1051,7 +1101,7 @@ export function makeLineFont(fontSize: number) {
   }
   // MARK: u
   {
-    const advance = digitWidth;
+    const advance = digitWidth * 0.85;
     const center = advance / 2;
     const shape = PathShape.M(left, capitalMiddle)
       .V(capitalBottomMiddle)

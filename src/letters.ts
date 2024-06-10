@@ -5,158 +5,30 @@ import { PathShape } from "./path-shape";
 import { makeLineFont } from "./line-font";
 import rough from "roughjs";
 import { Config } from "roughjs/bin/core";
+import { DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
 
 const svg = getById("main", SVGSVGElement);
 
-export class FontMetrics {
-  /**
-   * The height of a capital M.  1em in css.
-   */
-  get mHeight() {
-    return this.fontSize;
-  }
-  /**
-   * The height of a lower case x.
-   */
-  get xHeight() {
-    return this.fontSize * 0.5;
-  }
-  /**
-   * The width of a capital A.
-   */
-  get aWidth() {
-    return this.fontSize * 0.75;
-  }
-  /**
-   * The width of a 0, 1, ..., or 9.
-   *
-   * A lot of other characters use this same width because they are designed the same way as the digits.
-   */
-  get digitWidth() {
-    return this.fontSize * 0.5;
-  }
-  /**
-   * Put this much space between adjacent characters.
-   */
-  get defaultKerning() {
-    return this.strokeWidth * 2.5;
-  }
-  /**
-   * The y coordinate for the top of most capital letters.
-   */
-  get capitalTop() {
-    return this.baseline - this.mHeight;
-  }
-  /**
-   * Exactly half way between capitalTop and capitalMiddle.
-   */
-  get capitalTopMiddle() {
-    return (this.capitalTop + this.capitalMiddle) / 2;
-  }
-  /**
-   * The y coordinate for the mid line for E, F, G, H, etc.
-   */
-  get capitalMiddle() {
-    return this.baseline - this.xHeight;
-  }
-  /**
-   * Exactly half way between capitalMiddle  and baseline.
-   */
-  get capitalBottomMiddle() {
-    return (this.baseline + this.capitalMiddle) / 2;
-  }
-  /**
-   * The bottom of most letters, but not the descenders.
-   *
-   * The baseline is often used to line up different elements.
-   */
-  get baseline() {
-    return 0;
-  }
-  /**
-   * The y coordinate for the bottom of letters like g, y, p, q, and j.
-   */
-  get descender() {
-    return this.mHeight / 4;
-  }
-
-  /**
-   *
-   * @param fontSize How tall to make the font.
-   * This is measured in svg units.
-   * This is typically (but not always) the same as the mHeight.
-   * @param strokeWidth The expected stroke width.
-   * This is mostly ignored, by choice, but that's not always possible.
-   */
-  constructor(
-    public readonly fontSize: number,
-    public readonly strokeWidth = fontSize / 10
-  ) {
-    if (fontSize <= 0 || !isFinite(fontSize)) {
-      throw new Error("wtf");
-    }
-  }
-}
-
-export class DescriptionOfLetter {
-  constructor(
-    public readonly letter: string,
-    public readonly shape: PathShape,
-    /**
-     * How far to advance the print head after printing this character.
-     * In SVG units.
-     * Typically the "black" area of the character will start at x=0 and send at x=advance.
-     */
-    public readonly advance: number,
-    public readonly fontMetrics: FontMetrics
-  ) {}
-  /**
-   * This is in the right format for a lot of _css properties_.
-   *
-   * If you are planning to set the d _attribute_ of an element, use this.d instead.
-   */
-  get cssPath() {
-    return this.shape.cssPath;
-  }
-  get d() {
-    return this.shape.rawPath;
-  }
-  private static makeElement(cssPath: string) {
-    const pathElement = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "path"
+function convertToCubics(original: Font): Font {
+  const result = new Map<string, DescriptionOfLetter>();
+  original.forEach((originalDescription, key) => {
+    const { letter, advance, fontMetrics } = originalDescription;
+    const shape = originalDescription.shape.convertToCubics();
+    const newDescription = new DescriptionOfLetter(
+      letter,
+      shape,
+      advance,
+      fontMetrics
     );
-    pathElement.style.d = cssPath;
-    if (pathElement.style.d == "") {
-      console.error(cssPath, pathElement);
-      throw new Error("wtf");
-    }
-    return pathElement;
-  }
-  /**
-   * Create a new element to draw this letter.
-   * @returns Currently this is always a <path> element.
-   * I might or might not want to change that to be a <g> element.
-   */
-  makeElement(): SVGElement {
-    return DescriptionOfLetter.makeElement(this.cssPath);
-  }
-  /**
-   *
-   * @returns One element part continuous part of the path.
-   */
-  makeElements() {
-    return this.shape.splitOnMove().map((innerShape) => ({
-      innerShape,
-      element: DescriptionOfLetter.makeElement(innerShape.cssPath),
-    }));
-  }
+    result.set(key, newDescription);
+  });
+  return result;
 }
 
 function makeSmallCaps(
   capitalSize: number,
   smallSize: number = capitalSize * 0.75
-) {
+): Font {
   const bigFont = makeLineFont(capitalSize);
   const smallFont = makeLineFont(smallSize);
   smallFont.forEach((descriptionOfLetter, letter) => {
@@ -175,8 +47,7 @@ function makeSmallCaps(
  * https://github.com/rough-stuff/rough/wiki#options
  * @returns The requested font.
  */
-function makeRoughFont(size: number, config: Config) {
-  const baseFont = makeLineFont(size);
+function makeRoughFont(baseFont: Font, config: Config): Font {
   const generator = rough.generator(config);
   const result = new Map<string, DescriptionOfLetter>();
   baseFont.forEach((baseDescription, key) => {
@@ -259,6 +130,9 @@ function makeRoughFont(size: number, config: Config) {
         if (description) {
           const element = this.show1(description);
           return element;
+        } else if (char == " ") {
+          this.showSpace();
+          return [];
         } else {
           invalid.add(char);
           return [];
@@ -276,6 +150,9 @@ function makeRoughFont(size: number, config: Config) {
         if (description) {
           const elements = this.splitAndShow1(description);
           return elements;
+        } else if (char == " ") {
+          this.showSpace();
+          return [];
         } else {
           invalid.add(char);
           return [];
@@ -285,6 +162,9 @@ function makeRoughFont(size: number, config: Config) {
         console.warn(invalid);
       }
       return result;
+    }
+    showSpace() {
+      this.x += this.font.get("0")!.fontMetrics.spaceWidth;
     }
   }
 
@@ -390,10 +270,44 @@ function makeRoughFont(size: number, config: Config) {
   writer.font = makeSmallCaps(5);
   writer.show("Small  Caps");
 
-  writer.font = makeRoughFont(14, {
-    options: { roughness: 0.5, bowing: 3, disableMultiStroke: true },
-  });
-  writer.lineHeight *= 3;
+  writer.lineHeight *= 1.2;
+  const baseFont = makeLineFont(new FontMetrics(6, 0.5));
+  const cubicFont = convertToCubics(baseFont);
   writer.CRLF();
-  writer.show("Rough Font");
+  writer.font = cubicFont;
+  //const strokeWidth = cubicFont.get("0")!.fontMetrics.strokeWidth.toString();
+  writer.show("Cubic Line 6"); //.forEach(element => element.style.strokeWidth = strokeWidth);
+  const roughOptions = {
+    options: {
+      roughness: 0.5,
+      bowing: 3,
+      disableMultiStroke: false,
+      preserveVertices: true,
+    },
+  };
+  writer.font = makeRoughFont(baseFont, roughOptions);
+  writer.CRLF();
+  writer
+    .show("Rough Font 1")
+    .forEach((element) => (element.style.strokeWidth = "0.25"));
+  writer.font = makeRoughFont(cubicFont, roughOptions);
+  writer.CRLF();
+  writer
+    .show("Rough Font 2")
+    .forEach((element) => (element.style.strokeWidth = "0.25"));
+  roughOptions.options.disableMultiStroke = true;
+  writer.font = makeRoughFont(cubicFont, roughOptions);
+  writer.CRLF();
+  writer.show("Rough Font 3");
+  roughOptions.options.preserveVertices = false;
+  roughOptions.options.roughness = 0.3;
+  writer.font = makeRoughFont(cubicFont, roughOptions);
+  writer.CRLF();
+  writer.show("Rough Font 4");
+  roughOptions.options.disableMultiStroke = false;
+  writer.font = makeRoughFont(cubicFont, roughOptions);
+  writer.CRLF();
+  writer
+    .show("Rough Font 5")
+    .forEach((element) => (element.style.strokeWidth = "0.25"));
 }

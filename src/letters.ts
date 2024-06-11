@@ -1,11 +1,12 @@
 import { getById } from "phil-lib/client-misc";
 import "./style.css";
-import { sleep } from "phil-lib/misc";
+import { initializedArray, sleep } from "phil-lib/misc";
 import { PathShape } from "./path-shape";
 import { makeLineFont } from "./line-font";
 import rough from "roughjs";
-import { Config } from "roughjs/bin/core";
+import { Options } from "roughjs/bin/core";
 import { DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
+import { lerp } from "./utility";
 
 const svg = getById("main", SVGSVGElement);
 
@@ -42,8 +43,16 @@ function makeSmallCaps(
  * https://github.com/rough-stuff/rough/wiki#options
  * @returns The requested font.
  */
-function makeRoughFont(baseFont: Font, config: Config): Font {
-  const generator = rough.generator(config);
+function makeRoughFont(baseFont: Font, options: Options): Font {
+  const baseOptions = {
+    roughness: 0.5,
+    bowing: 3,
+    disableMultiStroke: true,
+    preserveVertices: true,
+  } as const;
+  const generator = rough.generator({
+    options: { ...baseOptions, ...options },
+  });
   const result = new Map<string, DescriptionOfLetter>();
   baseFont.forEach((baseDescription, key) => {
     const shape = () => {
@@ -125,7 +134,7 @@ function makeRoughFont(baseFont: Font, config: Config): Font {
         const description = this.getDescription(char);
         if (description) {
           const element = this.show1(description);
-          return element;
+          return { element, description, char };
         } else if (char == " ") {
           this.showSpace();
           return [];
@@ -193,7 +202,7 @@ function makeRoughFont(baseFont: Font, config: Config): Font {
     writer.show1(description).classList.add("historical");
   });
   writer.CRLF();
-  writer.show(normal).forEach((element) => {
+  writer.show(normal).forEach(({ element }) => {
     element.classList.add("lights");
   });
 
@@ -269,33 +278,119 @@ function makeRoughFont(baseFont: Font, config: Config): Font {
   writer.lineHeight *= 1.125;
   const baseFont = makeLineFont(new FontMetrics(6, 0.5));
   const cubicFont = convertToCubics(baseFont);
+  // You can adjust the font metrics to tell it your desired stroke width.  Or you can
+  // read the recommended value from the fontMetrics (shown below) then update the elements
+  // style with this value.
   //const strokeWidth = cubicFont.get("0")!.fontMetrics.strokeWidth.toString();
-  const roughOptions = {
-    options: {
-      roughness: 0.5,
-      bowing: 3,
-      disableMultiStroke: true,
-      preserveVertices: true,
-    },
-  };
-  const rowsOfElements = [0.24, 0.34, 0.4, 0.44, 0.5, 0.54, 0.64].map(
+  const rowsOfLetters = [0.24, 0.34, 0.4, 0.44, 0.5, 0.54, 0.64].map(
     (roughness) => {
-      roughOptions.options.roughness = roughness;
-      writer.font = makeRoughFont(cubicFont, roughOptions);
+      writer.font = makeRoughFont(cubicFont, { roughness });
       writer.CRLF();
-      return writer.show(`Rough Font ${Math.round(roughness * 100)}  (4XxYyZ)`);
+      return writer.show(`Rough Font ${Math.round(roughness * 100)}  [4XxYyZ]`);
     }
   );
-  rowsOfElements;
-  /*
   {
-    const elements = rowsOfElements.flat();
-    (async () => {
-      while (true) {
-        await sleep(1000);
-        const element = pick(elements);
-        const element = pick()
-      }
-    })()
-  }*/
+    const row = rowsOfLetters[6];
+    /**
+     *
+     * @returns 50% chance of 0, 50% chance of 1.
+     */
+    function coinFlip() {
+      return (Math.random() + 0.5) | 0;
+    }
+    row.forEach((letter) => {
+      //letter.element.style.stroke="red";
+      const pathCount = 3 + coinFlip() + coinFlip() + coinFlip();
+      const frames = initializedArray(pathCount, () => ({
+        d: letter.description.cssPath,
+      }));
+      frames.push(frames[0]);
+      const maxDuration = (pathCount * 10000) / 3;
+      const minDuration = maxDuration / 8;
+      const duration = Math.exp(
+        lerp(Math.log(minDuration), Math.log(maxDuration), Math.random())
+      );
+      letter.element.animate(frames, { duration, iterations: Infinity });
+    });
+  }
+  /**
+   * On the screen this looks the same as the cubicFont font, but it includes
+   * some extra M commands to match the output of rough.js.
+   */
+  const smoothFont = makeRoughFont(cubicFont, { roughness: 0 });
+  {
+    const row = rowsOfLetters[5];
+    row.forEach((letter) => {
+      const smoothPath = smoothFont.get(letter.char)!.cssPath;
+      const roughPath = letter.element.style.d;
+      const moveTime = 0.03;
+      const keyframes: Keyframe[] = [
+        { offset: 0, d: roughPath },
+        { offset: moveTime, d: smoothPath },
+        { offset: 0.5, d: smoothPath },
+        { offset: moveTime + 0.5, d: roughPath },
+        { offset: 1, d: roughPath },
+      ];
+      letter.element.animate(keyframes, {
+        duration: 3000,
+        iterations: Infinity,
+      });
+    });
+  }
+  {
+    const row = rowsOfLetters[4];
+    row.forEach((letter) => {
+      const smoothPath = smoothFont.get(letter.char)!.cssPath;
+      const roughPath = letter.element.style.d;
+      const offset1 = 1 / 8;
+      const offset2 = 7 / 8;
+      const duration = 14000;
+      // const keyframes: Keyframe[] = [
+      //   { offset: 0, d: smoothPath, strokeWidth: 0.5, opacity: 1 },
+      //   { offset: 1 / 3, d: smoothPath, strokeWidth: 0.5, opacity: 1 },
+      //   { offset: 2 / 3, d: roughPath, strokeWidth: 2, opacity: 0 },
+      //   { offset: 1, d: roughPath, strokeWidth: 2, opacity: 0 },
+      // ];
+      const strokeWidthKeyframes: Keyframe[] = [
+        { offset: 0, strokeWidth: 0.5 },
+        { offset: offset1, strokeWidth: 0.5 },
+        { offset: offset2, strokeWidth: 2.25 },
+        { offset: 1, strokeWidth: 2.25 },
+      ];
+      const roughnessKeyframes: Keyframe[] = [
+        { offset: 0, d: smoothPath },
+        {
+          offset: offset1,
+          d: smoothPath,
+          easing: "cubic-bezier(0.275, 0.760, 0.495, 1.005)",
+        },
+        { offset: offset2, d: roughPath },
+        { offset: 1, d: roughPath },
+      ];
+      const opacityKeyframes: Keyframe[] = [
+        { offset: 0, opacity: 1 },
+        {
+          offset: offset1,
+          opacity: 1,
+          easing: "cubic-bezier(0.280, 0.650, 0.630, 1.000)",
+        },
+        { offset: offset2, opacity: 0 },
+        { offset: 1, opacity: 0 },
+      ];
+      letter.element.animate(opacityKeyframes, {
+        duration,
+        iterations: Infinity,
+      });
+      letter.element.animate(roughnessKeyframes, {
+        duration,
+        iterations: Infinity,
+      });
+      letter.element.animate(strokeWidthKeyframes, {
+        duration,
+        iterations: Infinity,
+      });
+    });
+  }
 }
+
+// TODO:  Handwriting on a chalkboard effect as in https://www.youtube.com/watch?v=8K0i8odwA9Q

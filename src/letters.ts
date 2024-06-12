@@ -114,9 +114,10 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       this.makeRoom(description);
       const element = description.makeElement();
       svg.appendChild(element);
-      element.style.transform = `translate(${this.x}px,${this.baseline}px)`;
+      const { x, baseline } = this;
+      element.style.transform = `translate(${x}px,${baseline}px)`;
       this.advance(description);
-      return element;
+      return { element, x, baseline };
     }
     splitAndShow1(description: DescriptionOfLetter) {
       this.makeRoom(description);
@@ -133,8 +134,8 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       const result = [...message].flatMap((char) => {
         const description = this.getDescription(char);
         if (description) {
-          const element = this.show1(description);
-          return { element, description, char };
+          const shown = this.show1(description);
+          return { ...shown, description, char };
         } else if (char == " ") {
           this.showSpace();
           return [];
@@ -199,7 +200,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   writer.show(normal);
   writer.CRLF();
   special.forEach((description) => {
-    writer.show1(description).classList.add("historical");
+    writer.show1(description).element.classList.add("historical");
   });
   writer.CRLF();
   writer.show(normal).forEach(({ element }) => {
@@ -290,6 +291,9 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     }
   );
   {
+    // Cycle between different rough versions of each letter.
+    // All versions of all letters use the same roughness settings.
+    // The speed and complexity of each letter are different from each other.
     const row = rowsOfLetters[6];
     /**
      *
@@ -319,6 +323,8 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
    */
   const smoothFont = makeRoughFont(cubicFont, { roughness: 0 });
   {
+    // Snaps between normal and rough.
+    // There is a short animation period and a long period of no animation.
     const row = rowsOfLetters[5];
     row.forEach((letter) => {
       const smoothPath = smoothFont.get(letter.char)!.cssPath;
@@ -338,19 +344,33 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     });
   }
   {
+    // Spreads out like old skywriting.
     const row = rowsOfLetters[4];
+    {
+      const padding = 1;
+      //const left = row[0].x - padding;
+      const rightInfo = row.at(-1)!;
+      //const right = rightInfo.x + rightInfo.description.advance + padding;
+      const fontMetrics = rightInfo.description.fontMetrics;
+      const top = fontMetrics.top + rightInfo.baseline - padding;
+      const bottom = fontMetrics.bottom + rightInfo.baseline + padding;
+      const element = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "rect"
+      );
+      element.x.baseVal.value = 0; //left;
+      element.y.baseVal.value = top;
+      element.width.baseVal.value = 100; //right - left;
+      element.height.baseVal.value = bottom - top;
+      element.style.fill = "hwb(190 10% 0% / 1)";
+      svg.insertBefore(element, row[0].element);
+    }
     row.forEach((letter) => {
       const smoothPath = smoothFont.get(letter.char)!.cssPath;
       const roughPath = letter.element.style.d;
       const offset1 = 1 / 8;
       const offset2 = 7 / 8;
       const duration = 14000;
-      // const keyframes: Keyframe[] = [
-      //   { offset: 0, d: smoothPath, strokeWidth: 0.5, opacity: 1 },
-      //   { offset: 1 / 3, d: smoothPath, strokeWidth: 0.5, opacity: 1 },
-      //   { offset: 2 / 3, d: roughPath, strokeWidth: 2, opacity: 0 },
-      //   { offset: 1, d: roughPath, strokeWidth: 2, opacity: 0 },
-      // ];
       const strokeWidthKeyframes: Keyframe[] = [
         { offset: 0, strokeWidth: 0.5 },
         { offset: offset1, strokeWidth: 0.5 },
@@ -389,6 +409,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
         duration,
         iterations: Infinity,
       });
+      letter.element.style.stroke = "white";
     });
   }
 }

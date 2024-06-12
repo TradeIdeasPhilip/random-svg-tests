@@ -39,6 +39,9 @@ export class FontMetrics {
   get spaceWidth() {
     return this.strokeWidth + this.digitWidth / 2;
   }
+  get top() {
+    return this.capitalTop - this.mHeight / 4;
+  }
   /**
    * The y coordinate for the top of most capital letters.
    */
@@ -76,6 +79,9 @@ export class FontMetrics {
    */
   get descender() {
     return this.mHeight / 4;
+  }
+  get bottom() {
+    return this.descender + this.mHeight / 4;
   }
 
   /**
@@ -142,10 +148,14 @@ export class DescriptionOfLetter {
   }
   /**
    * Create a new element to draw this letter.
-   * @returns Currently this is always a <path> element.
-   * I might or might not want to change that to be a <g> element.
+   * @returns This is always a <path> element.
+   *
+   * I considered making that a <g> element.
+   * But see makeElements(), translate(), etc. instead.
+   * The focus of this project is creating and
+   * manipulating paths.
    */
-  makeElement(): SVGElement {
+  makeElement(): SVGPathElement {
     return DescriptionOfLetter.makeElement(this.cssPath);
   }
   /**

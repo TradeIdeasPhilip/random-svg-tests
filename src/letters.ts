@@ -286,16 +286,18 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   const rowsOfLetters = [
     { roughness: 0.24 },
     { roughness: 0.34 },
-    { roughness: 0.4 },
-    { roughness: 0.44, title: "Heartbeat" },
+    { roughness: 0.4, title: "Heartbeat" },
+    { roughness: 0.44, title: "Toggle (snap)" },
     { roughness: 0.5, title: "Skywriting" },
-    { roughness: 0.54, title: "Toggle (snap)" },
-    { roughness: 0.64, title: "Windy day" },
+    { roughness: 0.54, title: "Do the Wave" },
+    { roughness: 0.64, title: "Blustery day" },
   ].map((lineInfo) => {
     const { roughness, title } = lineInfo;
     writer.font = makeRoughFont(cubicFont, { roughness });
     writer.CRLF();
-    return (writer.show(`${Math.round(roughness * 100)} ${title??"Rough Font"} [4XxYyZ]`));
+    return writer.show(
+      `${Math.round(roughness * 100)} ${title ?? "Rough Font"} [4XxYyZ]`
+    );
   });
   /**
    * On the screen this looks the same as the cubicFont font, but it includes
@@ -333,7 +335,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   {
     // Snaps between normal and rough.
     // There is a short animation period and a long period of no animation.
-    const row = rowsOfLetters[5];
+    const row = rowsOfLetters[3];
     row.forEach((letter) => {
       const smoothPath = smoothFont.get(letter.char)!.cssPath;
       const roughPath = letter.element.style.d;
@@ -347,6 +349,56 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       ];
       letter.element.animate(keyframes, {
         duration: 2000,
+        iterations: Infinity,
+      });
+    });
+  }
+  {
+    // Wave!
+    const row = rowsOfLetters[5];
+    /**
+     * In units to be determined later.
+     */
+    const rampUpTime = 5;
+    /**
+     * Same units as `rampUpTime`.
+     */
+    const holdTime = 1;
+    /**
+     * Same units as `rampUpTime`.
+     */
+    const rampDownTime = 8;
+    /**
+     * How far after this letter starts should the next letter start.
+     * Same units as `rampUpTime`.
+     */
+    const startNextTime = 3;
+    const letterCount = row.length;
+    const period = letterCount * startNextTime;
+    const msPerLetter = 5000;
+    row.forEach((letter, index) => {
+      const smoothPath = smoothFont.get(letter.char)!.cssPath;
+      const roughPath = letter.element.style.d;
+      const smoothTransform = letter.element.style.transform;
+      const roughTransform = smoothTransform + " scale(1.32)";
+      console.warn({ roughTransform, smoothTransform });
+
+      const common = { d: smoothPath, transform: smoothTransform };
+      const special = { d: roughPath, transform: roughTransform };
+      const keyframes: Keyframe[] = [
+        { offset: 0, ...common },
+        { offset: rampUpTime / period, ...special },
+        {
+          offset: (rampUpTime + holdTime) / period,
+          ...special,
+        },
+        { offset: (rampUpTime + holdTime + rampDownTime) / period, ...common },
+        { offset: 1, ...common },
+      ];
+
+      letter.element.animate(keyframes, {
+        duration: msPerLetter,
+        iterationStart: 1 - index / letterCount,
         iterations: Infinity,
       });
     });
@@ -426,7 +478,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   }
   {
     // beep, beep, beep.
-    const row = rowsOfLetters[3];
+    const row = rowsOfLetters[2];
     row.forEach((letter) => {
       const smoothPath = smoothFont.get(letter.char)!.cssPath;
       const roughPath = letter.element.style.d;
@@ -447,7 +499,6 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
         ],
         { duration, iterations: Infinity }
       );
-      console.log(letter.element);
     });
   }
 }

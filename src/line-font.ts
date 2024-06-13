@@ -16,7 +16,7 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
   const add = (letter: string, shape: PathShape, advance: number) => {
     const description = new DescriptionOfLetter(shape, advance, fontMetrics);
     if (result.has(letter)) {
-      throw new Error("wtf");
+      throw new Error(`duplicate letter: "${letter}", previous letter: "${[...result].at(-1)![0]}"`);
     }
     result.set(letter, description);
   };
@@ -89,7 +89,9 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
         .Q(right, baseline, center, baseline)
         .Q(left, baseline, left, capitalBottomMiddle)
         .L(left, capitalTopMiddle)
-        .Q(left, capitalTop, center, capitalTop);
+        .Q(left, capitalTop, center, capitalTop)
+        .M(right, capitalTopMiddle)
+        .L(left, capitalBottomMiddle);
       add("0", shape, advance);
     }
     {
@@ -802,12 +804,13 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
     add("h", shape, advance);
   }
   // MARK: i
+  const dotHeight = strokeWidth / 4;
   {
     const advance = 0;
     const shape = PathShape.M(left, capitalMiddle)
       .V(baseline)
       .M(left, capitalTopMiddle)
-      .V(capitalTopMiddle - strokeWidth / 4);
+      .V(capitalTopMiddle - dotHeight);
     add("i", shape, advance);
   }
   // MARK: j
@@ -819,7 +822,7 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       .Q_VH(center, descender)
       .Q_HV(left, baseline)
       .M(advance, capitalTopMiddle)
-      .V(capitalTopMiddle - strokeWidth / 4);
+      .V(capitalTopMiddle - dotHeight);
     add("j", shape, advance);
   }
   {
@@ -832,6 +835,45 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       .M(advance, capitalTopMiddle)
       .V(capitalTopMiddle - strokeWidth / 4);
     add("ja", shape, advance);
+  }
+  // MARK: .
+  {
+    const advance = 0;
+    const shape = PathShape.M(left, baseline).V(baseline - dotHeight);
+    add(".", shape, advance);
+  }
+  // MARK: ,
+  {
+    const advance = 0;
+    const drop = (descender - baseline) / 2;
+    const back = drop / 2;
+    const shape = PathShape.M(left, baseline - dotHeight)
+      .V(baseline)
+      .Q_VH(-back, baseline + drop);
+    add(",", shape, advance);
+  }
+  // MARK: :
+  {
+    const advance = 0;
+    const topDotTop = (capitalBottomMiddle+capitalMiddle)/2;
+    const shape = PathShape.M(left, baseline)
+      .V(baseline - dotHeight)
+      .M(left, topDotTop + dotHeight)
+      .V(topDotTop);
+    add(":", shape, advance);
+  }
+  // MARK: ;
+  {
+    const advance = 0;
+    const topDotTop = (capitalBottomMiddle+capitalMiddle)/2;
+    const drop = (descender - baseline) / 2;
+    const back = drop / 2;
+    const shape = PathShape.M(left, baseline - dotHeight)
+      .V(baseline)
+      .Q_VH(-back, baseline + drop)
+      .M(left, topDotTop + dotHeight)
+      .V(topDotTop);
+    add(";", shape, advance);
   }
   // MARK: k
   {

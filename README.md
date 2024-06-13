@@ -14,6 +14,7 @@ I occasionally test on an Android phone.
 
 ## Letters 
 [This](https://tradeideasphilip.github.io/random-svg-tests/letters.html) shows some some productive work I've done with SVG and text.
+[Here](https://www.youtube.com/watch?v=HOfTgohh90w) is a video showing off my recent progress.
 
 This shows a snapshot of some work in progress:
 ![Several samples of text with various special effects, described below.](./for-readme/RoughFont.png)

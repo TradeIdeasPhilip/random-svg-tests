@@ -283,13 +283,26 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   // read the recommended value from the fontMetrics (shown below) then update the elements
   // style with this value.
   //const strokeWidth = cubicFont.get("0")!.fontMetrics.strokeWidth.toString();
-  const rowsOfLetters = [0.24, 0.34, 0.4, 0.44, 0.5, 0.54, 0.64].map(
-    (roughness) => {
-      writer.font = makeRoughFont(cubicFont, { roughness });
-      writer.CRLF();
-      return writer.show(`Rough Font ${Math.round(roughness * 100)}  [4XxYyZ]`);
-    }
-  );
+  const rowsOfLetters = [
+    { roughness: 0.24 },
+    { roughness: 0.34 },
+    { roughness: 0.4 },
+    { roughness: 0.44, title: "Heartbeat" },
+    { roughness: 0.5, title: "Skywriting" },
+    { roughness: 0.54, title: "Toggle (snap)" },
+    { roughness: 0.64, title: "Windy day" },
+  ].map((lineInfo) => {
+    const { roughness, title } = lineInfo;
+    writer.font = makeRoughFont(cubicFont, { roughness });
+    writer.CRLF();
+    return (writer.show(`${Math.round(roughness * 100)} ${title??"Rough Font"} [4XxYyZ]`));
+  });
+  /**
+   * On the screen this looks the same as the cubicFont font, but it includes
+   * some extra M commands to match the output of rough.js.
+   */
+  const smoothFont = makeRoughFont(cubicFont, { roughness: 0 });
+
   {
     // Cycle between different rough versions of each letter.
     // All versions of all letters use the same roughness settings.
@@ -317,11 +330,6 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       letter.element.animate(frames, { duration, iterations: Infinity });
     });
   }
-  /**
-   * On the screen this looks the same as the cubicFont font, but it includes
-   * some extra M commands to match the output of rough.js.
-   */
-  const smoothFont = makeRoughFont(cubicFont, { roughness: 0 });
   {
     // Snaps between normal and rough.
     // There is a short animation period and a long period of no animation.
@@ -338,7 +346,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
         { offset: 1, d: roughPath },
       ];
       letter.element.animate(keyframes, {
-        duration: 3000,
+        duration: 2000,
         iterations: Infinity,
       });
     });
@@ -347,6 +355,10 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     // Spreads out like old skywriting.
     const row = rowsOfLetters[4];
     {
+      // Draw the blue background.
+      // TODO add clipping!  Otherwise is can be inefficient to make lots of big partially transparent things.
+      // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/clip-path
+      // https://developer.mozilla.org/en-US/docs/Web/SVG/Element/clipPath
       const padding = 1;
       //const left = row[0].x - padding;
       const rightInfo = row.at(-1)!;
@@ -368,8 +380,8 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     row.forEach((letter) => {
       const smoothPath = smoothFont.get(letter.char)!.cssPath;
       const roughPath = letter.element.style.d;
-      const offset1 = 1 / 8;
-      const offset2 = 7 / 8;
+      const offset1 = 1 / 16;
+      const offset2 = 15 / 16;
       const duration = 14000;
       const strokeWidthKeyframes: Keyframe[] = [
         { offset: 0, strokeWidth: 0.5 },
@@ -393,7 +405,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
           offset: offset1,
           opacity: 1,
           easing: "cubic-bezier(0.280, 0.650, 0.630, 1.000)",
-        },
+        }, // TODO this gets way too transparent way too fast!
         { offset: offset2, opacity: 0 },
         { offset: 1, opacity: 0 },
       ];
@@ -410,6 +422,32 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
         iterations: Infinity,
       });
       letter.element.style.stroke = "white";
+    });
+  }
+  {
+    // beep, beep, beep.
+    const row = rowsOfLetters[3];
+    row.forEach((letter) => {
+      const smoothPath = smoothFont.get(letter.char)!.cssPath;
+      const roughPath = letter.element.style.d;
+      const duration = 750;
+      const easing = /*"ease-in-out"*/ "cubic-bezier(.55,0,1,.55)";
+      letter.element.animate(
+        [
+          { offset: 0, d: smoothPath, easing },
+          {
+            offset: 0.5,
+            d: roughPath,
+            easing,
+          },
+          {
+            offset: 1,
+            d: smoothPath,
+          },
+        ],
+        { duration, iterations: Infinity }
+      );
+      console.log(letter.element);
     });
   }
 }

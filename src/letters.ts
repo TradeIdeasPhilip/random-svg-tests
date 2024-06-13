@@ -299,17 +299,21 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       `${Math.round(roughness * 100)} ${title ?? "Rough Font"} [4XxYyZ]`
     );
   });
+  const heartbeatRow = rowsOfLetters[2];
+  const toggleRow = rowsOfLetters[3];
+  const skywritingRow = rowsOfLetters[4];
+  const waveRow = rowsOfLetters[5];
+  const blusteryRow = rowsOfLetters[6];
   /**
    * On the screen this looks the same as the cubicFont font, but it includes
    * some extra M commands to match the output of rough.js.
    */
   const smoothFont = makeRoughFont(cubicFont, { roughness: 0 });
 
-  {
-    // Cycle between different rough versions of each letter.
-    // All versions of all letters use the same roughness settings.
-    // The speed and complexity of each letter are different from each other.
-    const row = rowsOfLetters[6];
+  // Cycle between different rough versions of each letter.
+  // All versions of all letters use the same roughness settings.
+  // The speed and complexity of each letter are different from each other.
+  blusteryRow.forEach((letter) => {
     /**
      *
      * @returns 50% chance of 0, 50% chance of 1.
@@ -317,45 +321,39 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     function coinFlip() {
       return (Math.random() + 0.5) | 0;
     }
-    row.forEach((letter) => {
-      //letter.element.style.stroke="red";
-      const pathCount = 3 + coinFlip() + coinFlip() + coinFlip();
-      const frames = initializedArray(pathCount, () => ({
-        d: letter.description.cssPath,
-      }));
-      frames.push(frames[0]);
-      const maxDuration = (pathCount * 10000) / 3;
-      const minDuration = maxDuration / 8;
-      const duration = Math.exp(
-        lerp(Math.log(minDuration), Math.log(maxDuration), Math.random())
-      );
-      letter.element.animate(frames, { duration, iterations: Infinity });
+    //letter.element.style.stroke="red";
+    const pathCount = 3 + coinFlip() + coinFlip() + coinFlip();
+    const frames = initializedArray(pathCount, () => ({
+      d: letter.description.cssPath,
+    }));
+    frames.push(frames[0]);
+    const maxDuration = (pathCount * 10000) / 3;
+    const minDuration = maxDuration / 8;
+    const duration = Math.exp(
+      lerp(Math.log(minDuration), Math.log(maxDuration), Math.random())
+    );
+    letter.element.animate(frames, { duration, iterations: Infinity });
+  });
+  // Snaps between normal and rough.
+  // There is a short animation period and a long period of no animation.
+  toggleRow.forEach((letter) => {
+    const smoothPath = smoothFont.get(letter.char)!.cssPath;
+    const roughPath = letter.element.style.d;
+    const moveTime = 0.03;
+    const keyframes: Keyframe[] = [
+      { offset: 0, d: roughPath },
+      { offset: moveTime, d: smoothPath },
+      { offset: 0.5, d: smoothPath },
+      { offset: moveTime + 0.5, d: roughPath },
+      { offset: 1, d: roughPath },
+    ];
+    letter.element.animate(keyframes, {
+      duration: 2000,
+      iterations: Infinity,
     });
-  }
-  {
-    // Snaps between normal and rough.
-    // There is a short animation period and a long period of no animation.
-    const row = rowsOfLetters[3];
-    row.forEach((letter) => {
-      const smoothPath = smoothFont.get(letter.char)!.cssPath;
-      const roughPath = letter.element.style.d;
-      const moveTime = 0.03;
-      const keyframes: Keyframe[] = [
-        { offset: 0, d: roughPath },
-        { offset: moveTime, d: smoothPath },
-        { offset: 0.5, d: smoothPath },
-        { offset: moveTime + 0.5, d: roughPath },
-        { offset: 1, d: roughPath },
-      ];
-      letter.element.animate(keyframes, {
-        duration: 2000,
-        iterations: Infinity,
-      });
-    });
-  }
+  });
   {
     // Wave!
-    const row = rowsOfLetters[5];
     /**
      * In units to be determined later.
      */
@@ -373,15 +371,14 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
      * Same units as `rampUpTime`.
      */
     const startNextTime = 3;
-    const letterCount = row.length;
+    const letterCount = waveRow.length;
     const period = letterCount * startNextTime;
     const msPerLetter = 5000;
-    row.forEach((letter, index) => {
+    waveRow.forEach((letter, index) => {
       const smoothPath = smoothFont.get(letter.char)!.cssPath;
       const roughPath = letter.element.style.d;
       const smoothTransform = letter.element.style.transform;
       const roughTransform = smoothTransform + " scale(1.32)";
-      console.warn({ roughTransform, smoothTransform });
 
       const common = { d: smoothPath, transform: smoothTransform };
       const special = { d: roughPath, transform: roughTransform };
@@ -405,12 +402,8 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   }
   {
     // Spreads out like old skywriting.
-    const row = rowsOfLetters[4];
+    const row = skywritingRow;
     {
-      // Draw the blue background.
-      // TODO add clipping!  Otherwise is can be inefficient to make lots of big partially transparent things.
-      // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/clip-path
-      // https://developer.mozilla.org/en-US/docs/Web/SVG/Element/clipPath
       const padding = 1;
       //const left = row[0].x - padding;
       const rightInfo = row.at(-1)!;
@@ -476,31 +469,28 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       letter.element.style.stroke = "white";
     });
   }
-  {
-    // beep, beep, beep.
-    const row = rowsOfLetters[2];
-    row.forEach((letter) => {
-      const smoothPath = smoothFont.get(letter.char)!.cssPath;
-      const roughPath = letter.element.style.d;
-      const duration = 750;
-      const easing = /*"ease-in-out"*/ "cubic-bezier(.55,0,1,.55)";
-      letter.element.animate(
-        [
-          { offset: 0, d: smoothPath, easing },
-          {
-            offset: 0.5,
-            d: roughPath,
-            easing,
-          },
-          {
-            offset: 1,
-            d: smoothPath,
-          },
-        ],
-        { duration, iterations: Infinity }
-      );
-    });
-  }
+  // beep, beep, beep, ...
+  heartbeatRow.forEach((letter) => {
+    const smoothPath = smoothFont.get(letter.char)!.cssPath;
+    const roughPath = letter.element.style.d;
+    const duration = 750;
+    const easing = /*"ease-in-out"*/ "cubic-bezier(.55,0,1,.55)";
+    letter.element.animate(
+      [
+        { offset: 0, d: smoothPath, easing },
+        {
+          offset: 0.5,
+          d: roughPath,
+          easing,
+        },
+        {
+          offset: 1,
+          d: smoothPath,
+        },
+      ],
+      { duration, iterations: Infinity }
+    );
+  });
 }
 
 // TODO:  Handwriting on a chalkboard effect as in https://www.youtube.com/watch?v=8K0i8odwA9Q

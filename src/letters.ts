@@ -1,6 +1,6 @@
 import { getById } from "phil-lib/client-misc";
 import "./style.css";
-import { initializedArray, sleep } from "phil-lib/misc";
+import { initializedArray, makeLinear, sleep } from "phil-lib/misc";
 import { PathShape } from "./path-shape";
 import { makeLineFont } from "./line-font";
 import rough from "roughjs";
@@ -199,13 +199,13 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   });
   writer.show(normal);
   writer.CRLF();
-  special.forEach((description) => {
-    writer.show1(description).element.classList.add("historical");
-  });
-  writer.CRLF();
-  writer.show(normal).forEach(({ element }) => {
-    element.classList.add("lights");
-  });
+  {
+    const letters = writer.show(normal);
+    letters.forEach(({ element }) => {
+      element.classList.add("lights");
+    });
+    makeDivRect(letters).style.fill = "black";
+  }
 
   writer.CRLF();
   const elementInfo = writer.splitAndShow(normal);
@@ -273,7 +273,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   loopIt();
 
   writer.CRLF();
-  writer.font = makeSmallCaps(5);
+  writer.font = makeSmallCaps(5, 3);
   writer.show("Small  Caps");
 
   writer.lineHeight *= 1.125;
@@ -284,8 +284,6 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   // style with this value.
   //const strokeWidth = cubicFont.get("0")!.fontMetrics.strokeWidth.toString();
   const rowsOfLetters = [
-    { roughness: 0.24 },
-    { roughness: 0.34 },
     { roughness: 0.4, title: "Heartbeat" },
     { roughness: 0.44, title: "Toggle (snap)" },
     { roughness: 0.5, title: "Skywriting" },
@@ -299,11 +297,11 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       `${Math.round(roughness * 100)} ${title ?? "Rough Font"} [4XxYyZ]`
     );
   });
-  const heartbeatRow = rowsOfLetters[2];
-  const toggleRow = rowsOfLetters[3];
-  const skywritingRow = rowsOfLetters[4];
-  const waveRow = rowsOfLetters[5];
-  const blusteryRow = rowsOfLetters[6];
+  const heartbeatRow = rowsOfLetters[0];
+  const toggleRow = rowsOfLetters[1];
+  const skywritingRow = rowsOfLetters[2];
+  const waveRow = rowsOfLetters[3];
+  const blusteryRow = rowsOfLetters[4];
   /**
    * On the screen this looks the same as the cubicFont font, but it includes
    * some extra M commands to match the output of rough.js.
@@ -357,11 +355,11 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     /**
      * In units to be determined later.
      */
-    const rampUpTime = 5;
+    const rampUpTime = 4;
     /**
      * Same units as `rampUpTime`.
      */
-    const holdTime = 1;
+    const holdTime = 2;
     /**
      * Same units as `rampUpTime`.
      */
@@ -400,28 +398,39 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       });
     });
   }
+  function makeDivRect(
+    letters: readonly {
+      readonly description: DescriptionOfLetter;
+      readonly element: SVGElement;
+      readonly baseline: number;
+    }[]
+  ) {
+    const padding = 1;
+    let topSoFar = Infinity;
+    let bottomSoFar = -Infinity;
+    letters.forEach((letter) => {
+      const { description, baseline } = letter;
+      const { fontMetrics } = description;
+      topSoFar = Math.min(topSoFar, fontMetrics.top + baseline);
+      bottomSoFar = Math.max(bottomSoFar, fontMetrics.bottom + baseline);
+    });
+    const top = topSoFar - padding;
+    const bottom = bottomSoFar + padding;
+    const element = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "rect"
+    );
+    element.x.baseVal.value = 0; //left;
+    element.y.baseVal.value = top;
+    element.width.baseVal.value = 100; //right - left;
+    element.height.baseVal.value = bottom - top;
+    svg.insertBefore(element, letters[0].element);
+    return element;
+  }
   {
     // Spreads out like old skywriting.
     const row = skywritingRow;
-    {
-      const padding = 1;
-      //const left = row[0].x - padding;
-      const rightInfo = row.at(-1)!;
-      //const right = rightInfo.x + rightInfo.description.advance + padding;
-      const fontMetrics = rightInfo.description.fontMetrics;
-      const top = fontMetrics.top + rightInfo.baseline - padding;
-      const bottom = fontMetrics.bottom + rightInfo.baseline + padding;
-      const element = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "rect"
-      );
-      element.x.baseVal.value = 0; //left;
-      element.y.baseVal.value = top;
-      element.width.baseVal.value = 100; //right - left;
-      element.height.baseVal.value = bottom - top;
-      element.style.fill = "hwb(190 10% 0% / 1)";
-      svg.insertBefore(element, row[0].element);
-    }
+    makeDivRect(row).style.fill = "hwb(190 10% 0% / 1)";
     row.forEach((letter) => {
       const smoothPath = smoothFont.get(letter.char)!.cssPath;
       const roughPath = letter.element.style.d;
@@ -491,6 +500,86 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       { duration, iterations: Infinity }
     );
   });
+
+  {
+    writer.CRLF();
+    const minRoughness = 0.25;
+    const maxRoughness = 1.5;
+    const text =
+      "The more I drink the more I want to tell you what I really think about you.";
+    const roughness = makeLinear(
+      0,
+      minRoughness,
+      text.length - 1,
+      maxRoughness
+    );
+    const elementInfo =[...text].flatMap((char, index) => {
+      writer.font = makeRoughFont(cubicFont, { roughness: roughness(index) });
+      return writer.splitAndShow(char);      
+    });
+    const distanceBefore = (index: number) => {
+      if (index == 0) {
+        return 0;
+      }
+      const current = elementInfo[index].innerShape;
+      const previous = elementInfo[index - 1].innerShape;
+      const distance = Math.hypot(
+        previous.endX - current.startX,
+        previous.endY - current.startY
+      );
+      return distance;
+    };
+    const { totalLength, maxLength } = elementInfo.reduce(
+      ({ totalLength, maxLength }, { element }, index) => {
+        const elementLength = element.getTotalLength();
+        totalLength += distanceBefore(index) + elementLength;
+        maxLength = Math.max(maxLength, elementLength);
+        return { totalLength, maxLength };
+      },
+      { totalLength: 0, maxLength: 0 }
+    );
+  
+    // Draw the letters as if a person were writing with a pen.
+    // I.e. animate it to look like someone is writing.
+    const lineLength = Math.ceil(maxLength) + 1;
+    const strokeDasharray = `0 ${lineLength} ${lineLength} 0`;
+    async function loopIt() {
+      while (true) {
+        /**
+         * Number of MS while the screen is blank before we start drawing the text each time.
+         */
+        const initialDelay = 1000;
+        /**
+         * Number of ms that it takes to do the writing.
+         */
+        const writeTime = 30000;
+        // const totalTime = 12000;
+        let lengthSoFar = 0;
+        let lastAnimation: Animation;
+        elementInfo.forEach(({ element }, index) => {
+          const elementLength = element.getTotalLength();
+          lengthSoFar += distanceBefore(index);
+          /**
+           * start delay
+           */
+          const delay = initialDelay + (lengthSoFar / totalLength) * writeTime;
+          lengthSoFar += elementLength;
+          const duration = (elementLength / totalLength) * writeTime;
+          lastAnimation = element.animate(
+            [
+              { strokeDasharray, strokeDashoffset: 0.00001 },
+              { strokeDasharray, strokeDashoffset: -elementLength },
+            ],
+            { delay, duration, fill: "backwards" }
+          );
+        });
+        await lastAnimation!.finished;
+        // Wait this long with everything visible before restarting the loop and clearing the screen.
+        await sleep(3000);
+      }
+    }
+    loopIt();
+  }
 }
 
 // TODO:  Handwriting on a chalkboard effect as in https://www.youtube.com/watch?v=8K0i8odwA9Q

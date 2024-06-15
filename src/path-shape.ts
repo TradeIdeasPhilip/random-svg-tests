@@ -340,6 +340,20 @@ export class PathShape {
   get cssPath() {
     return PathShape.cssifyPath(this.rawPath);
   }
+  makeElement() {
+    const pathElement = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "path"
+    );
+    const cssPath = this.cssPath;
+    pathElement.style.d = cssPath;
+    if (pathElement.style.d == "") {
+      console.error(cssPath, pathElement);
+      throw new Error("wtf");
+    }
+    return pathElement;
+  }
+
   get rawPath() {
     return this.#commands.map((command) => command.asString).join(" ");
   }
@@ -353,6 +367,13 @@ export class PathShape {
   get rawPaths(): string[] {
     return this.splitOnMove().map((shape) => shape.rawPath);
   }
+  /**
+   * Split this PathShape into smaller PathShapes.
+   * Break it on the move (M) commands, so each of the
+   * new shapes can be use independently.
+   *
+   * Undo with `PathShape.join()`.
+   */
   splitOnMove(): PathShape[] {
     const result: PathCommand[][] = [];
     let current: PathCommand[] = [];
@@ -369,6 +390,20 @@ export class PathShape {
       path.#commands.push(...commands);
       return path;
     });
+  }
+  /**
+   * @param shapes The shapes to merge
+   * @returns A single shape that includes all of the input shapes
+   */
+  static join(
+    pieces: { Δx: number; Δy: number; shape: PathShape }[]
+  ): PathShape {
+    const result = new PathShape();
+    pieces.forEach(({ Δx, Δy, shape }) => {
+      shape.#commands.forEach((command) => command.translate(result, Δx, Δy));
+    });
+    result.checkInvariants();
+    return result;
   }
   convertToCubics(): PathShape {
     const result = new PathShape();

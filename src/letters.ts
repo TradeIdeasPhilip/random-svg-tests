@@ -94,6 +94,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     }
     /**
      * __Before__ drawing the letter.
+     * @deprecated See `showAndAdvance()`
      */
     makeRoom(description: DescriptionOfLetter) {
       if (
@@ -106,16 +107,32 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     }
     /**
      * __After__ drawing the letter.
+     * @deprecated See `showAndAdvance()`
      */
     advance(description: DescriptionOfLetter) {
       this.x += description.advance + description.fontMetrics.defaultKerning;
+    }
+    /**
+     * @deprecated See `showAndAdvance()`
+     */
+    moveToCursor(element: SVGElement) {
+      element.style.transform = `translate(${this.x}px,${this.baseline}px)`;
+    }
+    showAndAdvance(element: SVGElement, advance: number) {
+      if (this.x + advance > this.rightMargin && this.x > this.leftMargin) {
+        this.carriageReturn();
+        this.lineFeed();
+      }
+      svg.appendChild(element);
+      element.style.transform = `translate(${this.x}px,${this.baseline}px)`;
+      this.x += advance;
     }
     show1(description: DescriptionOfLetter) {
       this.makeRoom(description);
       const element = description.makeElement();
       svg.appendChild(element);
       const { x, baseline } = this;
-      element.style.transform = `translate(${x}px,${baseline}px)`;
+      this.moveToCursor(element);
       this.advance(description);
       return { element, x, baseline };
     }
@@ -124,7 +141,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       const elementInfo = description.makeElements();
       elementInfo.forEach(({ element }) => {
         svg.appendChild(element);
-        element.style.transform = `translate(${this.x}px,${this.baseline}px)`;
+        this.moveToCursor(element);
       });
       this.advance(description);
       return elementInfo;
@@ -513,9 +530,9 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       text.length - 1,
       maxRoughness
     );
-    const elementInfo =[...text].flatMap((char, index) => {
+    const elementInfo = [...text].flatMap((char, index) => {
       writer.font = makeRoughFont(cubicFont, { roughness: roughness(index) });
-      return writer.splitAndShow(char);      
+      return writer.splitAndShow(char);
     });
     const distanceBefore = (index: number) => {
       if (index == 0) {
@@ -538,7 +555,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       },
       { totalLength: 0, maxLength: 0 }
     );
-  
+
     // Draw the letters as if a person were writing with a pen.
     // I.e. animate it to look like someone is writing.
     const lineLength = Math.ceil(maxLength) + 1;
@@ -579,6 +596,46 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       }
     }
     loopIt();
+  }
+  {
+    writer.font = baseFont;
+    writer.CRLF();
+    const out = [writer.show("Stop "), writer.show("Go")];
+    console.log(
+      out.map((word) =>
+        word
+          .map((letter) =>
+            [...letter.element.style.d].filter(
+              (possibleCommand) =>
+                possibleCommand.toLowerCase() != possibleCommand
+            )
+          )
+          .flat()
+          ./*sort().*/ join("")
+      )
+    );
+    function joinLetters(letters: readonly DescriptionOfLetter[]) {
+      let Δx = 0;
+      const Δy = 0;
+      const instructions = letters.map(({ shape, advance, fontMetrics }) => {
+        const result = { Δx, Δy, shape };
+        Δx += advance + fontMetrics.defaultKerning;
+        return result;
+      });
+      return { shape: PathShape.join(instructions), advance: Δx };
+    }
+    const stopShapeInfo = joinLetters(
+      out[0].map(({ description }) => description)
+    );
+    const goShapeInfo = joinLetters(
+      out[1].map(({ description }) => description)
+    );
+    writer.CRLF();
+    const stopElement = stopShapeInfo.shape.makeElement();
+    writer.showAndAdvance(stopElement, stopShapeInfo.advance);
+    writer.showSpace();
+    const goElement = goShapeInfo.shape.makeElement();
+    writer.showAndAdvance(goElement, goShapeInfo.advance);
   }
 }
 

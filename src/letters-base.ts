@@ -112,7 +112,7 @@ export class DescriptionOfLetter {
     /**
      * How far to advance the print head after printing this character.
      * In SVG units.
-     * Typically the "black" area of the character will start at x=0 and send at x=advance.
+     * Typically the "black" area of the character will start at x=0 and end at x=advance.
      */
     public readonly advance: number,
     public readonly fontMetrics: FontMetrics
@@ -134,18 +134,6 @@ export class DescriptionOfLetter {
   get d() {
     return this.shape.rawPath;
   }
-  private static makeElement(cssPath: string) {
-    const pathElement = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "path"
-    );
-    pathElement.style.d = cssPath;
-    if (pathElement.style.d == "") {
-      console.error(cssPath, pathElement);
-      throw new Error("wtf");
-    }
-    return pathElement;
-  }
   /**
    * Create a new element to draw this letter.
    * @returns This is always a <path> element.
@@ -156,7 +144,7 @@ export class DescriptionOfLetter {
    * manipulating paths.
    */
   makeElement(): SVGPathElement {
-    return DescriptionOfLetter.makeElement(this.cssPath);
+    return this.shape.makeElement();
   }
   /**
    *
@@ -165,7 +153,7 @@ export class DescriptionOfLetter {
   makeElements() {
     return this.shape.splitOnMove().map((innerShape) => ({
       innerShape,
-      element: DescriptionOfLetter.makeElement(innerShape.cssPath),
+      element: innerShape.makeElement(),
     }));
   }
 }

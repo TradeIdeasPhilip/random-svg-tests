@@ -305,7 +305,8 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     { roughness: 0.44, title: "Toggle (snap)" },
     { roughness: 0.5, title: "Skywriting" },
     { roughness: 0.54, title: "Do the Wave" },
-    { roughness: 0.64, title: "Blustery day" },
+    { roughness: 0.59, title: "Wavy lights" },
+    { roughness: 0.64, title: "Blustery day.i" },
   ].map((lineInfo) => {
     const { roughness, title } = lineInfo;
     writer.font = makeRoughFont(cubicFont, { roughness });
@@ -318,37 +319,46 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   const toggleRow = rowsOfLetters[1];
   const skywritingRow = rowsOfLetters[2];
   const waveRow = rowsOfLetters[3];
-  const blusteryRow = rowsOfLetters[4];
+  const lightsRow = rowsOfLetters[4];
+  const blusteryRow = rowsOfLetters[5];
   /**
    * On the screen this looks the same as the cubicFont font, but it includes
    * some extra M commands to match the output of rough.js.
    */
   const smoothFont = makeRoughFont(cubicFont, { roughness: 0 });
 
+  makeDivRect(lightsRow).style.fill = "black";
+  lightsRow.forEach(({ element }) => {
+    element.classList.add("lights");
+  });
+
   // Cycle between different rough versions of each letter.
   // All versions of all letters use the same roughness settings.
   // The speed and complexity of each letter are different from each other.
-  blusteryRow.forEach((letter) => {
-    /**
-     *
-     * @returns 50% chance of 0, 50% chance of 1.
-     */
-    function coinFlip() {
-      return (Math.random() + 0.5) | 0;
-    }
-    //letter.element.style.stroke="red";
-    const pathCount = 3 + coinFlip() + coinFlip() + coinFlip();
-    const frames = initializedArray(pathCount, () => ({
-      d: letter.description.cssPath,
-    }));
-    frames.push(frames[0]);
-    const maxDuration = (pathCount * 10000) / 3;
-    const minDuration = maxDuration / 8;
-    const duration = Math.exp(
-      lerp(Math.log(minDuration), Math.log(maxDuration), Math.random())
-    );
-    letter.element.animate(frames, { duration, iterations: Infinity });
+  [lightsRow, blusteryRow].forEach((row) => {
+    row.forEach((letter) => {
+      /**
+       *
+       * @returns 50% chance of 0, 50% chance of 1.
+       */
+      function coinFlip() {
+        return (Math.random() + 0.5) | 0;
+      }
+      //letter.element.style.stroke="red";
+      const pathCount = 3 + coinFlip() + coinFlip() + coinFlip();
+      const frames = initializedArray(pathCount, () => ({
+        d: letter.description.cssPath,
+      }));
+      frames.push(frames[0]);
+      const maxDuration = (pathCount * 10000) / 3;
+      const minDuration = maxDuration / 8;
+      const duration = Math.exp(
+        lerp(Math.log(minDuration), Math.log(maxDuration), Math.random())
+      );
+      letter.element.animate(frames, { duration, iterations: Infinity });
+    });
   });
+
   // Snaps between normal and rough.
   // There is a short animation period and a long period of no animation.
   toggleRow.forEach((letter) => {
@@ -637,6 +647,15 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     const goElement = goShapeInfo.shape.makeElement();
     writer.showAndAdvance(goElement, goShapeInfo.advance);
   }
+  // Automatically adjust the size of the SVG to fit everything I've added so far.
+  if (writer.x > writer.rightMargin) {
+    writer.CRLF();
+  }
+  svg.viewBox.baseVal.height =
+    writer.baseline + writer.font.get("0")!.fontMetrics.bottom;
 }
 
-// TODO:  Handwriting on a chalkboard effect as in https://www.youtube.com/watch?v=8K0i8odwA9Q
+// TODO:  Steal the handwriting on a chalkboard effect as in https://www.youtube.com/watch?v=8K0i8odwA9Q
+// And a lot of other effects from aftereffects.  Once I click on that video I see a lot of other
+// effects.
+//

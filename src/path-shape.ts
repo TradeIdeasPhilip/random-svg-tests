@@ -33,8 +33,17 @@ type PathCommand = {
    * @param destination Add the modified command to this.
    */
   toCubic(destination: PathShape): void;
-  readonly reversed?: string;
 };
+
+abstract class PathSegment {
+  protected constructor(
+    protected readonly previous: PathSegment | undefined,
+    public readonly endX: number,
+    public readonly endY: number
+  ) {}
+  abstract get asString(): string;
+}
+PathSegment;
 
 const afterCommand = " *";
 const number = "(-?[0-9]+.?[0-9]*)";

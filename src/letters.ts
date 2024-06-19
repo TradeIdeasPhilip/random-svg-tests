@@ -6,7 +6,7 @@ import { makeLineFont } from "./line-font";
 import rough from "roughjs";
 import { Options } from "roughjs/bin/core";
 import { DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
-import { lerp } from "./utility";
+import { assertFinite, lerp } from "./utility";
 
 const svg = getById("main", SVGSVGElement);
 
@@ -59,7 +59,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       const drawable = generator.path(baseDescription.d);
       const allPathInfo = generator.toPaths(drawable);
       const pathStrings = allPathInfo.map((pathInfo) => pathInfo.d);
-      return PathShape.fromStrings(...pathStrings);
+      return PathShape.fromStrings(pathStrings);
     };
     const newDescription = new DescriptionOfLetter(
       shape,
@@ -167,12 +167,20 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       return result;
     }
     splitAndShow(message: string) {
+      // This is a really bad interface.  show() vs splitAndShow()
+      // I knew that from the beginning.  Now that I've been manipulating paths more I see the answer.
+      // One item should be responsible for layout:  Assign an x and y coordinate to each letter and remember where we left off.
+      // Another should be responsible for displaying things that are in that format.
+      // Some things (like splitting each character to PathSegments) should be done to the the intermediate data structure between those two calls.
+      // So the structure will have to be flexible.  E.g. allow for multiple PathSegment objects per record.
+      // And other things can consume this data.  E.g. this should be a valid input to a lot of special effects.
+      // Or an input to the thing that merges multiple paths into one path.
+      // TODO fix this soon.
       const invalid = new Set<string>();
       const result = [...message].flatMap((char) => {
         const description = this.getDescription(char);
         if (description) {
-          const elements = this.splitAndShow1(description);
-          return elements;
+          return this.splitAndShow1(description);
         } else if (char == " ") {
           this.showSpace();
           return [];
@@ -236,11 +244,13 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       previous.endX - current.startX,
       previous.endY - current.startY
     );
+    assertFinite(distance);
     return distance;
   };
   const { totalLength, maxLength } = elementInfo.reduce(
     ({ totalLength, maxLength }, { element }, index) => {
       const elementLength = element.getTotalLength();
+      assertFinite(elementLength);
       totalLength += distanceBefore(index) + elementLength;
       maxLength = Math.max(maxLength, elementLength);
       return { totalLength, maxLength };
@@ -554,6 +564,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
         previous.endX - current.startX,
         previous.endY - current.startY
       );
+      assertFinite(distance);
       return distance;
     };
     const { totalLength, maxLength } = elementInfo.reduce(

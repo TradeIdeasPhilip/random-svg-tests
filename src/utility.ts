@@ -63,3 +63,16 @@ export function dateToFileName(date: Date) {
 export function lerp(at0: number, at1: number, where: number) {
   return at0 + (at1 - at0) * where;
 }
+
+/**
+ * This is a wrapper around `isFinite()`.
+ * @param values the values to check.
+ * @throws If any of the values are not finite, an error is thrown.
+ */
+export function assertFinite(...values: number[]): void {
+  values.forEach((value) => {
+    if (!isFinite(value)) {
+      throw new Error("wtf");
+    }
+  });
+}

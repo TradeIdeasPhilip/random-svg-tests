@@ -72,6 +72,30 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
 }
 
 {
+  class Layout {
+    leftMargin = 5;
+    rightMargin = 95;
+    x = this.leftMargin;
+    baseline = 10;
+    lineHeight = 7.5;
+    carriageReturn() {
+      this.x = this.leftMargin;
+    }
+    lineFeed(lineCount = 1) {
+      this.baseline += this.lineHeight * lineCount;
+    }
+    CRLF() {
+      this.carriageReturn();
+      this.lineFeed(4 / 3);
+    }
+    font = makeLineFont(5);
+    getDescription(key: string) {
+      return this.font.get(key);
+    }
+    private static word = /^ *([^ ]+ *)(.*)$/;
+    addText(toAdd: string) {}
+  }
+
   class Writer {
     leftMargin = 5;
     rightMargin = 95;
@@ -315,7 +339,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     { roughness: 0.44, title: "Toggle (snap)" },
     { roughness: 0.5, title: "Skywriting" },
     { roughness: 0.54, title: "Do the Wave" },
-    { roughness: 0.59, title: "Wavy lights" },
+    { roughness: 0.59, title: "Wavy Lights." },
     { roughness: 0.64, title: "Blustery day.i" },
   ].map((lineInfo) => {
     const { roughness, title } = lineInfo;
@@ -561,7 +585,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       const current = elementInfo[index].innerShape;
       const previous = elementInfo[index - 1].innerShape;
       const distance = Math.hypot(
-        previous.endX - current.startX,
+        previous.endX - current.startX, // Used HERE (https://www.youtube.com/watch?v=4yVOFGLoeIE for details)
         previous.endY - current.startY
       );
       assertFinite(distance);

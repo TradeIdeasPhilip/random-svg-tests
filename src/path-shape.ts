@@ -404,16 +404,17 @@ export class PathShape {
   }
   readonly segments: readonly PathSegment[];
   get endX() {
+    // Defined HERE (https://www.youtube.com/watch?v=4yVOFGLoeIE for details)
     return this.segments.at(-1)?.endX;
   }
   get endY() {
     return this.segments.at(-1)?.endY;
   }
   get startX() {
-    return this.segments.at(-1)?.segmentStartX;
+    return this.segments.at(0)?.segmentStartX;
   }
   get startY() {
-    return this.segments.at(-1)?.segmentStartY;
+    return this.segments.at(0)?.segmentStartY;
   }
   /**
    *
@@ -472,6 +473,7 @@ export class PathShape {
   splitOnMove() {
     return [...this.segments].map(
       (segment) =>
+        // Asserted HERE (https://www.youtube.com/watch?v=4yVOFGLoeIE for details)
         new PathShape([segment]) as PathShape & {
           readonly startX: number;
           readonly startY: number;

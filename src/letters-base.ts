@@ -148,7 +148,7 @@ export class DescriptionOfLetter {
   }
   /**
    *
-   * @returns One element part continuous part of the path.
+   * @returns One element per continuous part of the path.
    */
   makeElements() {
     return this.shape.splitOnMove().map((innerShape) => ({

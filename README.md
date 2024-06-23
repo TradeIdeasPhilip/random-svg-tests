@@ -12,6 +12,44 @@ Some pages worked and others didn't.
 I do most of my testing on Chrome on a Mac.
 I occasionally test on an Android phone.
 
+## Maintaining the Frame Rate
+
+Here's a problem I keep encountering:
+How hard can I push my animations?
+How many balls, or shadows, trails, etc. do I need to do a good job?
+How many can I get away with before I break things?
+
+Usually, I tune things manually.
+I add more or fewer of different elements.
+I stare at the screen and decide what I like.
+I only pay attention to the frame rate when it looks bad.
+
+For the most part I want to keep the framerate "good."
+I will sacrifice any optional features in the animations to maintain the framerate.
+But what exactly does "good" mean?
+
+According to [MDN](https://developer.mozilla.org/en-US/docs/Web/Performance/Animation_performance_and_frame_rate):
+> It's commonly accepted that 60 frames per second is the rate at which animations will appear smooth.
+
+I was hoping to see something more explicit, like "the browser always tries to maintain 60 frames per second."
+Or I could read a property to get the ideal frame rate.
+I don't even know if the ideal frame rate can change over time.
+
+My concern is as follows:
+I assume that the browser is trying to give me 60 frames per second.
+Any time performance gets below 60 fps I adjust the graphics to be simpler.
+I don't know exactly how much I need to adjust, so I'd use a simple feedback control system.
+I.e. I'll guess and keep trying until the results are reasonable.
+
+What if I can't really get 60 fps?
+Maybe I'm using the browser embedded in OBS which is set to 30 ftp by default?
+Maybe the system is busy with unrelated tasks, and we could never hope for more than 45 fps.
+In these cases I'm afraid my simple control system will keep simplifying my animations until there's nothing left.
+
+I want to understand and monitor the health of the system, so I can push the limits.
+I need to know what's a reasonable FPS, so I know how to interpret the current FPS.
+I haven't found any discussion of this on the internet.
+
 ## Letters 
 [This](https://tradeideasphilip.github.io/random-svg-tests/letters.html) shows some some productive work I've done with SVG and text.
 [Here](https://www.youtube.com/watch?v=HOfTgohh90w) is a video showing off my recent progress.

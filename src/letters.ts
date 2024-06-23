@@ -72,11 +72,11 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
 }
 
 {
-  class Layout {
-    leftMargin = 5;
+  class TextLayout {
+    leftMargin = 0;
     rightMargin = 95;
     x = this.leftMargin;
-    baseline = 10;
+    baseline = 0;
     lineHeight = 7.5;
     carriageReturn() {
       this.x = this.leftMargin;
@@ -92,8 +92,91 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     getDescription(key: string) {
       return this.font.get(key);
     }
-    private static word = /^ *([^ ]+ *)(.*)$/;
-    addText(toAdd: string) {}
+    static join(letters:{
+      readonly x: number;
+      readonly baseline: number;
+      readonly description: { readonly shape: PathShape };
+    }[]){
+      return new PathShape(
+      letters.flatMap(letter=> 
+       letter.description.shape.translate(letter.x, letter.baseline).segments
+      ));
+    }
+    displayText<
+      T extends {
+        readonly x: number;
+        readonly baseline: number;
+        readonly description: { readonly shape: PathShape };
+      }
+    >(letters: readonly T[]) {
+      return letters.map((letter) => {
+        const shape = letter.description.shape;
+        const element = shape.makeElement();
+        svg.appendChild(element);
+        element.style.transform = `translate(${this.x}px,${this.baseline}px)`;
+        return { ...letter, shape, element };
+      });
+    }
+    private static wordBreak = /^( +|[^ ]+)(.*)/;
+    addText(toAdd: string) {
+      const invalid = new Set<string>();
+      const result: {
+        x: number;
+        baseline: number;
+        description: DescriptionOfLetter;
+        char: string;
+      }[] = [];
+      while (true) {
+        const pieces = TextLayout.wordBreak.exec(toAdd);
+        if (!pieces) {
+          break;
+        }
+        const thisWord = pieces[1];
+        toAdd = pieces[2];
+        if (thisWord[0] == " ") {
+          this.addSpace(thisWord.length);
+        } else {
+          /**
+           * Position relative to the first character.
+           */
+          let x = 0;
+          /**
+           * Placeholder.
+           */
+          const baseline = 0;
+          const wordInfo = [...thisWord].flatMap((char) => {
+            const description = this.getDescription(char);
+            if (description) {
+              const width =
+                description.advance + description.fontMetrics.defaultKerning;
+              const charInfo = { x,width, baseline, description, char };
+              x += width;
+              return charInfo;
+            } else {
+              invalid.add(char);
+              return [];
+            }
+          });
+          if (this.x + x > this.rightMargin && this.x > this.leftMargin) {
+            this.carriageReturn();
+            this.lineFeed();
+          }
+          wordInfo.forEach((charInfo) => {
+            charInfo.x += this.x;
+            charInfo.baseline = this.baseline;
+            result.push(charInfo);
+          });
+          this.x += x;
+        }
+      }
+      if (invalid.size > 0) {
+        console.warn(invalid);
+      }
+      return result;
+    }
+    addSpace(numberOfSpaces = 1) {
+      this.x += this.font.get("0")!.fontMetrics.spaceWidth * numberOfSpaces;
+    }
   }
 
   class Writer {
@@ -645,35 +728,19 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   {
     writer.font = baseFont;
     writer.CRLF();
-    const out = [writer.show("Stop "), writer.show("Go")];
-    console.log(
-      out.map((word) =>
-        word
-          .map((letter) =>
-            [...letter.element.style.d].filter(
-              (possibleCommand) =>
-                possibleCommand.toLowerCase() != possibleCommand
-            )
-          )
-          .flat()
-          ./*sort().*/ join("")
-      )
+    function makeIt(it :string) {
+      const layout = new TextLayout();
+      layout.font=baseFont;
+      const a = layout.addText(it);
+      const shape = TextLayout.join(a);
+const advance = layout.x; 
+      return {shape, advance};
+    } 
+    const stopShapeInfo = makeIt(
+      "Stop"
     );
-    function joinLetters(letters: readonly DescriptionOfLetter[]) {
-      let Δx = 0;
-      const Δy = 0;
-      const instructions = letters.map(({ shape, advance, fontMetrics }) => {
-        const result = { Δx, Δy, shape };
-        Δx += advance + fontMetrics.defaultKerning;
-        return result;
-      });
-      return { shape: PathShape.join(instructions), advance: Δx };
-    }
-    const stopShapeInfo = joinLetters(
-      out[0].map(({ description }) => description)
-    );
-    const goShapeInfo = joinLetters(
-      out[1].map(({ description }) => description)
+    const goShapeInfo = makeIt(
+"Go"
     );
     writer.CRLF();
     const stopElement = stopShapeInfo.shape.makeElement();

@@ -133,6 +133,43 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       add("#", shape, advance);
     }
     {
+      // MARK: @
+      const third = digitWidth / 2;
+      const advance = 3 * third;
+      const left = 0;
+      const leftCenter = third;
+      const center = advance / 2;
+      const rightCenter = 2 * third;
+      const right = advance;
+      const top = capitalTop + (fontMetrics.mHeight - advance) / 2; // And assert (left==0);
+      const topMiddle = top + leftCenter;
+      const middle = top + center;
+      const bottomMiddle = top + rightCenter;
+      const bottom = top + right;
+      const shape = new PathShape([
+        PathSegment.M(rightCenter, middle)
+          .Q_VH(center, topMiddle)
+          .Q_HV(leftCenter, middle)
+          .Q_VH(center, bottomMiddle)
+
+          .Q_HV(rightCenter, middle)
+          .Q_VH((rightCenter + right) / 2, bottomMiddle)
+
+          //.H(rightCenter)
+          //.H((rightCenter+right)/2)
+          .Q_HV(right, middle)
+          .V((topMiddle + middle) / 2)
+          //.Q_HV(right, topMiddle)
+          .Q_VH(center, top)
+          .Q_HV(left, middle)
+          .Q_VH(center, bottom)
+          .H(right),
+      ]);
+      // Interesting thought:  Adjust things when the boldness (strokeWidth vs mHeight) gets too high, and we're worried
+      // about losing detail, we grow.
+      add("@", shape, advance);
+    }
+    {
       // MARK: 0
       const shape = new PathShape([
         PathSegment.M(center, capitalTop)

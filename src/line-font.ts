@@ -151,22 +151,15 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
           .Q_VH(center, topMiddle)
           .Q_HV(leftCenter, middle)
           .Q_VH(center, bottomMiddle)
-
           .Q_HV(rightCenter, middle)
           .Q_VH((rightCenter + right) / 2, bottomMiddle)
-
-          //.H(rightCenter)
-          //.H((rightCenter+right)/2)
           .Q_HV(right, middle)
           .V((topMiddle + middle) / 2)
-          //.Q_HV(right, topMiddle)
           .Q_VH(center, top)
           .Q_HV(left, middle)
           .Q_VH(center, bottom)
-          .H(right),
+          .H((rightCenter + right) / 2),
       ]);
-      // Interesting thought:  Adjust things when the boldness (strokeWidth vs mHeight) gets too high, and we're worried
-      // about losing detail, we grow.
       add("@", shape, advance);
     }
     {
@@ -698,6 +691,26 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       PathSegment.M(left, capitalTop).H(advance).L(left, baseline).H(advance),
     ]);
     add("Z", shape, advance);
+  }
+  // MARK: %
+  {
+    const radius = digitWidth / 4;
+    const advance = digitWidth * 1.2;
+    const topCircle = PathSegment.M(radius * 2, capitalTop + radius)
+      .Q_VH(radius, capitalTop)
+      .Q_HV(0, capitalTop + radius)
+      .Q_VH(radius, capitalTop + radius * 2)
+      .Q_HV(radius * 2, capitalTop + radius);
+    const bottomCircle = topCircle.translate(
+      advance - radius * 2,
+      fontMetrics.mHeight - radius * 2
+    );
+    const shape = new PathShape([
+      topCircle,
+      PathSegment.M(advance, capitalTop).L(left, baseline),
+      bottomCircle,
+    ]);
+    add("%", shape, advance);
   }
   // MARK: /
   {

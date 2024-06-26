@@ -92,15 +92,20 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     getDescription(key: string) {
       return this.font.get(key);
     }
-    static join(letters:{
-      readonly x: number;
-      readonly baseline: number;
-      readonly description: { readonly shape: PathShape };
-    }[]){
+    static join(
+      letters: {
+        readonly x: number;
+        readonly baseline: number;
+        readonly description: { readonly shape: PathShape };
+      }[]
+    ) {
       return new PathShape(
-      letters.flatMap(letter=> 
-       letter.description.shape.translate(letter.x, letter.baseline).segments
-      ));
+        letters.flatMap(
+          (letter) =>
+            letter.description.shape.translate(letter.x, letter.baseline)
+              .segments
+        )
+      );
     }
     displayText<
       T extends {
@@ -149,7 +154,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
             if (description) {
               const width =
                 description.advance + description.fontMetrics.defaultKerning;
-              const charInfo = { x,width, baseline, description, char };
+              const charInfo = { x, width, baseline, description, char };
               x += width;
               return charInfo;
             } else {
@@ -378,7 +383,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       /**
        * Number of ms that it takes to do the writing.
        */
-      const writeTime = 20000;
+      const writeTime = 30000;
       // const totalTime = 12000;
       let lengthSoFar = 0;
       let lastAnimation: Animation;
@@ -728,26 +733,29 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   {
     writer.font = baseFont;
     writer.CRLF();
-    function makeIt(it :string) {
+    function makeIt(it: string) {
       const layout = new TextLayout();
-      layout.font=baseFont;
+      layout.font = baseFont;
       const a = layout.addText(it);
       const shape = TextLayout.join(a);
-const advance = layout.x; 
-      return {shape, advance};
-    } 
-    const stopShapeInfo = makeIt(
-      "Stop"
-    );
-    const goShapeInfo = makeIt(
-"Go"
-    );
+      const advance = layout.x;
+      return { shape, advance };
+    }
+    const stopShapeInfo = makeIt("Stop");
+    const goShapeInfo = makeIt("Go");
     writer.CRLF();
     const stopElement = stopShapeInfo.shape.makeElement();
     writer.showAndAdvance(stopElement, stopShapeInfo.advance);
     writer.showSpace();
     const goElement = goShapeInfo.shape.makeElement();
     writer.showAndAdvance(goElement, goShapeInfo.advance);
+    const TODO = goShapeInfo.shape.matchForMorph(stopShapeInfo.shape);
+    console.log({
+      goSegmentsInitial: goShapeInfo.shape.segments,
+      stopSegmentsInitial: stopShapeInfo.shape.segments,
+      goSegmentsFinal: TODO.thisSegments,
+      stopSegmentsFinal: TODO.otherSegments,
+    });
   }
   // Automatically adjust the size of the SVG to fit everything I've added so far.
   if (writer.x > writer.rightMargin) {

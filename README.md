@@ -4,6 +4,10 @@ I'm having fun.
 It's nice to have a place to doodle.
 See these running at https://tradeideasphilip.github.io/random-svg-tests/.
 
+A lot of SVG is built on top of Bézier curves.
+[This](https://pomax.github.io/bezierinfo/) is _the_ guide to all things Bézier.
+I wish I'd found it sooner.
+
 ## Status and Testing
 
 I've heard some complaints from an iPhone user.

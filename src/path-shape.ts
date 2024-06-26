@@ -1,4 +1,4 @@
-import { parseFloatX } from "phil-lib/misc";
+import { count, parseFloatX, zip } from "phil-lib/misc";
 import { assertFinite, lerp } from "./utility";
 
 /**
@@ -19,6 +19,20 @@ export abstract class PathSegment {
     public readonly endY: number
   ) {
     assertFinite(segmentStartX, segmentStartY, endX, endY);
+  }
+
+  /**
+   *
+   * @returns A PathSegment containing only the last command from `this`, with a new M command so this can be be used without the rest of the PathSegment.
+   * `remaining` and `last` together will display the same as just `this`.
+   */
+  popCommand(): {
+    remaining: PathSegment | undefined;
+    last: PathSegment;
+  } {
+    // By default assume there is nothing else to break up.
+    // Return what's left as the last element, and undefined to say that nothing else is remaining.
+    return { remaining: undefined, last: this };
   }
 
   /**
@@ -210,6 +224,27 @@ abstract class ContinuingCommand extends PathSegment {
   ) {
     super(previous.segmentStartX, previous.segmentStartY, endX, endY);
   }
+  override popCommand(): {
+    remaining: PathSegment | undefined;
+    last: PathSegment;
+  } {
+    const remaining = this.previous;
+    if (!(remaining instanceof ContinuingCommand)) {
+      return super.popCommand();
+    }
+    const last = this.duplicateCommand(
+      PathSegment.M(this.segmentStartX, this.segmentStartY)
+    );
+    return { remaining, last };
+  }
+  /**
+   * Copy a command as is to the end of an existing PathSegment.
+   * This is typically used when changing only one command in a PathSegment.
+   * @param newPrevious The base to build on top of.
+   */
+  protected abstract duplicateCommand(
+    newPrevious: PathSegment
+  ): ContinuingCommand;
   override *[Symbol.iterator](): Iterator<PathSegment> {
     yield* this.previous;
     yield this;
@@ -226,6 +261,9 @@ abstract class ContinuingCommand extends PathSegment {
 }
 
 class HCommand extends ContinuingCommand {
+  protected override duplicateCommand(newPrevious: PathSegment) {
+    return new HCommand(newPrevious, this.endX);
+  }
   override translate(Δx: number, Δy: number): PathSegment {
     return new HCommand(this.previous.translate(Δx, Δy), this.endX + Δx);
   }
@@ -248,6 +286,9 @@ class HCommand extends ContinuingCommand {
 }
 
 class VCommand extends ContinuingCommand {
+  protected override duplicateCommand(newPrevious: PathSegment) {
+    return new VCommand(newPrevious, this.endY);
+  }
   override translate(Δx: number, Δy: number): PathSegment {
     return new VCommand(this.previous.translate(Δx, Δy), this.endY + Δy);
   }
@@ -270,6 +311,9 @@ class VCommand extends ContinuingCommand {
 }
 
 class LCommand extends ContinuingCommand {
+  protected override duplicateCommand(newPrevious: PathSegment) {
+    return new LCommand(newPrevious, this.endX, this.endY);
+  }
   override translate(Δx: number, Δy: number): PathSegment {
     return new LCommand(
       this.previous.translate(Δx, Δy),
@@ -296,6 +340,9 @@ class LCommand extends ContinuingCommand {
 }
 
 class QCommand extends ContinuingCommand {
+  protected override duplicateCommand(newPrevious: PathSegment) {
+    return new QCommand(newPrevious, this.x1, this.y1, this.endX, this.endY);
+  }
   override translate(Δx: number, Δy: number): PathSegment {
     return new QCommand(
       this.previous.translate(Δx, Δy),
@@ -332,6 +379,47 @@ class QCommand extends ContinuingCommand {
 }
 
 class CCommand extends ContinuingCommand {
+  /**
+   * Break one or more commands into a smaller pieces.  The result will
+   * look the same, but the extra pieces can help some special effects.
+   *
+   * This is different from PathSegment.popCommand().  This function breaks
+   * one or more commands into multiple commands.  This function returns
+   * a single PathSegment with more commands than the original.
+   *
+   * PathSegment.popCommand() breaks a PathSegment into two PathSegment
+   * objects.  That creates a new M command but leaves all of the drawing
+   * commands alone.
+   * @param numberOfPieces Turn this command into how many commands?
+   * 1 would be a no-op and will (probably) make a copy of `this`.
+   *
+   * If you provide multiple values, the first will apply to `this`
+   * command directly, the second will apply to `this.previous`, the
+   * third to `this.previous.previous`, etc.
+   * @returns A new `CCommand` object that looks the same as the original
+   * but has more commands in it.
+   * @throws If one of the `previous` items does not support this
+   * function, but it needs to, this function will throw an error.
+   */
+  splitIndividualCommands(...numberOfPieces: number[]) {
+    // See https://pomax.github.io/bezierinfo/#splitting for the algorithm for splitting a single command.
+    const current = numberOfPieces.shift();
+    throw new Error("TODO");
+    if (!current) {
+      return;
+    }
+  }
+  protected override duplicateCommand(newPrevious: PathSegment) {
+    return new CCommand(
+      newPrevious,
+      this.x1,
+      this.y1,
+      this.x2,
+      this.y2,
+      this.x3,
+      this.y3
+    );
+  }
   override translate(Δx: number, Δy: number): PathSegment {
     return new CCommand(
       this.previous.translate(Δx, Δy),
@@ -393,14 +481,64 @@ const cCommand = new RegExp(
  * I.e. to create a string like "path('M 1,2 L 3,5')".
  */
 export class PathShape {
-  matchForMorph(_other: PathShape) {
+  matchForMorph(other: PathShape) {
+    const thisSegments = [...this.segments];
+    const otherSegments = [...other.segments];
+    // Consider getting rid of segments with nothing but an M.
+    if (thisSegments.length != otherSegments.length) {
+      // The number of M commands don't match.
+      // Add additional M commands to make them match.
+      // Because I'm using rounded corners and rounded end caps, this will not change the path's appearance.
+      const { shorter, longer } =
+        thisSegments.length < otherSegments.length
+          ? { shorter: thisSegments, longer: otherSegments }
+          : { shorter: otherSegments, longer: thisSegments };
+      if (shorter.length == 0) {
+        // One list of segments was completely empty and the other was not.
+        throw new Error("can't morph something into nothing");
+      }
+      let remainingToAdd = longer.length - shorter.length;
+      const rightOfShorter: PathSegment[] = [];
+      while (remainingToAdd > 0) {
+        const old = shorter.pop();
+        if (!old) {
+          // Need to break existing commands into multiple commands then spit each into its own PathSegment
+          throw new Error("TODO");
+        }
+        const { remaining, last } = old.popCommand();
+        rightOfShorter.unshift(last);
+        if (remaining) {
+          shorter.push(remaining);
+          remainingToAdd--;
+        }
+      }
+      shorter.push(...rightOfShorter);
+    }
+    if (thisSegments.length != otherSegments.length) {
+      throw new Error("wtf");
+    }
+    for (const [thisSegment, otherSegment, index] of zip(
+      thisSegments,
+      otherSegments,
+      count()
+    )) {
+      const thisCommands = [...thisSegment];
+      const otherCommands = [...otherSegment];
+      if (thisCommands.length != otherCommands.length) {
+        const [shorter, longer] =
+          thisCommands.length < otherCommands.length
+            ? [thisCommands, otherCommands]
+            : [otherCommands, thisCommands];
+        const needToAdd = longer.length - shorter.length;
+        const toSplit = shorter.pop();
+      }
+    }
     //TODO!!!  Implement this next!
-    /* If both commands are moves, copy them both and move on.
-     * If one command is a move, copy it and insert a new move on the other side.
-     * If both commands are the same type, copy them as is.
+    /* If both commands are the same type, copy them as is.
      * Call toCubic on both commands.
      * What if one is longer than the other???!
      */
+    return { thisSegments, otherSegments };
   }
   readonly segments: readonly PathSegment[];
   get endX() {

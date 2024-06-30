@@ -1,55 +1,237 @@
-import { count, parseFloatX, zip } from "phil-lib/misc";
+import { parseFloatX } from "phil-lib/misc";
 import { assertFinite, lerp } from "./utility";
 
-/**
- * This class represents a _continuous_ segment of a path.
- * It always starts with an M command.
- * It contains other commands, but no more M's.
- *
- * `PathSegment` objects are read only, so they can easily
- * be shared and reused.  Operations like H() and V() will
- * create a new `PathSegment` object rather than modifying
- * the existing object.
- */
-export abstract class PathSegment {
-  protected constructor(
-    public readonly segmentStartX: number,
-    public readonly segmentStartY: number,
-    public readonly endX: number,
-    public readonly endY: number
-  ) {
-    assertFinite(segmentStartX, segmentStartY, endX, endY);
-  }
-
+type Command = {
   /**
+   * The initial x value.
    *
-   * @returns A PathSegment containing only the last command from `this`, with a new M command so this can be be used without the rest of the PathSegment.
-   * `remaining` and `last` together will display the same as just `this`.
+   * We do not have to write this as part of the command.
+   * SVG knows this from the end of the previous command.
+   * We us this for things like reversing a command or splitting a command into multiple commands.
    */
-  popCommand(): {
-    remaining: PathSegment | undefined;
-    last: PathSegment;
-  } {
-    // By default assume there is nothing else to break up.
-    // Return what's left as the last element, and undefined to say that nothing else is remaining.
-    return { remaining: undefined, last: this };
-  }
-
+  readonly x0: number;
   /**
-   * This property refers to this individual command.
+   * The initial y value.
+   *
+   * We do not have to write this as part of the command.
+   * SVG knows this from the end of the previous command.
+   * We us this for things like reversing a command or splitting a command into multiple commands.
    */
-  protected abstract get asString(): string;
-  abstract translate(Δx: number, Δy: number): PathSegment;
-  abstract toCubic(): PathSegment;
-  abstract [Symbol.iterator](): Iterator<PathSegment>;
-
+  readonly y0: number;
   /**
-   * This property refers to the entire path segment.
+   * The final x value.
+   * This will be x0 for the next command.
    */
-  get rawPath() {
-    return [...this].map((segment) => segment.asString).join(" ");
-  }
+  readonly x: number;
+  /**
+   * The final y value.
+   * This will be y0 for the next command.
+   */
+  readonly y: number;
+  readonly incomingAngle: number;
+  readonly outgoingAngle: number;
+  /**
+   * E.g. "C", "Q", "L", etc.
+   *
+   * Never "M".  "M" commands get added at a later stage.
+   */
+  readonly command: string;
+  /**
+   * E.g. "H 5", "L 2,3", etc.
+   */
+  readonly asString: string;
+  translate(Δx: number, Δy: number): Command;
+  toCubic(): Command;
+  // split into pieces
+};
 
+class HCommand implements Command {
+  readonly y: number;
+  constructor(
+    public readonly x0: number,
+    public readonly y0: number,
+    public readonly x: number
+  ) {
+    assertFinite(x0, y0, x);
+    this.y = y0;
+    this.asString = `H ${x}`;
+  }
+  readonly incomingAngle = NaN; // TODO
+  readonly outgoingAngle = NaN; // TODO
+  readonly command = "H";
+  readonly asString: string;
+  translate(Δx: number, Δy: number): Command {
+    return new HCommand(this.x0 + Δx, this.y0 + Δy, this.x + Δx);
+  }
+  toCubic(): Command {
+    return new CCommand(
+      this.x0,
+      this.y0,
+      lerp(this.x0, this.x, 1 / 3),
+      this.y0,
+      lerp(this.x0, this.x, 2 / 3),
+      this.y0,
+      this.x,
+      this.y0
+    );
+  }
+}
+
+class VCommand implements Command {
+  readonly x: number;
+  constructor(
+    public readonly x0: number,
+    public readonly y0: number,
+    public readonly y: number
+  ) {
+    assertFinite(x0, y0, y);
+    this.x = x0;
+    this.asString = `V ${y}`;
+  }
+  readonly incomingAngle = NaN; // TODO
+  readonly outgoingAngle = NaN; // TODO
+  readonly command = "V";
+  readonly asString: string;
+  translate(Δx: number, Δy: number): Command {
+    return new VCommand(this.x0 + Δx, this.y0 + Δy, this.y + Δy);
+  }
+  toCubic(): Command {
+    return new CCommand(
+      this.x0,
+      this.y0,
+      this.x0,
+      lerp(this.y0, this.y, 1 / 3),
+      this.x0,
+      lerp(this.y0, this.y, 2 / 3),
+      this.x0,
+      this.y
+    );
+  }
+}
+
+class LCommand implements Command {
+  constructor(
+    public readonly x0: number,
+    public readonly y0: number,
+    public readonly x: number,
+    public readonly y: number
+  ) {
+    assertFinite(x0, y0, x, y);
+    this.asString = `L ${x},${y}`;
+  }
+  readonly incomingAngle = NaN; // TODO
+  readonly outgoingAngle = NaN; // TODO
+  readonly command = "L";
+  readonly asString: string;
+  translate(Δx: number, Δy: number): Command {
+    return new LCommand(this.x0 + Δx, this.y0 + Δy, this.x + Δx, this.y + Δy);
+  }
+  toCubic(): Command {
+    return new CCommand(
+      this.x0,
+      this.y0,
+      lerp(this.x0, this.x, 1 / 3),
+      lerp(this.y0, this.y, 1 / 3),
+      lerp(this.x0, this.x, 2 / 3),
+      lerp(this.y0, this.y, 2 / 3),
+      this.x,
+      this.y
+    );
+  }
+}
+
+class QCommand implements Command {
+  constructor(
+    public readonly x0: number,
+    public readonly y0: number,
+    public readonly x1: number,
+    public readonly y1: number,
+    public readonly x: number,
+    public readonly y: number
+  ) {
+    assertFinite(x0, y0, x1, y1, x, y);
+    this.asString = `Q ${x1},${y1} ${x},${y}`;
+  }
+  readonly incomingAngle = NaN; // TODO
+  readonly outgoingAngle = NaN; // TODO
+  readonly command = "Q";
+  readonly asString: string;
+  translate(Δx: number, Δy: number): Command {
+    return new QCommand(
+      this.x0 + Δx,
+      this.y0 + Δy,
+      this.x1 + Δx,
+      this.y1 + Δy,
+      this.x + Δx,
+      this.y + Δy
+    );
+  }
+  toCubic(): Command {
+    return new CCommand(
+      this.x0,
+      this.y0,
+      lerp(this.x0, this.x1, 2 / 3),
+      lerp(this.y0, this.y1, 2 / 3),
+      lerp(this.x, this.x1, 2 / 3),
+      lerp(this.y, this.y1, 2 / 3),
+      this.x,
+      this.y
+    );
+  }
+}
+
+class CCommand implements Command {
+  constructor(
+    public readonly x0: number,
+    public readonly y0: number,
+    public readonly x1: number,
+    public readonly y1: number,
+    public readonly x2: number,
+    public readonly y2: number,
+    public readonly x: number,
+    public readonly y: number
+  ) {
+    assertFinite(x0, y0, x1, y1, x2, y2, x, y);
+    this.asString = `C ${x1},${y1} ${x2},${y2} ${x},${y}`;
+  }
+  readonly incomingAngle = NaN; // TODO
+  readonly outgoingAngle = NaN; // TODO
+  readonly command = "C";
+  readonly asString: string;
+  translate(Δx: number, Δy: number): Command {
+    return new CCommand(
+      this.x0 + Δx,
+      this.y0 + Δy,
+      this.x1 + Δx,
+      this.y1 + Δy,
+      this.x2 + Δx,
+      this.y2 + Δy,
+      this.x + Δx,
+      this.y + Δy
+    );
+  }
+  toCubic(): Command {
+    return this;
+  }
+}
+
+/**
+ * This class helps you build a path in a somewhat traditional way.
+ * Start with an M, all other commands start from where the previous command ended.
+ */
+export class PathBuilder {
+  /**
+   * The commands added so far.
+   *
+   * This result might or might not reuse an array object.
+   * Use this value immediately, or save a __copy__ of it.
+   */
+  get commands(): readonly Command[] {
+    return this.#commands;
+  }
+  addCommands(commands: readonly Command[]) {
+    this.#commands.push(...commands);
+  }
   /**
    * Convert a list of strings into a list of `PathSegments` objects.
    *
@@ -61,10 +243,10 @@ export abstract class PathSegment {
    * It's ugly.
    * It's aimed at someone in the debugger, not an end user.
    */
-  static fromStrings(strings: readonly string[]): PathSegment[] {
+  static fromStrings(strings: readonly string[]): PathBuilder[] {
     let s = strings.join(" ");
-    const allSegments: PathSegment[] = [];
-    let current: PathSegment | undefined;
+    const allSegments: PathBuilder[] = [];
+    let current: PathBuilder | undefined;
     while (true) {
       // Remove leading whitespace.
       s = s.replace(/^ */, "");
@@ -138,32 +320,69 @@ export abstract class PathSegment {
     }
     return allSegments;
   }
+
   /**
-   * Create a new `PathSegment`.
-   * Note that all path segments start with an M command.
-   * @param x Begin the segment here.
-   * @param y Begin the segment here.
-   * @returns A new segment containing a single M command.
+   * Create a new `PathBuilder`.
+   *
+   * Note that all paths start with an M command.
+   * This method is sometimes a convenient way to create a new PathBuild that is guaranteed to be in a valid state.
+   * @param x Begin the following `Command` here.
+   * @param y Begin the following `Command` here.
+   * @returns A new `PathBuilder` containing a single M command.
    */
-  static M(x: number, y: number): PathSegment {
-    return new MCommand(x, y);
+  static M(x: number, y: number): PathBuilder {
+    const result = new PathBuilder();
+    result.M(x, y);
+    return result;
+  }
+  readonly #commands: Command[] = [];
+  get pathShape() {
+    return new PathShape(this.#commands);
+  }
+  #nextStart:
+    | undefined
+    | {
+        readonly x: number;
+        readonly y: number;
+        readonly outgoingAngle: number;
+      };
+  M(x: number, y: number): this {
+    assertFinite(x, y);
+    this.#nextStart = { x, y, outgoingAngle: NaN };
+    return this;
+  }
+  private peekPrevious() {
+    return this.#nextStart ?? this.#commands.at(-1);
+  }
+  private consumePrevious() {
+    const result = this.peekPrevious();
+    this.#nextStart = undefined;
+    return result;
   }
   /**
-   * Non destructively add an H command to this `PathSegment`.
+   * Add an H command to `this`.
    * @param x The argument for the H command.
-   * @returns A new PathSegment ending with this command.
+   * @returns A new PathBuilder ending with this command.
    */
-  H(x: number): PathSegment {
-    return new HCommand(this, x);
+  H(x: number) {
+    const previous = this.consumePrevious()!;
+    this.#commands.push(new HCommand(previous.x, previous.y, x));
+    return this;
   }
-  V(y: number): PathSegment {
-    return new VCommand(this, y);
+  V(y: number): PathBuilder {
+    const previous = this.consumePrevious()!;
+    this.#commands.push(new VCommand(previous.x, previous.y, y));
+    return this;
   }
-  L(x: number, y: number): PathSegment {
-    return new LCommand(this, x, y);
+  L(x: number, y: number): PathBuilder {
+    const previous = this.consumePrevious()!;
+    this.#commands.push(new LCommand(previous.x, previous.y, x, y));
+    return this;
   }
-  Q(x1: number, y1: number, x2: number, y2: number): PathSegment {
-    return new QCommand(this, x1, y1, x2, y2);
+  Q(x1: number, y1: number, x: number, y: number) {
+    const previous = this.consumePrevious()!;
+    this.#commands.push(new QCommand(previous.x, previous.y, x1, y1, x, y));
+    return this;
   }
   /**
    * This adds a new Q command to the shape.
@@ -174,7 +393,8 @@ export abstract class PathSegment {
    * @param y The y for the final control point.
    */
   Q_HV(x: number, y: number) {
-    return this.Q(x, this.endY, x, y);
+    const previous = this.peekPrevious()!;
+    return this.Q(x, previous.y, x, y);
   }
   /**
    * This adds a new Q command to the shape.
@@ -185,281 +405,15 @@ export abstract class PathSegment {
    * @param y The y for both control points.
    */
   Q_VH(x: number, y: number) {
-    return this.Q(this.endX, y, x, y);
+    const previous = this.peekPrevious()!;
+    return this.Q(previous.x, y, x, y);
   }
-  C(
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
-    x3: number,
-    y3: number
-  ): PathSegment {
-    return new CCommand(this, x1, y1, x2, y2, x3, y3);
-  }
-}
-
-class MCommand extends PathSegment {
-  override *[Symbol.iterator](): Iterator<PathSegment> {
-    yield this;
-  }
-  override translate(Δx: number, Δy: number): PathSegment {
-    return new MCommand(this.endX + Δx, this.endY + Δy);
-  }
-  override toCubic(): PathSegment {
+  C(x1: number, y1: number, x2: number, y2: number, x: number, y: number) {
+    const previous = this.consumePrevious()!;
+    this.#commands.push(
+      new CCommand(previous.x, previous.y, x1, y1, x2, y2, x, y)
+    );
     return this;
-  }
-  readonly asString: string;
-  constructor(x: number, y: number) {
-    super(x, y, x, y);
-    this.asString = `M ${x},${y}`;
-  }
-}
-
-abstract class ContinuingCommand extends PathSegment {
-  constructor(
-    protected readonly previous: PathSegment,
-    endX: number,
-    endY: number
-  ) {
-    super(previous.segmentStartX, previous.segmentStartY, endX, endY);
-  }
-  override popCommand(): {
-    remaining: PathSegment | undefined;
-    last: PathSegment;
-  } {
-    const remaining = this.previous;
-    if (!(remaining instanceof ContinuingCommand)) {
-      return super.popCommand();
-    }
-    const last = this.duplicateCommand(
-      PathSegment.M(this.segmentStartX, this.segmentStartY)
-    );
-    return { remaining, last };
-  }
-  /**
-   * Copy a command as is to the end of an existing PathSegment.
-   * This is typically used when changing only one command in a PathSegment.
-   * @param newPrevious The base to build on top of.
-   */
-  protected abstract duplicateCommand(
-    newPrevious: PathSegment
-  ): ContinuingCommand;
-  override *[Symbol.iterator](): Iterator<PathSegment> {
-    yield* this.previous;
-    yield this;
-  }
-  abstract override get asString(): string;
-  abstract override translate(Δx: number, Δy: number): PathSegment;
-  abstract override toCubic(): PathSegment;
-  protected get commandStartX() {
-    return this.previous.endX;
-  }
-  protected get commandStartY() {
-    return this.previous.endY;
-  }
-}
-
-class HCommand extends ContinuingCommand {
-  protected override duplicateCommand(newPrevious: PathSegment) {
-    return new HCommand(newPrevious, this.endX);
-  }
-  override translate(Δx: number, Δy: number): PathSegment {
-    return new HCommand(this.previous.translate(Δx, Δy), this.endX + Δx);
-  }
-  override toCubic(): PathSegment {
-    return new CCommand(
-      this.previous.toCubic(),
-      lerp(this.commandStartX, this.endX, 1 / 3),
-      this.commandStartY,
-      lerp(this.commandStartX, this.endX, 2 / 3),
-      this.commandStartY,
-      this.endX,
-      this.commandStartY
-    );
-  }
-  readonly asString: string;
-  constructor(previous: PathSegment, x: number) {
-    super(previous, x, previous.endY);
-    this.asString = `H ${x}`;
-  }
-}
-
-class VCommand extends ContinuingCommand {
-  protected override duplicateCommand(newPrevious: PathSegment) {
-    return new VCommand(newPrevious, this.endY);
-  }
-  override translate(Δx: number, Δy: number): PathSegment {
-    return new VCommand(this.previous.translate(Δx, Δy), this.endY + Δy);
-  }
-  override toCubic(): PathSegment {
-    return new CCommand(
-      this.previous.toCubic(),
-      this.commandStartX,
-      lerp(this.commandStartY, this.endY, 1 / 3),
-      this.commandStartX,
-      lerp(this.commandStartY, this.endY, 2 / 3),
-      this.commandStartX,
-      this.endY
-    );
-  }
-  readonly asString: string;
-  constructor(previous: PathSegment, y: number) {
-    super(previous, previous.endX, y);
-    this.asString = `V ${y}`;
-  }
-}
-
-class LCommand extends ContinuingCommand {
-  protected override duplicateCommand(newPrevious: PathSegment) {
-    return new LCommand(newPrevious, this.endX, this.endY);
-  }
-  override translate(Δx: number, Δy: number): PathSegment {
-    return new LCommand(
-      this.previous.translate(Δx, Δy),
-      this.endX + Δx,
-      this.endY + Δy
-    );
-  }
-  override toCubic(): PathSegment {
-    return new CCommand(
-      this.previous.toCubic(),
-      lerp(this.commandStartX, this.endX, 1 / 3),
-      lerp(this.commandStartY, this.endY, 1 / 3),
-      lerp(this.commandStartX, this.endX, 2 / 3),
-      lerp(this.commandStartY, this.endY, 2 / 3),
-      this.endX,
-      this.endY
-    );
-  }
-  readonly asString: string;
-  constructor(previous: PathSegment, x: number, y: number) {
-    super(previous, x, y);
-    this.asString = `L ${x},${y}`;
-  }
-}
-
-class QCommand extends ContinuingCommand {
-  protected override duplicateCommand(newPrevious: PathSegment) {
-    return new QCommand(newPrevious, this.x1, this.y1, this.endX, this.endY);
-  }
-  override translate(Δx: number, Δy: number): PathSegment {
-    return new QCommand(
-      this.previous.translate(Δx, Δy),
-      this.x1 + Δx,
-      this.y1 + Δy,
-      this.endX + Δx,
-      this.endY + Δy
-    );
-  }
-  override toCubic(): PathSegment {
-    // https://fontforge.org/docs/techref/bezier.html#converting-truetype-to-postscript
-    return new CCommand(
-      this.previous.toCubic(),
-      lerp(this.commandStartX, this.x1, 2 / 3),
-      lerp(this.commandStartY, this.y1, 2 / 3),
-      lerp(this.endX, this.x1, 2 / 3),
-      lerp(this.endY, this.y1, 2 / 3),
-      this.endX,
-      this.endY
-    );
-  }
-  readonly asString: string;
-  constructor(
-    previous: PathSegment,
-    public readonly x1: number,
-    public readonly y1: number,
-    x2: number,
-    y2: number
-  ) {
-    assertFinite(x1, y1);
-    super(previous, x2, y2);
-    this.asString = `Q ${x1},${y1} ${x2},${y2}`;
-  }
-}
-
-class CCommand extends ContinuingCommand {
-  /**
-   * Break one or more commands into a smaller pieces.  The result will
-   * look the same, but the extra pieces can help some special effects.
-   *
-   * This is different from PathSegment.popCommand().  This function breaks
-   * one or more commands into multiple commands.  This function returns
-   * a single PathSegment with more commands than the original.
-   *
-   * PathSegment.popCommand() breaks a PathSegment into two PathSegment
-   * objects.  That creates a new M command but leaves all of the drawing
-   * commands alone.
-   * @param numberOfPieces Turn this command into how many commands?
-   * 1 would be a no-op and will (probably) make a copy of `this`.
-   *
-   * If you provide multiple values, the first will apply to `this`
-   * command directly, the second will apply to `this.previous`, the
-   * third to `this.previous.previous`, etc.
-   * @returns A new `CCommand` object that looks the same as the original
-   * but has more commands in it.
-   * @throws If one of the `previous` items does not support this
-   * function, but it needs to, this function will throw an error.
-   */
-  splitIndividualCommands(...numberOfPieces: number[]) {
-    // See https://pomax.github.io/bezierinfo/#splitting for the algorithm for splitting a single command.
-    const current = numberOfPieces.shift();
-    throw new Error("TODO");
-    if (!current) {
-      return;
-    }
-  }
-  protected override duplicateCommand(newPrevious: PathSegment) {
-    return new CCommand(
-      newPrevious,
-      this.x1,
-      this.y1,
-      this.x2,
-      this.y2,
-      this.x3,
-      this.y3
-    );
-  }
-  override translate(Δx: number, Δy: number): PathSegment {
-    return new CCommand(
-      this.previous.translate(Δx, Δy),
-      this.x1 + Δx,
-      this.y1 + Δy,
-      this.x2 + Δx,
-      this.y2 + Δy,
-      this.x3 + Δx,
-      this.y3 + Δy
-    );
-  }
-  override toCubic(): PathSegment {
-    const upstream = this.previous.toCubic();
-    if (upstream == this.previous) {
-      return this;
-    } else {
-      return new CCommand(
-        upstream,
-        this.x1,
-        this.y1,
-        this.x2,
-        this.y2,
-        this.x3,
-        this.y3
-      );
-    }
-  }
-  readonly asString: string;
-  constructor(
-    previous: PathSegment,
-    public readonly x1: number,
-    public readonly y1: number,
-    public readonly x2: number,
-    public readonly y2: number,
-    public readonly x3: number,
-    public readonly y3: number
-  ) {
-    assertFinite(x1, x2, y1, y2);
-    super(previous, x3, y3);
-    this.asString = `C ${x1},${y1} ${x2},${y2} ${x3},${y3}`;
   }
 }
 
@@ -482,77 +436,59 @@ const cCommand = new RegExp(
  */
 export class PathShape {
   matchForMorph(other: PathShape) {
-    const thisSegments = [...this.segments];
-    const otherSegments = [...other.segments];
-    // Consider getting rid of segments with nothing but an M.
-    if (thisSegments.length != otherSegments.length) {
-      // The number of M commands don't match.
-      // Add additional M commands to make them match.
-      // Because I'm using rounded corners and rounded end caps, this will not change the path's appearance.
+    const commandsForThis = this.commands.map((command) => command.toCubic());
+    const commandsForOther = other.commands.map((command) => command.toCubic());
+    if (commandsForThis.length != commandsForOther.length) {
       const { shorter, longer } =
-        thisSegments.length < otherSegments.length
-          ? { shorter: thisSegments, longer: otherSegments }
-          : { shorter: otherSegments, longer: thisSegments };
+        commandsForThis.length < commandsForOther.length
+          ? { shorter: commandsForThis, longer: commandsForOther }
+          : { shorter: commandsForOther, longer: commandsForThis };
       if (shorter.length == 0) {
         // One list of segments was completely empty and the other was not.
         throw new Error("can't morph something into nothing");
       }
-      let remainingToAdd = longer.length - shorter.length;
-      const rightOfShorter: PathSegment[] = [];
-      while (remainingToAdd > 0) {
-        const old = shorter.pop();
-        if (!old) {
-          // Need to break existing commands into multiple commands then spit each into its own PathSegment
-          throw new Error("TODO");
+      /**
+       * This will be greater than one.
+       */
+      const ratio = longer.length / shorter.length;
+      const replacementForShorter: Command[] = [];
+      shorter.forEach((command, index) => {
+        const desiredLength = Math.round((index + 1) * ratio);
+        //const howManyToAdd = Math.ceil(replacementForShorter.length - desiredLength);
+        // TODO The command should really be split.  https://pomax.github.io/bezierinfo/#splitting
+        // Copying is a temporary solution, just enough to get morphing working.
+        while (replacementForShorter.length < desiredLength) {
+          replacementForShorter.push(command);
         }
-        const { remaining, last } = old.popCommand();
-        rightOfShorter.unshift(last);
-        if (remaining) {
-          shorter.push(remaining);
-          remainingToAdd--;
-        }
-      }
-      shorter.push(...rightOfShorter);
+      });
+      shorter.length = 0;
+      shorter.push(...replacementForShorter);
     }
-    if (thisSegments.length != otherSegments.length) {
+    if (commandsForThis.length != commandsForOther.length) {
       throw new Error("wtf");
     }
-    for (const [thisSegment, otherSegment, index] of zip(
-      thisSegments,
-      otherSegments,
-      count()
-    )) {
-      const thisCommands = [...thisSegment];
-      const otherCommands = [...otherSegment];
-      if (thisCommands.length != otherCommands.length) {
-        const [shorter, longer] =
-          thisCommands.length < otherCommands.length
-            ? [thisCommands, otherCommands]
-            : [otherCommands, thisCommands];
-        const needToAdd = longer.length - shorter.length;
-        const toSplit = shorter.pop();
-      }
+    function fullSplit(commands: readonly Command[]) {
+      return PathShape.cssifyPath(
+        commands.map((command) => new PathShape([command]).rawPath).join()
+      );
     }
-    //TODO!!!  Implement this next!
-    /* If both commands are the same type, copy them as is.
-     * Call toCubic on both commands.
-     * What if one is longer than the other???!
-     */
-    return { thisSegments, otherSegments };
+    const pathForThis = fullSplit(commandsForThis);
+    const pathForOther = fullSplit(commandsForOther);
+    return { pathForThis, pathForOther };
   }
-  readonly segments: readonly PathSegment[];
+  readonly commands: readonly Command[];
   get endX() {
     // Defined HERE (https://www.youtube.com/watch?v=4yVOFGLoeIE for details)
-    return this.segments.at(-1)?.endX;
+    return this.commands.at(-1)?.x;
   }
   get endY() {
-    return this.segments.at(-1)?.endY;
+    return this.commands.at(-1)?.y;
   }
   get startX() {
-    return this.segments.at(0)?.segmentStartX;
+    return this.commands.at(0)?.x0;
   }
   get startY() {
-    return this.segments.at(0)?.segmentStartY;
+    return this.commands.at(0)?.y0;
   }
   /**
    *
@@ -560,12 +496,15 @@ export class PathShape {
    * @returns A new PathShape based on the path strings.
    */
   static fromStrings(strings: string[]) {
-    const segments = PathSegment.fromStrings(strings);
-    const result = new this(segments);
+    const pathBuilders = PathBuilder.fromStrings(strings);
+    const commands = pathBuilders.flatMap(
+      (pathBuilder) => pathBuilder.commands
+    );
+    const result = new this(commands);
     return result;
   }
-  constructor(segments: readonly PathSegment[]) {
-    this.segments = [...segments];
+  constructor(commands: readonly Command[]) {
+    this.commands = [...commands];
   }
 
   static cssifyPath(rawPath: string) {
@@ -587,9 +526,30 @@ export class PathShape {
     }
     return pathElement;
   }
-
+  static needAnM(before: Command | undefined, after: Command): boolean {
+    if (!before) {
+      return true;
+    }
+    if (before.x != after.x0) {
+      return true;
+    }
+    if (before.y != after.y0) {
+      return true;
+    }
+    return false;
+  }
   get rawPath() {
-    return this.segments.map((segment) => segment.rawPath).join(" ");
+    return this.commands
+      .flatMap((command, index) => {
+        const result: string[] = [];
+        const previousCommand = this.commands[index - 1];
+        if (PathShape.needAnM(previousCommand, command)) {
+          result.push(`M ${command.x0},${command.y0}`);
+        }
+        result.push(command.asString);
+        return result;
+      })
+      .join(" ");
   }
   /**
    * Like css path, but broken each time the pen is lifted.
@@ -609,10 +569,19 @@ export class PathShape {
    * Undo with `PathShape.join()`.
    */
   splitOnMove() {
-    return [...this.segments].map(
-      (segment) =>
+    const pieces: Command[][] = [];
+    let current: Command[] = [];
+    this.commands.forEach((command) => {
+      if (PathShape.needAnM(current.at(-1), command)) {
+        current = [];
+        pieces.push(current);
+      }
+      current.push(command);
+    });
+    return pieces.map(
+      (piece) =>
         // Asserted HERE (https://www.youtube.com/watch?v=4yVOFGLoeIE for details)
-        new PathShape([segment]) as PathShape & {
+        new PathShape(piece) as PathShape & {
           readonly startX: number;
           readonly startY: number;
           readonly endX: number;
@@ -628,17 +597,15 @@ export class PathShape {
     pieces: { Δx: number; Δy: number; shape: PathShape }[]
   ): PathShape {
     return new PathShape(
-      pieces.flatMap(({ Δx, Δy, shape }) => shape.translate(Δx, Δy).segments)
+      pieces.flatMap(({ Δx, Δy, shape }) => shape.translate(Δx, Δy).commands)
     );
   }
   convertToCubics(): PathShape {
-    return new PathShape(
-      this.segments.map((pathSegment) => pathSegment.toCubic())
-    );
+    return new PathShape(this.commands.map((command) => command.toCubic()));
   }
   translate(Δx: number, Δy: number): PathShape {
     return new PathShape(
-      this.segments.map((pathSegment) => pathSegment.translate(Δx, Δy))
+      this.commands.map((command) => command.translate(Δx, Δy))
     );
   }
 }

@@ -103,7 +103,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
         letters.flatMap(
           (letter) =>
             letter.description.shape.translate(letter.x, letter.baseline)
-              .segments
+              .commands
         )
       );
     }
@@ -749,13 +749,29 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     writer.showSpace();
     const goElement = goShapeInfo.shape.makeElement();
     writer.showAndAdvance(goElement, goShapeInfo.advance);
-    const TODO = goShapeInfo.shape.matchForMorph(stopShapeInfo.shape);
+    const morphable = goShapeInfo.shape.matchForMorph(stopShapeInfo.shape);
     console.log({
-      goSegmentsInitial: goShapeInfo.shape.segments,
-      stopSegmentsInitial: stopShapeInfo.shape.segments,
-      goSegmentsFinal: TODO.thisSegments,
-      stopSegmentsFinal: TODO.otherSegments,
+      goCommands: goShapeInfo.shape.commands,
+      stopCommands: stopShapeInfo.shape.commands,
+      goString: morphable.pathForThis,
+      stopString: morphable.pathForOther,
     });
+    const morphableGoPath = morphable.pathForThis;
+    const morphableStopPath = morphable.pathForOther;
+    const morphingElement = stopShapeInfo.shape.makeElement();
+    writer.showSpace();
+    writer.showAndAdvance(morphingElement, stopShapeInfo.advance);
+    writer.showAndAdvance(morphingElement, stopShapeInfo.advance);
+    morphingElement.animate(
+      [
+        { d: morphableGoPath },
+        { d: morphableGoPath, easing: "ease" },
+        { d: morphableStopPath },
+        { d: morphableStopPath, easing: "ease" },
+        { d: morphableGoPath },
+      ],
+      { duration: 5000, iterations: Infinity }
+    );
   }
   // Automatically adjust the size of the SVG to fit everything I've added so far.
   if (writer.x > writer.rightMargin) {

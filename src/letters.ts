@@ -122,7 +122,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
         return { ...letter, shape, element };
       });
     }
-    private static wordBreak = /^( +|[^ ]+)(.*)/;
+    private static WORD_BREAK = /^(\n+| +|[^ \n]+)(.*)/ms;
     addText(toAdd: string) {
       const invalid = new Set<string>();
       const result: {
@@ -132,13 +132,16 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
         char: string;
       }[] = [];
       while (true) {
-        const pieces = TextLayout.wordBreak.exec(toAdd);
+        const pieces = TextLayout.WORD_BREAK.exec(toAdd);
         if (!pieces) {
           break;
         }
         const thisWord = pieces[1];
         toAdd = pieces[2];
-        if (thisWord[0] == " ") {
+        if (thisWord[0] == "\n") {
+          this.carriageReturn();
+          this.lineFeed((thisWord.length * 4) / 3);
+        } else if (thisWord[0] == " ") {
           this.addSpace(thisWord.length);
         } else {
           /**
@@ -238,6 +241,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       svg.appendChild(element);
       element.style.transform = `translate(${this.x}px,${this.baseline}px)`;
       this.x += advance;
+      return this;
     }
     show1(description: DescriptionOfLetter) {
       this.makeRoom(description);
@@ -306,8 +310,16 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       }
       return result;
     }
-    showSpace() {
-      this.x += this.font.get("0")!.fontMetrics.spaceWidth;
+    /**
+     * Advance the cursor.
+     *
+     * This never directly causes a word wrap.
+     * You can have as many spaces as you want after the right margin.
+     * @param count How many spaces.  Defaults to 1.  Does not have to be an integer.
+     */
+    showSpace(count = 1) {
+      this.x += this.font.get("0")!.fontMetrics.spaceWidth * count;
+      return this;
     }
   }
 
@@ -750,14 +762,9 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     const goElement = goShapeInfo.shape.makeElement();
     writer.showAndAdvance(goElement, goShapeInfo.advance);
     const morphable = goShapeInfo.shape.matchForMorph(stopShapeInfo.shape);
-    console.log({
-      goCommands: goShapeInfo.shape.commands,
-      stopCommands: stopShapeInfo.shape.commands,
-      goString: morphable.pathForThis,
-      stopString: morphable.pathForOther,
-    });
-    const morphableGoPath = morphable.pathForThis;
-    const morphableStopPath = morphable.pathForOther;
+    console.log({ goShapeInfo, stopShapeInfo, morphable });
+    const morphableGoPath = morphable[0];
+    const morphableStopPath = morphable[1];
     const morphingElement = stopShapeInfo.shape.makeElement();
     writer.showSpace();
     writer.showAndAdvance(morphingElement, stopShapeInfo.advance);
@@ -772,6 +779,35 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       ],
       { duration: 5000, iterations: Infinity }
     );
+
+    // This next section shows "123" morphing into "ABC."
+    // I used this for the thumbnail of https://www.youtube.com/watch?v=uIcByP_9NuM
+    /**
+     *
+     * @param toStack What to display.
+     * @returns A shape with all of the letters stacked vertically.
+     */
+    const stackIt = (toStack: string) => {
+      return makeIt([...toStack].join("\n")).shape;
+    };
+    const initial = stackIt("123");
+    const final = stackIt("ABC");
+    const [initialD, finalD] = initial.matchForMorph(final);
+    writer.CRLF();
+    initializedArray(7, (columnIndex) => {
+      const element = initial.makeElement();
+      writer.showAndAdvance(element, 10 * (6 / 7) * 0.86);
+      /*const animation = */ element.animate([{ d: initialD }, { d: finalD }], {
+        duration: Number.MAX_SAFE_INTEGER,
+        iterations: 1,
+        iterationStart: (columnIndex / 6) * 0.999,
+      });
+      // The animation will not update when paused.  You can set the iterationStart or a few
+      // other properties to change the position of the animation, but nothing will change on
+      // the screen until the animation is resumed. :(
+      // animation.pause();
+    });
+    writer.lineFeed(2);
   }
   // Automatically adjust the size of the SVG to fit everything I've added so far.
   if (writer.x > writer.rightMargin) {

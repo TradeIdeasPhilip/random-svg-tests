@@ -435,7 +435,7 @@ const cCommand = new RegExp(
  * I.e. to create a string like "path('M 1,2 L 3,5')".
  */
 export class PathShape {
-  matchForMorph(other: PathShape) {
+  matchForMorph(other: PathShape): [pathForThis: string, pathForOther: string] {
     const commandsForThis = this.commands.map((command) => command.toCubic());
     const commandsForOther = other.commands.map((command) => command.toCubic());
     if (commandsForThis.length != commandsForOther.length) {
@@ -474,7 +474,7 @@ export class PathShape {
     }
     const pathForThis = fullSplit(commandsForThis);
     const pathForOther = fullSplit(commandsForOther);
-    return { pathForThis, pathForOther };
+    return [pathForThis, pathForOther];
   }
   readonly commands: readonly Command[];
   get endX() {

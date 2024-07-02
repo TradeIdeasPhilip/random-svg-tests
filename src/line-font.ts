@@ -1,5 +1,7 @@
+import { initializedArray } from "phil-lib/misc";
+import { polarToRectangular } from "./utility";
 import { DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
-import { PathShape, PathBuilder } from "./path-shape";
+import { PathShape, PathBuilder, LCommand } from "./path-shape";
 
 /**
  * This seems silly.  Is size really the only input?
@@ -97,6 +99,32 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       const advance = digitWidth * 0.75;
       const shape = PathBuilder.M(left, capitalMiddle).H(advance).pathShape;
       add("-", shape, advance);
+    }
+    {
+      const outerRadius = (digitWidth / 2) * 0.9;
+      const spokes = 5;
+      const initialAngle = -Math.PI / 2;
+      const middle = (capitalTop + baseline) / 2;
+      const innerRadius = 0;
+      const geometry = initializedArray(spokes, (n) => {
+        const θ = (n * (Math.PI * 2)) / spokes + initialAngle;
+        const inside = polarToRectangular(innerRadius, θ);
+        const outside = polarToRectangular(outerRadius, θ);
+        return [inside, outside];
+      });
+      const allPoints = geometry.flat();
+      const smallestX = Math.min(...allPoints.map(({ x }) => x));
+      allPoints.forEach((point) => {
+        point.x -= smallestX;
+        point.y += middle;
+      });
+      //console.warn(geometry);
+      const commands = geometry.map(
+        ([from, to]) => new LCommand(from.x, from.y, to.x, to.y)
+      );
+      const shape = new PathShape(commands);
+      const advance = Math.max(...allPoints.map(({ x }) => x));
+      add("*", shape, advance);
     }
     {
       // MARK: =

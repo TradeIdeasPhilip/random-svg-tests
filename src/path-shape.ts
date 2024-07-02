@@ -109,7 +109,7 @@ class VCommand implements Command {
   }
 }
 
-class LCommand implements Command {
+export class LCommand implements Command {
   constructor(
     public readonly x0: number,
     public readonly y0: number,

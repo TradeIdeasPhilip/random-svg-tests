@@ -76,3 +76,17 @@ export function assertFinite(...values: number[]): void {
     }
   });
 }
+
+/**
+ * Randomly reorder the contents of the array.
+ * @param array The array to shuffle.  This is modified in place.
+ * @returns The original array.
+ */
+export function shuffleArray<T>(array: T[]) {
+  // https://stackoverflow.com/a/12646864/971955
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}

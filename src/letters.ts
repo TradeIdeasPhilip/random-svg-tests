@@ -6,7 +6,7 @@ import { makeLineFont } from "./line-font";
 import rough from "roughjs";
 import { Options } from "roughjs/bin/core";
 import { DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
-import { assertFinite, lerp } from "./utility";
+import { assertFinite, lerp, shuffleArray } from "./utility";
 
 const svg = getById("main", SVGSVGElement);
 
@@ -435,10 +435,10 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   // style with this value.
   //const strokeWidth = cubicFont.get("0")!.fontMetrics.strokeWidth.toString();
   const rowsOfLetters = [
-    { roughness: 0.4, title: "Heartbeat" },
-    { roughness: 0.44, title: "Toggle (snap)" },
+    { roughness: 0.4, title: "Heartbeat!" },
+    { roughness: 0.44, title: "Toggle @#$%" },
     { roughness: 0.5, title: "Skywriting" },
-    { roughness: 0.54, title: "Do the Wave" },
+    { roughness: 0.54, title: "The Wave *" },
     { roughness: 0.59, title: "Wavy Lights." },
     { roughness: 0.64, title: "Blustery day.i" },
   ].map((lineInfo) => {
@@ -742,19 +742,19 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     }
     loopIt();
   }
+  function textToShape(text: string) {
+    const layout = new TextLayout();
+    layout.font = baseFont;
+    const a = layout.addText(text);
+    const shape = TextLayout.join(a);
+    const advance = layout.x; // TODO this is wrong if the text include a \n.
+    return { shape, advance };
+  }
   {
     writer.font = baseFont;
     writer.CRLF();
-    function makeIt(it: string) {
-      const layout = new TextLayout();
-      layout.font = baseFont;
-      const a = layout.addText(it);
-      const shape = TextLayout.join(a);
-      const advance = layout.x;
-      return { shape, advance };
-    }
-    const stopShapeInfo = makeIt("Stop");
-    const goShapeInfo = makeIt("Go");
+    const stopShapeInfo = textToShape("Stop");
+    const goShapeInfo = textToShape("Go");
     writer.CRLF();
     const stopElement = stopShapeInfo.shape.makeElement();
     writer.showAndAdvance(stopElement, stopShapeInfo.advance);
@@ -762,12 +762,11 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
     const goElement = goShapeInfo.shape.makeElement();
     writer.showAndAdvance(goElement, goShapeInfo.advance);
     const morphable = goShapeInfo.shape.matchForMorph(stopShapeInfo.shape);
-    console.log({ goShapeInfo, stopShapeInfo, morphable });
+    //console.log({ goShapeInfo, stopShapeInfo, morphable });
     const morphableGoPath = morphable[0];
     const morphableStopPath = morphable[1];
     const morphingElement = stopShapeInfo.shape.makeElement();
     writer.showSpace();
-    writer.showAndAdvance(morphingElement, stopShapeInfo.advance);
     writer.showAndAdvance(morphingElement, stopShapeInfo.advance);
     morphingElement.animate(
       [
@@ -779,7 +778,8 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       ],
       { duration: 5000, iterations: Infinity }
     );
-
+  }
+  {
     // This next section shows "123" morphing into "ABC."
     // I used this for the thumbnail of https://www.youtube.com/watch?v=uIcByP_9NuM
     /**
@@ -788,7 +788,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
      * @returns A shape with all of the letters stacked vertically.
      */
     const stackIt = (toStack: string) => {
-      return makeIt([...toStack].join("\n")).shape;
+      return textToShape([...toStack].join("\n")).shape;
     };
     const initial = stackIt("123");
     const final = stackIt("ABC");
@@ -807,7 +807,43 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       // the screen until the animation is resumed. :(
       // animation.pause();
     });
-    writer.lineFeed(2);
+    writer.lineFeed(2.5);
+  }
+  {
+    writer.CRLF();
+    function showMorph(shape1: PathShape, shape2: PathShape) {
+      const element = shape1.makeElement();
+      writer.showAndAdvance(element, 0);
+      const d = shape1.matchForMorph(shape2);
+      element.animate(
+        [
+          { d: d[0] },
+          { d: d[0], easing: "ease" },
+          { d: d[1] },
+          { d: d[1], easing: "ease" },
+          { d: d[0] },
+        ],
+        { duration: 5000, iterations: Infinity }
+      );
+    }
+    //const fromShapeInfo = textToShape("Hello\nWorld!");
+    //const toShapeInfo = textToShape("Party on\ndudes!");
+    const fromShapeInfo = textToShape("A  B  C");
+    const toShapeInfo = textToShape(" A B C");
+    showMorph(fromShapeInfo.shape, toShapeInfo.shape);
+    writer.x += Math.max(fromShapeInfo.advance, toShapeInfo.advance);
+    writer.showSpace(4);
+    const reorderedToShape = new PathShape(
+      shuffleArray([...toShapeInfo.shape.commands])
+    );
+    showMorph(fromShapeInfo.shape, reorderedToShape);
+    writer.x += Math.max(fromShapeInfo.advance, toShapeInfo.advance);
+    writer.showSpace(4);
+    const reversedShape = new PathShape(
+      toShapeInfo.shape.commands.toReversed()
+    );
+    showMorph(fromShapeInfo.shape, reversedShape);
+    writer.lineFeed(2.5);
   }
   // Automatically adjust the size of the SVG to fit everything I've added so far.
   if (writer.x > writer.rightMargin) {

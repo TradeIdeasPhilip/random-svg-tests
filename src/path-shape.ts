@@ -1,7 +1,7 @@
 import { parseFloatX } from "phil-lib/misc";
 import { assertFinite, lerp } from "./utility";
 
-type Command = {
+export type Command = {
   /**
    * The initial x value.
    *
@@ -41,7 +41,7 @@ type Command = {
    */
   readonly asString: string;
   translate(Δx: number, Δy: number): Command;
-  toCubic(): Command;
+  toCubic(): CCommand;
   // split into pieces
 };
 
@@ -63,7 +63,7 @@ class HCommand implements Command {
   translate(Δx: number, Δy: number): Command {
     return new HCommand(this.x0 + Δx, this.y0 + Δy, this.x + Δx);
   }
-  toCubic(): Command {
+  toCubic() {
     return new CCommand(
       this.x0,
       this.y0,
@@ -95,7 +95,7 @@ class VCommand implements Command {
   translate(Δx: number, Δy: number): Command {
     return new VCommand(this.x0 + Δx, this.y0 + Δy, this.y + Δy);
   }
-  toCubic(): Command {
+  toCubic(): CCommand {
     return new CCommand(
       this.x0,
       this.y0,
@@ -126,7 +126,7 @@ export class LCommand implements Command {
   translate(Δx: number, Δy: number): Command {
     return new LCommand(this.x0 + Δx, this.y0 + Δy, this.x + Δx, this.y + Δy);
   }
-  toCubic(): Command {
+  toCubic(): CCommand {
     return new CCommand(
       this.x0,
       this.y0,
@@ -166,7 +166,7 @@ class QCommand implements Command {
       this.y + Δy
     );
   }
-  toCubic(): Command {
+  toCubic(): CCommand {
     return new CCommand(
       this.x0,
       this.y0,
@@ -181,6 +181,18 @@ class QCommand implements Command {
 }
 
 class CCommand implements Command {
+  reverse() {
+    return new CCommand(
+      this.x,
+      this.y,
+      this.x2,
+      this.y2,
+      this.x1,
+      this.y1,
+      this.x0,
+      this.y0
+    );
+  }
   constructor(
     public readonly x0: number,
     public readonly y0: number,
@@ -210,7 +222,7 @@ class CCommand implements Command {
       this.y + Δy
     );
   }
-  toCubic(): Command {
+  toCubic(): CCommand {
     return this;
   }
 }
@@ -451,7 +463,7 @@ export class PathShape {
        * This will be greater than one.
        */
       const ratio = longer.length / shorter.length;
-      const replacementForShorter: Command[] = [];
+      const replacementForShorter: CCommand[] = [];
       shorter.forEach((command, index) => {
         const desiredLength = Math.round((index + 1) * ratio);
         //const howManyToAdd = Math.ceil(replacementForShorter.length - desiredLength);

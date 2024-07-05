@@ -1,12 +1,12 @@
 import { getById } from "phil-lib/client-misc";
 import "./style.css";
 import { initializedArray, makeLinear, sleep } from "phil-lib/misc";
-import { PathShape } from "./path-shape";
+import { PathShape, Command } from "./path-shape";
 import { makeLineFont } from "./line-font";
 import rough from "roughjs";
 import { Options } from "roughjs/bin/core";
 import { DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
-import { assertFinite, lerp, shuffleArray } from "./utility";
+import { assertFinite, lerp, rotateArray, shuffleArray } from "./utility";
 
 const svg = getById("main", SVGSVGElement);
 
@@ -811,10 +811,12 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   }
   {
     writer.CRLF();
-    function showMorph(shape1: PathShape, shape2: PathShape) {
-      const element = shape1.makeElement();
+    type Shapes = readonly [PathShape, PathShape];
+    type ReadonlyShapes = readonly [PathShape, PathShape];
+    function showMorph(shapes: ReadonlyShapes) {
+      const element = shapes[0].makeElement();
       writer.showAndAdvance(element, 0);
-      const d = shape1.matchForMorph(shape2);
+      const d = shapes[0].matchForMorph(shapes[1]);
       element.animate(
         [
           { d: d[0] },
@@ -826,23 +828,156 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
         { duration: 5000, iterations: Infinity }
       );
     }
-    //const fromShapeInfo = textToShape("Hello\nWorld!");
-    //const toShapeInfo = textToShape("Party on\ndudes!");
-    const fromShapeInfo = textToShape("A  B  C");
-    const toShapeInfo = textToShape(" A B C");
-    showMorph(fromShapeInfo.shape, toShapeInfo.shape);
+    function shuffleOne(shapes: ReadonlyShapes): Shapes {
+      const newSecondShape = new PathShape(
+        shuffleArray([...shapes[1].commands])
+      );
+      return [shapes[0], newSecondShape];
+    }shuffleOne;
+    function reverseOne(shapes: ReadonlyShapes): Shapes {
+      const newSecondShape = new PathShape(shapes[1].commands.toReversed());
+      return [shapes[0], newSecondShape];
+    }
+    function rotateOneLinearly(shapes: ReadonlyShapes, ratio: number): Shapes {
+      const commands = shapes[1].commands;
+      const howMany = Math.round(commands.length * ratio);
+      const rotatedCommands = rotateArray(commands, howMany);
+      const newSecondShape = new PathShape(rotatedCommands);
+      return [shapes[0], newSecondShape];
+    }
+    rotateOneLinearly;
+    function closestSegments(shapes: ReadonlyShapes): Shapes {
+      {
+        const empty = shapes.map((shape) => !shape.commands.length);
+        if (empty[0] && empty[1]) {
+          return shapes;
+        }
+        if (empty[0] || empty[1]) {
+          throw new Error("wtf");
+        }
+      }
+      function compare(
+        a: Command,
+        b: Command
+      ): { distance: number; needToReverse: boolean } {
+        const same =
+          Math.hypot(a.x - b.x, a.y - b.y) +
+          Math.hypot(a.x0 - b.x0, a.y0 - b.y0);
+        const reversed =
+          Math.hypot(a.x - b.x0, a.y - b.y0) +
+          Math.hypot(a.x0 - b.x0, a.y - b.y);
+        const needToReverse = reversed < same;
+        const distance = needToReverse ? reversed : same;
+        return { distance, needToReverse };
+      }
+      // We could try every combination, but that would take ridiculous time.
+      // Maybe:
+      //   let extra = longer.length - shorter.length
+      //   For each item in the longer list
+      //     compare it to each item in the shorter list to find the best match.
+      //     If (extra > 0) {
+      //         extra--;
+      //         increment the use count of this item.
+      //      } else {
+      //         only allow a use count to go from 0 to 1 now.
+      //         i.e. don't reuse or split any segments
+      //      }
+      // Or maybe one single pass that is allowed to steal from another if that's
+      // a net positive, or take one that's still available.  Like a white elephant
+      // party.
+      //
+      // Or iterate from the shorter list.
+      //   Maybe randomize it first, so there's no obvious bias.
+      //   Each item in the shorter list picks its favorite from the longer list.
+      //   That piece is removed from the longer list so it can't be reused.
+      // Then there will be some pieces left in the longer list.
+      //   Iterate over those.
+      //   Each can pick it's favorite from the short list.
+      //   Each will cause a duplication (or a split) of the piece from the short list.
+      //   Every piece on the short list is valid and can be used as many times as requested.
+      const commands = shapes.map((shape) => shape.commands);
+      const [shorter, longer] =
+        commands[0].length < commands[1].length
+          ? commands
+          : commands.toReversed();
+      const longerSource = [...longer];
+      const longerDestination: Command[] = [];
+      const newShorter = shuffleArray([...shorter]);
+      newShorter.forEach((shorterCommand) => {
+        let bestSoFar = {
+          command: undefined! as Command,
+          distance: Infinity,
+          index: NaN,
+        };
+        longerSource.forEach((longerCommand, index) => {
+          const { distance, needToReverse } = compare(
+            shorterCommand,
+            longerCommand
+          );
+          if (distance < bestSoFar.distance) {
+            const command = needToReverse
+              ? longerCommand.toCubic().reverse()
+              : longerCommand;
+            bestSoFar = { command, distance, index };
+          }
+        });
+        const winner = bestSoFar;
+        longerDestination.push(winner.command);
+        longerSource.splice(winner.index, 1);
+      });
+      if (newShorter.length != longerDestination.length) {
+        throw new Error("wtf");
+      }
+      longerSource.forEach((longerCommand) => {
+        let bestSoFar = {
+          command: undefined! as Command,
+          distance: Infinity,
+          index: NaN,
+        };
+        newShorter.forEach((shorterCommand, index) => {
+          const { distance, needToReverse } = compare(
+            shorterCommand,
+            longerCommand
+          );
+          if (distance < bestSoFar.distance) {
+            const command = needToReverse
+              ? shorterCommand.toCubic().reverse()
+              : shorterCommand;
+            bestSoFar = { command, distance, index };
+          }
+        });
+        const winner = bestSoFar;
+        newShorter.push(winner.command);
+        longerDestination.push(longerCommand);
+      });
+      if (newShorter.length != longerDestination.length) {
+        throw new Error("wtf");
+      }
+      const newCommands = [newShorter, longerDestination];
+      if (shorter == commands[1]) {
+        newCommands.reverse();
+      }
+      console.log(shorter);
+      return [new PathShape(newCommands[0]), new PathShape(newCommands[1])];
+    }
+    function rotateOneAround(
+      _shapes: ReadonlyShapes,
+      _centerX: number,
+      _centerY: number,
+      _radians: number
+    ) {
+      throw new Error("TODO");
+    }rotateOneAround;
+    const fromShapeInfo = textToShape("Round\n  and\nround!");
+    const toShapeInfo = textToShape("Circle\n  in a\nspiral");
+    const shapes = [fromShapeInfo.shape, toShapeInfo.shape] as const;
+    showMorph(shapes);
     writer.x += Math.max(fromShapeInfo.advance, toShapeInfo.advance);
     writer.showSpace(4);
-    const reorderedToShape = new PathShape(
-      shuffleArray([...toShapeInfo.shape.commands])
-    );
-    showMorph(fromShapeInfo.shape, reorderedToShape);
+    showMorph(closestSegments(shapes));
     writer.x += Math.max(fromShapeInfo.advance, toShapeInfo.advance);
     writer.showSpace(4);
-    const reversedShape = new PathShape(
-      toShapeInfo.shape.commands.toReversed()
-    );
-    showMorph(fromShapeInfo.shape, reversedShape);
+    showMorph(reverseOne(shapes));
     writer.lineFeed(2.5);
   }
   // Automatically adjust the size of the SVG to fit everything I've added so far.

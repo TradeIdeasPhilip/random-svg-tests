@@ -10,11 +10,33 @@ I wish I'd found it sooner.
 
 ## Status and Testing
 
-I've heard some complaints from an iPhone user.
-Some pages worked and others didn't.
+Some of these demos work better on phones than others.
 
 I do most of my testing on Chrome on a Mac.
 I occasionally test on an Android phone.
+
+## [curves.ts](./src/curves.ts) / [math-to-path.ts](./src/math-to-path.ts)
+
+[This page](https://tradeideasphilip.github.io/random-svg-tests/curves.html) shows some simple examples of some tools that can create and manipulate paths.
+One example is shown below.
+
+![Two images, both outlines of a heart.  The one on the left is drawn with a simple, standard, fixed with line.  The other line has three thick sections separated by three thin areas.](./for-readme/Hearts.png)
+
+The heart on the left is a very simple path that I copied from [a sample at MDN](https://developer.mozilla.org/en-US/docs/Web/SVG/Element/path#example).
+On the right I asked math-to-path.ts to change the stroke-width of that path to look like a sine wave.
+
+The paths and the formulas can be as complicated as needed.
+I ♡ these examples, but they are only simple proofs of concept.
+See [this video](https://www.youtube.com/watch?v=IjQcdktLzLY) for another way I've used `math-to-path`.
+
+This is an older project that I only recently added this this repository.
+I worked on this project in February 2024 but never published it until now.
+The current examples are very simple because I didn't know exactly what to do with these tools at first.
+But these tools will combine nicely with the other tools in this repository.
+
+Note that I always tell `math-to-path` exactly how many segments I want in my result.
+I originally added this parameter so I could balance quality vs. performance.
+Now I can use this parameter to make [morphing](#morph) trivial!
 
 ## Maintaining the Frame Rate
 
@@ -33,6 +55,7 @@ I will sacrifice any optional features in the animations to maintain the framera
 But what exactly does "good" mean?
 
 According to [MDN](https://developer.mozilla.org/en-US/docs/Web/Performance/Animation_performance_and_frame_rate):
+
 > It's commonly accepted that 60 frames per second is the rate at which animations will appear smooth.
 
 I was hoping to see something more explicit, like "the browser always tries to maintain 60 frames per second."
@@ -54,21 +77,22 @@ I want to understand and monitor the health of the system, so I can push the lim
 I need to know what's a reasonable FPS, so I know how to interpret the current FPS.
 I haven't found any discussion of this on the internet.
 
-## Letters 
+## Letters
+
 [This](https://tradeideasphilip.github.io/random-svg-tests/letters.html) shows some some productive work I've done with SVG and text.
 [Here](https://www.youtube.com/watch?v=HOfTgohh90w) is a video showing off my recent progress.
 
 This shows a snapshot of some work in progress:
 ![Several samples of text with various special effects, described below.](./for-readme/RoughFont.png)
 
-* The first row shows an animation in progress.
-* The second row shows a Small Caps font that I synthesized from the default font.
-* The third row shows what happens when I convert all of the lines and parabolas in my drawings into cubics.  As intended, there are no changes visible in the font on this line.
-* Rough Font 1 shows what happens when I feed my line font directly into rough.js.  It looks strange where the straight lines run into the curved lines.
-* Rough Font 2 shows what happens when I convert my line font into cubics _then_ feed it to rough.js.  This is a huge improvement.  As intended, this fixed the problem in the previous line.
-* #3 is my favorite of the rough fonts.  I will remove the others.  I got rid of the multi-stroke because I think it looks a little better this way.
-* #4 is similar to #3, but with `preserveVertices` to false.  I never liked this the results of that setting.
-* And last row shows a 5th variation of the rough font.  While it looks like fun it seems way too rough and hard to read for my needs.
+- The first row shows an animation in progress.
+- The second row shows a Small Caps font that I synthesized from the default font.
+- The third row shows what happens when I convert all of the lines and parabolas in my drawings into cubics. As intended, there are no changes visible in the font on this line.
+- Rough Font 1 shows what happens when I feed my line font directly into rough.js. It looks strange where the straight lines run into the curved lines.
+- Rough Font 2 shows what happens when I convert my line font into cubics _then_ feed it to rough.js. This is a huge improvement. As intended, this fixed the problem in the previous line.
+- #3 is my favorite of the rough fonts. I will remove the others. I got rid of the multi-stroke because I think it looks a little better this way.
+- #4 is similar to #3, but with `preserveVertices` to false. I never liked this the results of that setting.
+- And last row shows a 5th variation of the rough font. While it looks like fun it seems way too rough and hard to read for my needs.
 
 I will be removing a lot of the irrelevant lines from here to make room for new experiments.
 Most of these have already served their purpose.

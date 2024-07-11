@@ -126,7 +126,12 @@ If you want CSS to smoothly animate the change between two path strings:
 
 There are a lot of ways to potentially deal with this.
 Notice `toCubic()` and `covertToCubics()`.
-Coming soon: `removeIrrelevantMoves()` because rough.js sometimes adds moves when it doesn't need to.
+
+~~Coming soon: `removeIrrelevantMoves()` because rough.js sometimes adds moves when it doesn't need to.~~
+While working on this code I seriously reorganized the way I store paths.
+I no longer store explicit `M` commands.
+Each `Command` object knows its own start position.
+My code typically adds `M` commands back automatically, exactly where they are needed.
 
 ## Quick Simple Fun JavaScript Animations
 

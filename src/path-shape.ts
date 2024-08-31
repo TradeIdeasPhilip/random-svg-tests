@@ -1,5 +1,10 @@
-import { parseFloatX } from "phil-lib/misc";
-import { assertFinite, lerp } from "./utility";
+import { initializedArray, makeLinear, parseFloatX } from "phil-lib/misc";
+import {
+  assertFinite,
+  lerp,
+  polarToRectangular,
+  positiveModulo,
+} from "./utility";
 
 export type Command = {
   /**
@@ -241,8 +246,12 @@ export class PathBuilder {
   get commands(): readonly Command[] {
     return this.#commands;
   }
+  addCommand(command: Command) {
+    this.#commands.push(command);
+    this.#recentMove = undefined;
+  }
   addCommands(commands: readonly Command[]) {
-    this.#commands.push(...commands);
+    commands.forEach((command) => this.addCommand(command));
   }
   /**
    * Convert a list of strings into a list of `PathSegments` objects.
@@ -351,25 +360,29 @@ export class PathBuilder {
   get pathShape() {
     return new PathShape(this.#commands);
   }
-  #nextStart:
+  /** 
+   * If the last command was an M, store the info here.
+   * Otherwise this will be `undefined`.
+   */
+  #recentMove:
     | undefined
     | {
         readonly x: number;
         readonly y: number;
         readonly outgoingAngle: number;
       };
-  M(x: number, y: number): this {
+  M(x: number, y: number, outgoingAngle = NaN): this {
     assertFinite(x, y);
-    this.#nextStart = { x, y, outgoingAngle: NaN };
+    this.#recentMove = { x, y, outgoingAngle };
     return this;
   }
-  private peekPrevious() {
-    return this.#nextStart ?? this.#commands.at(-1);
-  }
-  private consumePrevious() {
-    const result = this.peekPrevious();
-    this.#nextStart = undefined;
-    return result;
+  /**
+   * 
+   * @returns The final position and angle from the previous command.
+   * Or `undefined` if there was no previous command.
+   */
+  private previous() {
+    return this.#recentMove ?? this.#commands.at(-1);
   }
   /**
    * Add an H command to `this`.
@@ -377,23 +390,23 @@ export class PathBuilder {
    * @returns A new PathBuilder ending with this command.
    */
   H(x: number) {
-    const previous = this.consumePrevious()!;
-    this.#commands.push(new HCommand(previous.x, previous.y, x));
+    const previous = this.previous()!;
+    this.addCommand(new HCommand(previous.x, previous.y, x));
     return this;
   }
   V(y: number): PathBuilder {
-    const previous = this.consumePrevious()!;
-    this.#commands.push(new VCommand(previous.x, previous.y, y));
+    const previous = this.previous()!;
+    this.addCommand(new VCommand(previous.x, previous.y, y));
     return this;
   }
   L(x: number, y: number): PathBuilder {
-    const previous = this.consumePrevious()!;
-    this.#commands.push(new LCommand(previous.x, previous.y, x, y));
+    const previous = this.previous()!;
+    this.addCommand(new LCommand(previous.x, previous.y, x, y));
     return this;
   }
   Q(x1: number, y1: number, x: number, y: number) {
-    const previous = this.consumePrevious()!;
-    this.#commands.push(new QCommand(previous.x, previous.y, x1, y1, x, y));
+    const previous = this.previous()!;
+    this.addCommand(new QCommand(previous.x, previous.y, x1, y1, x, y));
     return this;
   }
   /**
@@ -405,7 +418,7 @@ export class PathBuilder {
    * @param y The y for the final control point.
    */
   Q_HV(x: number, y: number) {
-    const previous = this.peekPrevious()!;
+    const previous = this.previous()!;
     return this.Q(x, previous.y, x, y);
   }
   /**
@@ -417,16 +430,211 @@ export class PathBuilder {
    * @param y The y for both control points.
    */
   Q_VH(x: number, y: number) {
-    const previous = this.peekPrevious()!;
+    const previous = this.previous()!;
     return this.Q(previous.x, y, x, y);
   }
-  C(x1: number, y1: number, x2: number, y2: number, x: number, y: number) {
-    const previous = this.consumePrevious()!;
-    this.#commands.push(
-      new CCommand(previous.x, previous.y, x1, y1, x2, y2, x, y)
+  /**
+   * 
+   * @param x The end point.
+   * @param y The end point.
+   * @param finalAngle The angle at the end point.
+   * @param initialAngle The angle at the beginning.
+   * By default this is read from the previous command.
+   * @returns `this`.
+   */
+  Q_angles(x: number, y: number, finalAngle: number, initialAngle?: number) {
+    const previous = this.previous()!;
+    initialAngle ??= previous.outgoingAngle;
+    if (initialAngle === undefined) {
+      throw new Error("wtf");
+    }
+    assertFinite(initialAngle, finalAngle);
+    const controlPoint = findIntersection(
+      {
+        x0: previous.x,
+        y0: previous.y,
+        slope: Math.tan(initialAngle),
+      },
+      {
+        x0: x,
+        y0: y,
+        slope: Math.tan(finalAngle),
+      }
     );
+    if (!controlPoint) {
+      this.L(x, y);
+    } else {
+      this.Q(controlPoint.x, controlPoint.y, x, y);
+      //console.warn({x0:previous.x, y0:previous.y, initialAngle, x1: controlPoint.x, y1:controlPoint.y, x, y, finalAngle})
+    }
     return this;
   }
+  C(x1: number, y1: number, x2: number, y2: number, x: number, y: number) {
+    const previous = this.previous()!;
+    this.addCommand(new CCommand(previous.x, previous.y, x1, y1, x2, y2, x, y));
+    return this;
+  }
+  /**
+   * Add a new circle to the path starting and ending at the current point.
+   * @param cx The center of the circle.
+   * @param cy The center of the circle.
+   * @param direction Clockwise or counterclockwise.
+   * @returns `this`.
+   */
+  circle(cx: number, cy: number, direction: "cw" | "ccw" = "cw") {
+    const previous = this.previous()!;
+    const x0 = previous.x;
+    const y0 = previous.y;
+    const fromAngle = Math.atan2(y0 - cy, x0 - cx);
+    const radius = Math.hypot(y0 - cy, x0 - cx);
+    const forward = direction == "cw" ? 1 : -1;
+    const toAngle = fromAngle + Math.PI * 2 * forward;
+    const getAngle = makeLinear(0, fromAngle, 1, toAngle);
+    function f(t: number): Point {
+      switch (t) {
+        case 0:
+        case 1: {
+          return previous;
+        }
+        default: {
+          const angle = getAngle(t);
+          const relative = polarToRectangular(radius, angle);
+          return { x: cx + relative.x, y: cy + relative.y };
+        }
+      }
+    }
+    //const log = new Array();
+    function fAndLog(t: number): Point {
+      const result = f(t);
+      // log.push({
+      //   t,
+      //   angle: (getAngle(t) / Math.PI) * 180,
+      //   x: result.x,
+      //   y: result.y,
+      // });
+      return result;
+    }
+    const numberOfSegments = 8;
+    this.addParametricPath(fAndLog, numberOfSegments);
+    //console.table(log);
+    return this;
+  }
+  /**
+   * Add an arc of a circle to the path.
+   * Start at the current point.
+   * Rotate around (cx,cy).
+   * End at (x,y).
+   * @param cx The center of the circle.
+   * @param cy The center of the circle.
+   * @param x Where to end.
+   * @param y Where to end.
+   * @param direction Clockwise or counterclockwise.
+   * Flipping this value will draw a complementary arc.
+   * The two together would form a complete circle.
+   * @returns `this`
+   */
+  arc(cx: number, cy: number, x: number, y: number, direction: "cw" | "ccw") {
+    const previous = this.previous()!;
+    const x0 = previous.x;
+    const y0 = previous.y;
+    let fromAngle = positiveModulo(Math.atan2(y0 - cy, x0 - cx), Math.PI * 2);
+    const fromRadius = Math.hypot(y0 - cy, x0 - cx);
+    let toAngle = positiveModulo(Math.atan2(y - cy, x - cx), Math.PI * 2);
+    const toRadius = Math.hypot(y - cy, x - cx);
+    if (direction == "cw") {
+      if (fromAngle > toAngle) {
+        toAngle += Math.PI * 2;
+      }
+    } else {
+      if (fromAngle < toAngle) {
+        fromAngle += Math.PI *2;
+      }
+    }
+    const angleTraversed = Math.abs(fromAngle-toAngle);
+    const numberOfSegments = Math.ceil(angleTraversed * 1.17 + 0.0001);
+    const getRadius = makeLinear(0, fromRadius, 1, toRadius);
+    const getAngle = makeLinear(0, fromAngle, 1, toAngle);
+    function f(t: number): Point {
+      switch (t) {
+        case 0: {
+          return previous;
+        }
+        case 1: {
+          return { x, y };
+        }
+        default: {
+          const relative = polarToRectangular(getRadius(t), getAngle(t));
+          return { x: cx + relative.x, y: cy + relative.y };
+        }
+      }
+    }
+    return this.addParametricPath(f, numberOfSegments);
+  }
+  /**
+   * Add a path described by a TypeScript function.
+   * @param f An input of 0 should return the point at the beginning of the path.
+   * An input of 1 should return the point at the end of the path.
+   * Other inputs in that range will cause the output to move smoothly.
+   * @param numberOfSegments How many Q commands to create.  
+   * More gives you more detail.
+   * @returns `this`.
+   */
+  addParametricPath(f: ParametricFunction, numberOfSegments: number) {
+    // This idea was called math-to-path in previous incarnations.
+    // This version is better because it fills a PathBuilder rather
+    // than creating a string.  And this version fixes a few bugs.
+    if (numberOfSegments <= 0) {
+      throw new Error("wtf");
+    }
+    const ε = 0.01 / numberOfSegments;
+    const samples = initializedArray(numberOfSegments + 1, (index) => {
+      const t = index / numberOfSegments;
+      const point = f(t);
+      const direction = getDirection(f, t, ε);
+      return { t, point, direction };
+    });
+    const segments = initializedArray(numberOfSegments, (index) => ({
+      from: samples[index],
+      to: samples[index + 1],
+    }));
+    //    segments.length = 4;
+    segments.forEach((segment) => {
+      this.Q_angles(
+        segment.to.point.x,
+        segment.to.point.y,
+        segment.to.direction,
+        segment.from.direction
+      );
+    });
+    return this;
+  }
+}
+
+type ParametricFunction = (t: number) => Point;
+
+/**
+ * What direction is the output of the given function moving at the given time?
+ *
+ * Basically a derivative in more dimensions.
+ * @param f Find the derivative of this function.
+ * @param t Take the derivative at this time.
+ * @param ε A small value that we can add to t or subtract from t, to estimate the derivative.
+ * @returns An angle, in a form suitable for Math.tan().  Or NaN in case of any errors.
+ */
+function getDirection(f: ParametricFunction, t: number, ε: number) {
+  if (!(t >= 0 && t <= 1)) {
+    throw new Error("Expected 0 ≤ t ≤ 1");
+  }
+  const fromInput = Math.max(0, t - ε);
+  const fromOutput = f(fromInput);
+  const toInput = Math.min(1, t + ε); // TODO port this fix back to ../../chuzzle/src/math-to-path.ts
+  const toOutput = f(toInput);
+  const Δx = toOutput.x - fromOutput.x;
+  const Δy = toOutput.y - fromOutput.y;
+  if (Δx == 0 && Δy == 0) {
+    return NaN;
+  }
+  return Math.atan2(Δy, Δx);
 }
 
 const afterCommand = " *";
@@ -620,4 +828,34 @@ export class PathShape {
       this.commands.map((command) => command.translate(Δx, Δy))
     );
   }
+}
+
+// TODO these should really be rays.  Two rays might not meet at all.
+// If they do meet, findIntersection() will give the right answer.
+// We need to know an angle, not a slope, to find that out.
+//
+type Line = { x0: number; y0: number; slope: number };
+type Point = { readonly x: number; readonly y: number };
+
+function findIntersection(α: Line, β: Line): Point | undefined {
+  if (isNaN(α.slope) || isNaN(β.slope) || α.slope == β.slope) {
+    return undefined;
+  }
+  const αIsVertical = Math.abs(α.slope) > Number.MAX_SAFE_INTEGER;
+  const βIsVertical = Math.abs(β.slope) > Number.MAX_SAFE_INTEGER;
+  if (αIsVertical && βIsVertical) {
+    // Notice the bug fix.
+    // When I copied this from math-to-path.ts (which itself is copied from another project)
+    // I changed if (αIsVertical || βIsVertical) to if (αIsVertical && βIsVertical)
+    return undefined;
+  }
+  const x = αIsVertical
+    ? α.x0
+    : βIsVertical
+    ? β.x0
+    : (β.y0 - β.slope * β.x0 - α.y0 + α.slope * α.x0) / (α.slope - β.slope);
+  const y = αIsVertical
+    ? β.slope * (x - β.x0) + β.y0
+    : α.slope * (x - α.x0) + α.y0;
+  return { x, y };
 }

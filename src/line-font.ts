@@ -118,7 +118,6 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
         point.x -= smallestX;
         point.y += middle;
       });
-      //console.warn(geometry);
       const commands = geometry.map(
         ([from, to]) => new LCommand(from.x, from.y, to.x, to.y)
       );
@@ -1095,6 +1094,42 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       .L(left, baseline)
       .H(advance).pathShape;
     add("z", shape, advance);
+  }
+  // MARK: ° (degrees)
+  {
+    const advance = digitWidth / 2;
+    const radius = advance / 2;
+    const shape = PathBuilder.M(radius, capitalTop).circle(
+      radius,
+      capitalTop + radius,"cw"
+    ).pathShape;
+    add("°", shape, advance);
+  }
+  // MARK: ◯ (large circle)
+  {
+    const advance = -capitalTop;
+    const radius = advance / 2;
+    const shape = PathBuilder.M(radius, capitalTop).circle(
+      radius,
+      capitalTop + radius,"cw"
+    ).pathShape;
+    add("◯", shape, advance);
+  }
+  // MARK: ◠ (upper half circle)
+  {
+    const advance = -capitalTop;
+    const radius = advance / 2;
+    const middle = capitalTop/2;
+    const shape = PathBuilder.M(0, middle).arc(radius, middle, advance, middle, "cw").pathShape;
+    add("◠",shape,advance)
+  }
+  // MARK: ◡ (lower half circle)
+  {
+    const advance = -capitalTop;
+    const radius = advance / 2;
+    const middle = capitalTop/2;
+    const shape = PathBuilder.M(0, middle).arc(radius, middle, advance, middle, "ccw").pathShape;
+    add("◡",shape,advance)
   }
   // Sort the map by key.
   return new Map(

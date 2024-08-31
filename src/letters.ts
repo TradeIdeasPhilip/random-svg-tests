@@ -753,8 +753,8 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   {
     writer.font = baseFont;
     writer.CRLF();
-    const stopShapeInfo = textToShape("Stop");
-    const goShapeInfo = textToShape("Go");
+    const stopShapeInfo = textToShape("Stop°");
+    const goShapeInfo = textToShape("Go◯");
     writer.CRLF();
     const stopElement = stopShapeInfo.shape.makeElement();
     writer.showAndAdvance(stopElement, stopShapeInfo.advance);

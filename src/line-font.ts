@@ -3,6 +3,17 @@ import { polarToRectangular } from "./utility";
 import { DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
 import { PathShape, PathBuilder, LCommand } from "./path-shape";
 
+const dEast = 0;
+const dNorthEast = Math.PI / 4; // 45°
+const dNorth = 2 * dNorthEast; // 90°
+const dNorthWest = 3 * dNorthEast;
+const dWest = 4 * dNorthEast; // 180°
+const dSouthWest = 5 * dNorthEast;
+const dSouth = 6 * dNorthEast; // 270°
+const dSouthEast = 7 * dNorthEast;
+
+dEast || dSouthEast;
+
 /**
  * This seems silly.  Is size really the only input?
  * I'm not sure that the size should be fixed at this time.
@@ -101,6 +112,7 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       add("-", shape, advance);
     }
     {
+      // MARK: *
       const outerRadius = (digitWidth / 2) * 0.9;
       const spokes = 5;
       const initialAngle = -Math.PI / 2;
@@ -1101,7 +1113,8 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
     const radius = advance / 2;
     const shape = PathBuilder.M(radius, capitalTop).circle(
       radius,
-      capitalTop + radius,"cw"
+      capitalTop + radius,
+      "cw"
     ).pathShape;
     add("°", shape, advance);
   }
@@ -1111,7 +1124,8 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
     const radius = advance / 2;
     const shape = PathBuilder.M(radius, capitalTop).circle(
       radius,
-      capitalTop + radius,"cw"
+      capitalTop + radius,
+      "cw"
     ).pathShape;
     add("◯", shape, advance);
   }
@@ -1119,17 +1133,60 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
   {
     const advance = -capitalTop;
     const radius = advance / 2;
-    const middle = capitalTop/2;
-    const shape = PathBuilder.M(0, middle).arc(radius, middle, advance, middle, "cw").pathShape;
-    add("◠",shape,advance)
+    const middle = capitalTop / 2;
+    const shape = PathBuilder.M(0, middle).arc(
+      radius,
+      middle,
+      advance,
+      middle,
+      "cw"
+    ).pathShape;
+    add("◠", shape, advance);
   }
   // MARK: ◡ (lower half circle)
   {
     const advance = -capitalTop;
     const radius = advance / 2;
-    const middle = capitalTop/2;
-    const shape = PathBuilder.M(0, middle).arc(radius, middle, advance, middle, "ccw").pathShape;
-    add("◡",shape,advance)
+    const middle = capitalTop / 2;
+    const shape = PathBuilder.M(0, middle).arc(
+      radius,
+      middle,
+      advance,
+      middle,
+      "ccw"
+    ).pathShape;
+    add("◡", shape, advance);
+  }
+  // MARK: ♡ (white heart suit)
+  {
+    // This is a scaled down version of https://developer.mozilla.org/en-US/docs/Web/SVG/Element/path#example
+    const advance = -capitalTop;
+    const radius = advance / 4;
+    const middle = capitalTop + radius;
+    // TODO this shows off some bugs.  Get rid of either or both +0.01 to see one bug.
+    // Also, the diagonals seem backwards.
+    const shape = PathBuilder.M(radius * 2, middle)
+      .arc(radius * 3, middle, advance, middle, "cw")
+      .Q_angles(radius * 2, baseline, dNorthWest, dSouth + 0.01)
+      .Q_angles(0, middle, dNorth + 0.01, dSouthWest)
+      .arc(radius, middle, radius * 2, middle, "cw").pathShape;
+    add("♡", shape, advance);
+  }
+  // MARK: temp/test
+  {
+    // TODO these show off a bug.  Remove the +0.01 to see it.
+    // TODO fix the bug then remove these test cases.
+    ["À", "Á", "Â", "Ã", "Ä", "Å"].forEach((ch, index, all) => {
+      const advance = (-capitalTop / all.length) * (index * 2 + 1);
+      const shape = PathBuilder.M(advance, capitalTop).Q_angles(
+        0,
+        baseline,
+        dWest,
+        dSouth + 0.01
+      ).pathShape;
+      add(ch, shape, advance);
+      console.log(shape.commands[0].asString);
+    });
   }
   // Sort the map by key.
   return new Map(

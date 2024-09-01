@@ -360,7 +360,7 @@ export class PathBuilder {
   get pathShape() {
     return new PathShape(this.#commands);
   }
-  /** 
+  /**
    * If the last command was an M, store the info here.
    * Otherwise this will be `undefined`.
    */
@@ -377,7 +377,7 @@ export class PathBuilder {
     return this;
   }
   /**
-   * 
+   *
    * @returns The final position and angle from the previous command.
    * Or `undefined` if there was no previous command.
    */
@@ -434,7 +434,7 @@ export class PathBuilder {
     return this.Q(previous.x, y, x, y);
   }
   /**
-   * 
+   *
    * @param x The end point.
    * @param y The end point.
    * @param finalAngle The angle at the end point.
@@ -479,6 +479,8 @@ export class PathBuilder {
    * @param cx The center of the circle.
    * @param cy The center of the circle.
    * @param direction Clockwise or counterclockwise.
+   * The direction does __not__ matter for a simple fill or stroke.
+   * However, it can make a difference with animations an special effects.
    * @returns `this`.
    */
   circle(cx: number, cy: number, direction: "cw" | "ccw" = "cw") {
@@ -547,10 +549,10 @@ export class PathBuilder {
       }
     } else {
       if (fromAngle < toAngle) {
-        fromAngle += Math.PI *2;
+        fromAngle += Math.PI * 2;
       }
     }
-    const angleTraversed = Math.abs(fromAngle-toAngle);
+    const angleTraversed = Math.abs(fromAngle - toAngle);
     const numberOfSegments = Math.ceil(angleTraversed * 1.17 + 0.0001);
     const getRadius = makeLinear(0, fromRadius, 1, toRadius);
     const getAngle = makeLinear(0, fromAngle, 1, toAngle);
@@ -575,7 +577,7 @@ export class PathBuilder {
    * @param f An input of 0 should return the point at the beginning of the path.
    * An input of 1 should return the point at the end of the path.
    * Other inputs in that range will cause the output to move smoothly.
-   * @param numberOfSegments How many Q commands to create.  
+   * @param numberOfSegments How many Q commands to create.
    * More gives you more detail.
    * @returns `this`.
    */
@@ -597,7 +599,6 @@ export class PathBuilder {
       from: samples[index],
       to: samples[index + 1],
     }));
-    //    segments.length = 4;
     segments.forEach((segment) => {
       this.Q_angles(
         segment.to.point.x,

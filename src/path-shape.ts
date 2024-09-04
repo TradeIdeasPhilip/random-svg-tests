@@ -842,21 +842,36 @@ function findIntersection(α: Line, β: Line): Point | undefined {
   if (isNaN(α.slope) || isNaN(β.slope) || α.slope == β.slope) {
     return undefined;
   }
-  const αIsVertical = Math.abs(α.slope) > Number.MAX_SAFE_INTEGER;
-  const βIsVertical = Math.abs(β.slope) > Number.MAX_SAFE_INTEGER;
+  const αIsVertical = Math.abs(α.slope) * 100 > Number.MAX_SAFE_INTEGER;
+  const βIsVertical = Math.abs(β.slope) * 100 > Number.MAX_SAFE_INTEGER;
   if (αIsVertical && βIsVertical) {
     // Notice the bug fix.
     // When I copied this from math-to-path.ts (which itself is copied from another project)
     // I changed if (αIsVertical || βIsVertical) to if (αIsVertical && βIsVertical)
     return undefined;
   }
-  const x = αIsVertical
+
+  let x: number;
+  let y: number;
+  if (αIsVertical || βIsVertical) {
+    x = αIsVertical ? α.x0 : β.x0;
+    const otherLine = αIsVertical ? β : α;
+    y = otherLine.slope * (x - otherLine.x0) + otherLine.y0;
+  } else {
+    x = (β.y0 - β.slope * β.x0 - α.y0 + α.slope * α.x0) / (α.slope - β.slope);
+    y = α.slope * (x - α.x0) + α.y0;
+  }
+
+  const oldX = αIsVertical
     ? α.x0
     : βIsVertical
     ? β.x0
     : (β.y0 - β.slope * β.x0 - α.y0 + α.slope * α.x0) / (α.slope - β.slope);
-  const y = αIsVertical
-    ? β.slope * (x - β.x0) + β.y0
-    : α.slope * (x - α.x0) + α.y0;
+  const oldY = αIsVertical
+    ? β.slope * (oldX - β.x0) + β.y0
+    : α.slope * (oldX - α.x0) + α.y0;
+
+  console.log({ x, oldX, y, oldY, αIsVertical, βIsVertical, α, β });
+
   return { x, y };
 }

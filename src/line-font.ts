@@ -1163,26 +1163,25 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
     const advance = -capitalTop;
     const radius = advance / 4;
     const middle = capitalTop + radius;
-    // TODO this shows off some bugs.  Get rid of either or both +0.01 to see one bug.
-    // Also, the diagonals seem backwards.
     const shape = PathBuilder.M(radius * 2, middle)
       .arc(radius * 3, middle, advance, middle, "cw")
-      .Q_angles(radius * 2, baseline, dNorthWest, dSouth + 0.01)
-      .Q_angles(0, middle, dNorth + 0.01, dSouthWest)
+      // TODO it seem like dNorthWest and dSouthWest should be swapped in the
+      // next two lines.  Currently this looks right on the screen.  But
+      // I think there's still a bug in Q_angles.
+      .Q_angles(radius * 2, baseline, dNorthWest, dSouth)
+      .Q_angles(0, middle, dNorth, dSouthWest)
       .arc(radius, middle, radius * 2, middle, "cw").pathShape;
     add("♡", shape, advance);
   }
   // MARK: temp/test
   {
-    // TODO these show off a bug.  Remove the +0.01 to see it.
-    // TODO fix the bug then remove these test cases.
     ["À", "Á", "Â", "Ã", "Ä", "Å"].forEach((ch, index, all) => {
       const advance = (-capitalTop / all.length) * (index * 2 + 1);
       const shape = PathBuilder.M(advance, capitalTop).Q_angles(
         0,
         baseline,
         dWest,
-        dSouth + 0.01
+        dSouth
       ).pathShape;
       add(ch, shape, advance);
       console.log(shape.commands[0].asString);

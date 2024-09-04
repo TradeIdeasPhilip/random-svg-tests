@@ -437,7 +437,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   const rowsOfLetters = [
     { roughness: 0.4, title: "Heartbeat!" },
     { roughness: 0.44, title: "Toggle @#$%" },
-    { roughness: 0.5, title: "Skywriting" },
+    { roughness: 0.5, title: "Skywriting ♡" },
     { roughness: 0.54, title: "The Wave *" },
     { roughness: 0.59, title: "Wavy Lights." },
     { roughness: 0.64, title: "Blustery day.i" },
@@ -833,7 +833,8 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
         shuffleArray([...shapes[1].commands])
       );
       return [shapes[0], newSecondShape];
-    }shuffleOne;
+    }
+    shuffleOne;
     function reverseOne(shapes: ReadonlyShapes): Shapes {
       const newSecondShape = new PathShape(shapes[1].commands.toReversed());
       return [shapes[0], newSecondShape];
@@ -967,7 +968,8 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       _radians: number
     ) {
       throw new Error("TODO");
-    }rotateOneAround;
+    }
+    rotateOneAround;
     const fromShapeInfo = textToShape("Round\n  and\nround!");
     const toShapeInfo = textToShape("Circle\n  in a\nspiral");
     const shapes = [fromShapeInfo.shape, toShapeInfo.shape] as const;

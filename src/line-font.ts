@@ -4,13 +4,13 @@ import { DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
 import { PathShape, PathBuilder, LCommand } from "./path-shape";
 
 const dEast = 0;
-const dNorthEast = Math.PI / 4; // 45°
-const dNorth = 2 * dNorthEast; // 90°
-const dNorthWest = 3 * dNorthEast;
-const dWest = 4 * dNorthEast; // 180°
-const dSouthWest = 5 * dNorthEast;
-const dSouth = 6 * dNorthEast; // 270°
-const dSouthEast = 7 * dNorthEast;
+const dSouthEast = Math.PI / 4; // 45°
+const dSouth = 2 * dSouthEast; // 90°
+const dSouthWest = 3 * dSouthEast;
+//const dWest = 4 * dSouthEast; // 180°
+const dNorthWest = 5 * dSouthEast;
+const dNorth = 6 * dSouthEast; // 270°
+//const dNorthEast = 7 * dSouthEast;
 
 dEast || dSouthEast;
 
@@ -1168,24 +1168,56 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       // TODO it seem like dNorthWest and dSouthWest should be swapped in the
       // next two lines.  Currently this looks right on the screen.  But
       // I think there's still a bug in Q_angles.
-      .Q_angles(radius * 2, baseline, dNorthWest, dSouth)
-      .Q_angles(0, middle, dNorth, dSouthWest)
+      .Q_angles(radius * 2, baseline, dSouthWest, dSouth)
+      .Q_angles(0, middle, dNorth, dNorthWest)
       .arc(radius, middle, radius * 2, middle, "cw").pathShape;
     add("♡", shape, advance);
   }
-  // MARK: temp/test
+
+  //MARK: ↔ ← → ↕ ↑ ↓
   {
-    ["À", "Á", "Â", "Ã", "Ä", "Å"].forEach((ch, index, all) => {
-      const advance = (-capitalTop / all.length) * (index * 2 + 1);
-      const shape = PathBuilder.M(advance, capitalTop).Q_angles(
-        0,
-        baseline,
-        dWest,
-        dSouth
-      ).pathShape;
-      add(ch, shape, advance);
-      console.log(shape.commands[0].asString);
-    });
+    const shaftLength = fontMetrics.mHeight;
+    // const headSideLength = shaftLength/3;
+    // const headHalfBase = headSideLength / 2;
+    // const headHeight = Math.sqrt(3)/2*headSideLength;
+    const headHalfBase = shaftLength / 4;
+    const headHeight = headHalfBase;
+    {
+      const advance = shaftLength;
+      const middle = (capitalTop + baseline) / 2;
+      const double = PathBuilder.M(headHeight, middle - headHalfBase)
+        .L(0, middle)
+        .L(headHeight, middle + headHalfBase)
+        .M(0, middle)
+        .L(advance, middle)
+        .M(advance - headHeight, middle - headHalfBase)
+        .L(advance, middle)
+        .L(advance - headHeight, middle + headHalfBase);
+      add("↔", double.pathShape, advance); // LEFT RIGHT ARROW
+      const left = new PathShape(double.commands.slice(0, 3));
+      add("←", left, advance); // LEFTWARDS ARROW
+      const right = new PathShape(double.commands.slice(2, 5));
+      add("→", right, advance); // RIGHTWARDS ARROW
+    }
+    {
+      const left = 0;
+      const center = headHalfBase;
+      const advance = headHalfBase * 2;
+      const right = advance;
+      const double = PathBuilder.M(left, capitalTop + headHeight)
+        .L(center, capitalTop)
+        .L(right, capitalTop + headHeight)
+        .M(center, capitalTop)
+        .L(center, baseline)
+        .M(left, baseline - headHeight)
+        .L(center, baseline)
+        .L(right, baseline - headHeight);
+      add("↕", double.pathShape, advance); // UP DOWN ARROW
+      const up = new PathShape(double.commands.slice(0, 3));
+      add("↑", up, advance); // UPWARDS ARROW
+      const down = new PathShape(double.commands.slice(2, 5));
+      add("↓", down, advance); // DOWNWARDS ARROW
+    }
   }
   // Sort the map by key.
   return new Map(

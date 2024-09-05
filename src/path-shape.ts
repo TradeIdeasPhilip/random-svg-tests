@@ -252,6 +252,7 @@ export class PathBuilder {
   }
   addCommands(commands: readonly Command[]) {
     commands.forEach((command) => this.addCommand(command));
+    return this;
   }
   /**
    * Convert a list of strings into a list of `PathSegments` objects.

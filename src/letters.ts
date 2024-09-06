@@ -435,10 +435,10 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   // style with this value.
   //const strokeWidth = cubicFont.get("0")!.fontMetrics.strokeWidth.toString();
   const rowsOfLetters = [
-    { roughness: 0.4, title: "Heartbeat!" },
+    { roughness: 0.4, title: '"Heartbeat!"' },
     { roughness: 0.44, title: "Toggle @#$%" },
     { roughness: 0.5, title: "Skywriting ♡" },
-    { roughness: 0.54, title: "The Wave *" },
+    { roughness: 0.54, title: "The Wave's *" },
     { roughness: 0.59, title: "Wavy Lights." },
     { roughness: 0.64, title: "Blustery day.i" },
   ].map((lineInfo) => {

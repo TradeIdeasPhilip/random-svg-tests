@@ -49,6 +49,7 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
     strokeWidth,
   } = fontMetrics;
   const left = 0;
+  const dotHeight = strokeWidth / 4;
   {
     const advance = digitWidth;
     const radius = advance / 2;
@@ -834,7 +835,6 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
     add("h", shape, advance);
   }
   // MARK: i
-  const dotHeight = strokeWidth / 4;
   {
     const advance = 0;
     const shape = PathBuilder.M(left, capitalMiddle)
@@ -881,6 +881,27 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       .V(baseline)
       .Q_VH(-back, baseline + drop).pathShape;
     add(",", shape, advance);
+  }
+  // MARK: '
+  {
+    const advance = 0;
+    const drop = (descender - baseline) / 2;
+    const total = drop + dotHeight;
+    const shape = new PathShape([
+      new LCommand(left, capitalTop, left, capitalTop + total),
+    ]);
+    add("'", shape, advance);
+  }
+  // MARK: "
+  {
+    const advance = strokeWidth*2;
+    const drop = (descender - baseline) / 2;
+    const total = drop + dotHeight;
+    const shape = new PathShape([
+      new LCommand(left, capitalTop, left, capitalTop + total),
+      new LCommand(advance, capitalTop, advance, capitalTop + total),
+    ]);
+    add('"', shape, advance);
   }
   // MARK: :
   {
@@ -1297,6 +1318,7 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
     function normalize() {
       // It seems like I've done this before.
       // Consider making this a library routine.
+      // TODO check out *.  That appears to have a lot of code that I should have reused.
       const min = { x: Infinity, y: Infinity };
       const max = { x: -Infinity, y: -Infinity };
       vertices.forEach((vertex) => {

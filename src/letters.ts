@@ -958,7 +958,6 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       if (shorter == commands[1]) {
         newCommands.reverse();
       }
-      console.log(shorter);
       return [new PathShape(newCommands[0]), new PathShape(newCommands[1])];
     }
     function rotateOneAround(

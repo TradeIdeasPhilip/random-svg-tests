@@ -145,7 +145,34 @@ export class LCommand implements Command {
   }
 }
 
-class QCommand implements Command {
+export class QCommand implements Command {
+  static angles(
+    x0: number,
+    y0: number,
+    angle0: number,
+    x: number,
+    y: number,
+    angle: number
+  ): Command {
+    assertFinite(x0, y0, angle0, x, y, angle);
+    const controlPoint = findIntersection(
+      {
+        x0,
+        y0,
+        slope: Math.tan(angle0),
+      },
+      {
+        x0: x,
+        y0: y,
+        slope: Math.tan(angle),
+      }
+    );
+    if (!controlPoint) {
+      return new LCommand(x0, y0, x, y);
+    } else {
+      return new this(x0, y0, controlPoint.x, controlPoint.y, x, y);
+    }
+  }
   constructor(
     public readonly x0: number,
     public readonly y0: number,
@@ -449,25 +476,9 @@ export class PathBuilder {
     if (initialAngle === undefined) {
       throw new Error("wtf");
     }
-    assertFinite(initialAngle, finalAngle);
-    const controlPoint = findIntersection(
-      {
-        x0: previous.x,
-        y0: previous.y,
-        slope: Math.tan(initialAngle),
-      },
-      {
-        x0: x,
-        y0: y,
-        slope: Math.tan(finalAngle),
-      }
+    this.addCommand(
+      QCommand.angles(previous.x, previous.y, initialAngle, x, y, finalAngle)
     );
-    if (!controlPoint) {
-      this.L(x, y);
-    } else {
-      this.Q(controlPoint.x, controlPoint.y, x, y);
-      //console.warn({x0:previous.x, y0:previous.y, initialAngle, x1: controlPoint.x, y1:controlPoint.y, x, y, finalAngle})
-    }
     return this;
   }
   C(x1: number, y1: number, x2: number, y2: number, x: number, y: number) {
@@ -863,16 +874,15 @@ function findIntersection(α: Line, β: Line): Point | undefined {
     y = α.slope * (x - α.x0) + α.y0;
   }
 
-  const oldX = αIsVertical
-    ? α.x0
-    : βIsVertical
-    ? β.x0
-    : (β.y0 - β.slope * β.x0 - α.y0 + α.slope * α.x0) / (α.slope - β.slope);
-  const oldY = αIsVertical
-    ? β.slope * (oldX - β.x0) + β.y0
-    : α.slope * (oldX - α.x0) + α.y0;
-
-  console.log({ x, oldX, y, oldY, αIsVertical, βIsVertical, α, β });
+  // const oldX = αIsVertical
+  //   ? α.x0
+  //   : βIsVertical
+  //   ? β.x0
+  //   : (β.y0 - β.slope * β.x0 - α.y0 + α.slope * α.x0) / (α.slope - β.slope);
+  // const oldY = αIsVertical
+  //   ? β.slope * (oldX - β.x0) + β.y0
+  //   : α.slope * (oldX - α.x0) + α.y0;
+  //   console.log({ x, oldX, y, oldY, αIsVertical, βIsVertical, α, β });
 
   return { x, y };
 }

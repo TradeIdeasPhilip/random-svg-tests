@@ -1,7 +1,7 @@
 import { initializedArray, makeBoundedLinear } from "phil-lib/misc";
 import { polarToRectangular } from "./utility";
 import { DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
-import { PathShape, PathBuilder, LCommand } from "./path-shape";
+import { PathShape, PathBuilder, LCommand, QCommand } from "./path-shape";
 
 const dEast = 0;
 const dSouthEast = Math.PI / 4; // 45°
@@ -894,7 +894,7 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
   }
   // MARK: "
   {
-    const advance = strokeWidth*2;
+    const advance = strokeWidth * 2;
     const drop = (descender - baseline) / 2;
     const total = drop + dotHeight;
     const shape = new PathShape([
@@ -1258,7 +1258,6 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
     add("✧", shape, advance); //WHITE FOUR POINTED STAR
   }
   // MARK: ☆ (white star)
-  // ⭒ WHITE SMALL STAR
   {
     const numberOfVertices = 5;
     /**
@@ -1337,12 +1336,25 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       return translation;
     }
     const translation = normalize();
-    const commands = vertices.map((vertex, index, array) => {
+    const lines = vertices.map((vertex, index, array) => {
       const next = array.at(index + 1 - array.length)!;
       return new LCommand(vertex.x, vertex.y, next.x, next.y);
     });
-    // WHITE STAR
-    add("☆", new PathShape(commands), translation.advance);
+    add("☆", new PathShape(lines), translation.advance); // WHITE STAR
+    const curves = vertices.map((vertex, index, array) => {
+      const next = array.at(index + 1 - array.length)!;
+      const baseAngle = Math.atan2(next.y - vertex.y, next.x - vertex.x);
+      const tweakAngle = 0.175;
+      return QCommand.angles(
+        vertex.x,
+        vertex.y,
+        baseAngle + tweakAngle,
+        next.x,
+        next.y,
+        baseAngle - tweakAngle
+      );
+    });
+    add("⭒", new PathShape(curves), translation.advance); // WHITE SMALL STAR
   }
   // Sort the map by key.
   return new Map(

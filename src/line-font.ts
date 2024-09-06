@@ -1,4 +1,4 @@
-import { initializedArray } from "phil-lib/misc";
+import { initializedArray, makeBoundedLinear } from "phil-lib/misc";
 import { polarToRectangular } from "./utility";
 import { DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
 import { PathShape, PathBuilder, LCommand } from "./path-shape";
@@ -7,7 +7,7 @@ const dEast = 0;
 const dSouthEast = Math.PI / 4; // 45°
 const dSouth = 2 * dSouthEast; // 90°
 const dSouthWest = 3 * dSouthEast;
-//const dWest = 4 * dSouthEast; // 180°
+const dWest = 4 * dSouthEast; // 180°
 const dNorthWest = 5 * dSouthEast;
 const dNorth = 6 * dSouthEast; // 270°
 //const dNorthEast = 7 * dSouthEast;
@@ -1218,6 +1218,109 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       const down = new PathShape(double.commands.slice(2, 5));
       add("↓", down, advance); // DOWNWARDS ARROW
     }
+  }
+  // MARK: ✧ (white 4 pointed star)
+  {
+    const advance = fontMetrics.mHeight;
+    const left = 0;
+    const center = advance / 2;
+    const right = advance;
+    const top = capitalTop;
+    const bottom = baseline;
+    const middle = (top + bottom) / 2;
+    const angle = Math.PI / 16;
+    const shape = PathBuilder.M(center, top)
+      .Q_angles(right, middle, dEast + angle, dSouth - angle)
+      .Q_angles(center, bottom, dSouth + angle, dEast - angle)
+      .Q_angles(left, middle, dWest + angle, dNorth - angle)
+      .Q_angles(center, top, dNorth + angle, dWest - angle).pathShape;
+    add("✧", shape, advance); //WHITE FOUR POINTED STAR
+  }
+  // MARK: ☆ (white star)
+  // ⭒ WHITE SMALL STAR
+  {
+    const numberOfVertices = 5;
+    /**
+     * * 1 would be a simple polygon.
+     * * -1 would be a polygon drawn backwards.
+     * * 2 for a simple star.
+     * * If you had 7 vertices, 2 and 3 would give you different stars.
+     */
+    const overlap = 2;
+    const initialAngle = dNorth;
+    const vertices = initializedArray(numberOfVertices, (n) => {
+      const angle =
+        initialAngle + (n * (2 * Math.PI) * overlap) / numberOfVertices;
+      return polarToRectangular(1, angle);
+    });
+    /**
+     * Translate and resize an image to fit into a space.
+     *
+     * This starts with a summary of the image (the bounds of the image)
+     * and returns functions used to convert the individual vertices of the image.
+     * @param initial The bounds of the shape before we start.
+     * We will preserve this aspect ratio.
+     * @param final Something like `{top: capitalTop, bottom:baseline}`.
+     * Left is always 0 and the width is computed to preserve the aspect ratio.
+     * @returns `result.x()` and `result.y()` will convert x and y coordinates from the initial shape to the final shape.
+     * `result.advance` contains the width of the final shape.
+     */
+    function forceFit(
+      initial: { minX: number; maxX: number; minY: number; maxY: number },
+      final: { top: number; bottom: number }
+    ) {
+      const initialHeight = initial.maxY - initial.minY;
+      const finalHeight = final.bottom - final.top;
+      const scaleBy = finalHeight / initialHeight;
+      const initialWidth = initial.maxX - initial.minX;
+      const finalWidth = initialWidth * scaleBy;
+      const finalLeft = 0;
+      const finalRight = finalWidth;
+      const x = makeBoundedLinear(
+        initial.minX,
+        finalLeft,
+        initial.maxX,
+        finalRight
+      );
+      const y = makeBoundedLinear(
+        initial.minY,
+        final.top,
+        initial.maxY,
+        final.bottom
+      );
+      return { x, y, advance: finalRight };
+    }
+    /**
+     * Examines and modifies vertices in place.
+     * @returns The information required to translate additional points.
+     */
+    function normalize() {
+      // It seems like I've done this before.
+      // Consider making this a library routine.
+      const min = { x: Infinity, y: Infinity };
+      const max = { x: -Infinity, y: -Infinity };
+      vertices.forEach((vertex) => {
+        (["x", "y"] as const).forEach((index) => {
+          min[index] = Math.min(min[index], vertex[index]);
+          max[index] = Math.max(max[index], vertex[index]);
+        });
+      });
+      const initial = { minX: min.x, maxX: max.x, minY: min.y, maxY: max.y };
+      const final = { top: capitalTop, bottom: baseline };
+      const translation = forceFit(initial, final);
+      vertices.forEach((vertex) => {
+        vertex.x = translation.x(vertex.x);
+        vertex.y = translation.y(vertex.y);
+      });
+      return translation;
+    }
+    const translation = normalize();
+    const commands = vertices.map((vertex, index, array) => {
+      const next = array.at(index + 1 - array.length)!;
+      return new LCommand(vertex.x, vertex.y, next.x, next.y);
+    });
+    // WHITE STAR
+    add("☆", new PathShape(commands), translation.advance);
   }
   // Sort the map by key.
   return new Map(

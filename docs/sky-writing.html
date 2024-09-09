@@ -1,32 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Ideally I'd disable the cache using http headers, 
-         but I don't think I can do that on github pages.
-         Notice that only the html page needs this because everything else gets hashed. -->
-    <meta http-equiv="Cache-Control" content="no-store" />
     <meta charset="UTF-8" />
-    <!-- vite.svg was located in ./public/ -->
-    <!-- <link rel="icon" type="image/svg+xml" href="/vite.svg" /> -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>𝕝𝕖𝕥𝕥𝕖𝕣𝕤</title>
+    <title>Sky Writing</title>
     <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
-    <script type="module" crossorigin src="./assets/letters-CRtNaiIK.js"></script>
+    <script type="module" crossorigin src="./assets/skyWriting-CrvYrbCY.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-leadhGo2.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-DcEUXXL7.js">
     <link rel="modulepreload" crossorigin href="./assets/letters-more-DCkPiy7g.js">
-    <link rel="modulepreload" crossorigin href="./assets/rough.esm-C_8OcXYf.js">
-    <link rel="stylesheet" crossorigin href="./assets/style-FGzvypKX.css">
+    <link rel="stylesheet" crossorigin href="./assets/skyWriting-CuWXc4F2.css">
   </head>
   <body>
-    <div style="margin-left: 0.5em; margin-right: 0.5em">
-      <h1>Letters</h1>
-      <p>Several tests and examples.</p>
-    </div>
+    <h1>What’s this?</h1>
+    <p>This is a work in progress.</p>
+    <p>
+      This is a new take on the demos I've created in
+      <a href="../letters.html">../letters.html</a>. The user can type any text
+      he wants, including line breaks. And I will display the words as sky
+      writing.
+    </p>
+    <p>
+      I really like the sky writing effect and I want to do a better job of
+      that. Presumably I can add other effects, too, chosen from a radio button.
+    </p>
+    <p>
+      The idea is that a "normal" person could use this. Presumably you could
+      write a message, customize it, then send someone a url to view it.
+    </p>
+    <p>
+      Currently I'm displaying the the user's text in the simplest way possible.
+      I need to add some special effects. However, I decided this was a good
+      stopping point. At this point I've refactored some code so ../letters.html
+      and this page can share more code.
+    </p>
+    <h1>Type Something Here</h1>
+    <textarea id="input"></textarea>
+    <h1>Result</h1>
     <svg
-      id="main"
-      viewBox="0 0 100 200"
+      viewBox="0 0 100 100"
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid slice"
       style="max-width: 100vmin; overflow: visible"
@@ -53,6 +66,7 @@
           }
         }
       </style>
+      <g id="main"></g>
     </svg>
     <p>
       <a

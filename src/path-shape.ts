@@ -863,26 +863,15 @@ function findIntersection(α: Line, β: Line): Point | undefined {
     return undefined;
   }
 
-  let x: number;
-  let y: number;
   if (αIsVertical || βIsVertical) {
-    x = αIsVertical ? α.x0 : β.x0;
+    const x = αIsVertical ? α.x0 : β.x0;
     const otherLine = αIsVertical ? β : α;
-    y = otherLine.slope * (x - otherLine.x0) + otherLine.y0;
+    const y = otherLine.slope * (x - otherLine.x0) + otherLine.y0;
+    return { x, y };
   } else {
-    x = (β.y0 - β.slope * β.x0 - α.y0 + α.slope * α.x0) / (α.slope - β.slope);
-    y = α.slope * (x - α.x0) + α.y0;
+    const x =
+      (β.y0 - β.slope * β.x0 - α.y0 + α.slope * α.x0) / (α.slope - β.slope);
+    const y = α.slope * (x - α.x0) + α.y0;
+    return { x, y };
   }
-
-  // const oldX = αIsVertical
-  //   ? α.x0
-  //   : βIsVertical
-  //   ? β.x0
-  //   : (β.y0 - β.slope * β.x0 - α.y0 + α.slope * α.x0) / (α.slope - β.slope);
-  // const oldY = αIsVertical
-  //   ? β.slope * (oldX - β.x0) + β.y0
-  //   : α.slope * (oldX - α.x0) + α.y0;
-  //   console.log({ x, oldX, y, oldY, αIsVertical, βIsVertical, α, β });
-
-  return { x, y };
 }

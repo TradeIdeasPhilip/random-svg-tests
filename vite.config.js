@@ -16,6 +16,7 @@ export default defineConfig({
         spheresStarfield: resolve(__dirname, "spheres-starfield.html"),
         morph: resolve(__dirname, "morph.html"),
         letters: resolve(__dirname, "letters.html"),
+        skyWriting: resolve(__dirname, "sky-writing.html"),
         curves: resolve(__dirname, "curves.html"),
         /*
         scratch: resolve(__dirname, "scratch.html"),

@@ -50,6 +50,7 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
   } = fontMetrics;
   const left = 0;
   const dotHeight = strokeWidth / 4;
+  // Missing ASCII chars:  & < > ? ^ { } ~
   {
     const advance = digitWidth;
     const radius = advance / 2;
@@ -892,6 +893,17 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
     ]);
     add("'", shape, advance);
   }
+  // MARK: `
+  {
+    const drop = (descender - baseline) / 2;
+    const total = drop + dotHeight;
+    const advance = total;
+    const right = total;
+    const shape = new PathShape([
+      new LCommand(right, capitalTop, left, capitalTop + total),
+    ]);
+    add("`", shape, advance);
+  }
   // MARK: "
   {
     const advance = strokeWidth * 2;
@@ -912,6 +924,14 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       .M(left, topDotTop - dotHeight)
       .V(topDotTop).pathShape;
     add(":", shape, advance);
+  }
+  // MARK: |
+  {
+    const advance = 0;
+    const shape = new PathShape([
+      new LCommand(left, capitalTop, left, baseline),
+    ]);
+    add("|", shape, advance);
   }
   // MARK: ;
   {

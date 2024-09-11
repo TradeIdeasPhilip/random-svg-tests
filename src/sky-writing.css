@@ -24,6 +24,18 @@ p {
   max-width: 60ch;
 }
 
+textarea {
+  width: 60rch;
+}
+
 h1 + p {
   text-indent: 0;
+}
+
+svg {
+ background-color:  rgb(26, 217, 255);
+}
+
+#available {
+  font-weight: normal;
 }

@@ -1,1 +1,0 @@
-import"./modulepreload-polyfill-B5Qt9EMX.js";import{g as n}from"./client-misc-leadhGo2.js";import{T as r}from"./letters-more-DCkPiy7g.js";import"./utility-DcEUXXL7.js";const a=n("input",HTMLTextAreaElement),e=n("main",SVGElement);function m(){e.innerHTML="";const t=new r;t.restart();const o=a.value,i=t.addText(o);t.displayText(i,e)}a.addEventListener("input",()=>{m()});

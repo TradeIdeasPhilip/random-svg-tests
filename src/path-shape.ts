@@ -185,7 +185,9 @@ export class QCommand implements Command {
     this.asString = `Q ${x1},${y1} ${x},${y}`;
   }
   readonly incomingAngle = NaN; // TODO
-  readonly outgoingAngle = NaN; // TODO
+  get outgoingAngle(): number {
+    return Math.atan2(this.y - this.y1, this.x - this.x1);
+  }
   readonly command = "Q";
   readonly asString: string;
   translate(Δx: number, Δy: number): Command {

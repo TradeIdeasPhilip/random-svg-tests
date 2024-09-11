@@ -163,3 +163,28 @@ export class DescriptionOfLetter {
  * The order is based on the most convenient implementation and is likely to change.
  */
 export type Font = Map<string, DescriptionOfLetter>;
+
+export function describeFont(font: Font) {
+  /**
+   *
+   * @param s Something printable.  I.e. a key in a font.
+   * @returns true for normal things like `2` or `9` or `A`,
+   * false for special things like `9b` or `2a`.
+   */
+  function isNormalChar(s: string) {
+    // This is not great.  Remember that s.length doesn't always equal [...s].length.
+    // This will work for ASCII, so it's good enough for now.
+    return s.length == 1;
+  }
+
+  let normal = "";
+  let special: DescriptionOfLetter[] = [];
+  font.forEach((value, key) => {
+    if (isNormalChar(key)) {
+      normal += key;
+    } else {
+      special.push(value);
+    }
+  });
+  return { normal, special };
+}

@@ -5,21 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sky Writing</title>
     <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
-    <script type="module" crossorigin src="./assets/skyWriting-CrvYrbCY.js"></script>
+    <script type="module" crossorigin src="./assets/skyWriting-BvS0iEyA.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-leadhGo2.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-DcEUXXL7.js">
-    <link rel="modulepreload" crossorigin href="./assets/letters-more-DCkPiy7g.js">
-    <link rel="stylesheet" crossorigin href="./assets/skyWriting-CuWXc4F2.css">
+    <link rel="modulepreload" crossorigin href="./assets/letters-more-DwYcELTw.js">
+    <link rel="stylesheet" crossorigin href="./assets/skyWriting-B-oh5kOR.css">
   </head>
   <body>
-    <h1>What’s this?</h1>
+    <h1>What is this?</h1>
     <p>This is a work in progress.</p>
     <p>
       This is a new take on the demos I've created in
-      <a href="../letters.html">../letters.html</a>. The user can type any text
-      he wants, including line breaks. And I will display the words as sky
-      writing.
+      <a href="./letters.html">./letters.html</a>. The user can type any text he
+      wants, including line breaks. And I will display the words as sky writing.
     </p>
     <p>
       I really like the sky writing effect and I want to do a better job of
@@ -32,14 +31,22 @@
     <p>
       Currently I'm displaying the the user's text in the simplest way possible.
       I need to add some special effects. However, I decided this was a good
-      stopping point. At this point I've refactored some code so ../letters.html
+      stopping point. At this point I've refactored some code so ./letters.html
       and this page can share more code.
     </p>
-    <h1>Type Something Here</h1>
-    <textarea id="input"></textarea>
+    <p>
+      This page is part of a bigger
+      <a
+        href="https://github.com/TradeIdeasPhilip/random-svg-tests?tab=readme-ov-file#random-svg-tests"
+        >project</a
+      >.
+    </p>
+    <h1>Type something here</h1>
+    <textarea id="input" rows="3"></textarea>
+    <p>Available characters: <span id="available"></span></p>
     <h1>Result</h1>
     <svg
-      viewBox="0 0 100 100"
+      viewBox="0 0 100 10"
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid slice"
       style="max-width: 100vmin; overflow: visible"
@@ -47,7 +54,7 @@
       <style>
         path {
           fill: none;
-          stroke: black;
+          stroke: white;
           stroke-width: 0.5;
           stroke-linecap: round;
           stroke-linejoin: round;
@@ -68,11 +75,5 @@
       </style>
       <g id="main"></g>
     </svg>
-    <p>
-      <a
-        href="https://github.com/TradeIdeasPhilip/random-svg-tests?tab=readme-ov-file#random-svg-tests"
-        >More Info</a
-      >
-    </p>
   </body>
 </html>

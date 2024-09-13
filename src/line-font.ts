@@ -53,17 +53,23 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
   // Missing ASCII chars:  & < > ~
   // MARK: ?
   {
-    const advance = digitWidth;
+    const advance = digitWidth * 0.9;
     const center = advance / 2;
     //const right = advance;
     const radius = advance / 2;
     const sqrt = radius * Math.SQRT1_2;
-    const pathBuilder = PathBuilder.M(left, capitalTop+radius);
-    pathBuilder.arc(center, capitalTop+radius,center+sqrt, capitalTop+radius+sqrt,"cw");
-    pathBuilder.Q_angles(center, capitalBottomMiddle, dSouth);  
-    pathBuilder.M(center, baseline-dotHeight);
-    pathBuilder.L(center,baseline);
-    add("?",pathBuilder.pathShape, advance);
+    const pathBuilder = PathBuilder.M(left, capitalTop + radius);
+    pathBuilder.arc(
+      center,
+      capitalTop + radius,
+      center + sqrt,
+      capitalTop + radius + sqrt,
+      "cw"
+    );
+    pathBuilder.Q_angles(center, capitalBottomMiddle, dSouth);
+    pathBuilder.M(center, baseline - dotHeight);
+    pathBuilder.L(center, baseline);
+    add("?", pathBuilder.pathShape, advance);
   }
   {
     const advance = (digitWidth * 7) / 8;
@@ -952,11 +958,13 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
     const drop = (descender - baseline) / 2;
     const total = drop + dotHeight;
     const center = total;
-    const advance = total*2;
+    const advance = total * 2;
     const right = advance;
     const top = capitalTop;
-    const bottom = capitalTop+total;
-    const shape = PathBuilder.M(left, bottom).L(center,top).L(right,bottom).pathShape;
+    const bottom = capitalTop + total;
+    const shape = PathBuilder.M(left, bottom)
+      .L(center, top)
+      .L(right, bottom).pathShape;
     add("^", shape, advance);
   }
   // MARK: "

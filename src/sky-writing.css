@@ -6,6 +6,21 @@
   font-weight: 200;
 }
 
+body {
+  display: grid;
+  grid-template-columns: 1fr max-content 1fr;
+  max-width: 100vw;
+}
+
+#fakeBody {
+  grid-column-start: 2;
+  grid-column-end: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: calc(min(60ch, 100vw - 2em));
+}
+
 h1,
 h2,
 h3,
@@ -21,11 +36,10 @@ p {
   /*  margin-top: 0.4em;*/
   /*  margin-bottom: 0.4em;*/
   text-indent: 2.5ch;
-  max-width: 60ch;
 }
 
 textarea {
-  width: 60rch;
+  align-self: stretch;
 }
 
 h1 + p {
@@ -33,9 +47,26 @@ h1 + p {
 }
 
 svg {
- background-color:  rgb(26, 217, 255);
+  background-color: rgb(26, 217, 255);
 }
 
 #available {
   font-weight: normal;
+}
+
+#configMain {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.75em;
+}
+
+#typeList {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+}
+
+#additionalConfig {
+  flex-grow: 1;
 }

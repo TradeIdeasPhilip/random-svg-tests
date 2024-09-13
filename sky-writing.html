@@ -8,67 +8,87 @@
     <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
   </head>
   <body>
-    <h1>What is this?</h1>
-    <p>This is a work in progress.</p>
-    <p>
-      This is a new take on the demos I've created in
-      <a href="./letters.html">./letters.html</a>. The user can type any text he
-      wants, including line breaks. And I will display the words as sky writing.
-    </p>
-    <p>
-      I really like the sky writing effect and I want to do a better job of
-      that. Presumably I can add other effects, too, chosen from a radio button.
-    </p>
-    <p>
-      The idea is that a "normal" person could use this. Presumably you could
-      write a message, customize it, then send someone a url to view it.
-    </p>
-    <p>
-      Currently I'm displaying the the user's text in the simplest way possible.
-      I need to add some special effects. However, I decided this was a good
-      stopping point. At this point I've refactored some code so ./letters.html
-      and this page can share more code.
-    </p>
-    <p>
-      This page is part of a bigger
-      <a
-        href="https://github.com/TradeIdeasPhilip/random-svg-tests?tab=readme-ov-file#random-svg-tests"
-        >project</a
-      >.
-    </p>
-    <h1>Type something here</h1>
-    <textarea id="input" rows="3"></textarea>
-    <p>Available characters: <span id="available"></span></p>
-    <h1>Result</h1>
-    <svg
-      viewBox="0 0 100 10"
-      xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMidYMid slice"
-      style="max-width: 100vmin; overflow: visible"
-    >
-      <style>
-        path {
-          fill: none;
-          stroke: white;
-          stroke-width: 0.5;
-          stroke-linecap: round;
-          stroke-linejoin: round;
-        }
-        .lights {
-          stroke: yellow;
-          stroke-dasharray: 0 0.75;
-          animation: lights 5000s linear 0s infinite reverse;
-        }
-        @keyframes lights {
-          0% {
-            stroke-dashoffset: 0;
+    <div id="fakeBody">
+      <h1>What is this?</h1>
+      <p>
+        This is a new take on the demos I've created in
+        <a href="./letters.html">./letters.html</a>. The user can type any text
+        he wants, including line breaks. And I will display the words as sky
+        writing.
+      </p>
+      <p>
+        I really like the sky writing effect and I want to do a better job of
+        that. Presumably I can add other effects, too, chosen from a radio
+        button.
+      </p>
+      <p>
+        The idea is that a "normal" person could use this. Presumably you could
+        write a message, customize it, then send someone a url to view it.
+      </p>
+      <p>
+        This is a work in progress. Currently I'm displaying the the user's text
+        in the simplest way possible. I need to add some special effects.
+        However, I decided this was a good stopping point. At this point I've
+        refactored some code so ./letters.html and this page can share more
+        code.
+      </p>
+      <p>
+        This page is part of a bigger
+        <a
+          href="https://github.com/TradeIdeasPhilip/random-svg-tests?tab=readme-ov-file#random-svg-tests"
+          >project</a
+        >.
+      </p>
+      <h1>Type something here</h1>
+      <textarea id="input" rows="3"></textarea>
+      <p>Available characters: <span id="available"></span></p>
+      <div id="configMain">
+        <div id="typeList">
+          <input type="radio" name="type" checked id="simpleType" /><label
+            for="simpleType"
+            >Simple</label
+          >
+          <input type="radio" name="type" id="handwritingType" /><label
+            for="handwritingType"
+            >Handwriting</label
+          >
+        </div>
+        <div id="additionalConfig">
+          Additional inputs based on the the quick brown fox jumps over the lazy
+          àáâäǎæãåā 1 2 3 4 5 6 7 8 9 0 qw er Abril Fatface IBM Plex Serif
+        </div>
+      </div>
+      <h1>Result</h1>
+      <svg
+        viewBox="0 0 100 10"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="xMidYMid slice"
+        style="max-width: 100vmin; overflow: visible"
+      >
+        <style>
+          path {
+            fill: none;
+            stroke: white;
+            stroke-width: 0.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
           }
-          100% {
-            stroke-dashoffset: 10000;
+          .lights {
+            stroke: yellow;
+            stroke-dasharray: 0 0.75;
+            animation: lights 5000s linear 0s infinite reverse;
           }
-        }
-      </style>
-      <g id="main"></g>
-    </svg>
+          @keyframes lights {
+            0% {
+              stroke-dashoffset: 0;
+            }
+            100% {
+              stroke-dashoffset: 10000;
+            }
+          }
+        </style>
+        <g id="main"></g>
+      </svg>
+    </div>
   </body>
 </html>

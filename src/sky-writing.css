@@ -66,10 +66,23 @@ svg {
   display: grid;
   grid-template-columns: auto auto;
   align-items: center;
+  align-content: center;
 }
 
 #additionalConfig {
   flex-grow: 1;
   border: medium solid black;
   width: 13em;
+  display: flex;
+  flex-direction: column;
+}
+
+g.handwriting > path {
+  --offset: replace-me;
+  --length: replace-me;
+  --position: calc(clamp(0, var(--total-position) - var(--offset), var(--length)));
+  stroke-dasharray: 0, var(--length), var(--length), 0;
+  /* TODO the following 0.0001 is a hack that avoids some but not
+   * all spurious dots.  TODO fix it. */
+  stroke-dashoffset: calc(0.0001 - var(--position));
 }

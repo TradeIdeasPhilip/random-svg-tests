@@ -26,11 +26,15 @@
         write a message, customize it, then send someone a url to view it.
       </p>
       <p>
-        This is a work in progress. Currently I'm displaying the the user's text
-        in the simplest way possible. I need to add some special effects.
-        However, I decided this was a good stopping point. At this point I've
-        refactored some code so ./letters.html and this page can share more
-        code.
+        This is a work in progress. I'm refactoring code so ./letters.html and
+        this page can share more code. At this point I can switch between
+        different animation styles and configure the animation from the GUI. I
+        need to fix some small bugs in the Handwriting demo, but it's a pretty
+        good proof of concept. And I need to port more demos to this page.
+      </p>
+      <p>
+        I'm still focused on skywriting. Handwriting is an important step along
+        the way.
       </p>
       <p>
         This page is part of a bigger
@@ -40,22 +44,31 @@
         >.
       </p>
       <h1>Type something here</h1>
-      <textarea id="input" rows="3"></textarea>
+      <textarea id="input" rows="3">☆ Magic ⭒ is ⭒ real ☆</textarea>
       <p>Available characters: <span id="available"></span></p>
       <div id="configMain">
         <div id="typeList">
-          <input type="radio" name="type" checked id="simpleType" /><label
+          <input type="radio" name="type" id="simpleType" /><label
             for="simpleType"
             >Simple</label
           >
-          <input type="radio" name="type" id="handwritingType" /><label
+          <input type="radio" name="type" checked id="handwritingType" /><label
             for="handwritingType"
             >Handwriting</label
           >
         </div>
         <div id="additionalConfig">
-          Additional inputs based on the the quick brown fox jumps over the lazy
-          àáâäǎæãåā 1 2 3 4 5 6 7 8 9 0 qw er Abril Fatface IBM Plex Serif
+          <div>
+            Use this control to adjust the time of the animation. Far left for
+            the beginning, far right for the end.
+          </div>
+          <input
+            type="range"
+            id="completionRatio"
+            min="0"
+            max="1"
+            step="0.001"
+          />
         </div>
       </div>
       <h1>Result</h1>

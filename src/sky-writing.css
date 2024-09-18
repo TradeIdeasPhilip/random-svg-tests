@@ -33,9 +33,13 @@ h6 {
 
 p {
   text-align: justify;
-  /*  margin-top: 0.4em;*/
-  /*  margin-bottom: 0.4em;*/
+  margin-top: 0.33em;
+  margin-bottom: 0.33em;
   text-indent: 2.5ch;
+}
+
+h1 {
+  margin-bottom: 0.33em;
 }
 
 textarea {
@@ -80,9 +84,9 @@ svg {
 g.handwriting > path {
   --offset: replace-me;
   --length: replace-me;
-  --position: calc(clamp(0, var(--total-position) - var(--offset), var(--length)));
-  stroke-dasharray: 0, var(--length), var(--length), 0;
-  /* TODO the following 0.0001 is a hack that avoids some but not
-   * all spurious dots.  TODO fix it. */
-  stroke-dashoffset: calc(0.0001 - var(--position));
+  --position: calc(
+    clamp(-0.0001, var(--total-position) - var(--offset), var(--length))
+  );
+  stroke-dasharray: 0, calc(var(--length) + 1), calc(var(--length) + 1), 0;
+  stroke-dashoffset: calc(0 - var(--position));
 }

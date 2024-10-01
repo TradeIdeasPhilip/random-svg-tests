@@ -94,7 +94,12 @@ class Handwriting extends AnimationController {
     const abortController = new AbortController();
     this.doCleanup = () => abortController.abort();
     // finish one time stuff.
-    const totalLength = soFar;
+    /**
+     * Continue for enough time to add this much length.
+     * Nothing will be added but what's there will be animated.
+     */
+    const extraLength = 40;
+    const totalLength = soFar + extraLength;
     const updatePosition = () => {
       const position = completionRatioInput.valueAsNumber * totalLength;
       assertFinite(position);

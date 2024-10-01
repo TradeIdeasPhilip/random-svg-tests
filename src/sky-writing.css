@@ -89,4 +89,7 @@ g.handwriting > path {
   );
   stroke-dasharray: 0, calc(var(--length) + 1), calc(var(--length) + 1), 0;
   stroke-dashoffset: calc(0 - var(--position));
+  --position1: calc(clamp(0, var(--total-position) - var(--offset), 300));
+  stroke-width: calc(0.5 + var(--position1) * 0.0175 / 3); /* 0.5 - 2.25 */
+  opacity: calc(1 - var(--position1) * 0.01 / 3);
 }

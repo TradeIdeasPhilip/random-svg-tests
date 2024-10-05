@@ -1,7 +1,19 @@
 import { initializedArray, makeLinear } from "phil-lib/misc";
-import { polarToRectangular } from "./utility";
+import { lerp, polarToRectangular } from "./utility";
 
 export type Point = { readonly x: number; readonly y: number };
+
+/**
+ *
+ * @param at0 `lerpPoints(at0, at1, 0)` → at0
+ * @param at1 `lerpPoints(at0, at1, 1)` → at1
+ * @param where
+ */
+export function lerpPoints(at0: Point, at1: Point, where: number): Point {
+  const x = lerp(at0.x, at1.x, where);
+  const y = lerp(at0.y, at1.y, where);
+  return { x, y };
+}
 
 type Options = {
   /**

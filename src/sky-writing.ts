@@ -1,8 +1,10 @@
 import { getById } from "phil-lib/client-misc";
 import "./sky-writing.css";
 import { TextLayout } from "./letters-more";
-import { describeFont } from "./letters-base";
-import { assertFinite } from "./utility";
+import { describeFont, DescriptionOfLetter, Font } from "./letters-base";
+import { assertFinite, polarToRectangular } from "./utility";
+import { Command, PathShape, QCommand } from "./path-shape";
+import { lerpPoints, Point } from "./math-to-path";
 
 const inputTextArea = getById("input", HTMLTextAreaElement);
 const mainSvg = getById("main", SVGElement);
@@ -164,6 +166,160 @@ class Skywriting extends AnimationController {
   }
 }
 
+function noContinuousCurves(shape: PathShape): boolean {
+  let previousAngle = NaN;
+  for (const command of shape.commands) {
+    const { incomingAngle, outgoingAngle } = command;
+    // TODO this next line still fails A LOT!
+    assertFinite(incomingAngle, outgoingAngle);
+    if (!Number.isNaN(previousAngle)) {
+      const difference = Math.abs(previousAngle - incomingAngle);
+      if (difference < Math.PI / 180) {
+        return false;
+      }
+    }
+    previousAngle = outgoingAngle;
+  }
+  return true;
+}
+noContinuousCurves;
+function roughStrategy1(shape: PathShape): boolean {
+  // All are lines.  That's a good start for now.  noContinuousCurves() can be better but that needs a lot of work.
+  // This strategy should work for ⭒ but not for o.  They both use only Q commands.  I want to treat the case of the
+  // curvy star ⭒ exactly like the case of the straight line star.  But I have to do something different for the
+  // o.  Taking something round and giving it a lot of kinks usually looks bad.  That's the main reason I'm avoiding
+  // it now.  I'm not sure what my strategy will be, yet.
+  // Until I implement incomingAngle and outgoingAngle I have not way to know the difference between these cases.
+  return !shape.commands.some((command) => command.command != "L");
+}
+
+class Rough extends AnimationController {
+  //enroughenify
+  /**
+   *
+   * @param shape The initial shape that you want to make rough.
+   * @param roughness Roughly how many svg units each point is allowed to move.
+   * @returns `after` is the rough version of the initial shape.
+   * `before` will look the same as (or as close as possible to) the initial
+   * shape, but it will be in a form that can morph into the rough shape.
+   */
+  static makeRoughShape(
+    shape: PathShape,
+    roughness: number
+  ): { before: PathShape; after: PathShape } {
+    // should be a flatMap of parts????
+    const before = new Array<Command>();
+    const after = new Array<Command>();
+    shape.splitOnMove().forEach((connectedShape): void => {
+      // TODO I should also check that these are all L or Q commands.
+      if (roughStrategy1(connectedShape)) {
+        const commands = connectedShape.commands;
+        const sharedPoints: ReadonlyArray<Point> = commands.flatMap(
+          (command, index) => {
+            if (index == 0) {
+              return [];
+            } else {
+              return { x: command.x0, y: command.y0 };
+            }
+          }
+        );
+
+        function adjust(
+          initial: Point,
+          scale?: "½"
+        ): Point & { offset: Point; initial: Point } {
+          const r = roughness * (scale ? Math.SQRT1_2 : 1) * Math.random();
+          const θ = Math.random() * Math.PI * 2;
+          const offset = polarToRectangular(r, θ);
+          const x = initial.x + offset.x;
+          const y = initial.y + offset.y;
+          return { x, y, offset, initial };
+        }
+
+        const firstCommand = commands[0];
+        const endPoints = [
+          adjust({ x: firstCommand.x0, y: firstCommand.y0 }, "½"),
+        ];
+        sharedPoints.forEach((point) => {
+          endPoints.push(adjust(point));
+        });
+        const lastCommand = commands[commands.length - 1];
+        endPoints.push(adjust(lastCommand));
+
+        if (
+          endPoints.length != commands.length + 1 ||
+          commands.length != sharedPoints.length + 1
+        ) {
+          throw new Error("wtf");
+        }
+
+        commands.forEach((command, index): void => {
+          const from = endPoints[index];
+          const to = endPoints[index + 1];
+          const middle1: Point =
+            command instanceof QCommand
+              ? { x: command.x1, y: command.y1 }
+              : lerpPoints(from, to, Math.random());
+
+          // Adjust to match the average of the adjustments of the two end points.
+          const middle2 = {
+            x: middle1.x + (from.offset.x + to.offset.x) / 2,
+            y: middle1.y + (from.offset.y + to.offset.y) / 2,
+          };
+
+          // Add additional randomness.
+          const middle3 = adjust(middle2, "½");
+          before.push(
+            new QCommand(
+              from.initial.x,
+              from.initial.y,
+              middle2.x,
+              middle2.y,
+              to.initial.x,
+              to.initial.y
+            )
+          );
+          after.push(
+            new QCommand(from.x, from.y, middle3.x, middle3.y, to.x, to.y)
+          );
+        });
+      } else {
+        before.push(...connectedShape.commands);
+        after.push(...connectedShape.commands);
+      }
+    });
+    return { before: new PathShape(before), after: new PathShape(after) };
+  }
+  static makeRoughFont(baseFont: Font): Font {
+    const result: Font = new Map();
+    baseFont.forEach((baseLetter, key) => {
+      const newLetter = new DescriptionOfLetter(
+        this.makeRoughShape(
+          baseLetter.shape,
+          baseLetter.fontMetrics.strokeWidth * 1.5
+        ).before,
+        baseLetter.advance,
+        baseLetter.fontMetrics
+      );
+      result.set(key, newLetter);
+    });
+    return result;
+  }
+  protected override startImpl(): void {
+    const textLayout = new TextLayout();
+    textLayout.font = Rough.makeRoughFont(textLayout.font);
+    textLayout.restart();
+    const text = inputTextArea.value;
+    const t = textLayout.addText(text);
+    textLayout.displayText(t, mainSvg);
+    mainSvg.ownerSVGElement!.viewBox.baseVal.height =
+      textLayout.baseline + textLayout.font.get("0")!.fontMetrics.bottom;
+  }
+  static start() {
+    new this().start();
+  }
+}
+
 inputTextArea.addEventListener("input", () => {
   AnimationController.restartCurrent();
 });
@@ -184,7 +340,7 @@ function selectAnimation() {
       break;
     }
     case "roughType": {
-      new Skywriting().start();
+      new Rough().start();
       break;
     }
     default: {

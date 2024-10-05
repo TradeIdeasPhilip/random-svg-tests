@@ -50,70 +50,6 @@ export type Command = {
   // split into pieces
 };
 
-class HCommand implements Command {
-  readonly y: number;
-  constructor(
-    public readonly x0: number,
-    public readonly y0: number,
-    public readonly x: number
-  ) {
-    assertFinite(x0, y0, x);
-    this.y = y0;
-    this.asString = `H ${x}`;
-  }
-  readonly incomingAngle = NaN; // TODO
-  readonly outgoingAngle = NaN; // TODO
-  readonly command = "H";
-  readonly asString: string;
-  translate(Δx: number, Δy: number): Command {
-    return new HCommand(this.x0 + Δx, this.y0 + Δy, this.x + Δx);
-  }
-  toCubic() {
-    return new CCommand(
-      this.x0,
-      this.y0,
-      lerp(this.x0, this.x, 1 / 3),
-      this.y0,
-      lerp(this.x0, this.x, 2 / 3),
-      this.y0,
-      this.x,
-      this.y0
-    );
-  }
-}
-
-class VCommand implements Command {
-  readonly x: number;
-  constructor(
-    public readonly x0: number,
-    public readonly y0: number,
-    public readonly y: number
-  ) {
-    assertFinite(x0, y0, y);
-    this.x = x0;
-    this.asString = `V ${y}`;
-  }
-  readonly incomingAngle = NaN; // TODO
-  readonly outgoingAngle = NaN; // TODO
-  readonly command = "V";
-  readonly asString: string;
-  translate(Δx: number, Δy: number): Command {
-    return new VCommand(this.x0 + Δx, this.y0 + Δy, this.y + Δy);
-  }
-  toCubic(): CCommand {
-    return new CCommand(
-      this.x0,
-      this.y0,
-      this.x0,
-      lerp(this.y0, this.y, 1 / 3),
-      this.x0,
-      lerp(this.y0, this.y, 2 / 3),
-      this.x0,
-      this.y
-    );
-  }
-}
-
 export class LCommand implements Command {
   constructor(
     public readonly x0: number,
@@ -414,21 +350,43 @@ export class PathBuilder {
   private previous() {
     return this.#recentMove ?? this.#commands.at(-1);
   }
+
   /**
    * Add an H command to `this`.
+   *
+   * More precisely, add an equivalent L command.
    * @param x The argument for the H command.
-   * @returns A new PathBuilder ending with this command.
+   * I.e. the x of the final position.
+   * @returns this.
    */
   H(x: number) {
     const previous = this.previous()!;
-    this.addCommand(new HCommand(previous.x, previous.y, x));
+    this.addCommand(new LCommand(previous.x, previous.y, x, previous.y));
     return this;
   }
+
+  /**
+   * Add a V command to `this`.
+   *
+   * More precisely, add an equivalent L command.
+   * @param y The argument for the V command.
+   * I.e. the y of the final position.
+   * @returns `this`.
+   */
   V(y: number): PathBuilder {
     const previous = this.previous()!;
-    this.addCommand(new VCommand(previous.x, previous.y, y));
+    this.addCommand(new LCommand(previous.x, previous.y, previous.x, y));
     return this;
   }
+
+  /**
+   * Append an L command to `this`.
+   * @param x The x argument for the L command.
+   * I.e. the x of the final position.
+   * @param y The y argument for the L command.
+   * I.e. the y of the final position.
+   * @returns `this`.
+   */
   L(x: number, y: number): PathBuilder {
     const previous = this.previous()!;
     this.addCommand(new LCommand(previous.x, previous.y, x, y));

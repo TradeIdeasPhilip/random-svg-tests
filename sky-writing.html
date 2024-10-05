@@ -33,8 +33,19 @@
         good proof of concept. And I need to port more demos to this page.
       </p>
       <p>
-        I'm still focused on skywriting. Handwriting is an important step along
-        the way.
+        I'm still focused on skywriting. "Handwriting" is an important step
+        along the way. I'm pretty happy with with this animation. I'll probably
+        tweak it, but for now it looks great.
+      </p>
+      <p>
+        I'm just getting started on the "rough" stuff. I used rough.js on
+        <a href="./letters.html">./letters.html</a>. That was good enough for a
+        prototype, but I've clearly pushed it as far as I can. On this page
+        making things "rough" with my own code. I've started with the simple
+        shapes like -, *, ☆, and M. I should be able to handle ✧ and ⭒ (curvy
+        pointy things) soon. I'm still considering my strategy for complicated
+        curves (including U and O 🤨). And I need to attach the controls to this
+        demo better. This is a promising start.
       </p>
       <p>
         This page is part of a bigger
@@ -44,7 +55,11 @@
         >.
       </p>
       <h1>Type something here</h1>
-      <textarea id="input" rows="3">☆ Magic ⭒ is ⭒ real ☆</textarea>
+      <textarea id="input" rows="3">
+!"#$%'*+-./147:;=?[\]^_`|←↑→↓
+↔↕☆abdfijklptvwxyz
+ABEFHIKLMNPQRTVWXYZ</textarea
+      >
       <p>Available characters: <span id="available"></span></p>
       <div id="configMain">
         <div id="typeList">
@@ -56,11 +71,11 @@
             for="handwritingType"
             >Handwriting</label
           >
-          <input type="radio" name="type" checked id="skywritingType" /><label
+          <input type="radio" name="type" id="skywritingType" /><label
             for="skywritingType"
             >Skywriting</label
           >
-          <input type="radio" name="type" disabled id="roughType" /><label
+          <input type="radio" name="type" checked id="roughType" /><label
             for="roughType"
             >Rough</label
           >

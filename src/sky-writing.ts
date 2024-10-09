@@ -294,15 +294,45 @@ class Rough extends AnimationController {
     const result: Font = new Map();
     baseFont.forEach((baseLetter, key) => {
       const newLetter = new DescriptionOfLetter(
-        this.makeRoughShape(
-          baseLetter.shape,
-          baseLetter.fontMetrics.strokeWidth * 1.5
-        ).before,
+        () =>
+          this.makeRoughShape(
+            baseLetter.shape,
+            baseLetter.fontMetrics.strokeWidth * 1.5
+          ).before,
         baseLetter.advance,
         baseLetter.fontMetrics
       );
       result.set(key, newLetter);
     });
+    return result;
+  }
+  static #recentValues: readonly {
+    readonly char: string;
+    readonly shape: PathShape;
+  }[] = [];
+  private static instantiate<
+    T extends {
+      readonly char: string;
+      readonly description: { readonly shape: PathShape };
+    }
+  >(letters: readonly T[]) {
+    const available = [...this.#recentValues];
+    let frontStillMatches = true;
+    const result = letters.map((input) => {
+      if (frontStillMatches) {
+        const possibleMatch = available.at(0);
+        if (possibleMatch?.char === input.char) {
+          available.shift();
+          return {
+            ...input,
+            shape: possibleMatch.shape,
+          };
+        }
+        frontStillMatches = false;
+      }
+      return input;
+    });
+    // TODO add stuff from the end.
     return result;
   }
   protected override startImpl(): void {
@@ -311,7 +341,8 @@ class Rough extends AnimationController {
     textLayout.restart();
     const text = inputTextArea.value;
     const t = textLayout.addText(text);
-    textLayout.displayText(t, mainSvg);
+    const t1 = Rough.instantiate(t);
+    Rough.#recentValues = textLayout.displayText(t1, mainSvg);
     mainSvg.ownerSVGElement!.viewBox.baseVal.height =
       textLayout.baseline + textLayout.font.get("0")!.fontMetrics.bottom;
   }

@@ -316,12 +316,24 @@ class Rough extends AnimationController {
       readonly description: { readonly shape: PathShape };
     }
   >(letters: readonly T[]) {
+    /**
+     * These are the shapes that we used last time.
+     */
     const available = [...this.#recentValues];
+    /**
+     * Start from the beginning of the current string and the beginning of previous string.
+     * Keep pairing up the characters until the first character that doesn't match any more.
+     */
     let frontStillMatches = true;
+    /**
+     * Copy the input to the result, one character at a time.
+     * Include a copy of the `shape` field from the recentValues, if there was a match.
+     */
     const result = letters.map((input) => {
       if (frontStillMatches) {
         const possibleMatch = available.at(0);
         if (possibleMatch?.char === input.char) {
+          // We are using this character from recentValues, so it is no longer available.
           available.shift();
           return {
             ...input,
@@ -330,9 +342,26 @@ class Rough extends AnimationController {
         }
         frontStillMatches = false;
       }
+      // Keep the character as is.
       return input;
     });
-    // TODO add stuff from the end.
+    // Now try to match characters from the end.
+    // The idea is that you are likely to type, delete, cut or paste just one area of the field
+    // at a time.  Everything before and after that change should still match up.
+    for (let index = result.length - 1; index >= 0; index--) {
+      const possibleMatch = available.pop();
+      if (possibleMatch === undefined) {
+        // All of the previous items have already been used.
+        break;
+      }
+      const current = result[index];
+      if (possibleMatch.char != current.char) {
+        // We've found a change.  Presumably this is a new character that the user typed or pasted.
+        break;
+      }
+      const replacement = { ...current, shape: possibleMatch.shape };
+      result[index] = replacement;
+    }
     return result;
   }
   protected override startImpl(): void {

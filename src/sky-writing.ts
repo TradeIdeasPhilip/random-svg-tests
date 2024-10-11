@@ -106,7 +106,6 @@ class Handwriting extends AnimationController {
     completionRatioInput.addEventListener("input", updatePosition, {
       signal: abortController.signal,
     });
-    //    throw new Error("Method not implemented."); TODO finishme
   }
   static start() {
     new this().start();
@@ -170,7 +169,6 @@ function noContinuousCurves(shape: PathShape): boolean {
   let previousAngle = NaN;
   for (const command of shape.commands) {
     const { incomingAngle, outgoingAngle } = command;
-    // TODO this next line still fails A LOT!
     assertFinite(incomingAngle, outgoingAngle);
     if (!Number.isNaN(previousAngle)) {
       const difference = Math.abs(previousAngle - incomingAngle);
@@ -182,19 +180,8 @@ function noContinuousCurves(shape: PathShape): boolean {
   }
   return true;
 }
-noContinuousCurves;
-function roughStrategy1(shape: PathShape): boolean {
-  // All are lines.  That's a good start for now.  noContinuousCurves() can be better but that needs a lot of work.
-  // This strategy should work for ⭒ but not for o.  They both use only Q commands.  I want to treat the case of the
-  // curvy star ⭒ exactly like the case of the straight line star.  But I have to do something different for the
-  // o.  Taking something round and giving it a lot of kinks usually looks bad.  That's the main reason I'm avoiding
-  // it now.  I'm not sure what my strategy will be, yet.
-  // Until I implement incomingAngle and outgoingAngle I have not way to know the difference between these cases.
-  return !shape.commands.some((command) => command.command != "L");
-}
 
 class Rough extends AnimationController {
-  //enroughenify
   /**
    *
    * @param shape The initial shape that you want to make rough.
@@ -212,7 +199,7 @@ class Rough extends AnimationController {
     const after = new Array<Command>();
     shape.splitOnMove().forEach((connectedShape): void => {
       // TODO I should also check that these are all L or Q commands.
-      if (roughStrategy1(connectedShape)) {
+      if (noContinuousCurves(connectedShape)) {
         const commands = connectedShape.commands;
         const sharedPoints: ReadonlyArray<Point> = commands.flatMap(
           (command, index) => {

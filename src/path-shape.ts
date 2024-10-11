@@ -59,9 +59,10 @@ export class LCommand implements Command {
   ) {
     assertFinite(x0, y0, x, y);
     this.asString = `L ${x},${y}`;
+    this.outgoingAngle= this.incomingAngle = Math.atan2(y-y0,x-x0);
   }
-  readonly incomingAngle = NaN; // TODO
-  readonly outgoingAngle = NaN; // TODO
+  readonly incomingAngle;
+  readonly outgoingAngle;
   readonly command = "L";
   readonly asString: string;
   translate(Δx: number, Δy: number): Command {
@@ -120,7 +121,9 @@ export class QCommand implements Command {
     assertFinite(x0, y0, x1, y1, x, y);
     this.asString = `Q ${x1},${y1} ${x},${y}`;
   }
-  readonly incomingAngle = NaN; // TODO
+  get incomingAngle() {
+    return Math.atan2(this.y1 - this.y0, this.x1 - this.x0);
+  }
   get outgoingAngle(): number {
     return Math.atan2(this.y - this.y1, this.x - this.x1);
   }
@@ -176,8 +179,12 @@ class CCommand implements Command {
     assertFinite(x0, y0, x1, y1, x2, y2, x, y);
     this.asString = `C ${x1},${y1} ${x2},${y2} ${x},${y}`;
   }
-  readonly incomingAngle = NaN; // TODO
-  readonly outgoingAngle = NaN; // TODO
+  get incomingAngle() {
+    return Math.atan2(this.y1 - this.y0, this.x1 - this.x0);
+  }
+  get outgoingAngle(): number {
+    return Math.atan2(this.y - this.y2, this.x - this.x2);
+  }
   readonly command = "C";
   readonly asString: string;
   translate(Δx: number, Δy: number): Command {

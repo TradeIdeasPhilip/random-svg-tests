@@ -59,7 +59,7 @@ export class LCommand implements Command {
   ) {
     assertFinite(x0, y0, x, y);
     this.asString = `L ${x},${y}`;
-    this.outgoingAngle= this.incomingAngle = Math.atan2(y-y0,x-x0);
+    this.outgoingAngle = this.incomingAngle = Math.atan2(y - y0, x - x0);
   }
   readonly incomingAngle;
   readonly outgoingAngle;
@@ -90,7 +90,7 @@ export class QCommand implements Command {
     x: number,
     y: number,
     angle: number
-  ): Command {
+  ): QCommand {
     assertFinite(x0, y0, angle0, x, y, angle);
     const controlPoint = findIntersection(
       {
@@ -105,7 +105,11 @@ export class QCommand implements Command {
       }
     );
     if (!controlPoint) {
-      return new LCommand(x0, y0, x, y);
+      // I don't expect this to happen often.  Sometimes it's unavoidable.
+      // But I want to know if it happens a lot.
+      console.warn("Line instead of Q");
+      // Ignore the requested angles and just draw a line segment.
+      return new this(x0, y0, (x0 - x) / 2, (y0 + y) / 2, x, y);
     } else {
       return new this(x0, y0, controlPoint.x, controlPoint.y, x, y);
     }

@@ -18,7 +18,7 @@ const mainSvg = getById("main", SVGElement);
 }
 
 abstract class AnimationController {
-  static #current: undefined | AnimationController; // (() => void);
+  static #current: undefined | AnimationController;
   /**
    * Stop the current animation (if there is one) and clear the SVG.
    */
@@ -165,20 +165,17 @@ class Skywriting extends AnimationController {
   }
 }
 
-function noContinuousCurves(shape: PathShape): boolean {
-  let previousAngle = NaN;
-  for (const command of shape.commands) {
-    const { incomingAngle, outgoingAngle } = command;
-    assertFinite(incomingAngle, outgoingAngle);
-    if (!Number.isNaN(previousAngle)) {
-      const difference = Math.abs(previousAngle - incomingAngle);
-      if (difference < Math.PI / 180) {
-        return false;
-      }
-    }
-    previousAngle = outgoingAngle;
-  }
-  return true;
+/**
+ * Equal or almost equal.  Ideally I'd use == but that would never
+ * work because of round off error.
+ * @param angle1 
+ * @param angle2 
+ * @returns true if the inputs are within 1° of each other.
+ */
+// TODO deal with wrap around and with values that might be n×2π off from expected.
+function similarAngles(angle1: number, angle2: number) {
+  const difference = Math.abs(angle1 - angle2);
+  return difference < Math.PI / 180;
 }
 
 class Rough extends AnimationController {
@@ -198,82 +195,112 @@ class Rough extends AnimationController {
     const before = new Array<Command>();
     const after = new Array<Command>();
     shape.splitOnMove().forEach((connectedShape): void => {
-      // TODO I should also check that these are all L or Q commands.
-      if (noContinuousCurves(connectedShape)) {
-        const commands = connectedShape.commands;
-        const sharedPoints: ReadonlyArray<Point> = commands.flatMap(
-          (command, index) => {
-            if (index == 0) {
-              return [];
-            } else {
-              return { x: command.x0, y: command.y0 };
+      const commands = connectedShape.commands;
+      const sharedPoints: ReadonlyArray<Point> = commands.flatMap(
+        (command, index) => {
+          if (index == 0) {
+            return [];
+          } else {
+            return { x: command.x0, y: command.y0 };
+          }
+        }
+      );
+
+      function adjust(
+        initial: Point,
+        scale?: "½"
+      ): Point & { offset: Point; initial: Point } {
+        const r = roughness * (scale ? Math.SQRT1_2 : 1) * Math.random();
+        const θ = Math.random() * Math.PI * 2;
+        const offset = polarToRectangular(r, θ);
+        const x = initial.x + offset.x;
+        const y = initial.y + offset.y;
+        return { x, y, offset, initial };
+      }
+
+      const firstCommand = commands[0];
+      const endPoints = [
+        adjust({ x: firstCommand.x0, y: firstCommand.y0 }, "½"),
+      ];
+      sharedPoints.forEach((point) => {
+        endPoints.push(adjust(point));
+      });
+      const lastCommand = commands[commands.length - 1];
+      endPoints.push(adjust(lastCommand));
+
+      if (
+        endPoints.length != commands.length + 1 ||
+        commands.length != sharedPoints.length + 1
+      ) {
+        throw new Error("wtf");
+      }
+
+      commands.forEach((command, index): void => {
+        const from = endPoints[index];
+        const to = endPoints[index + 1];
+        const middle1: Point =
+          command instanceof QCommand
+            ? { x: command.x1, y: command.y1 }
+            : lerpPoints(from, to, Math.random());
+
+        // Adjust to match the average of the adjustments of the two end points.
+        const middle2 = {
+          x: middle1.x + (from.offset.x + to.offset.x) / 2,
+          y: middle1.y + (from.offset.y + to.offset.y) / 2,
+        };
+
+        // Add additional randomness.
+        const middle3 = adjust(middle2, "½");
+
+        after.push(
+          new QCommand(from.x, from.y, middle3.x, middle3.y, to.x, to.y)
+        );
+        before.push(
+          new QCommand(
+            from.initial.x,
+            from.initial.y,
+            middle1.x,
+            middle1.y,
+            to.initial.x,
+            to.initial.y
+          )
+        );
+        {
+          if (index > 0) {
+            // This command and the previous command are connected.
+            if (
+              similarAngles(
+                before.at(-2)!.outgoingAngle,
+                before.at(-1)!.incomingAngle
+              )
+            ) {
+              // This was a smooth connection before randomizing.  Make it smooth again.
+              const last = after.pop()!;
+              const previous = after.pop()!;
+              // TODO fix the bad edge case:  !!
+              const average = (previous.outgoingAngle + last.incomingAngle) / 2;
+              const previous1 = QCommand.angles(
+                previous.x0,
+                previous.y0,
+                previous.incomingAngle,
+                previous.x,
+                previous.y,
+                average
+              );
+              after.push(previous1);
+              const last1 = QCommand.angles(
+                last.x0,
+                last.y0,
+                average,
+                last.x,
+                last.y,
+                last.outgoingAngle
+              );
+              after.push(last1);
             }
           }
-        );
-
-        function adjust(
-          initial: Point,
-          scale?: "½"
-        ): Point & { offset: Point; initial: Point } {
-          const r = roughness * (scale ? Math.SQRT1_2 : 1) * Math.random();
-          const θ = Math.random() * Math.PI * 2;
-          const offset = polarToRectangular(r, θ);
-          const x = initial.x + offset.x;
-          const y = initial.y + offset.y;
-          return { x, y, offset, initial };
         }
-
-        const firstCommand = commands[0];
-        const endPoints = [
-          adjust({ x: firstCommand.x0, y: firstCommand.y0 }, "½"),
-        ];
-        sharedPoints.forEach((point) => {
-          endPoints.push(adjust(point));
-        });
-        const lastCommand = commands[commands.length - 1];
-        endPoints.push(adjust(lastCommand));
-
-        if (
-          endPoints.length != commands.length + 1 ||
-          commands.length != sharedPoints.length + 1
-        ) {
-          throw new Error("wtf");
-        }
-
-        commands.forEach((command, index): void => {
-          const from = endPoints[index];
-          const to = endPoints[index + 1];
-          const middle1: Point =
-            command instanceof QCommand
-              ? { x: command.x1, y: command.y1 }
-              : lerpPoints(from, to, Math.random());
-
-          // Adjust to match the average of the adjustments of the two end points.
-          const middle2 = {
-            x: middle1.x + (from.offset.x + to.offset.x) / 2,
-            y: middle1.y + (from.offset.y + to.offset.y) / 2,
-          };
-
-          // Add additional randomness.
-          const middle3 = adjust(middle2, "½");
-          before.push(
-            new QCommand(
-              from.initial.x,
-              from.initial.y,
-              middle2.x,
-              middle2.y,
-              to.initial.x,
-              to.initial.y
-            )
-          );
-          after.push(
-            new QCommand(from.x, from.y, middle3.x, middle3.y, to.x, to.y)
-          );
-        });
-      } else {
-        before.push(...connectedShape.commands);
-        after.push(...connectedShape.commands);
-      }
+      });
     });
     return { before: new PathShape(before), after: new PathShape(after) };
   }
@@ -285,7 +312,7 @@ class Rough extends AnimationController {
           this.makeRoughShape(
             baseLetter.shape,
             baseLetter.fontMetrics.strokeWidth * 1.5
-          ).before,
+          ).after,
         baseLetter.advance,
         baseLetter.fontMetrics
       );

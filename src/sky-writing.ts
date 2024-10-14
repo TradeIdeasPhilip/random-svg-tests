@@ -100,7 +100,7 @@ class Handwriting extends AnimationController {
     );
     parentGElement.classList.add("handwriting");
     mainSvg.appendChild(parentGElement);
-    let soFar = 0;
+    let soFar = 0.01;
     pathShape.splitOnMove().forEach((shape) => {
       const element = document.createElementNS(
         "http://www.w3.org/2000/svg",
@@ -158,7 +158,7 @@ class Skywriting extends AnimationController {
     );
     parentGElement.classList.add("handwriting", "skywriting");
     mainSvg.appendChild(parentGElement);
-    let soFar = 0;
+    let soFar = 0.01;
     pathShape.splitOnMove().forEach((shape) => {
       const element = document.createElementNS(
         "http://www.w3.org/2000/svg",

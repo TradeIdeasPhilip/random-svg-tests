@@ -383,33 +383,17 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       throw new Error("wtf");
     }
     const bottomLineLength = advance - bottomRadius;
-    const shape = PathBuilder.M(left, capitalTop)
-      .L(left, baseline)
-      .L(bottomLineLength, baseline)
-      .M(Math.max(bottomLineLength, topLineLength), capitalMiddle)
-      .L(left, capitalMiddle)
-      .M(left, capitalTop)
+    const shape = PathBuilder.M(left, baseline)
+      .L(left, capitalTop)
       .L(topLineLength, capitalTop)
-      .Q(
-        topLineLength + topRadius,
-        capitalTop,
-        topLineLength + topRadius,
-        capitalTop + topRadius
-      )
+      .Q_HV(topLineLength + topRadius, capitalTop + topRadius)
       .Q(topLineLength + topRadius, capitalMiddle, topLineLength, capitalMiddle)
-      .M(bottomLineLength, capitalMiddle)
-      .Q(
-        bottomLineLength + bottomRadius,
-        capitalMiddle,
-        bottomLineLength + bottomRadius,
-        baseline - bottomRadius
-      )
-      .Q(
-        bottomLineLength + bottomRadius,
-        baseline,
-        bottomLineLength,
-        baseline
-      ).pathShape;
+      .L(left, capitalMiddle)
+      .M(Math.max(bottomLineLength, topLineLength), capitalMiddle)
+      .Q_HV(bottomLineLength + bottomRadius, baseline - bottomRadius)
+      .Q_VH(bottomLineLength,
+        baseline)
+      .L(left, baseline).pathShape;
     add("B", shape, advance);
   }
   {

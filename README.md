@@ -105,9 +105,37 @@ However, this was an amazing proof of concept.
 For now I want to do more interesting things.
 I can circle back after I see how I'm actually planning to use rough.js.
 
+### Examples
+
+Here's some junk mail we received at work.
+I'm sure they got the names and addresses off [our company website](https://www.trade-ideas.com/about/).
+
+![Two almost identical envelopes that look hand addressed.  Only the recipient's name is different.](./for-readme/RoughEnvelope.png)
+![Two almost identical cards with the same handwriting as on the envelopes.](./for-readme/RoughInside.png)
+
+If you only received _one_ of these, it would probably look convincing.
+But when you see the _two_ side by side you'll notice a lot of identical letters.
+
+One of the things I'm working on is text that looks like this.
+I wasn't planning to fool anyone.
+I just thought it would look good, especially when __animated__ on the screen.
+
+Terminology:
+* When I say "rough" I mean making it look more like a person did it, less like a machine did it.  I'm basing this term on the [Rough.js](https://roughjs.com/) library.
+* "Handwriting effect" is a standard term for a style of animation.  You draw the letters as if a pen were moving across the screen.
+
+I often mix these two effects so it looks like a person is writing on the computer while you are watching.
+
 ## Morph
 
-[This](https://tradeideasphilip.github.io/random-svg-tests/morph.html) is my current focus.
+### Work in Progress
+
+[This](https://tradeideasphilip.github.io/random-svg-tests/letters.html) shows some examples applying morphing to letters.
+[This](https://tradeideasphilip.github.io/random-svg-tests/sky-writing.html) is a newer document with my second attempt at morphing letters.
+
+### Initial Experiment
+
+[This](https://tradeideasphilip.github.io/random-svg-tests/morph.html) was my initial experiment.
 [Here](https://youtu.be/oiSRroma5dA?si=VsztEUqX8jwz1qg3&t=440) is a video showing off this and other recent work.
 
 I like the idea of a an arbitrary svg doodle morphing into another svg doodle.

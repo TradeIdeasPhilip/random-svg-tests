@@ -6,8 +6,11 @@ import { assertFinite, polarToRectangular } from "./utility";
 import { Command, PathShape, QCommand } from "./path-shape";
 import { lerpPoints, Point } from "./math-to-path";
 
+// MARK: One time setup
+
 const inputTextArea = getById("input", HTMLTextAreaElement);
 const mainSvg = getById("main", SVGElement);
+const completionRatioInput = getById("completionRatio", HTMLInputElement);
 
 {
   const textLayout = new TextLayout();
@@ -17,6 +20,12 @@ const mainSvg = getById("main", SVGElement);
   span.innerText = [...normal].sort().join(" ");
 }
 
+// MARK: AnimationController
+
+/**
+ * This is shared by all animations.
+ * In particular it makes sure than no more than one animation is running at a time.
+ */
 abstract class AnimationController {
   static #current: undefined | AnimationController;
   /**
@@ -37,6 +46,11 @@ abstract class AnimationController {
       current.start();
     }
   }
+  /**
+   * Start this animation.
+   *
+   * This will stop any other animations from running before starting the new animation.
+   */
   start() {
     AnimationController.doCleanup();
     this.startImpl();
@@ -46,6 +60,11 @@ abstract class AnimationController {
   protected doCleanup() {}
 }
 
+// MARK: Simple
+
+/**
+ * Display the text with no embellishments.
+ */
 class Simple extends AnimationController {
   override startImpl(): void {
     const textLayout = new TextLayout();
@@ -61,8 +80,11 @@ class Simple extends AnimationController {
   }
 }
 
-const completionRatioInput = getById("completionRatio", HTMLInputElement);
+// MARK: Handwriting
 
+/**
+ * As time progresses (simulated by the range control) we draw more of the text.
+ */
 class Handwriting extends AnimationController {
   protected override startImpl(): void {
     const textLayout = new TextLayout();
@@ -111,6 +133,16 @@ class Handwriting extends AnimationController {
     new this().start();
   }
 }
+
+// MARK: Skywriting
+
+/**
+ * This is a combination of multiple effects.
+ * See the skywriting example at https://tradeideasphilip.github.io/random-svg-tests/letters.html for the previous version of this effect.
+ * The goal of this project is do a better version of this effect.
+ * The other classes / animations let me test the parts individually.
+ * This is very rough at the moment, little more than a placeholder.
+ */
 class Skywriting extends AnimationController {
   protected override startImpl(): void {
     const textLayout = new TextLayout();
@@ -165,11 +197,13 @@ class Skywriting extends AnimationController {
   }
 }
 
+// MARK: Rough
+
 /**
  * Equal or almost equal.  Ideally I'd use == but that would never
  * work because of round off error.
- * @param angle1 
- * @param angle2 
+ * @param angle1
+ * @param angle2
  * @returns true if the inputs are within 1° of each other.
  */
 // TODO deal with wrap around and with values that might be n×2π off from expected.
@@ -178,6 +212,14 @@ function similarAngles(angle1: number, angle2: number) {
   return difference < Math.PI / 180;
 }
 
+/**
+ * This tests the part of the code that makes lines less straight, etc.
+ *
+ * My first attempt used Rough.js.
+ * That package is great, but I ran into some limitations.
+ * For example:
+ * * Consider
+ */
 class Rough extends AnimationController {
   /**
    *
@@ -304,6 +346,20 @@ class Rough extends AnimationController {
     });
     return { before: new PathShape(before), after: new PathShape(after) };
   }
+  /**
+   * This is a simple alternative to the `Rough` class.
+   *
+   * This font will give you a rough version of each letter.
+   * And the `shape` of the letter will change randomly each time you ask for that property.
+   *
+   * The `Rough` class goes directly to makeRoughShape so it can grab two versions of the shape.
+   * This is required if you want to animate a change from no roughness to full roughness.
+   * It was tough to map this functionality into a font because a font is such a simple interface.
+   * That's why the `Rough` class eventually stopped using this function.  However, this function
+   * should suffice in a lot of cases.
+   * @param baseFont Start from this font.
+   * @returns The new font.
+   */
   static makeRoughFont(baseFont: Font): Font {
     const result: Font = new Map();
     baseFont.forEach((baseLetter, key) => {
@@ -322,78 +378,179 @@ class Rough extends AnimationController {
   }
   static #recentValues: readonly {
     readonly char: string;
-    readonly shape: PathShape;
+    readonly shape0: PathShape;
+    readonly shape1: PathShape;
   }[] = [];
-  private static instantiate<
+  private static makeRough<
     T extends {
       readonly char: string;
-      readonly description: { readonly shape: PathShape };
+      readonly shape: PathShape;
+      readonly element: SVGPathElement;
+      readonly description: DescriptionOfLetter;
     }
   >(letters: readonly T[]) {
+    /**
+     * Prepare a path element to display one of two shapes, or an interpolation between those two.
+     * Returns an object used to control this display.
+     * @param param0 `param0.shape0` is the initial shape. `param0.shape1` is the final shape.
+     * @param element The path to animate.
+     * @returns The new `Animation` object.
+     * The controller is initially paused.
+     * The intent is for the caller to update the `currentTime` of this controller with values between 0.0 and 1.0, inclusive.
+     *
+     * The current intent is to use the scrollbar to control the animation.
+     * Eventually the interface could change to use standard css times and timing functions.
+     */
+    function animate(
+      { shape0, shape1 }: { shape0: PathShape; shape1: PathShape },
+      element: SVGPathElement
+    ) {
+      const keyframes: Keyframe[] = [
+        { offset: 0, d: shape0.cssPath },
+        { offset: 1, d: shape1.cssPath },
+      ];
+      const animation = element.animate(keyframes, {
+        duration: 1,
+        fill: "both",
+      });
+      animation.pause();
+      return animation;
+    }
     /**
      * These are the shapes that we used last time.
      */
     const available = [...this.#recentValues];
     /**
+     * This are the characters we want to use.
+     */
+    const required = [...letters];
+
+    /**
+     * We will return a list of items of this type.
+     *
+     * The input items (in `T`) are copied as is.
+     */
+    type Result = T & {
+      /**
+       * Display this when animation.currentTime == 0.
+       */
+      readonly shape0: PathShape;
+      /**
+       * Display this when animation.currentTime == 1.
+       */
+      readonly shape1: PathShape;
+      /**
+       * Use this to select what to display.
+       */
+      readonly animation: Animation;
+    };
+    /**
      * Start from the beginning of the current string and the beginning of previous string.
      * Keep pairing up the characters until the first character that doesn't match any more.
      */
-    let frontStillMatches = true;
-    /**
-     * Copy the input to the result, one character at a time.
-     * Include a copy of the `shape` field from the recentValues, if there was a match.
-     */
-    const result = letters.map((input) => {
-      if (frontStillMatches) {
-        const possibleMatch = available.at(0);
-        if (possibleMatch?.char === input.char) {
-          // We are using this character from recentValues, so it is no longer available.
-          available.shift();
-          return {
-            ...input,
-            shape: possibleMatch.shape,
-          };
-        }
-        frontStillMatches = false;
-      }
-      // Keep the character as is.
-      return input;
-    });
-    // Now try to match characters from the end.
-    // The idea is that you are likely to type, delete, cut or paste just one area of the field
-    // at a time.  Everything before and after that change should still match up.
-    for (let index = result.length - 1; index >= 0; index--) {
-      const possibleMatch = available.pop();
-      if (possibleMatch === undefined) {
-        // All of the previous items have already been used.
+    const front: Result[] = [];
+    while (true) {
+      if (available.length == 0) {
         break;
       }
-      const current = result[index];
-      if (possibleMatch.char != current.char) {
-        // We've found a change.  Presumably this is a new character that the user typed or pasted.
+      if (required.length == 0) {
         break;
       }
-      const replacement = { ...current, shape: possibleMatch.shape };
-      result[index] = replacement;
+      if (available[0].char != required[0].char) {
+        break;
+      }
+      const toCopy = available.shift()!;
+      const request = required.shift()!;
+      front.push({
+        ...request,
+        shape0: toCopy.shape0,
+        shape1: toCopy.shape1,
+        animation: animate(toCopy, request.element),
+      });
     }
+
+    /**
+     * Now try to match characters from the end.
+     *
+     * The idea is that you are likely to type, delete, cut or paste just one area of the field
+     * at a time.  Everything before and after that change should still match up.
+     */
+    const back: Result[] = [];
+    while (true) {
+      if (available.length == 0) {
+        break;
+      }
+      if (required.length == 0) {
+        break;
+      }
+      if (available.at(-1)!.char != required.at(-1)!.char) {
+        break;
+      }
+      const toCopy = available.pop()!;
+      const request = required.pop()!;
+      front.push({
+        ...request,
+        shape0: toCopy.shape0,
+        shape1: toCopy.shape1,
+        animation: animate(toCopy, request.element),
+      });
+    }
+
+    /**
+     * Create new shapes for any remaining letters.
+     */
+    const middle: Result[] = required.map((letter) => {
+      const rough = Rough.makeRoughShape(
+        letter.shape,
+        letter.description.fontMetrics.strokeWidth * 1.5
+      );
+      const shape0 = rough.before;
+      const shape1 = rough.after;
+      return {
+        ...letter,
+        shape0,
+        shape1,
+        animation: animate({ shape0, shape1 }, letter.element),
+      };
+    });
+
+    const result: readonly Result[] = [...front, ...middle, ...back];
+    this.#recentValues = result;
     return result;
   }
   protected override startImpl(): void {
     const textLayout = new TextLayout();
-    textLayout.font = Rough.makeRoughFont(textLayout.font);
     textLayout.restart();
     const text = inputTextArea.value;
     const t = textLayout.addText(text);
-    const t1 = Rough.instantiate(t);
-    Rough.#recentValues = textLayout.displayText(t1, mainSvg);
+    const t1 = textLayout.displayText(t, mainSvg);
+    const t2 = Rough.makeRough(t1);
     mainSvg.ownerSVGElement!.viewBox.baseVal.height =
       textLayout.baseline + textLayout.font.get("0")!.fontMetrics.bottom;
+    const abortController = new AbortController();
+    this.doCleanup = () => abortController.abort();
+
+    // Attach the range control to the characters we just created above.
+    const updateTime = () => {
+      const time = completionRatioInput.valueAsNumber;
+      assertFinite(time);
+      t2.forEach(({ animation }) => {
+        animation.currentTime = time;
+      });
+    };
+    updateTime();
+    completionRatioInput.addEventListener("input", updateTime, {
+      signal: abortController.signal,
+    });
   }
   static start() {
     new this().start();
   }
 }
 
+// MARK: Select an animation
+
+// We someone types anything, restart the animation from scratch.
 inputTextArea.addEventListener("input", () => {
   AnimationController.restartCurrent();
 });

@@ -391,8 +391,7 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       .L(left, capitalMiddle)
       .M(Math.max(bottomLineLength, topLineLength), capitalMiddle)
       .Q_HV(bottomLineLength + bottomRadius, baseline - bottomRadius)
-      .Q_VH(bottomLineLength,
-        baseline)
+      .Q_VH(bottomLineLength, baseline)
       .L(left, baseline).pathShape;
     add("B", shape, advance);
   }

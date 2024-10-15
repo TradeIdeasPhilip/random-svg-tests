@@ -92,6 +92,14 @@ export function shuffleArray<T>(array: T[]) {
 }
 
 /**
+ * 2π radians.
+ */
+export const fullCircle = 2 * Math.PI;
+
+export const degreesPerRadian = 360 / fullCircle;
+export const radiansPerDegree = fullCircle / 360;
+
+/**
  * This is similar to `numerator % denominator`, i.e. modulo division.
  * The difference is that the result will never be negative.
  * If the numerator is negative `%`  will return a negative number.
@@ -134,3 +142,96 @@ export function rotateArray<T>(input: ReadonlyArray<T>, by: number) {
   }
 }
 
+/**
+ * This object contains a random number generator.
+ * If you want an **exact** copy of this object, you will want to start from the same seed.
+ */
+export type HasSeed ={ readonly seed : string};
+
+/**
+ * This provides a random number generator that can be seeded.
+ * `Math.rand()` cannot be seeded.  Using a seed will allow
+ * me to repeat things in the debugger when my program acts
+ * strange.
+ */
+export class Random {
+  /**
+   * sfc32 (Simple Fast Counter) is part of the [PractRand](http://pracrand.sourceforge.net/)
+   * random number testing suite (which it passes of course).
+   * sfc32 has a 128-bit state and is very fast in JS.
+   *
+   * [Source](https://stackoverflow.com/a/47593316/971955)
+   * @param a A 32 bit integer.  The 1st part of the seed.
+   * @param b A 32 bit integer.  The 2nd part of the seed.
+   * @param c A 32 bit integer.  The 3rd part of the seed.
+   * @param d A 32 bit integer.  The 4th part of the seed.
+   * @returns A function that will act a lot like `Math.rand()`, but it starts from the given seed.
+   */
+  private static sfc32(a: number, b: number, c: number, d: number) {
+    return function () {
+      a |= 0;
+      b |= 0;
+      c |= 0;
+      d |= 0;
+      let t = (((a + b) | 0) + d) | 0;
+      d = (d + 1) | 0;
+      a = b ^ (b >>> 9);
+      b = (c + (c << 3)) | 0;
+      c = (c << 21) | (c >>> 11);
+      c = (c + t) | 0;
+      return (t >>> 0) / 4294967296;
+    };
+  }
+  static #nextSeedInt = 42;
+  /**
+   * Create a new instance of a random number generator.
+   * @param seed The result from a previous call to `Random.newSeed()`.
+   * By default this will create a new seed.
+   * Either way the seed will be sent to the JavaScript console.
+   * 
+   * Typical use:  Use the default until you want to repeat something.
+   * Then copy the last seed from the log and use here.
+   * @returns A function that can be used as a drop in replacement for `Math.random()`.
+   * @throws If the seed is invalid this will `throw` an `Error`.
+   */
+  static create(seed: string = this.newSeed()) {
+    console.info(seed);
+    const seedObject: unknown = JSON.parse(seed);
+    if (!(seedObject instanceof Array)) {
+      throw new Error("invalid seed");
+    }
+    if (seedObject.length != 4) {
+      throw new Error("invalid seed");
+    }
+    const [a, b, c, d] = seedObject;
+    if (
+      !(
+        typeof a == "number" &&
+        typeof b == "number" &&
+        typeof c == "number" &&
+        typeof d == "number"
+      )
+    ) {
+      throw new Error("invalid seed");
+    }
+    return this.sfc32(a, b, c, d);
+  }
+  /**
+   * 
+   * @returns A new seed value appropriate for use in a call to `Random.create()`.
+   * This will be reasonably random.
+   * 
+   * The seed is intended to be opaque, a magic cookie.
+   * It's something that's easy to copy and paste.
+   * Don't try to parse or create one of these.
+   */
+  static newSeed() {
+    const ints: number[] = [];
+    ints.push(Date.now());
+    ints.push(this.#nextSeedInt++);
+    ints.push((Math.random() * 2 ** 31) | 0);
+    ints.push((Math.random() * 2 ** 31) | 0);
+    const seed = JSON.stringify(ints);
+    return seed;
+  }
+}

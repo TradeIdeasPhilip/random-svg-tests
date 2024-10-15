@@ -2,7 +2,15 @@ import { getById } from "phil-lib/client-misc";
 import "./sky-writing.css";
 import { TextLayout } from "./letters-more";
 import { describeFont, DescriptionOfLetter, Font } from "./letters-base";
-import { assertFinite, polarToRectangular } from "./utility";
+import {
+  assertFinite,
+  fullCircle,
+  HasSeed,
+  polarToRectangular,
+  positiveModulo,
+  radiansPerDegree,
+  Random,
+} from "./utility";
 import { Command, PathShape, QCommand } from "./path-shape";
 import { lerpPoints, Point } from "./math-to-path";
 
@@ -200,16 +208,47 @@ class Skywriting extends AnimationController {
 // MARK: Rough
 
 /**
+ * Find the shortest path from `angle1` to `angle2`.
+ * This will never take the long way around the circle or make multiple loops around the circle.
+ *
+ * More precisely find `difference` where `positiveModulo(angle1 + difference, fullCircle) == positiveModulo(angle2, fullCircle)`.
+ * Then select the `difference` where `Math.abs(difference)` is smallest.
+ * Return the `difference`.
+ * @param angle1
+ * @param angle2
+ * @returns A value to add to `angle1` to get another angle that is equivalent to `angle2`.
+ * A value between -π and π.
+ */
+function angleBetween(angle1: number, angle2: number) {
+  angle1 = positiveModulo(angle1, fullCircle);
+  angle2 = positiveModulo(angle1, fullCircle);
+  let difference = angle2 - angle1;
+  const maxDifference = fullCircle / 2;
+  if (difference > maxDifference) {
+    difference -= fullCircle;
+  } else if (difference < -maxDifference) {
+    difference += fullCircle;
+  }
+  if (Math.abs(difference) > maxDifference) {
+    throw new Error("wtf");
+  }
+  return difference;
+}
+
+/**
  * Equal or almost equal.  Ideally I'd use == but that would never
  * work because of round off error.
  * @param angle1
  * @param angle2
  * @returns true if the inputs are within 1° of each other.
  */
-// TODO deal with wrap around and with values that might be n×2π off from expected.
 function similarAngles(angle1: number, angle2: number) {
-  const difference = Math.abs(angle1 - angle2);
-  return difference < Math.PI / 180;
+  const difference = angleBetween(angle1, angle2);
+  /**
+   * 1° converted to radians.
+   */
+  const cutoff = 1 * radiansPerDegree;
+  return Math.abs(difference) < cutoff;
 }
 
 /**
@@ -231,7 +270,8 @@ class Rough extends AnimationController {
    */
   static makeRoughShape(
     shape: PathShape,
-    roughness: number
+    roughness: number,
+    random: () => number
   ): { before: PathShape; after: PathShape } {
     // should be a flatMap of parts????
     const before = new Array<Command>();
@@ -252,8 +292,8 @@ class Rough extends AnimationController {
         initial: Point,
         scale?: "½"
       ): Point & { offset: Point; initial: Point } {
-        const r = roughness * (scale ? Math.SQRT1_2 : 1) * Math.random();
-        const θ = Math.random() * Math.PI * 2;
+        const r = roughness * (scale ? Math.SQRT1_2 : 1) * random();
+        const θ = random() * Math.PI * 2;
         const offset = polarToRectangular(r, θ);
         const x = initial.x + offset.x;
         const y = initial.y + offset.y;
@@ -297,16 +337,7 @@ class Rough extends AnimationController {
         after.push(
           new QCommand(from.x, from.y, middle3.x, middle3.y, to.x, to.y)
         );
-        before.push(
-          new QCommand(
-            from.initial.x,
-            from.initial.y,
-            middle1.x,
-            middle1.y,
-            to.initial.x,
-            to.initial.y
-          )
-        );
+        before.push(QCommand.line(from.initial, to.initial));
         {
           if (index > 0) {
             // This command and the previous command are connected.
@@ -319,8 +350,9 @@ class Rough extends AnimationController {
               // This was a smooth connection before randomizing.  Make it smooth again.
               const last = after.pop()!;
               const previous = after.pop()!;
-              // TODO fix the bad edge case:  !!
-              const average = (previous.outgoingAngle + last.incomingAngle) / 2;
+              const average =
+                previous.outgoingAngle +
+                angleBetween(previous.outgoingAngle, last.incomingAngle) / 2;
               const previous1 = QCommand.angles(
                 previous.x0,
                 previous.y0,
@@ -360,22 +392,30 @@ class Rough extends AnimationController {
    * @param baseFont Start from this font.
    * @returns The new font.
    */
-  static makeRoughFont(baseFont: Font): Font {
-    const result: Font = new Map();
+  static makeRoughFont(baseFont: Font, seed?: string): Font & HasSeed {
+    const font: Font = new Map();
+    if (seed == "" || seed === undefined) {
+      seed = Random.newSeed();
+    }
+    const random = Random.create(seed);
     baseFont.forEach((baseLetter, key) => {
       const newLetter = new DescriptionOfLetter(
         () =>
           this.makeRoughShape(
             baseLetter.shape,
-            baseLetter.fontMetrics.strokeWidth * 1.5
+            baseLetter.fontMetrics.strokeWidth * 1.5,
+            random
           ).after,
         baseLetter.advance,
         baseLetter.fontMetrics
       );
-      result.set(key, newLetter);
+      font.set(key, newLetter);
     });
+    const result: any = font;
+    result.seed = seed;
     return result;
   }
+  static #random = Random.create(/* Insert seed here. */"[1729026770590,42,394283687,1185765695]");
   static #recentValues: readonly {
     readonly char: string;
     readonly shape0: PathShape;
@@ -448,6 +488,9 @@ class Rough extends AnimationController {
      * Start from the beginning of the current string and the beginning of previous string.
      * Keep pairing up the characters until the first character that doesn't match any more.
      */
+    // TODO !!!‼! This is broken.  If I add text at the end it's fine.  Sometimes deleting from
+    // the middle seems to break the end part.  Or maybe it was when I was inserting in the
+    // middle.  Definitely very repeatable.  TODO fix this bug.
     const front: Result[] = [];
     while (true) {
       if (available.length == 0) {
@@ -502,7 +545,8 @@ class Rough extends AnimationController {
     const middle: Result[] = required.map((letter) => {
       const rough = Rough.makeRoughShape(
         letter.shape,
-        letter.description.fontMetrics.strokeWidth * 1.5
+        letter.description.fontMetrics.strokeWidth * 1.5,
+        Rough.#random
       );
       const shape0 = rough.before;
       const shape1 = rough.after;

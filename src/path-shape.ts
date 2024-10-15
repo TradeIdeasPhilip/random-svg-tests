@@ -83,6 +83,12 @@ export class LCommand implements Command {
 }
 
 export class QCommand implements Command {
+  static line4(x0: number, y0: number, x: number, y: number) {
+    return new this(x0, y0, (x0 + x) / 2, (y0 + y) / 2, x, y);
+  }
+  static line(from:Point, to:Point) {
+    return this.line4(from.x, from.y, to.x, to.y);
+  }
   static angles(
     x0: number,
     y0: number,
@@ -109,7 +115,7 @@ export class QCommand implements Command {
       // But I want to know if it happens a lot.
       console.warn("Line instead of Q");
       // Ignore the requested angles and just draw a line segment.
-      return new this(x0, y0, (x0 - x) / 2, (y0 + y) / 2, x, y);
+      return this.line4(x0, y0, x, y);
     } else {
       return new this(x0, y0, controlPoint.x, controlPoint.y, x, y);
     }

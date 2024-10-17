@@ -1,6 +1,8 @@
 import { initializedArray, makeLinear, parseFloatX } from "phil-lib/misc";
 import {
+  angleBetween,
   assertFinite,
+  degreesPerRadian,
   lerp,
   polarToRectangular,
   positiveModulo,
@@ -86,7 +88,7 @@ export class QCommand implements Command {
   static line4(x0: number, y0: number, x: number, y: number) {
     return new this(x0, y0, (x0 + x) / 2, (y0 + y) / 2, x, y);
   }
-  static line(from:Point, to:Point) {
+  static line(from: Point, to: Point) {
     return this.line4(from.x, from.y, to.x, to.y);
   }
   static angles(
@@ -643,6 +645,10 @@ const cCommand = new RegExp(
 /**
  * This is a way to manipulate a path shape.
  * I.e. to create a string like "path('M 1,2 L 3,5')".
+ *
+ * This class is read only.
+ * If you need to append commands one at a time, consider a `PathBuilder` object.
+ * If you wan to make more complicated changes, work on an array of `Command` objects.
  */
 export class PathShape {
   matchForMorph(other: PathShape): [pathForThis: string, pathForOther: string] {
@@ -817,6 +823,59 @@ export class PathShape {
     return new PathShape(
       this.commands.map((command) => command.translate(Δx, Δy))
     );
+  }
+  /**
+   * Avoid displaying numbers like 6.661338147750939e-16.
+   * Instead display 0.
+   *
+   * This is especially relevant with `console.table()`.
+   * By default it will display 6.661338147750939e-16 as "6.6613…" or similar.
+   * You have to make that column really wide to see that it's actually very close to 0, not 6.66.
+   *
+   * I tweaked the implementation to look good in my example.
+   * I'm not sure I'd trust this outside of debug code.
+   * @param angle The angle you want to display.
+   * @returns A value that is very similar to the input, but slightly more likely to be 0.
+   */
+  static fixAngleRounding(angle: number) {
+    return angle + 400 - 400;
+  }
+  static toDegrees(angle: number): number {
+    return Math.round(angle * degreesPerRadian * 100) / 100;
+  }
+  dump() {
+    const data = this.commands.map((command, index) => {
+      const {
+        x0,
+        y0,
+        x,
+        y,
+        incomingAngle,
+        outgoingAngle,
+        command: c,
+      } = command;
+      const previous = this.commands[index - 1];
+      const difference =
+        previous === undefined
+          ? {}
+          : {
+              difference: PathShape.toDegrees(
+                angleBetween(previous.outgoingAngle, incomingAngle)
+              ),
+            };
+      // path length
+      return {
+        x0,
+        y0,
+        x,
+        y,
+        incomingAngle: PathShape.toDegrees(incomingAngle),
+        outgoingAngle: PathShape.toDegrees(outgoingAngle),
+        c,
+        ...difference,
+      };
+    });
+    console.table(data);
   }
 }
 

@@ -3,16 +3,16 @@ import "./sky-writing.css";
 import { TextLayout } from "./letters-more";
 import { describeFont, DescriptionOfLetter, Font } from "./letters-base";
 import {
+  angleBetween,
   assertFinite,
-  fullCircle,
   HasSeed,
   polarToRectangular,
-  positiveModulo,
   radiansPerDegree,
   Random,
 } from "./utility";
 import { Command, PathShape, QCommand } from "./path-shape";
 import { lerpPoints, Point } from "./math-to-path";
+import { makeLineFont } from "./line-font";
 
 // MARK: One time setup
 
@@ -208,34 +208,6 @@ class Skywriting extends AnimationController {
 // MARK: Rough
 
 /**
- * Find the shortest path from `angle1` to `angle2`.
- * This will never take the long way around the circle or make multiple loops around the circle.
- *
- * More precisely find `difference` where `positiveModulo(angle1 + difference, fullCircle) == positiveModulo(angle2, fullCircle)`.
- * Then select the `difference` where `Math.abs(difference)` is smallest.
- * Return the `difference`.
- * @param angle1
- * @param angle2
- * @returns A value to add to `angle1` to get another angle that is equivalent to `angle2`.
- * A value between -π and π.
- */
-function angleBetween(angle1: number, angle2: number) {
-  angle1 = positiveModulo(angle1, fullCircle);
-  angle2 = positiveModulo(angle1, fullCircle);
-  let difference = angle2 - angle1;
-  const maxDifference = fullCircle / 2;
-  if (difference > maxDifference) {
-    difference -= fullCircle;
-  } else if (difference < -maxDifference) {
-    difference += fullCircle;
-  }
-  if (Math.abs(difference) > maxDifference) {
-    throw new Error("wtf");
-  }
-  return difference;
-}
-
-/**
  * Equal or almost equal.  Ideally I'd use == but that would never
  * work because of round off error.
  * @param angle1
@@ -274,7 +246,13 @@ class Rough extends AnimationController {
     random: () => number
   ): { before: PathShape; after: PathShape } {
     // should be a flatMap of parts????
-    const before = new Array<Command>();
+    const before = shape.commands.map((command) => {
+      if (command instanceof QCommand) {
+        return command;
+      } else {
+        return QCommand.line({ x: command.x0, y: command.y0 }, command);
+      }
+    });
     const after = new Array<Command>();
     shape.splitOnMove().forEach((connectedShape): void => {
       const commands = connectedShape.commands;
@@ -337,14 +315,13 @@ class Rough extends AnimationController {
         after.push(
           new QCommand(from.x, from.y, middle3.x, middle3.y, to.x, to.y)
         );
-        before.push(QCommand.line(from.initial, to.initial));
         {
           if (index > 0) {
             // This command and the previous command are connected.
             if (
               similarAngles(
-                before.at(-2)!.outgoingAngle,
-                before.at(-1)!.incomingAngle
+                before.at(after.length - 2)!.outgoingAngle,
+                before.at(after.length - 1)!.incomingAngle
               )
             ) {
               // This was a smooth connection before randomizing.  Make it smooth again.
@@ -415,7 +392,9 @@ class Rough extends AnimationController {
     result.seed = seed;
     return result;
   }
-  static #random = Random.create(/* Insert seed here. */"[1729026770590,42,394283687,1185765695]");
+  static #random = Random.create(
+    /* Insert seed here. */ "[1729026770590,42,394283687,1185765695]"
+  );
   static #recentValues: readonly {
     readonly char: string;
     readonly shape0: PathShape;
@@ -550,6 +529,10 @@ class Rough extends AnimationController {
       );
       const shape0 = rough.before;
       const shape1 = rough.after;
+      console.log(letter);
+      shape0.dump();
+      shape1.dump();
+      console.log(shape0.commands);
       return {
         ...letter,
         shape0,
@@ -564,6 +547,9 @@ class Rough extends AnimationController {
   }
   protected override startImpl(): void {
     const textLayout = new TextLayout();
+    textLayout.font = makeLineFont(15);
+    const fontMetrics = textLayout.font.get("0")!.fontMetrics;
+    textLayout.lineHeight = fontMetrics.bottom - fontMetrics.capitalTop;
     textLayout.restart();
     const text = inputTextArea.value;
     const t = textLayout.addText(text);

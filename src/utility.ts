@@ -94,10 +94,38 @@ export function shuffleArray<T>(array: T[]) {
 /**
  * 2π radians.
  */
-export const fullCircle = 2 * Math.PI;
+export const FULL_CIRCLE = 2 * Math.PI;
 
-export const degreesPerRadian = 360 / fullCircle;
-export const radiansPerDegree = fullCircle / 360;
+export const degreesPerRadian = 360 / FULL_CIRCLE;
+export const radiansPerDegree = FULL_CIRCLE / 360;
+
+/**
+ * Find the shortest path from `angle1` to `angle2`.
+ * This will never take the long way around the circle or make multiple loops around the circle.
+ *
+ * More precisely find `difference` where `positiveModulo(angle1 + difference, FULL_CIRCLE) == positiveModulo(angle2, FULL_CIRCLE)`.
+ * Then select the `difference` where `Math.abs(difference)` is smallest.
+ * Return the `difference`.
+ * @param angle1 radians
+ * @param angle2 radians
+ * @returns A value to add to `angle1` to get another angle that is equivalent to `angle2`.
+ * A value between -π and π.
+ */
+export function angleBetween(angle1: number, angle2: number) {
+  angle1 = positiveModulo(angle1, FULL_CIRCLE);
+  angle2 = positiveModulo(angle2, FULL_CIRCLE);
+  let difference = angle2 - angle1;
+  const maxDifference = FULL_CIRCLE / 2;
+  if (difference > maxDifference) {
+    difference -= FULL_CIRCLE;
+  } else if (difference < -maxDifference) {
+    difference += FULL_CIRCLE;
+  }
+  if (Math.abs(difference) > maxDifference) {
+    throw new Error("wtf");
+  }
+  return difference;
+}
 
 /**
  * This is similar to `numerator % denominator`, i.e. modulo division.
@@ -146,7 +174,7 @@ export function rotateArray<T>(input: ReadonlyArray<T>, by: number) {
  * This object contains a random number generator.
  * If you want an **exact** copy of this object, you will want to start from the same seed.
  */
-export type HasSeed ={ readonly seed : string};
+export type HasSeed = { readonly seed: string };
 
 /**
  * This provides a random number generator that can be seeded.
@@ -188,7 +216,7 @@ export class Random {
    * @param seed The result from a previous call to `Random.newSeed()`.
    * By default this will create a new seed.
    * Either way the seed will be sent to the JavaScript console.
-   * 
+   *
    * Typical use:  Use the default until you want to repeat something.
    * Then copy the last seed from the log and use here.
    * @returns A function that can be used as a drop in replacement for `Math.random()`.
@@ -217,10 +245,10 @@ export class Random {
     return this.sfc32(a, b, c, d);
   }
   /**
-   * 
+   *
    * @returns A new seed value appropriate for use in a call to `Random.create()`.
    * This will be reasonably random.
-   * 
+   *
    * The seed is intended to be opaque, a magic cookie.
    * It's something that's easy to copy and paste.
    * Don't try to parse or create one of these.

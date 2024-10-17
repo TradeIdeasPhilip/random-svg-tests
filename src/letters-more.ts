@@ -46,11 +46,10 @@ export class TextLayout {
       readonly x: number;
       readonly baseline: number;
       readonly description: { readonly shape: PathShape };
-      readonly shape?: PathShape;
     }
   >(letters: readonly T[], destination: SVGElement) {
     return letters.map((letter) => {
-      const shape = letter.shape??letter.description.shape;
+      const shape = letter.description.shape;
       const element = shape.makeElement();
       destination.appendChild(element);
       element.style.transform = `translate(${letter.x}px,${letter.baseline}px)`;
@@ -92,7 +91,7 @@ export class TextLayout {
           if (description) {
             const width =
               description.advance + description.fontMetrics.defaultKerning;
-            const charInfo = { x, width, baseline, description, char };
+            const charInfo = { char, x, width, baseline, description };
             x += width;
             return charInfo;
           } else {

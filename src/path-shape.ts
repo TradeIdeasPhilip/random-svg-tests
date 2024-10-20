@@ -104,12 +104,12 @@ export class QCommand implements Command {
       {
         x0,
         y0,
-        slope: Math.tan(angle0),
+        angle: angle0,
       },
       {
         x0: x,
         y0: y,
-        slope: Math.tan(angle),
+        angle: angle+Math.PI,
       }
     );
     if (!controlPoint) {
@@ -119,7 +119,8 @@ export class QCommand implements Command {
       // Ignore the requested angles and just draw a line segment.
       return this.line4(x0, y0, x, y);
     } else {
-      return new this(x0, y0, controlPoint.x, controlPoint.y, x, y);
+      const result = new this(x0, y0, controlPoint.x, controlPoint.y, x, y);
+      return result;
     }
   }
   constructor(
@@ -855,14 +856,14 @@ export class PathShape {
         command: c,
       } = command;
       const previous = this.commands[index - 1];
-      const difference =
-        previous === undefined
-          ? {}
-          : {
-              difference: PathShape.toDegrees(
-                angleBetween(previous.outgoingAngle, incomingAngle)
-              ),
-            };
+      const notConnectedToPrevious = PathShape.needAnM(previous, command);
+      const difference = notConnectedToPrevious
+        ? {}
+        : {
+            difference: PathShape.toDegrees(
+              angleBetween(previous.outgoingAngle, incomingAngle)
+            ),
+          };
       // path length
       return {
         x0,
@@ -879,35 +880,72 @@ export class PathShape {
   }
 }
 
-// TODO these should really be rays.  Two rays might not meet at all.
-// If they do meet, findIntersection() will give the right answer.
-// We need to know an angle, not a slope, to find that out.
-//
-type Line = { x0: number; y0: number; slope: number };
+type Ray = { x0: number; y0: number; angle: number };
 type Point = { readonly x: number; readonly y: number };
 
-function findIntersection(α: Line, β: Line): Point | undefined {
-  if (isNaN(α.slope) || isNaN(β.slope) || α.slope == β.slope) {
+/**
+ *
+ * @param r1 A ray pointing to the desired intersection point.
+ * This might be the incoming angle of a QCommand pointing from the first point of the command to the middle control point.
+ * @param r2 Another ray pointing to the desired intersection point.
+ * This might be **(180° +** the outgoing angle) pointing from the last point of a QCommand to the middle control point.
+ * The Command objects always work with the angle going in the forward direction.
+ * But this function is expecting both vectors to be pointing inward, not forward.
+ * @returns If the two rays intersect in a single point, return that point.
+ * Return undefined if the two rays completely miss each other, or if they overlap.
+ * I am **explicitly** talking about **rays, not lines**.
+ */
+function findIntersection(r1: Ray, r2: Ray): Point | undefined {
+  assertFinite(r1.x0, r1.y0, r1.angle, r2.x0, r2.y0, r2.angle);
+  if (isNaN(r1.angle) || isNaN(r2.angle) || r1.angle == r2.angle) {
     return undefined;
   }
-  const αIsVertical = Math.abs(α.slope) * 100 > Number.MAX_SAFE_INTEGER;
-  const βIsVertical = Math.abs(β.slope) * 100 > Number.MAX_SAFE_INTEGER;
-  if (αIsVertical && βIsVertical) {
+  const slope1 = Math.tan(r1.angle);
+  const slope2 = Math.tan(r2.angle);
+  const isVertical1 = Math.abs(slope1) * 100 > Number.MAX_SAFE_INTEGER;
+  const isVertical2 = Math.abs(slope2) * 100 > Number.MAX_SAFE_INTEGER;
+  if (isVertical1 && isVertical2) {
     // Notice the bug fix.
     // When I copied this from math-to-path.ts (which itself is copied from another project)
     // I changed if (αIsVertical || βIsVertical) to if (αIsVertical && βIsVertical)
     return undefined;
   }
 
-  if (αIsVertical || βIsVertical) {
-    const x = αIsVertical ? α.x0 : β.x0;
-    const otherLine = αIsVertical ? β : α;
+  /**
+   * If we drew a line segment with the same endpoints,
+   * what angle would that line segment point?
+   */
+  const lineAngle = Math.atan2(r2.y0 - r1.y0, r2.x0 - r1.x0);
+  const difference1 = angleBetween(r1.angle, lineAngle);
+  const difference2 = angleBetween(r2.angle , lineAngle);
+  const side1 = Math.sign(difference1);
+  const side2 = Math.sign(difference2);
+  if (side1 != side2 || side1 == 0) {
+    // 0 means the ray is pointing parallel to the line.
+    //   If both rays are parallel to the line that connects them, there are two possibilities:
+    //   The rays will either overlap or they will point away from each other.
+    //   Either way we cannot return __one__ point where the two rays overlap.
+    // 1 means the ray is pointing to one particular side of the line.
+    //   It doesn't matter which side.
+    //   All that matters is that this is consistent for both rays.
+    // -1 means the ray is pointing to the opposite side of the line.
+    // If the two rays are pointing to opposite sides of this line,
+    //   Then they cannot intersect with each other.
+    //   If think you see an intersection, you are probably thinking about lines rather than rays.
+    // TODO what about ±180°⁈
+    return undefined;
+  }
+
+  if (isVertical1 || isVertical2) {
+    const x = isVertical1 ? r1.x0 : r2.x0;
+    const otherLine = isVertical1 ? {...r2,slope:slope2} : {...r1,slope:slope1};
     const y = otherLine.slope * (x - otherLine.x0) + otherLine.y0;
     return { x, y };
   } else {
     const x =
-      (β.y0 - β.slope * β.x0 - α.y0 + α.slope * α.x0) / (α.slope - β.slope);
-    const y = α.slope * (x - α.x0) + α.y0;
+      (r2.y0 - slope2 * r2.x0 - r1.y0 + slope1 * r1.x0) /
+      (slope1 - slope2);
+    const y = slope1 * (x - r1.x0) + r1.y0;
     return { x, y };
   }
 }

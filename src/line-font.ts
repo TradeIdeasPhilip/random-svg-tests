@@ -10,9 +10,9 @@ const dSouthWest = 3 * dSouthEast;
 const dWest = 4 * dSouthEast; // 180°
 const dNorthWest = 5 * dSouthEast;
 const dNorth = 6 * dSouthEast; // 270°
-//const dNorthEast = 7 * dSouthEast;
+const dNorthEast = 7 * dSouthEast;
 
-dEast || dSouthEast;
+dEast || dSouthEast || dNorthEast;
 
 /**
  * This seems silly.  Is size really the only input?
@@ -1252,9 +1252,6 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
     const middle = capitalTop + radius;
     const shape = PathBuilder.M(radius * 2, middle)
       .arc(radius * 3, middle, advance, middle, "cw")
-      // TODO it seem like dNorthWest and dSouthWest should be swapped in the
-      // next two lines.  Currently this looks right on the screen.  But
-      // I think there's still a bug in Q_angles.
       .Q_angles(radius * 2, baseline, dSouthWest, dSouth)
       .Q_angles(0, middle, dNorth, dNorthWest)
       .arc(radius, middle, radius * 2, middle, "cw").pathShape;
@@ -1318,9 +1315,9 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
     const angle = Math.PI / 16;
     const shape = PathBuilder.M(center, top)
       .Q_angles(right, middle, dEast + angle, dSouth - angle)
-      .Q_angles(center, bottom, dSouth + angle, dEast - angle)
+      .Q_angles(center, bottom, dSouth + angle, dWest - angle)
       .Q_angles(left, middle, dWest + angle, dNorth - angle)
-      .Q_angles(center, top, dNorth + angle, dWest - angle).pathShape;
+      .Q_angles(center, top, dNorth + angle, dEast - angle).pathShape;
     add("✧", shape, advance); //WHITE FOUR POINTED STAR
   }
   // MARK: ☆ (white star)

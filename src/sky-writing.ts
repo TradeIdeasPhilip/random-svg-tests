@@ -245,7 +245,6 @@ class Rough extends AnimationController {
     roughness: number,
     random: () => number
   ): { before: PathShape; after: PathShape } {
-    // should be a flatMap of parts????
     const before = shape.commands.map((command) => {
       if (command instanceof QCommand) {
         return command;
@@ -348,6 +347,10 @@ class Rough extends AnimationController {
                 last.outgoingAngle
               );
               after.push(last1);
+              // This helped me track down the bug where the angle was sometimes 180° off.
+              // This shows the table after each addition.
+              // Remember than an addition can include a change to the previous row.
+              //new PathShape(after).dump();
             }
           }
         }
@@ -393,7 +396,7 @@ class Rough extends AnimationController {
     return result;
   }
   static #random = Random.create(
-    /* Insert seed here. */ "[1729026770590,42,394283687,1185765695]"
+    /* Insert seed here. */ "[1729402151840,42,2115899219,1537839617]"
   );
   static #recentValues: readonly {
     readonly char: string;
@@ -529,10 +532,10 @@ class Rough extends AnimationController {
       );
       const shape0 = rough.before;
       const shape1 = rough.after;
-      console.log(letter);
-      shape0.dump();
-      shape1.dump();
-      console.log(shape0.commands);
+      //console.log(letter);
+      //shape0.dump();
+      //shape1.dump();
+      //console.log(shape0.commands);
       return {
         ...letter,
         shape0,

@@ -147,6 +147,28 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       }
     }
     {
+      // MARK: ~
+      const outerWidth = digitWidth * 0.4;
+      const innerWidth = digitWidth * 0.3;
+      const x0 = left;
+      const x1 = x0 + outerWidth;
+      const x2 = x1 + innerWidth;
+      const x3 = x2 + innerWidth;
+      const x4 = x3 + outerWidth;
+      const advance = x4;
+      const vOffset = digitWidth * 0.25;
+      const middle = capitalMiddle;
+      const top = middle - vOffset;
+      const bottom = middle + vOffset;
+      const shape = PathBuilder.M(x0, middle)
+        .Q_angles(x1, top, dEast, dNorthEast)
+        .Q_angles(x2, middle, (dSouth + dSouthEast) / 2)
+        .Q_angles(x3, bottom, dEast)
+        .Q_angles(x4, middle, dNorthEast).pathShape;
+      //shape.dump();
+      add("~", shape, advance);
+    }
+    {
       // MARK: +
       const advance = digitWidth * 0.75;
       const center = advance / 2;

@@ -6,6 +6,7 @@ import {
   lerp,
   polarToRectangular,
   positiveModulo,
+  radiansPerDegree,
 } from "./utility";
 
 export type Command = {
@@ -53,6 +54,14 @@ export type Command = {
 };
 
 export class LCommand implements Command {
+  /**
+   * This was an interesting idea, but the `PathShape.rawPath`
+   * seem like a better idea.
+   * @returns Enough information to find and call the constructor.
+   */
+  toJSON() {
+    return { command: "L", x0: this.x0, y0: this.y0, x: this.x, y: this.y };
+  }
   constructor(
     public readonly x0: number,
     public readonly y0: number,
@@ -91,6 +100,34 @@ export class QCommand implements Command {
   static line(from: Point, to: Point) {
     return this.line4(from.x, from.y, to.x, to.y);
   }
+  /**
+   * Create a `QCommand` based on two points and the angle at those
+   * two points.
+   *
+   * This is the same as `tryAngles()` on success.  However, they
+   * handle errors differently.  If this request cannot be satisfied
+   * this function will return a straight line.  But on an error this
+   * `tryAngles()` will return `undefined`.
+   *
+   * Generally the straight line works well in production because it
+   * covers up a lot of problems, especially when the segments are
+   * small.  And it's bad in testing for the exact same reason.
+   * @param x0 x of the starting point.
+   * @param y0 y of the ending point.
+   * @param angle0 The direction that the curve is moving at the first point.
+   * Like a tangent line, but with a direction.
+   *
+   * Both angles are pointing _forward_.  So `angle0` is pointing into the
+   * curve and `angle1` is pointing out of the curve.
+   * @param x x of the ending point.
+   * @param y y of the ending point.
+   * @param angle The direction that the curve is moving at the end point.
+   * Like a tangent line, but with a direction.
+   *
+   * Both angles are pointing _forward_.  So `angle0` is pointing into the
+   * curve and `angle1` is pointing out of the curve.
+   * @returns A new `QCommand`.
+   */
   static angles(
     x0: number,
     y0: number,
@@ -109,19 +146,86 @@ export class QCommand implements Command {
       {
         x0: x,
         y0: y,
-        angle: angle+Math.PI,
+        angle: angle + Math.PI,
       }
     );
     if (!controlPoint) {
       // I don't expect this to happen often.  Sometimes it's unavoidable.
       // But I want to know if it happens a lot.
-      console.warn("Line instead of Q");
+      //console.warn("Line instead of Q");
       // Ignore the requested angles and just draw a line segment.
       return this.line4(x0, y0, x, y);
     } else {
       const result = new this(x0, y0, controlPoint.x, controlPoint.y, x, y);
       return result;
     }
+  }
+  /**
+   * This is the same as `angles()` but on an error this will return an `undefined`.
+   * On error `angles()` will return a straight line.
+   *
+   * Generally the straight line works well in production because it
+   * covers up a lot of problems, especially when the segments are
+   * small.  And it's bad in testing for the exact same reason.
+   * @param x0 x of the starting point.
+   * @param y0 y of the ending point.
+   * @param angle0 The direction that the curve is moving at the first point.
+   * Like a tangent line, but with a direction.
+   *
+   * Both angles are pointing _forward_.  So `angle0` is pointing into the
+   * curve and `angle1` is pointing out of the curve.
+   * @param x x of the ending point.
+   * @param y y of the ending point.
+   * @param angle The direction that the curve is moving at the end point.
+   * Like a tangent line, but with a direction.
+   *
+   * Both angles are pointing _forward_.  So `angle0` is pointing into the
+   * curve and `angle1` is pointing out of the curve.
+   * @returns A new `QCommand`.
+   *  */
+  static tryAngles(
+    x0: number,
+    y0: number,
+    angle0: number,
+    x: number,
+    y: number,
+    angle: number
+  ) {
+    assertFinite(x0, y0, angle0, x, y, angle);
+    const controlPoint = findIntersection(
+      {
+        x0,
+        y0,
+        angle: angle0,
+      },
+      {
+        x0: x,
+        y0: y,
+        angle: angle + Math.PI,
+      }
+    );
+    if (!controlPoint) {
+      return undefined;
+    } else {
+      const result = new this(x0, y0, controlPoint.x, controlPoint.y, x, y);
+      return result;
+    }
+  }
+  /**
+   * This was an interesting idea, but the `PathShape.rawPath`
+   * seem like a better idea.
+   * @returns Enough information to find and call the constructor.
+   */
+  toJSON() {
+    return {
+      command: "Q",
+      x0: this.x0,
+      y0: this.y0,
+      x1: this.x1,
+      y1: this.y1,
+      x: this.x,
+      y: this.y,
+    };
   }
   constructor(
     public readonly x0: number,
@@ -855,6 +959,12 @@ export class PathShape {
         outgoingAngle,
         command: c,
       } = command;
+      const element = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "path"
+      );
+      element.setAttribute("d", new PathShape([command]).rawPath);
+      const length = element.getTotalLength();
       const previous = this.commands[index - 1];
       const notConnectedToPrevious = PathShape.needAnM(previous, command);
       const difference = notConnectedToPrevious
@@ -864,7 +974,6 @@ export class PathShape {
               angleBetween(previous.outgoingAngle, incomingAngle)
             ),
           };
-      // path length
       return {
         x0,
         y0,
@@ -872,11 +981,15 @@ export class PathShape {
         y,
         incomingAngle: PathShape.toDegrees(incomingAngle),
         outgoingAngle: PathShape.toDegrees(outgoingAngle),
+        length,
         c,
         ...difference,
       };
     });
     console.table(data);
+    console.log(this.rawPath);
+    const json = JSON.stringify(this);
+    console.log(json);
   }
 }
 
@@ -917,14 +1030,19 @@ function findIntersection(r1: Ray, r2: Ray): Point | undefined {
    */
   const lineAngle = Math.atan2(r2.y0 - r1.y0, r2.x0 - r1.x0);
   const difference1 = angleBetween(r1.angle, lineAngle);
-  const difference2 = angleBetween(r2.angle , lineAngle);
+  const difference2 = angleBetween(r2.angle, lineAngle);
+  if (difference1 == 0 || Math.abs(difference2) == Math.PI) {
+    if (Math.abs(difference1) == Math.PI || difference2 == 0) {
+      return undefined;
+    }
+    const x = (r1.x0 + r2.x0) / 2;
+    const y = (r1.y0 + r2.y0) / 2;
+    return { x, y };
+  }
+  //console.log({phil: Math.abs(difference2)<= Math.abs(difference1),raw1: r1.angle * degreesPerRadian, raw2:r2.angle * degreesPerRadian, difference1:difference1*degreesPerRadian, difference2:difference2*degreesPerRadian,totalDifference:(difference1+difference2)*degreesPerRadian})
   const side1 = Math.sign(difference1);
   const side2 = Math.sign(difference2);
   if (side1 != side2 || side1 == 0) {
-    // 0 means the ray is pointing parallel to the line.
-    //   If both rays are parallel to the line that connects them, there are two possibilities:
-    //   The rays will either overlap or they will point away from each other.
-    //   Either way we cannot return __one__ point where the two rays overlap.
     // 1 means the ray is pointing to one particular side of the line.
     //   It doesn't matter which side.
     //   All that matters is that this is consistent for both rays.
@@ -935,16 +1053,27 @@ function findIntersection(r1: Ray, r2: Ray): Point | undefined {
     // TODO what about ±180°⁈
     return undefined;
   }
+  if (Math.abs(difference2) <= Math.abs(difference1) + radiansPerDegree) {
+    // if Math.abs(difference2) < Math.abs(difference1) then the two rays are too far apart.
+    //   They will not meet.  If you try to find the point where they meet, you will go
+    //   backwards, to the wrong side, and the curve will be totally wrong.
+    // If the two values are the same, then the rays will be parallel and never meet.
+    // If they are really close, but not exactly parallel, then the curve will be really
+    //   big and is probably a mistake.  I added 1° (1 * radiansPerDegree) to avoid this
+    //   problem.
+    return undefined;
+  }
 
   if (isVertical1 || isVertical2) {
     const x = isVertical1 ? r1.x0 : r2.x0;
-    const otherLine = isVertical1 ? {...r2,slope:slope2} : {...r1,slope:slope1};
+    const otherLine = isVertical1
+      ? { ...r2, slope: slope2 }
+      : { ...r1, slope: slope1 };
     const y = otherLine.slope * (x - otherLine.x0) + otherLine.y0;
     return { x, y };
   } else {
     const x =
-      (r2.y0 - slope2 * r2.x0 - r1.y0 + slope1 * r1.x0) /
-      (slope1 - slope2);
+      (r2.y0 - slope2 * r2.x0 - r1.y0 + slope1 * r1.x0) / (slope1 - slope2);
     const y = slope1 * (x - r1.x0) + r1.y0;
     return { x, y };
   }

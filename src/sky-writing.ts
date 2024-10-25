@@ -324,8 +324,10 @@ class Rough extends AnimationController {
               )
             ) {
               // This was a smooth connection before randomizing.  Make it smooth again.
+              new PathShape(after).dump();
               const last = after.pop()!;
               const previous = after.pop()!;
+              console.log({ previous, last });
               const average =
                 previous.outgoingAngle +
                 angleBetween(previous.outgoingAngle, last.incomingAngle) / 2;
@@ -347,10 +349,11 @@ class Rough extends AnimationController {
                 last.outgoingAngle
               );
               after.push(last1);
+              console.log({ previous1, last1 });
               // This helped me track down the bug where the angle was sometimes 180° off.
               // This shows the table after each addition.
               // Remember than an addition can include a change to the previous row.
-              //new PathShape(after).dump();
+              new PathShape(after).dump();
             }
           }
         }
@@ -536,6 +539,13 @@ class Rough extends AnimationController {
       //shape0.dump();
       //shape1.dump();
       //console.log(shape0.commands);
+      //      if (letter.char == "@") {
+      //        if (previousCount("@") == 1) {
+      //          console.log(letter.element);
+      //          shape0.dump();
+      //          shape1.dump();
+      //        }
+      //      }
       return {
         ...letter,
         shape0,

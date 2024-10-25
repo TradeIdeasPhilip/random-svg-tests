@@ -1,0 +1,21 @@
+path {
+  stroke-width: 0.05;
+  stroke: darkblue;
+}
+
+svg.angles {
+  fill: lightblue;
+  stroke-width: 0.055;
+  width: 5em;
+  margin: 0.5em;
+  fill: none;
+  overflow: visible;
+}
+
+svg.angles line {
+  stroke: darkorange;
+}
+
+svg.angles path {
+  stroke-width: 0.04;
+}

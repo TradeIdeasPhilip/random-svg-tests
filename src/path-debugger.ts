@@ -1,5 +1,4 @@
-import { PathShape, QCommand } from "./path-shape";
-import "./sky-writing.css";
+import { PathShape, PathShapeError, QCommand } from "./path-shape";
 import "./path-debugger.css";
 import { getById } from "phil-lib/client-misc";
 import { initializedArray } from "phil-lib/misc";
@@ -11,8 +10,9 @@ import {
 } from "./utility";
 
 const svg = document.querySelector("svg")!;
-const input = document.querySelector("input")!;
-const button = document.querySelector("button")!;
+const input = getById("pathInputElement", HTMLInputElement);
+const button = getById("displaySinglePath", HTMLButtonElement);
+const errorElement = getById("singlePathErrorMessage", HTMLSpanElement);
 
 button.addEventListener("click", () => {
   const asString = input.value;
@@ -30,6 +30,42 @@ button.addEventListener("click", () => {
   svg.viewBox.baseVal.height = bBox.height;
 });
 
+input.addEventListener("keyup", (event) => {
+  if (event.code == "Enter") {
+    button.click();
+    event.preventDefault();
+  }
+});
+
+{
+  let errorClick = () => {};
+
+  input.addEventListener("input", () => {
+    const d = input.value;
+    if (d.trim() === "") {
+      input.style.backgroundColor = "";
+      button.disabled = true;
+      errorElement.innerText = "";
+    } else {
+      try {
+        PathShape.fromString(d);
+        button.disabled = false;
+        errorElement.innerText = "";
+      } catch (reason) {
+        if (!(reason instanceof PathShapeError)) {
+          throw reason;
+        }
+        button.disabled = true;
+        errorElement.innerText = reason.message;
+        errorClick = () => {
+          input.focus();
+          input.setSelectionRange(d.length - reason.where.length, d.length);
+        };
+      }
+    }
+  });
+  errorElement.parentElement!.addEventListener("click", () => errorClick());
+}
 {
   const byAngleTable = getById("byAngle", HTMLTableElement);
   const initialOffset = 0; //45 * radiansPerDegree;

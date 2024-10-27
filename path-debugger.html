@@ -10,19 +10,29 @@
   <body>
     <div id="fakeBody">
       <h1>Path Debugger</h1>
-      <div>
+      <div id="singlePath">
         <svg
           viewBox="0 0 100 10"
           xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="xMidYMid slice"
+          preserveAspectRatio="xMidYMid meet"
           style="
             max-width: 100vmin;
             overflow: visible;
-            width: 75vw;
             max-height: 95vh;
+            align-self: center;
           "
         ></svg>
-        <input /> <button>Display</button>
+        <div id="singlePathMainInput">
+          <input
+            id="pathInputElement"
+            placeholder="Enter a valid d attribute for a &lt;path>."
+          />
+          <button id="displaySinglePath" disabled>Display</button>
+        </div>
+        <div class="errorContainer">
+          <span id="singlePathErrorMessage"></span
+          ><span>(Click to locate.)</span>
+        </div>
       </div>
       <h1>By Angle</h1>
       <p>

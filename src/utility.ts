@@ -283,3 +283,37 @@ export function previousCount(key: string): number {
   previousCountPrivate.set(key, result + 1);
   return result;
 }
+
+/**
+ * There are a lot of ways to convert a string to a number in JavaScript.
+ * And they are all slightly different!
+ *
+ * This is my preferred way to parse a number.  Any errors are reported
+ * as undefined, so you can choose to get rid of them with ??.
+ *
+ * I get rid of NaNs and infinities.  I don't think I every really send
+ * an infinity over the network or save it in a file.  These become
+ * undefined, just like errors.
+ * @param source The input to parse.
+ * @returns A finite number or undefined if the parse failed.
+ */
+export function parseFloatX(
+  source: string | undefined | null
+): number | undefined {
+  if (source === undefined || source === null) {
+    return undefined;
+  }
+  const result = +source;
+  if (isFinite(result)) {
+    return result;
+  } else {
+    return undefined;
+  }
+}
+
+// This version of parseFloatX() fixes the following TODO in PhilLib.
+//   TODO parseFloat is generally my favorite of the build it methods to
+//   convert to a number.  But "9x" and "9" both return 9.  In my C++
+//   version (and others) "9x" would fail.
+// +"1 2" returns NaN
+// parseFloat("1 2") returns 1.

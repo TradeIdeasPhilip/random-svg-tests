@@ -15,8 +15,9 @@ const button = getById("displaySinglePath", HTMLButtonElement);
 const errorElement = getById("singlePathErrorMessage", HTMLSpanElement);
 
 button.addEventListener("click", () => {
+  svg.innerHTML="";
   const asString = input.value;
-  const pathShape = PathShape.fromStrings([asString]);
+  const pathShape = PathShape.fromString(asString);
   const element = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "path"
@@ -160,6 +161,8 @@ input.addEventListener("keyup", (event) => {
             qCommand,
           });
           svg.style.backgroundColor = "lightpink";
+        } else {
+          svg.style.backgroundColor = "rgb(26, 217, 255)";
         }
       } else {
         svg.style.backgroundColor = "hsl(190 100% 85% / 1)";

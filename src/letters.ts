@@ -60,7 +60,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
       const drawable = generator.path(baseDescription.d);
       const allPathInfo = generator.toPaths(drawable);
       const pathStrings = allPathInfo.map((pathInfo) => pathInfo.d);
-      return PathShape.fromStrings(pathStrings);
+      return PathShape.fromString(pathStrings.join(" "));
     };
     const newDescription = new DescriptionOfLetter(
       shape,

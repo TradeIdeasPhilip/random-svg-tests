@@ -317,3 +317,34 @@ export function parseFloatX(
 //   version (and others) "9x" would fail.
 // +"1 2" returns NaN
 // parseFloat("1 2") returns 1.
+
+/**
+ * According to TypeScript SvgRect is an alias for DomRect.  But that's
+ * not true.  SvgRect is a class that has the following four properties.
+ * DomRect has a lot more properties.  I can't find that documented
+ * anywhere, but that's what I see running Chrome.
+ */
+export type RealSvgRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export type ReadOnlyRect = Readonly<RealSvgRect>;
+
+/**
+ *
+ * @param r1 A non-empty rectangle.
+ * @param r2 A non-empty rectangle.
+ * @returns The smallest rectangle that completely contains both inputs.
+ */
+export function RectUnion(r1: ReadOnlyRect, r2: ReadOnlyRect): ReadOnlyRect {
+  const x = Math.min(r1.x, r2.x);
+  const y = Math.min(r1.y, r2.y);
+  const right = Math.max(r1.x + r1.width, r2.x + r2.width);
+  const bottom = Math.max(r1.y + r1.height, r2.y + r2.height);
+  const width = right - x;
+  const height = bottom - y;
+  return { x, y, width, height };
+}

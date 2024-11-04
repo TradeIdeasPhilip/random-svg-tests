@@ -271,7 +271,6 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
         .Q_HV(left, middle)
         .Q_VH(center, bottom)
         .H((rightCenter + right) / 2).pathShape;
-      //shape.dump();
       add("@", shape, advance);
     }
     {

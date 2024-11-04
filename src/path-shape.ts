@@ -94,11 +94,64 @@ export class LCommand implements Command {
   }
 }
 
+/**
+ * What function was used to create this object?
+ * in the case of `angles()` the two angle inputs might get lost if we can't create the requested curve.
+ * In this case we might want to try again or to display the element differently.
+ * I.e. failures in red for debugging.
+ * `success == true` means that the actual angles are the same as the requested angles, ± round-off error.
+ */
+export type QCreationInfo = Readonly<
+  | { source: "line" }
+  | { source: "controlPoints" }
+  | { source: "angles"; success: boolean; angle0: number; angle: number }
+>;
+
 export class QCommand implements Command {
-  static line4(x0: number, y0: number, x: number, y: number) {
-    return new this(x0, y0, (x0 + x) / 2, (y0 + y) / 2, x, y);
+  /**
+   * Create a line segment.
+   * @param x0 Initial x
+   * @param y0 Initial y
+   * @param x Final x
+   * @param y Final y
+   * @param creationInfo Store this.
+   * @returns A new QCommand.
+   */
+  private static line(
+    x0: number,
+    y0: number,
+    x: number,
+    y: number,
+    creationInfo: QCreationInfo
+  ) {
+    return new this(x0, y0, (x0 + x) / 2, (y0 + y) / 2, x, y, creationInfo);
   }
-  static line(from: Point, to: Point) {
+  /**
+   * Create a line segment using a Q command.
+   *
+   * This version takes 4 numbers as inputs.
+   * See `line2()` if you have 2 points.
+   * @param x0 Initial x
+   * @param y0 Initial y
+   * @param x Final x
+   * @param y Final y
+   * @returns A new Q command.
+   */
+  static line4(x0: number, y0: number, x: number, y: number) {
+    return this.line(x0, y0, x, y, { source: "line" });
+  }
+  /**
+   * Create a line segment using a Q command.
+   *
+   * This version takes 2 points as inputs.
+   * See `line4()` if you have 4 numbers.
+   * @param x0 Initial x
+   * @param y0 Initial y
+   * @param x Final x
+   * @param y Final y
+   * @returns A new Q command.
+   */
+  static line2(from: Point, to: Point) {
     return this.line4(from.x, from.y, to.x, to.y);
   }
   /**
@@ -151,13 +204,21 @@ export class QCommand implements Command {
       }
     );
     if (!controlPoint) {
-      // I don't expect this to happen often.  Sometimes it's unavoidable.
-      // But I want to know if it happens a lot.
-      //console.warn("Line instead of Q");
       // Ignore the requested angles and just draw a line segment.
-      return this.line4(x0, y0, x, y);
+      // Store the original in case we want to try to fix it or report it.
+      return this.line(x0, y0, x, y, {
+        source: "angles",
+        success: false,
+        angle,
+        angle0,
+      });
     } else {
-      const result = new this(x0, y0, controlPoint.x, controlPoint.y, x, y);
+      const result = new this(x0, y0, controlPoint.x, controlPoint.y, x, y, {
+        source: "angles",
+        success: true,
+        angle,
+        angle0,
+      });
       return result;
     }
   }
@@ -183,6 +244,10 @@ export class QCommand implements Command {
    * Both angles are pointing _forward_.  So `angle0` is pointing into the
    * curve and `angle1` is pointing out of the curve.
    * @returns A new `QCommand`.
+   * @deprecated Each `QCommand` includes a `creationInfo` field.  Among other
+   * things this will tell you if you got requested curve or if you got
+   * a line.  I'm already using `creationInfo` in essential code and in test
+   * code.
    *  */
   static tryAngles(
     x0: number,
@@ -208,13 +273,17 @@ export class QCommand implements Command {
     if (!controlPoint) {
       return undefined;
     } else {
-      const result = new this(x0, y0, controlPoint.x, controlPoint.y, x, y);
+      const result = new this(x0, y0, controlPoint.x, controlPoint.y, x, y, {
+        source: "angles",
+        success: true,
+        angle,
+        angle0,
+      });
       return result;
     }
   }
   /**
-   * This was an interesting idea, but the `PathShape.rawPath`
-   * seem like a better idea.
+   * This stores some information that `PathShape.rawPath` might have missed.
    * @returns Enough information to find and call the constructor.
    */
   toJSON() {
@@ -226,15 +295,27 @@ export class QCommand implements Command {
       y1: this.y1,
       x: this.x,
       y: this.y,
+      creationInfo: this.creationInfo,
     };
   }
-  constructor(
+  static controlPoints(
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number,
+    x: number,
+    y: number
+  ) {
+    return new this(x0, y0, x1, y1, x, y, { source: "controlPoints" });
+  }
+  private constructor(
     public readonly x0: number,
     public readonly y0: number,
     public readonly x1: number,
     public readonly y1: number,
     public readonly x: number,
-    public readonly y: number
+    public readonly y: number,
+    public readonly creationInfo: QCreationInfo
   ) {
     assertFinite(x0, y0, x1, y1, x, y);
     this.asString = `Q ${x1},${y1} ${x},${y}`;
@@ -245,10 +326,24 @@ export class QCommand implements Command {
   get outgoingAngle(): number {
     return Math.atan2(this.y - this.y1, this.x - this.x1);
   }
+  get requestedIncomingAngle(): number {
+    if (this.creationInfo.source == "angles") {
+      return this.creationInfo.angle0;
+    } else {
+      return this.incomingAngle;
+    }
+  }
+  get requestedOutgoingAngle(): number {
+    if (this.creationInfo.source == "angles") {
+      return this.creationInfo.angle;
+    } else {
+      return this.outgoingAngle;
+    }
+  }
   readonly command = "Q";
   readonly asString: string;
   translate(Δx: number, Δy: number): Command {
-    return new QCommand(
+    return QCommand.controlPoints(
       this.x0 + Δx,
       this.y0 + Δy,
       this.x1 + Δx,
@@ -531,7 +626,9 @@ export class PathBuilder {
   }
   Q(x1: number, y1: number, x: number, y: number) {
     const previous = this.previous()!;
-    this.addCommand(new QCommand(previous.x, previous.y, x1, y1, x, y));
+    this.addCommand(
+      QCommand.controlPoints(previous.x, previous.y, x1, y1, x, y)
+    );
     return this;
   }
   /**
@@ -784,14 +881,18 @@ export class PathShapeError extends Error {
 export class PathShape {
   /**
    * Convert a string into a `PathShape`.
-   *
-   * This is a rewrite of `PathBuilder.fromStrings()`
-   * @param strings A valid d attribute for an `SVGPathElement`.
+   * @param d A valid d attribute for an `SVGPathElement`.
    * E.g "M1,2 L3,4".
+   *
+   * Or the result of a previous call to `JSON.stringify()` on a `PathShape`.
    * @returns The path segment generated by the string.
    * @throws An invalid input will throw a PathShapeError.
    */
   static fromString(d: string): PathShape {
+    const fromJson = this.fromJson(d);
+    if (fromJson) {
+      return fromJson;
+    }
     let remaining = d;
     let found: RegExpExecArray | null = null;
     const fail = (message: string): PathShapeError => {
@@ -845,7 +946,7 @@ export class PathShape {
         const y1 = parseOrThrow(found[2]);
         const x = parseOrThrow(found[3]);
         const y = parseOrThrow(found[4]);
-        const current = new QCommand(x0, y0, x1, y1, x, y);
+        const current = QCommand.controlPoints(x0, y0, x1, y1, x, y);
         push(current);
         remaining = found[5];
         continue;
@@ -868,6 +969,99 @@ export class PathShape {
     return new this(commands);
   }
 
+  static fromJson(source: string): PathShape | undefined {
+    try {
+      type CommandDescription =
+        | {
+            command: "C";
+            x0: number;
+            y0: number;
+            x1: number;
+            y1: number;
+            x2: number;
+            y2: number;
+            x: number;
+            y: number;
+          }
+        | {
+            command: "Q";
+            x0: number;
+            y0: number;
+            x1: number;
+            y1: number;
+            x: number;
+            y: number;
+            creationInfo: QCreationInfo;
+          }
+        | { command: "L"; x0: number; y0: number; x: number; y: number };
+      // '{"commands":[{"command":"Q","x0":7.5,"y0":-7.5,"x1":7.5,"y1":-9.375,"x":5.625,"y":-9.375,"creationInfo":{"source":"controlPoints"}}]}'
+      const sourceCommands: CommandDescription[] = JSON.parse(source).commands;
+      const commands: Command[] = sourceCommands.map((sourceCommand) => {
+        switch (sourceCommand.command) {
+          case "C": {
+            const { x0, y0, x1, y1, x2, y2, x, y } = sourceCommand;
+            return new CCommand(x0, y0, x1, y1, x2, y2, x, y);
+          }
+          case "L": {
+            const { x0, y0, x, y } = sourceCommand;
+            return new LCommand(x0, y0, x, y);
+          }
+          case "Q": {
+            const { x0, y0, x, y, creationInfo } = sourceCommand;
+            switch (creationInfo.source) {
+              case "angles": {
+                const { angle0, angle } = creationInfo;
+                const result = QCommand.angles(x0, y0, angle0, x, y, angle);
+                if (
+                  result.creationInfo.source != "angles" ||
+                  result.creationInfo.success != creationInfo.success
+                ) {
+                  // There are some legit reasons this could happen but they should be very rare.
+                  console.warn("different", sourceCommand, result);
+                }
+                return result;
+              }
+              case "controlPoints": {
+                const { x1, y1 } = sourceCommand;
+                const result = QCommand.controlPoints(x0, y0, x1, y1, x, y);
+                return result;
+              }
+              case "line": {
+                return QCommand.line4(x0, y0, x, y);
+              }
+              default: {
+                throw new Error(
+                  `Unknown source: "${(creationInfo as QCreationInfo).source}"`
+                );
+              }
+            }
+          }
+          default: {
+            throw new Error(
+              `Unknown command: "${(sourceCommand as any).command}"`
+            );
+          }
+        }
+      });
+      return new PathShape(commands);
+    } catch (reason: unknown) {
+      // This could happen a lot.
+      return undefined;
+    }
+  }
+
+  /**
+   * Use this to animate from any path string to any other path string.
+   *
+   * This function is very generic and works in a lot of cases.  However, it don't
+   * work well.  This is a great prototype.  But in general you should use a
+   * smarter version of this.
+   * @param other You want to morph from `this` to `other`.
+   * @returns A new pair of path strings.  The first looks like `this` and the second
+   * looks like `other`.  However, these might use different commands to get the same
+   * appearance.  The two result strings will have compatible commands, so you can
+   * morph between them with normal CSS animations.
+   */
   matchForMorph(other: PathShape): [pathForThis: string, pathForOther: string] {
     const commandsForThis = this.commands.map((command) => command.toCubic());
     const commandsForOther = other.commands.map((command) => command.toCubic());
@@ -946,6 +1140,23 @@ export class PathShape {
     }
     return pathElement;
   }
+  /**
+   * Internally we do not store any M commands.
+   * If the next segment starts at exactly the same place as the previous segment ends, we assume they are connected.
+   * Otherwise, they are not.
+   * If these two commands are not connected, and we are generating a CSS friendly path string, then insert an M here.
+   *
+   * Note that there is no margin of error.
+   * I'm looking for cases where we created the starting point of one command by _copying_ it from the ending point of
+   * another.
+   *
+   * I am explicitly ignoring the case where you want to force and M.
+   * That makes my life easier!
+   * That's the same reason I'm using rounded corners and end caps.
+   * @param before The first command.  This can be undefined if `after` is the first in a list of commands.
+   * @param after The second command.
+   * @returns true if we need to insert an M command before the second command.
+   */
   static needAnM(before: Command | undefined, after: Command): boolean {
     if (!before) {
       return true;
@@ -958,6 +1169,9 @@ export class PathShape {
     }
     return false;
   }
+  /**
+   * Something that you might feed to the `d` __attribute__ of a `<path>` element.
+   */
   get rawPath() {
     return this.commands
       .flatMap((command, index) => {
@@ -974,10 +1188,22 @@ export class PathShape {
   /**
    * Like css path, but broken each time the pen is lifted.
    * Each string in the result is a valid path where all of the parts are connected.
+   *
+   * @deprecated This was aimed at a very specific case involving rough.js.
+   * If you need it you can create something similar yourself.
+   * TODO remove this.
    */
   get cssPaths(): string[] {
     return this.splitOnMove().map((shape) => shape.cssPath);
   }
+  /**
+   * Like raw path, but broken each time the pen is lifted.
+   * Each string in the result is a valid path where all of the parts are connected.
+   *
+   * @deprecated This was aimed at a very specific case involving rough.js.
+   * If you need it you can create something similar yourself.
+   * TODO remove this.
+   */
   get rawPaths(): string[] {
     return this.splitOnMove().map((shape) => shape.rawPath);
   }
@@ -1087,6 +1313,7 @@ export class PathShape {
     });
     console.table(data);
     console.log(this.rawPath);
+    console.log(JSON.stringify(this));
   }
 }
 

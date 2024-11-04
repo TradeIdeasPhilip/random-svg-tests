@@ -10,7 +10,7 @@ import {
   radiansPerDegree,
   Random,
 } from "./utility";
-import { Command, PathShape, QCommand } from "./path-shape";
+import { PathShape, QCommand } from "./path-shape";
 import { lerpPoints, Point } from "./math-to-path";
 import { makeLineFont } from "./line-font";
 
@@ -249,10 +249,10 @@ class Rough extends AnimationController {
       if (command instanceof QCommand) {
         return command;
       } else {
-        return QCommand.line({ x: command.x0, y: command.y0 }, command);
+        return QCommand.line2({ x: command.x0, y: command.y0 }, command);
       }
     });
-    const after = new Array<Command>();
+    const after = new Array<QCommand>();
     shape.splitOnMove().forEach((connectedShape): void => {
       const commands = connectedShape.commands;
       const sharedPoints: ReadonlyArray<Point> = commands.flatMap(
@@ -312,27 +312,38 @@ class Rough extends AnimationController {
         const middle3 = adjust(middle2, "½");
 
         after.push(
-          new QCommand(from.x, from.y, middle3.x, middle3.y, to.x, to.y)
+          QCommand.controlPoints(
+            from.x,
+            from.y,
+            middle3.x,
+            middle3.y,
+            to.x,
+            to.y
+          )
         );
         {
           if (index > 0) {
             // This command and the previous command are connected.
             if (
               similarAngles(
-                before.at(after.length - 2)!.outgoingAngle,
-                before.at(after.length - 1)!.incomingAngle
+                before.at(after.length - 2)!.requestedOutgoingAngle,
+                before.at(after.length - 1)!.requestedIncomingAngle
               )
             ) {
               // This was a smooth connection before randomizing.  Make it smooth again.
               const last = after.pop()!;
               const previous = after.pop()!;
               const average =
-                previous.outgoingAngle +
-                angleBetween(previous.outgoingAngle, last.incomingAngle) / 2;
+                previous.requestedOutgoingAngle +
+                angleBetween(
+                  previous.requestedOutgoingAngle,
+                  last.requestedIncomingAngle
+                ) /
+                  2;
               const previous1 = QCommand.angles(
                 previous.x0,
                 previous.y0,
-                previous.incomingAngle,
+                previous.requestedIncomingAngle,
                 previous.x,
                 previous.y,
                 average
@@ -344,7 +355,7 @@ class Rough extends AnimationController {
                 average,
                 last.x,
                 last.y,
-                last.outgoingAngle
+                last.requestedOutgoingAngle
               );
               after.push(last1);
             }
@@ -525,6 +536,10 @@ class Rough extends AnimationController {
         letter.shape,
         letter.description.fontMetrics.strokeWidth * 1.5,
         Rough.#random
+      );
+      console.log(
+        letter.description.fontMetrics.strokeWidth * 1.5,
+        "Roughness"
       );
       const shape0 = rough.before;
       const shape1 = rough.after;

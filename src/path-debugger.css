@@ -36,6 +36,11 @@ code {
   max-width: calc(min(60ch, 100vw - 2em));
 }
 
+th {
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+}
+
 h1,
 h2,
 h3,
@@ -72,8 +77,33 @@ h1 + p {
   align-self: stretch;
 }
 
-#singlePath svg {
-  background-color: rgb(26, 217, 255);
+#singlePathSvg {
+  background-color: black;
+  max-width: 100vmin;
+  overflow: visible;
+  max-height: 50vh;
+  align-self: center;
+}
+
+path.hover {
+  stroke-width: 0.25;
+}
+
+td.hover {
+  background-color: lightgray;
+}
+
+#singlePathSvg path.selected {
+  stroke: white !important;
+}
+
+#segments td.selected {
+  color: white !important;
+}
+
+#singlePathSvg path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 #singlePathMainInput {
@@ -105,10 +135,38 @@ h1 + p {
   display: none;
 }
 
+#segments {
+  align-self: center;
+}
+
+#segments td {
+  text-align: right;
+}
+
+#segments td:nth-child(1) {
+  background-color: black;
+  font-weight: bold;
+}
+
+#segments td:nth-child(2) {
+  text-align: center;
+  font-family: "Courier Prime", monospace;
+}
+
+#segments td:nth-child(8) {
+  position: relative;
+  top: -0.5lh;
+  background-color: transparent;
+}
 path {
   stroke-width: 0.05;
   stroke: darkblue;
   fill: none;
+}
+
+#segments td.error {
+  /* text-decoration: 7% red wavy line-through;  */
+  color: #d30000;
 }
 
 svg.angles {

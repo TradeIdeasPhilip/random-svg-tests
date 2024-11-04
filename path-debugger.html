@@ -15,23 +15,38 @@
           viewBox="0 0 100 10"
           xmlns="http://www.w3.org/2000/svg"
           preserveAspectRatio="xMidYMid meet"
-          style="
-            max-width: 100vmin;
-            overflow: visible;
-            max-height: 95vh;
-            align-self: center;
-          "
+          id="singlePathSvg"
         ></svg>
         <div id="singlePathMainInput">
           <input
             id="pathInputElement"
             placeholder="Enter a valid d attribute for a &lt;path>."
           />
-          <button id="displaySinglePath" disabled>Display</button>
+          <button id="displaySinglePath">Display</button>
         </div>
         <div class="errorContainer">
           <span id="singlePathErrorMessage"></span
           ><span>(Click to locate.)</span>
+        </div>
+        <table id="segments">
+          <tr>
+            <th rowspan="2">#</th>
+            <th rowspan="2">C</th>
+            <th rowspan="2">Length</th>
+            <th colspan="2">Requested</th>
+            <th colspan="2">Actual</th>
+            <th rowspan="2">Difference</th>
+          </tr>
+          <tr>
+            <th>Incoming</th>
+            <th>Outgoing</th>
+            <th>Incoming</th>
+            <th>Outgoing</th>
+          </tr>
+        </table>
+        <div>
+          <button id="deleteAndBreak" disabled>Delete and Break</button
+          ><button id="deleteAndMend" disabled>Delete and Mend</button>
         </div>
       </div>
       <h1>By Angle</h1>

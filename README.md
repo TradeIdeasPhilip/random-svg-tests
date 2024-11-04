@@ -118,15 +118,21 @@ But when you see the _two_ side by side you'll notice a lot of identical letters
 
 One of the things I'm working on is text that looks like this.
 I wasn't planning to fool anyone.
-I just thought it would look good, especially when __animated__ on the screen.
+I just thought it would look good, especially when **animated** on the screen.
 
 Terminology:
-* When I say "rough" I mean making it look more like a person did it, less like a machine did it.  I'm basing this term on the [Rough.js](https://roughjs.com/) library.
-* "Handwriting effect" is a standard term for a style of animation.  You draw the letters as if a pen were moving across the screen.
+
+- When I say "rough" I mean making it look more like a person did it, less like a machine did it. I'm basing this term on the [Rough.js](https://roughjs.com/) library.
+- "Handwriting effect" is a standard term for a style of animation. You draw the letters as if a pen were moving across the screen.
 
 I often mix these two effects so it looks like a person is writing on the computer while you are watching.
 
 ## Morph
+
+### I need to take a closer look at these.
+
+- https://fonts.google.com/specimen/Caveat+Brush?preview.text=AAABBBCCCDDDaaaabbbbcccc
+- https://fonts.google.com/specimen/Kablammo/tester
 
 ### Work in Progress
 

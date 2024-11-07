@@ -534,12 +534,8 @@ class Rough extends AnimationController {
     const middle: Result[] = required.map((letter) => {
       const rough = Rough.makeRoughShape(
         letter.shape,
-        letter.description.fontMetrics.strokeWidth * 1.5,
+        letter.description.fontMetrics.strokeWidth * 1.5,  // This is 2.25 in my current examples.
         Rough.#random
-      );
-      console.log(
-        letter.description.fontMetrics.strokeWidth * 1.5,
-        "Roughness"
       );
       const shape0 = rough.before;
       const shape1 = rough.after;
@@ -557,7 +553,7 @@ class Rough extends AnimationController {
   }
   protected override startImpl(): void {
     const textLayout = new TextLayout();
-    textLayout.font = makeLineFont(15);
+    textLayout.font = makeLineFont(7);
     const fontMetrics = textLayout.font.get("0")!.fontMetrics;
     textLayout.lineHeight = fontMetrics.bottom - fontMetrics.capitalTop;
     textLayout.restart();

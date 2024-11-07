@@ -86,7 +86,7 @@ h1 + p {
 }
 
 path.hover {
-  stroke-width: 0.25;
+  stroke-width: 7;
 }
 
 td.hover {
@@ -159,7 +159,7 @@ td.hover {
   background-color: transparent;
 }
 path {
-  stroke-width: 0.05;
+  stroke-width: 2.25;
   stroke: darkblue;
   fill: none;
 }

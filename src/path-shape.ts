@@ -859,6 +859,9 @@ const qCommand = new RegExp(
 const cCommand = new RegExp(
   `^C${afterCommand}${number}${between}${number}${between}${number}${between}${number}${between}${number}${between}${number}(.*)$`
 );
+const cCommandContinuation = new RegExp(
+  `${afterCommand}${number}${between}${number}${between}${number}${between}${number}${between}${number}${between}${number}(.*)$`
+);
 
 /**
  * If the user enters a path string (like in `path.debugger.html`) that is invalid
@@ -893,6 +896,12 @@ export class PathShape {
     if (fromJson) {
       return fromJson;
     }
+    // TODO There is a strange bug in here.
+    // I had a "c" in my string and it was silently ignored.
+    // This routine does not handle "c" yet.
+    // It will soon!
+    // But until then I was expecting this to throw a PathShapeError.
+    // See path-debugger.ts where I've embedded a good test string and additional notes.
     let remaining = d;
     let found: RegExpExecArray | null = null;
     const fail = (message: string): PathShapeError => {
@@ -953,15 +962,18 @@ export class PathShape {
       }
       found = cCommand.exec(remaining);
       if (found) {
-        const x1 = parseOrThrow(found[1]);
-        const y1 = parseOrThrow(found[2]);
-        const x2 = parseOrThrow(found[3]);
-        const y2 = parseOrThrow(found[4]);
-        const x3 = parseOrThrow(found[5]);
-        const y3 = parseOrThrow(found[6]);
-        const current = new CCommand(x0, y0, x1, y1, x2, y2, x3, y3);
-        push(current);
-        remaining = found[7];
+        while (found) {
+          const x1 = parseOrThrow(found[1]);
+          const y1 = parseOrThrow(found[2]);
+          const x2 = parseOrThrow(found[3]);
+          const y2 = parseOrThrow(found[4]);
+          const x3 = parseOrThrow(found[5]);
+          const y3 = parseOrThrow(found[6]);
+          const current = new CCommand(x0, y0, x1, y1, x2, y2, x3, y3);
+          push(current);
+          remaining = found[7];
+          found = cCommandContinuation.exec(remaining);
+        }
         continue;
       }
       throw fail("Confused.");
@@ -969,6 +981,15 @@ export class PathShape {
     return new this(commands);
   }
 
+  /**
+   * The inverse of JSON.stringify().
+   *
+   * See also PathShape.fromString().  That works with JSON and other formats.
+   * @param source The result of a call to JSON.stringify() on a PathShape object.
+   * @returns A new PathShape object.  Any and all errors will cause this to return `undefined`.
+   * @throws Nothing.  Returns `undefined` on any error.  There is some addition information if
+   * you trace through the source code.  But I don't need to implement a JSON tester/debugger.
+   */
   static fromJson(source: string): PathShape | undefined {
     try {
       type CommandDescription =
@@ -1154,19 +1175,30 @@ export class PathShape {
    * That makes my life easier!
    * That's the same reason I'm using rounded corners and end caps.
    * @param before The first command.  This can be undefined if `after` is the first in a list of commands.
-   * @param after The second command.
-   * @returns true if we need to insert an M command before the second command.
+   * @param after The second command.  This can be undefined if `before` is the last in a list of commands.
+   * @returns true if we need to insert an M command between the two given commands.
    */
-  static needAnM(before: Command | undefined, after: Command): boolean {
+  static needAnM(
+    before: Command | undefined,
+    after: Command | undefined
+  ): boolean {
+    if (!after) {
+      // If there is no command `after` the `M` command, then the `M` command would clearly be unnecessary.
+      return false;
+    }
     if (!before) {
+      // If `after` is the first command in a list then we absolutely need an `M` command before it.
       return true;
     }
     if (before.x != after.x0) {
+      // There was a jump between the two commands, so we need to insert an `M` command to describe the jump.
       return true;
     }
     if (before.y != after.y0) {
+      // There was a jump between the two commands, so we need to insert an `M` command to describe the jump.
       return true;
     }
+    // The second command starts exactly where there the first ends.  So there is no need for an M.
     return false;
   }
   /**

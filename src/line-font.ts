@@ -50,7 +50,6 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
   } = fontMetrics;
   const left = 0;
   const dotHeight = strokeWidth / 3;
-  // Missing ASCII chars:  < >
   // MARK: &
   {
     // This code was automatically generated.
@@ -139,6 +138,32 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       )
     );
     add("&", new PathShape(commands), advance);
+  }
+  // MARK: < and >
+  {
+    const sideLength = digitWidth;
+    const advance = (sideLength / 2) * Math.sqrt(3);
+    const middle = (baseline + capitalTop) / 2;
+    const top = middle - sideLength / 2;
+    const bottom = top + sideLength;
+    const left = 0;
+    const right = advance;
+    add(
+      "<",
+      new PathShape([
+        QCommand.line4(right, top, left, middle),
+        QCommand.line4(left, middle, right, bottom),
+      ]),
+      advance
+    );
+    add(
+      ">",
+      new PathShape([
+        QCommand.line4(left, top, right, middle),
+        QCommand.line4(right, middle, left, bottom),
+      ]),
+      advance
+    );
   }
   // MARK: ?
   {

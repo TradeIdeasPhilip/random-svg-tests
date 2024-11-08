@@ -108,6 +108,113 @@ button.addEventListener("click", () => {
   const fullPathShape = PathShape.fromString(asString);
   let fullBBox: undefined | RealSvgRect;
   const commands = fullPathShape.commands;
+  /**
+   * The following is how I created a path for the & character.
+   * It's ugly, but it worked.  I think it's a good start.
+   *
+   * I found a bitmap image I liked.
+   * I loaded that into Inkscape.
+   * I picked a few spots that seemed like good endpoints for QCommands.
+   * I focused on places where I could get 90 degree angles, when possible, because it was easier to think about.
+   * I tried to draw the path in Inkscape, but Inkscape does not support quadratic curves.
+   * You have to use cubic curves.
+   * I used Inkscape just to get a rough sense of what I was looking at.
+   * I was focused on the tangent lines at each of my points.
+   * Then I saved my image file and used a text editor to find the path string.
+   * PathShape.fromString() now understands C and c commands.
+   * And I added a special conversion in the code below.
+   * It will interpret the C commands the way I intended them.
+   * It will create Q commands preserving the positions and angles.
+   * And the code below got rid of the kinks.
+   * And it made some angles snap to a cardinal direction.
+   * I don't know how to do those two things in Inkscape.
+   *
+   * I need to find a better vector graphics editor.
+   * path-debugger.* was very helpful.
+   *
+   * Initial string that feeds into this:
+   * "M 159.43363,236.57893 C 139.39225,211.71673 116.17009,188.00602 85.374138,137.83294 79.442993,121.43379 68.706413,107.78059 71.487983,86.40274 70.012084,75.635902 75.543692,68.372817 90.517159,65.830661 c 21.193741,1.982131 19.627371,12.092873 22.629291,20.57208 5.01399,12.845433 -15.622616,33.019609 -28.286615,50.915899 -13.036541,15.12654 -22.269361,34.60019 -25.715102,60.68764 -2.353207,23.26949 10.162985,35.15145 28.286612,40.62986 18.916925,0.15644 35.598375,-30.16544 50.401595,-79.20251";
+   */
+  /*
+  const commands = fullPathShape.commands.map((original) =>
+    QCommand.angles(
+      original.x0,
+      original.y0,
+      original.incomingAngle,
+      original.x,
+      original.y,
+      original.outgoingAngle
+    )
+  );
+  commands.forEach((first, firstIndex, array) => {
+    const secondIndex = firstIndex + 1;
+    const second = array.at(secondIndex);
+    if (second) {
+      let newAngle =
+        first.outgoingAngle +
+        angleBetween(first.outgoingAngle, second.incomingAngle) / 2;
+      // console.log(
+      //   (newAngle * degreesPerRadian).toFixed(2) + "°",
+      //   ((angleBetween(0, newAngle * 4) / 4) * degreesPerRadian).toFixed(2) +
+      //     "°"
+      // );
+      const cutoff = 23 * radiansPerDegree;
+      for (let i = 0; i < 4; i++) {
+        const cardinal = (FULL_CIRCLE / 4) * i;
+        if (Math.abs(angleBetween(cardinal, newAngle)) < cutoff) {
+          newAngle = cardinal;
+        }
+      }
+      const first1 = first.newAngles(undefined, newAngle);
+      const second1 = second.newAngles(newAngle, undefined);
+      array[firstIndex] = first1;
+      array[secondIndex] = second1;
+    }
+  });
+  if (commands.length > 0) {
+    let minX = commands[0].x0;
+    let maxX = minX;
+    let minY = commands[0].y0;
+    let maxY = minY;
+    commands.forEach((command) => {
+      const { x, y } = command;
+      minX = Math.min(x, minX);
+      minY = Math.min(y, minY);
+      maxX = Math.max(x, maxX);
+      maxY = Math.max(y, maxY);
+    });
+    const newY = makeLinear(minY, -1, maxY, 0);
+    const originalHeight = maxY - minY;
+    const originalWidth = maxX - minX;
+    const finalWidth = originalWidth / originalHeight;
+    const newX = makeLinear(minX, 0, maxX, finalWidth);
+    for (let i = 0; i < commands.length; i++) {
+      const original = commands[i];
+      const scaled = QCommand.controlPoints(
+        newX(original.x0),
+        newY(original.y0),
+        newX(original.x1),
+        newY(original.y1),
+        newX(original.x),
+        newY(original.y)
+      );
+      commands[i] = scaled;
+    }
+    let code = "";
+    code += "const scaleFactor = fontMetrics.mHeight;\n";
+    code += `const advance = ${finalWidth}*scaleFactor;\n`;
+    code += "const commands:QCommand[]=[];\n";
+    commands.forEach((command) => {
+      code += `commands.push(QCommand.controlPoints(
+      ${command.x0} * scaleFactor, ${command.y0}* scaleFactor,
+      ${command.x1}* scaleFactor, ${command.y1}* scaleFactor,
+      ${command.x}* scaleFactor, ${command.y} * scaleFactor
+    ) );\n`;
+    });
+    code += 'add("&", new PathShape(commands), advance);\n';
+    console.log(code);
+  }
+    */
   commands.map((command, index) => {
     const pathElement = document.createElementNS(
       "http://www.w3.org/2000/svg",
@@ -236,9 +343,8 @@ input.addEventListener("keyup", (event) => {
     }
   };
   input.addEventListener("input", inputListener);
-  // TODO / BUG!!!
-  // This value is a great test.  Just display this file and click the "Display" button.
-  // I'm in the process of adding more support to
+  // This is the a version of the & that I created in Inkscape.
+  // It gets cleaned up elsewhere.
   input.value =
     "M 159.43363,236.57893 C 139.39225,211.71673 116.17009,188.00602 85.374138,137.83294 79.442993,121.43379 68.706413,107.78059 71.487983,86.40274 70.012084,75.635902 75.543692,68.372817 90.517159,65.830661 c 21.193741,1.982131 19.627371,12.092873 22.629291,20.57208 5.01399,12.845433 -15.622616,33.019609 -28.286615,50.915899 -13.036541,15.12654 -22.269361,34.60019 -25.715102,60.68764 -2.353207,23.26949 10.162985,35.15145 28.286612,40.62986 18.916925,0.15644 35.598375,-30.16544 50.401595,-79.20251";
   inputListener();

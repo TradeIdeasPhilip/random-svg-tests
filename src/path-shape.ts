@@ -223,6 +223,38 @@ export class QCommand implements Command {
     }
   }
   /**
+   * Create a new `QCommand` based on `this` one.
+   * The requested fields will be changed.
+   * The other fields will be copied as is.
+   * @param incomingAngle The new requested value, or undefined to keep the old value.
+   * @param outgoingAngle The new requested value, or undefined to keep the old value.
+   * @returns The requested object.
+   */
+  newAngles(
+    incomingAngle: number | undefined,
+    outgoingAngle: number | undefined
+  ) {
+    // TODO the defaults should be based on the requested angles, not the current angles.
+    // This was not an issue for my original purpose.
+    // But I plan to use this in more places.
+    // Including places where I know the requested angle and the final angle are different.
+    // TODO after fixing the above, find the place where I'm already doing this.
+    // I had to add the "requested angle" fix somewhere else, I forget where.
+    // That whole block of code should be replaced by this call.
+    // Try searching for all references to QCommand.angles().  That will quickly expose
+    // and code that should be replaced by a call to this function.
+    incomingAngle ??= this.incomingAngle;
+    outgoingAngle ??= this.outgoingAngle;
+    return QCommand.angles(
+      this.x0,
+      this.y0,
+      incomingAngle,
+      this.x,
+      this.y,
+      outgoingAngle
+    );
+  }
+  /**
    * This is the same as `angles()` but on an error this will return an `undefined`.
    * On error `angles()` will return a straight line.
    *
@@ -391,6 +423,31 @@ class CCommand implements Command {
   ) {
     assertFinite(x0, y0, x1, y1, x2, y2, x, y);
     this.asString = `C ${x1},${y1} ${x2},${y2} ${x},${y}`;
+  }
+  /**
+   * Like you are reading values from a `c` command.
+   * A lower case "c."
+   * @param x0 The start of this curve.
+   * @param y0 The start of this curve.
+   * @param x1 A control point measured relative to x0.
+   * @param y1 A control point measured relative to y0.
+   * @param x2 A control point measured relative to x0.
+   * @param y2 A control point measured relative to y0.
+   * @param x A control point measured relative to x0.
+   * @param y A control point measured relative to y0.
+   * @returns A new `CCommand` object.
+   */
+  static relative(
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    x: number,
+    y: number
+  ) {
+    return new this(x0, y0, x1 + x0, y1 + y0, x2 + x0, y2 + y0, x + x0, y + y0);
   }
   get incomingAngle() {
     return Math.atan2(this.y1 - this.y0, this.x1 - this.x0);
@@ -860,7 +917,10 @@ const cCommand = new RegExp(
   `^C${afterCommand}${number}${between}${number}${between}${number}${between}${number}${between}${number}${between}${number}(.*)$`
 );
 const cCommandContinuation = new RegExp(
-  `${afterCommand}${number}${between}${number}${between}${number}${between}${number}${between}${number}${between}${number}(.*)$`
+  `^${afterCommand}${number}${between}${number}${between}${number}${between}${number}${between}${number}${between}${number}(.*)$`
+);
+const cCommandRelative = new RegExp(
+  `^c${afterCommand}${number}${between}${number}${between}${number}${between}${number}${between}${number}${between}${number}(.*)$`
 );
 
 /**
@@ -970,6 +1030,22 @@ export class PathShape {
           const x3 = parseOrThrow(found[5]);
           const y3 = parseOrThrow(found[6]);
           const current = new CCommand(x0, y0, x1, y1, x2, y2, x3, y3);
+          push(current);
+          remaining = found[7];
+          found = cCommandContinuation.exec(remaining);
+        }
+        continue;
+      }
+      found = cCommandRelative.exec(remaining);
+      if (found) {
+        while (found) {
+          const x1 = parseOrThrow(found[1]);
+          const y1 = parseOrThrow(found[2]);
+          const x2 = parseOrThrow(found[3]);
+          const y2 = parseOrThrow(found[4]);
+          const x3 = parseOrThrow(found[5]);
+          const y3 = parseOrThrow(found[6]);
+          const current = CCommand.relative(x0, y0, x1, y1, x2, y2, x3, y3);
           push(current);
           remaining = found[7];
           found = cCommandContinuation.exec(remaining);

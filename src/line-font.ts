@@ -50,7 +50,96 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
   } = fontMetrics;
   const left = 0;
   const dotHeight = strokeWidth / 3;
-  // Missing ASCII chars:  & < > ~
+  // Missing ASCII chars:  < >
+  // MARK: &
+  {
+    // This code was automatically generated.
+    // See path-debugger.ts for the source.
+    const scaleFactor = fontMetrics.mHeight;
+    const advance = 0.5803571598560251 * scaleFactor;
+    const commands: QCommand[] = [];
+    commands.push(
+      QCommand.controlPoints(
+        0.5803571598560251 * scaleFactor,
+        -0.011904772996231272 * scaleFactor,
+        0.1993461912459357 * scaleFactor,
+        -0.4845653833822309 * scaleFactor,
+        0.15178572549774305 * scaleFactor,
+        -0.5833333559985097 * scaleFactor
+      )
+    );
+    commands.push(
+      QCommand.controlPoints(
+        0.15178572549774305 * scaleFactor,
+        -0.5833333559985097 * scaleFactor,
+        0.07142858010885174 * scaleFactor,
+        -0.7502096094253163 * scaleFactor,
+        0.07142858010885174 * scaleFactor,
+        -0.8809523915616125 * scaleFactor
+      )
+    );
+    commands.push(
+      QCommand.controlPoints(
+        0.07142858010885174 * scaleFactor,
+        -0.8809523915616125 * scaleFactor,
+        0.07142858010885174 * scaleFactor,
+        -1 * scaleFactor,
+        0.18154763484090689 * scaleFactor,
+        -1 * scaleFactor
+      )
+    );
+    commands.push(
+      QCommand.controlPoints(
+        0.18154763484090689 * scaleFactor,
+        -1 * scaleFactor,
+        0.3125000278492327 * scaleFactor,
+        -1 * scaleFactor,
+        0.3125000278492327 * scaleFactor,
+        -0.8809523857747589 * scaleFactor
+      )
+    );
+    commands.push(
+      QCommand.controlPoints(
+        0.3125000278492327 * scaleFactor,
+        -0.8809523857747589 * scaleFactor,
+        0.3125000278492327 * scaleFactor,
+        -0.795672021064033 * scaleFactor,
+        0.14880952935525849 * scaleFactor,
+        -0.5863095347804337 * scaleFactor
+      )
+    );
+    commands.push(
+      QCommand.controlPoints(
+        0.14880952935525849 * scaleFactor,
+        -0.5863095347804337 * scaleFactor,
+        0 * scaleFactor,
+        -0.39598002063544424 * scaleFactor,
+        0 * scaleFactor,
+        -0.23511904966855834 * scaleFactor
+      )
+    );
+    commands.push(
+      QCommand.controlPoints(
+        0 * scaleFactor,
+        -0.23511904966855834 * scaleFactor,
+        0 * scaleFactor,
+        0 * scaleFactor,
+        0.16369048113341364 * scaleFactor,
+        0 * scaleFactor
+      )
+    );
+    commands.push(
+      QCommand.controlPoints(
+        0.16369048113341364 * scaleFactor,
+        0 * scaleFactor,
+        0.31699631330709954 * scaleFactor,
+        0 * scaleFactor,
+        0.45535713019840074 * scaleFactor,
+        -0.4583333263408854 * scaleFactor
+      )
+    );
+    add("&", new PathShape(commands), advance);
+  }
   // MARK: ?
   {
     const advance = digitWidth * 0.9;

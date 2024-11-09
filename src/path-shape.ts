@@ -226,25 +226,16 @@ export class QCommand implements Command {
    * Create a new `QCommand` based on `this` one.
    * The requested fields will be changed.
    * The other fields will be copied as is.
-   * @param incomingAngle The new requested value, or undefined to keep the old value.
-   * @param outgoingAngle The new requested value, or undefined to keep the old value.
+   * @param incomingAngle The new requested value, or undefined to keep the previously requested value.
+   * @param outgoingAngle The new requested value, or undefined to keep the previously requested value.
    * @returns The requested object.
    */
   newAngles(
     incomingAngle: number | undefined,
     outgoingAngle: number | undefined
   ) {
-    // TODO the defaults should be based on the requested angles, not the current angles.
-    // This was not an issue for my original purpose.
-    // But I plan to use this in more places.
-    // Including places where I know the requested angle and the final angle are different.
-    // TODO after fixing the above, find the place where I'm already doing this.
-    // I had to add the "requested angle" fix somewhere else, I forget where.
-    // That whole block of code should be replaced by this call.
-    // Try searching for all references to QCommand.angles().  That will quickly expose
-    // and code that should be replaced by a call to this function.
-    incomingAngle ??= this.incomingAngle;
-    outgoingAngle ??= this.outgoingAngle;
+    incomingAngle ??= this.requestedIncomingAngle;
+    outgoingAngle ??= this.requestedOutgoingAngle;
     return QCommand.angles(
       this.x0,
       this.y0,

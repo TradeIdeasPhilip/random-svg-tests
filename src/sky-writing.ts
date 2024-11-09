@@ -340,23 +340,9 @@ class Rough extends AnimationController {
                   last.requestedIncomingAngle
                 ) /
                   2;
-              const previous1 = QCommand.angles(
-                previous.x0,
-                previous.y0,
-                previous.requestedIncomingAngle,
-                previous.x,
-                previous.y,
-                average
-              );
+              const previous1 = previous.newAngles(undefined, average);
               after.push(previous1);
-              const last1 = QCommand.angles(
-                last.x0,
-                last.y0,
-                average,
-                last.x,
-                last.y,
-                last.requestedOutgoingAngle
-              );
+              const last1 = last.newAngles(average, undefined);
               after.push(last1);
             }
           }
@@ -534,7 +520,7 @@ class Rough extends AnimationController {
     const middle: Result[] = required.map((letter) => {
       const rough = Rough.makeRoughShape(
         letter.shape,
-        letter.description.fontMetrics.strokeWidth * 1.5,  // This is 2.25 in my current examples.
+        letter.description.fontMetrics.strokeWidth * 1.5, // This is 2.25 in my current examples.
         Rough.#random
       );
       const shape0 = rough.before;

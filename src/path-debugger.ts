@@ -426,8 +426,7 @@ input.addEventListener("keyup", (event) => {
         "http://www.w3.org/2000/svg",
         "path"
       );
-      // TODO remove deprecated function tryAngles().
-      const qCommand = QCommand.tryAngles(
+      const qCommand = QCommand.angles(
         fromX,
         fromY,
         incomingAngle,
@@ -435,7 +434,7 @@ input.addEventListener("keyup", (event) => {
         toY,
         outgoingAngle
       );
-      if (qCommand) {
+      if (qCommand.creationInfo.success) {
         const d = new PathShape([qCommand]).rawPath;
         path.setAttribute("d", d);
         svg.appendChild(path);
@@ -469,7 +468,7 @@ input.addEventListener("keyup", (event) => {
           qCommand,
         });
         debugger;
-        const newCommand = QCommand.tryAngles(
+        const newCommand = QCommand.angles(
           fromX,
           fromY,
           incomingAngle,
@@ -477,11 +476,7 @@ input.addEventListener("keyup", (event) => {
           toY,
           outgoingAngle
         );
-        console.log({
-          newCommand,
-          incomingAngle: newCommand?.incomingAngle,
-          outgoingAngle: newCommand?.outgoingAngle,
-        });
+        console.log(newCommand);
       });
     });
   });

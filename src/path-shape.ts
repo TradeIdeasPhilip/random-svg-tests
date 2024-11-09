@@ -189,7 +189,8 @@ export class QCommand implements Command {
     x: number,
     y: number,
     angle: number
-  ): QCommand {
+  ) {
+    type QCommandFromAngles = QCommand & { creationInfo: { source: "angles" } };
     assertFinite(x0, y0, angle0, x, y, angle);
     const controlPoint = findIntersection(
       {
@@ -211,7 +212,7 @@ export class QCommand implements Command {
         success: false,
         angle,
         angle0,
-      });
+      }) as QCommandFromAngles;
     } else {
       const result = new this(x0, y0, controlPoint.x, controlPoint.y, x, y, {
         source: "angles",
@@ -219,7 +220,7 @@ export class QCommand implements Command {
         angle,
         angle0,
       });
-      return result;
+      return result as QCommandFromAngles;
     }
   }
   /**
@@ -244,66 +245,6 @@ export class QCommand implements Command {
       this.y,
       outgoingAngle
     );
-  }
-  /**
-   * This is the same as `angles()` but on an error this will return an `undefined`.
-   * On error `angles()` will return a straight line.
-   *
-   * Generally the straight line works well in production because it
-   * covers up a lot of problems, especially when the segments are
-   * small.  And it's bad in testing for the exact same reason.
-   * @param x0 x of the starting point.
-   * @param y0 y of the ending point.
-   * @param angle0 The direction that the curve is moving at the first point.
-   * Like a tangent line, but with a direction.
-   *
-   * Both angles are pointing _forward_.  So `angle0` is pointing into the
-   * curve and `angle1` is pointing out of the curve.
-   * @param x x of the ending point.
-   * @param y y of the ending point.
-   * @param angle The direction that the curve is moving at the end point.
-   * Like a tangent line, but with a direction.
-   *
-   * Both angles are pointing _forward_.  So `angle0` is pointing into the
-   * curve and `angle1` is pointing out of the curve.
-   * @returns A new `QCommand`.
-   * @deprecated Each `QCommand` includes a `creationInfo` field.  Among other
-   * things this will tell you if you got requested curve or if you got
-   * a line.  I'm already using `creationInfo` in essential code and in test
-   * code.
-   *  */
-  static tryAngles(
-    x0: number,
-    y0: number,
-    angle0: number,
-    x: number,
-    y: number,
-    angle: number
-  ) {
-    assertFinite(x0, y0, angle0, x, y, angle);
-    const controlPoint = findIntersection(
-      {
-        x0,
-        y0,
-        angle: angle0,
-      },
-      {
-        x0: x,
-        y0: y,
-        angle: angle + Math.PI,
-      }
-    );
-    if (!controlPoint) {
-      return undefined;
-    } else {
-      const result = new this(x0, y0, controlPoint.x, controlPoint.y, x, y, {
-        source: "angles",
-        success: true,
-        angle,
-        angle0,
-      });
-      return result;
-    }
   }
   /**
    * This stores some information that `PathShape.rawPath` might have missed.

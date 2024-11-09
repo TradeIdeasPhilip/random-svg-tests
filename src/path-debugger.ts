@@ -301,10 +301,20 @@ button.addEventListener("click", () => {
     }
   });
   if (fullBBox) {
+    // Tell the SVG to display the entire path.  Don't include any margin or padding.
     svg.viewBox.baseVal.x = fullBBox.x;
     svg.viewBox.baseVal.y = fullBBox.y;
     svg.viewBox.baseVal.width = fullBBox.width;
     svg.viewBox.baseVal.height = fullBBox.height;
+    // And scale the stroke-width to look approximately the same to the user
+    // regardless of the scale.  The exact numbers were based on tweaking things
+    // and seeing what looked good.
+    svg.style.setProperty(
+      "--stroke-width",
+      (
+        Math.hypot(fullBBox.width, fullBBox.height) * 0.008305657597434369
+      ).toString()
+    );
   }
 });
 
@@ -343,10 +353,9 @@ input.addEventListener("keyup", (event) => {
     }
   };
   input.addEventListener("input", inputListener);
-  // This is the a version of the & that I created in Inkscape.
-  // It gets cleaned up elsewhere.
   input.value =
-    "M 159.43363,236.57893 C 139.39225,211.71673 116.17009,188.00602 85.374138,137.83294 79.442993,121.43379 68.706413,107.78059 71.487983,86.40274 70.012084,75.635902 75.543692,68.372817 90.517159,65.830661 c 21.193741,1.982131 19.627371,12.092873 22.629291,20.57208 5.01399,12.845433 -15.622616,33.019609 -28.286615,50.915899 -13.036541,15.12654 -22.269361,34.60019 -25.715102,60.68764 -2.353207,23.26949 10.162985,35.15145 28.286612,40.62986 18.916925,0.15644 35.598375,-30.16544 50.401595,-79.20251";
+    // This is an @ that got a little too rough.
+    '{"commands":[{"command":"Q","x0":3.3402364362167827,"y0":-3.3007448073623697,"x1":3.9340253985180738,"y1":-4.407606648762401,"x":3.011655728124868,"y":-4.539237903380115,"creationInfo":{"source":"angles","success":true,"angle":-2.9998399305675316,"angle0":-1.0784066014045661}},{"command":"Q","x0":3.011655728124868,"y0":-4.539237903380115,"x1":1.574687929408164,"y1":-4.744307389359313,"x":1.472816111697163,"y":-3.4705009993745333,"creationInfo":{"source":"angles","success":true,"angle":1.6506008096939941,"angle0":-2.9998399305675316}},{"command":"Q","x0":1.472816111697163,"y0":-3.4705009993745333,"x1":2.425601605422024,"y1":-3.103608911097618,"x":3.378387099146885,"y":-2.7367168228207026,"creationInfo":{"source":"angles","success":false,"angle":1.3560482815273174,"angle0":1.6506008096939941}},{"command":"Q","x0":3.378387099146885,"y0":-2.7367168228207026,"x1":3.3100861700748974,"y1":-2.9792037225344936,"x":3.2417852410029093,"y":-3.2216906222482846,"creationInfo":{"source":"angles","success":false,"angle":-1.3703249858538125,"angle0":1.3560482815273174}},{"command":"Q","x0":3.2417852410029093,"y0":-3.2216906222482846,"x1":3.71956498838227,"y1":-3.1350455976774514,"x":4.1973447357616305,"y":-3.048400573106618,"creationInfo":{"source":"angles","success":false,"angle":-0.1010220204226494,"angle0":-0.1456045239311423}},{"command":"Q","x0":4.1973447357616305,"y0":-3.048400573106618,"x1":5.4196689403631035,"y1":-3.172304017662219,"x":5.061868062841531,"y":-4.160669146632123,"creationInfo":{"source":"angles","success":true,"angle":-1.918132677407088,"angle0":-0.1010220204226494}},{"command":"Q","x0":5.061868062841531,"y0":-4.160669146632123,"x1":5.268526125402326,"y1":-4.012893855293418,"x":5.475184187963122,"y":-3.8651185639547148,"creationInfo":{"source":"angles","success":false,"angle":-0.37440229149874305,"angle0":-1.918132677407088}},{"command":"Q","x0":5.475184187963122,"y0":-3.8651185639547148,"x1":16.480296958276732,"y1":-8.189428173637983,"x":2.683828194676533,"y":-6.181870056091758,"creationInfo":{"source":"angles","success":true,"angle":2.997094360451321,"angle0":-0.37440229149874305}},{"command":"Q","x0":2.683828194676533,"y0":-6.181870056091758,"x1":0.1382015495290775,"y1":-5.81144965915722,"x":0.0608453441230225,"y":-3.4844558053025536,"creationInfo":{"source":"angles","success":true,"angle":1.6040270673159511,"angle0":2.997094360451321}},{"command":"Q","x0":0.0608453441230225,"y0":-3.4844558053025536,"x1":-0.040183084485440876,"y1":-0.4453650018892805,"x":2.6303996577439386,"y":-0.5926166531791432,"creationInfo":{"source":"angles","success":true,"angle":-0.055082620605849786,"angle0":1.6040270673159511}},{"command":"Q","x0":2.6303996577439386,"y0":-0.5926166531791432,"x1":3.7388797143957104,"y1":-0.6537364665377791,"x":4.4264871867272255,"y":-0.9672211302345681,"creationInfo":{"source":"angles","success":true,"angle":-0.42775484124811636,"angle0":-0.055082620605849786}}]}';
   inputListener();
   errorElement.parentElement!.addEventListener("click", () => errorClick());
 }

@@ -18,6 +18,7 @@ export default defineConfig({
         letters: resolve(__dirname, "letters.html"),
         skyWriting: resolve(__dirname, "sky-writing.html"),
         curves: resolve(__dirname, "curves.html"),
+        אֶחָד: resolve(__dirname, "path-debugger.html"),
         /*
         scratch: resolve(__dirname, "scratch.html"),
         topLevel: resolve(__dirname, "top-level.html"),

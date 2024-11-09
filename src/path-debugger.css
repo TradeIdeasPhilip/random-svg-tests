@@ -83,10 +83,15 @@ h1 + p {
   overflow: visible;
   max-height: 50vh;
   align-self: center;
+  --stroke-width: 2.25;
 }
 
-path.hover {
-  stroke-width: 7;
+#singlePathSvg path.hover {
+  stroke-width: calc(var(--stroke-width) / 2.25 * 7);
+}
+
+#singlePathSvg path {
+  stroke-width: var(--stroke-width);
 }
 
 td.hover {

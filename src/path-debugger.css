@@ -70,7 +70,7 @@ h1 + p {
   text-indent: 0;
 }
 
-#singlePath {
+.pathDebugger {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -102,7 +102,7 @@ td.hover {
   stroke: white !important;
 }
 
-#segments td.selected {
+.segments td.selected {
   color: white !important;
 }
 
@@ -116,6 +116,7 @@ td.hover {
   flex-direction: row;
   align-items: stretch;
   flex-wrap: wrap;
+  align-self: stretch;
 }
 
 #singlePathMainInput input {
@@ -125,6 +126,7 @@ td.hover {
 .errorContainer {
   color: white;
   background-color: red;
+  align-self: stretch;
 }
 
 .errorContainer :first-child {
@@ -140,25 +142,25 @@ td.hover {
   display: none;
 }
 
-#segments {
+.segments {
   align-self: center;
 }
 
-#segments td {
+.segments td {
   text-align: right;
 }
 
-#segments td:nth-child(1) {
+.segments td:nth-child(1) {
   background-color: black;
   font-weight: bold;
 }
 
-#segments td:nth-child(2) {
+.segments td:nth-child(2) {
   text-align: center;
   font-family: "Courier Prime", monospace;
 }
 
-#segments td:nth-child(8) {
+.segments td:nth-child(8) {
   position: relative;
   top: -0.5lh;
   background-color: transparent;
@@ -169,7 +171,7 @@ path {
   fill: none;
 }
 
-#segments td.error {
+.segments td.error {
   /* text-decoration: 7% red wavy line-through;  */
   color: #d30000;
 }

@@ -5,55 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Path Debugger</title>
     <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
-    <script type="module" crossorigin src="./assets/אֶחָד-BARgon0f.js"></script>
+    <script type="module" crossorigin src="./assets/שְׁמוֹנָה-BDmWkuYN.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-DWuUZUgy.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-CsOzd0ZV.js">
-    <link rel="modulepreload" crossorigin href="./assets/path-shape-DacCR_7D.js">
-    <link rel="stylesheet" crossorigin href="./assets/אֶחָד-DVThHohJ.css">
+    <link rel="modulepreload" crossorigin href="./assets/path-shape-BZC9YcLk.js">
+    <link rel="stylesheet" crossorigin href="./assets/שְׁמוֹנָה-BcHaJ0_K.css">
   </head>
   <body>
     <div id="fakeBody">
       <h1>Path Debugger</h1>
-      <div id="singlePath">
-        <svg
-          viewBox="0 0 100 10"
-          xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="xMidYMid meet"
-          id="singlePathSvg"
-        ></svg>
-        <div id="singlePathMainInput">
-          <input
-            id="pathInputElement"
-            placeholder="Enter a valid d attribute for a &lt;path>."
-          />
-          <button id="displaySinglePath">Display</button>
-        </div>
-        <div class="errorContainer">
-          <span id="singlePathErrorMessage"></span
-          ><span>(Click to locate.)</span>
-        </div>
-        <table id="segments">
-          <tr>
-            <th rowspan="2">#</th>
-            <th rowspan="2">C</th>
-            <th rowspan="2">Length</th>
-            <th colspan="2">Requested</th>
-            <th colspan="2">Actual</th>
-            <th rowspan="2">Difference</th>
-          </tr>
-          <tr>
-            <th>Incoming</th>
-            <th>Outgoing</th>
-            <th>Incoming</th>
-            <th>Outgoing</th>
-          </tr>
-        </table>
-        <div>
-          <button id="deleteAndBreak" disabled>Delete and Break</button
-          ><button id="deleteAndMend" disabled>Delete and Mend</button>
-        </div>
+      <div id="singlePathMainInput">
+        <input
+          id="pathInputElement"
+          placeholder="Enter a valid d attribute for a &lt;path>."
+        />
+        <button id="displaySinglePath">Display</button>
       </div>
+      <div class="errorContainer">
+        <span id="singlePathErrorMessage"></span><span>(Click to locate.)</span>
+      </div>
+
+      <div id="insertPathDebuggerHere"></div>
+
       <h1>By Angle</h1>
       <p>
         This tests the <code>QCommand.angles()</code> and

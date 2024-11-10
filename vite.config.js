@@ -11,14 +11,14 @@ export default defineConfig({
     outDir: "docs",
     rollupOptions: {
       input: {
-        main: resolve(__dirname, "index.html"),
-        spheresDev: resolve(__dirname, "spheres-dev.html"),
-        spheresStarfield: resolve(__dirname, "spheres-starfield.html"),
-        morph: resolve(__dirname, "morph.html"),
-        letters: resolve(__dirname, "letters.html"),
-        skyWriting: resolve(__dirname, "sky-writing.html"),
-        curves: resolve(__dirname, "curves.html"),
-        אֶחָד: resolve(__dirname, "path-debugger.html"),
+        אֶחָד: resolve(__dirname, "index.html"),
+        שְׁנַיִם: resolve(__dirname, "spheres-dev.html"),
+        שְׁלֹושָׁה: resolve(__dirname, "spheres-starfield.html"),
+        אַרְבָּעָה: resolve(__dirname, "morph.html"),
+        חֲמִשָּׁה: resolve(__dirname, "letters.html"),
+        שִׁשָּׁה: resolve(__dirname, "sky-writing.html"),
+        שִׁבְעָה: resolve(__dirname, "curves.html"),
+        שְׁמוֹנָה: resolve(__dirname, "path-debugger.html"),
         /*
         scratch: resolve(__dirname, "scratch.html"),
         topLevel: resolve(__dirname, "top-level.html"),

@@ -11,6 +11,10 @@ export default defineConfig({
     outDir: "docs",
     rollupOptions: {
       input: {
+        // The property names (e.g. אֶחָד, שְׁנַיִם) are only used in one place (as far as I can tell).
+        // Some of the names of _internal_ files will be based on these names.  These are the same
+        // files that have hashes in their file names.  A user would never see these unless he was
+        // looking at the page source, the dev tools, etc.  I.e. the property names don't matter.
         אֶחָד: resolve(__dirname, "index.html"),
         שְׁנַיִם: resolve(__dirname, "spheres-dev.html"),
         שְׁלֹושָׁה: resolve(__dirname, "spheres-starfield.html"),
@@ -19,15 +23,6 @@ export default defineConfig({
         שִׁשָּׁה: resolve(__dirname, "sky-writing.html"),
         שִׁבְעָה: resolve(__dirname, "curves.html"),
         שְׁמוֹנָה: resolve(__dirname, "path-debugger.html"),
-        /*
-        scratch: resolve(__dirname, "scratch.html"),
-        topLevel: resolve(__dirname, "top-level.html"),
-        internalTableOfContents: resolve(
-          __dirname,
-          "internal-table-of-contents.html"
-        ),
-        unlimitedScroll: resolve(__dirname, "unlimited-scroll.html"),
-        continuousFontWeight: resolve(__dirname, "continuous-font-weight.html"),*/
       },
     },
   },

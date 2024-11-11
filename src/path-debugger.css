@@ -66,6 +66,10 @@ h1 + p {
   text-indent: 0;
 }
 
+h2 + p {
+  text-indent: 0;
+}
+
 .pathDebugger {
   display: flex;
   flex-direction: column;

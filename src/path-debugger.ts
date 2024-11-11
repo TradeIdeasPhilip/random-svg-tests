@@ -301,11 +301,12 @@ const secondDebugger = createPathDebugger();
         ),
         HTMLInputElement
       ).value;
+      const originalCommands = pathShape.commands;
       switch (processingType) {
         case "delete": {
           if (selectedIndex > -1) {
             secondDebugger.pathShape = new PathShape(
-              pathShape.commands.toSpliced(selectedIndex, 1)
+              originalCommands.toSpliced(selectedIndex, 1)
             );
           } else {
             secondDebugger.pathShape = pathShape;
@@ -313,7 +314,6 @@ const secondDebugger = createPathDebugger();
           break;
         }
         case "mergeWithNext": {
-          const originalCommands = pathShape.commands;
           if (
             selectedIndex < 0 ||
             selectedIndex >= originalCommands.length - 1
@@ -342,8 +342,56 @@ const secondDebugger = createPathDebugger();
           break;
         }
         case "deleteThenMerge": {
-          // TODO
-          secondDebugger.pathShape = undefined;
+          if (
+            selectedIndex < 1 ||
+            selectedIndex >= originalCommands.length - 1
+          ) {
+            // Nothing is selected or the first or last segment is selected.
+            // Display nothing.
+            secondDebugger.pathShape = undefined;
+          } else {
+            const before = originalCommands[selectedIndex - 1];
+            const toDelete = originalCommands[selectedIndex];
+            const after = originalCommands[selectedIndex + 1];
+            if (
+              !(
+                before instanceof QCommand &&
+                toDelete instanceof QCommand &&
+                after instanceof QCommand
+              )
+            ) {
+              // TODO it seems like this should be implied (or asserted) all at once at the top.
+              throw new Error("wtf");
+            }
+            const xMid = (before.x + after.x0) / 2;
+            const yMid = (before.y + after.y0) / 2;
+            const angleA = before.requestedOutgoingAngle;
+            const angleB = after.requestedIncomingAngle;
+            const angleMid = angleA + angleBetween(angleA, angleB) / 2;
+            const newFirst = QCommand.angles(
+              before.x0,
+              before.y0,
+              before.requestedIncomingAngle,
+              xMid,
+              yMid,
+              angleMid
+            );
+            const newSecond = QCommand.angles(
+              xMid,
+              yMid,
+              angleMid,
+              after.x,
+              after.y,
+              after.requestedOutgoingAngle
+            );
+            const newCommands = originalCommands.toSpliced(
+              selectedIndex - 1,
+              3,
+              newFirst,
+              newSecond
+            );
+            secondDebugger.pathShape = new PathShape(newCommands);
+          }
           break;
         }
         case "flip": {

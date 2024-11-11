@@ -128,117 +128,139 @@ function createPathDebugger(pathShape?: PathShape) {
   const svg = assertClass(topLevelElement.firstElementChild, SVGSVGElement);
   const segmentsTable = assertClass(svg.nextElementSibling, HTMLTableElement);
 
+  let selectedIndex = -1;
+
   function updateDisplay() {
+    // Delete old stuff.
     svg.innerHTML = "";
     segmentsTable.querySelectorAll("tr[data-temporary]").forEach((dataRow) => {
       if (dataRow.firstElementChild) dataRow.remove();
     });
-    if (!pathShape) {
-      return;
-    }
-    let fullBBox: undefined | RealSvgRect;
-    const commands = pathShape.commands;
-    commands.map((command, index) => {
-      const pathElement = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "path"
-      );
-      pathElement.style.d = new PathShape([command]).cssPath;
-      const color = `hsl(${2.4 * index}rad ${60 + Math.sin(index) * 40}% 50%)`;
-      pathElement.style.stroke = color;
-      svg.appendChild(pathElement);
-      const bBox: RealSvgRect = pathElement.getBBox();
-      if (fullBBox) {
-        fullBBox = RectUnion(fullBBox, bBox);
-      } else {
-        fullBBox = bBox;
-      }
-      const rowElement = segmentsTable.insertRow();
-      rowElement.dataset["temporary"] = "😎";
-      const indexCell = rowElement.insertCell();
-      indexCell.innerText = index.toString();
-      indexCell.style.color = color;
-      const commandCell = rowElement.insertCell();
-      commandCell.innerText = command.command;
-      const lengthCell = rowElement.insertCell();
-      lengthCell.innerText = pathElement.getTotalLength().toFixed(2);
-      const showAngle = (element: HTMLTableCellElement, angle: number) => {
-        element.innerText = (angle * degreesPerRadian).toFixed(2) + "°";
-      };
-      const incomingRequestedCell = rowElement.insertCell();
-      const outgoingRequestedCell = rowElement.insertCell();
-      if (command instanceof QCommand) {
-        const creationInfo = command.creationInfo;
-        if (creationInfo.source == "angles") {
-          showAngle(incomingRequestedCell, creationInfo.angle0);
-          showAngle(outgoingRequestedCell, creationInfo.angle);
-          if (!creationInfo.success) {
-            [incomingRequestedCell, outgoingRequestedCell].forEach((cell) =>
-              cell.classList.add("error")
-            );
+    selectedIndex = -1;
+    if (pathShape) {
+      // Draw the new stuff.
+      let fullBBox: undefined | RealSvgRect;
+      const commands = pathShape.commands;
+      commands.map((command, index) => {
+        const pathElement = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "path"
+        );
+        pathElement.style.d = new PathShape([command]).cssPath;
+        const color = `hsl(${2.4 * index}rad ${
+          60 + Math.sin(index) * 40
+        }% 50%)`;
+        pathElement.style.stroke = color;
+        svg.appendChild(pathElement);
+        const bBox: RealSvgRect = pathElement.getBBox();
+        if (fullBBox) {
+          fullBBox = RectUnion(fullBBox, bBox);
+        } else {
+          fullBBox = bBox;
+        }
+        const rowElement = segmentsTable.insertRow();
+        rowElement.dataset["temporary"] = "😎";
+        const indexCell = rowElement.insertCell();
+        indexCell.innerText = index.toString();
+        indexCell.style.color = color;
+        const commandCell = rowElement.insertCell();
+        commandCell.innerText = command.command;
+        const lengthCell = rowElement.insertCell();
+        lengthCell.innerText = pathElement.getTotalLength().toFixed(2);
+        const showAngle = (element: HTMLTableCellElement, angle: number) => {
+          element.innerText = (angle * degreesPerRadian).toFixed(2) + "°";
+        };
+        const incomingRequestedCell = rowElement.insertCell();
+        const outgoingRequestedCell = rowElement.insertCell();
+        if (command instanceof QCommand) {
+          const creationInfo = command.creationInfo;
+          if (creationInfo.source == "angles") {
+            showAngle(incomingRequestedCell, creationInfo.angle0);
+            showAngle(outgoingRequestedCell, creationInfo.angle);
+            if (!creationInfo.success) {
+              [incomingRequestedCell, outgoingRequestedCell].forEach((cell) =>
+                cell.classList.add("error")
+              );
+            }
           }
         }
-      }
-      const incomingCell = rowElement.insertCell();
-      const incomingAngle = command.incomingAngle;
-      showAngle(incomingCell, incomingAngle);
-      const outgoingCell = rowElement.insertCell();
-      const outgoingAngle = command.outgoingAngle;
-      showAngle(outgoingCell, outgoingAngle);
-      const differenceCell = rowElement.insertCell();
-      const previousCommand = commands[index - 1];
-      const difference = PathShape.needAnM(previousCommand, command)
-        ? undefined
-        : angleBetween(previousCommand.outgoingAngle, command.incomingAngle);
-      if (difference !== undefined) {
-        showAngle(differenceCell, difference);
-      }
-      {
-        const normalCells: readonly HTMLTableCellElement[] = [
-          indexCell,
-          commandCell,
-          lengthCell,
-          incomingRequestedCell,
-          outgoingRequestedCell,
-          incomingCell,
-          outgoingCell,
-        ];
-        const selectableElements = [pathElement, ...normalCells];
-        const adjust = (action: "add" | "remove") => {
-          selectableElements.forEach((display) => {
-            display.classList[action]("hover");
+        const incomingCell = rowElement.insertCell();
+        const incomingAngle = command.incomingAngle;
+        showAngle(incomingCell, incomingAngle);
+        const outgoingCell = rowElement.insertCell();
+        const outgoingAngle = command.outgoingAngle;
+        showAngle(outgoingCell, outgoingAngle);
+        const differenceCell = rowElement.insertCell();
+        const previousCommand = commands[index - 1];
+        const difference = PathShape.needAnM(previousCommand, command)
+          ? undefined
+          : angleBetween(previousCommand.outgoingAngle, command.incomingAngle);
+        if (difference !== undefined) {
+          showAngle(differenceCell, difference);
+        }
+        {
+          const normalCells: readonly HTMLTableCellElement[] = [
+            indexCell,
+            commandCell,
+            lengthCell,
+            incomingRequestedCell,
+            outgoingRequestedCell,
+            incomingCell,
+            outgoingCell,
+          ];
+          const selectableElements = [pathElement, ...normalCells];
+          const adjust = (action: "add" | "remove") => {
+            selectableElements.forEach((display) => {
+              display.classList[action]("hover");
+            });
+          };
+          selectableElements.forEach((listener) => {
+            listener.addEventListener("mouseenter", () => adjust("add"));
+            listener.addEventListener("mouseleave", () => adjust("remove"));
+            listener.addEventListener("click", () => {
+              topLevelElement
+                .querySelectorAll(".selected")
+                .forEach((element) => element.classList.remove("selected"));
+              [pathElement, indexCell].forEach((element) =>
+                element.classList.add("selected")
+              );
+              selectedIndex = index;
+              notifyListeners();
+            });
           });
-        };
-        selectableElements.forEach((listener) => {
-          listener.addEventListener("mouseenter", () => adjust("add"));
-          listener.addEventListener("mouseleave", () => adjust("remove"));
-          listener.addEventListener("click", () => {
-            document
-              .querySelectorAll(".pathDebugger .selected") //TODO
-              .forEach((element) => element.classList.remove("selected"));
-            [pathElement, indexCell].forEach((element) =>
-              element.classList.add("selected")
-            );
-          });
-        });
+        }
+      });
+      if (fullBBox) {
+        // Tell the SVG to display the entire path.  Don't include any margin or padding.
+        svg.viewBox.baseVal.x = fullBBox.x;
+        svg.viewBox.baseVal.y = fullBBox.y;
+        svg.viewBox.baseVal.width = fullBBox.width;
+        svg.viewBox.baseVal.height = fullBBox.height;
+        // And scale the stroke-width to look approximately the same to the user
+        // regardless of the scale.  The exact numbers were based on tweaking things
+        // and seeing what looked good.
+        svg.style.setProperty(
+          "--stroke-width",
+          (
+            Math.hypot(fullBBox.width, fullBBox.height) * 0.008305657597434369
+          ).toString()
+        );
+      }
+    }
+
+    notifyListeners();
+  }
+
+  type Listener = () => void;
+  const listeners: Listener[] = [];
+  function notifyListeners(): void {
+    listeners.forEach((listener) => {
+      try {
+        listener();
+      } catch (reason) {
+        console.error(reason);
       }
     });
-    if (fullBBox) {
-      // Tell the SVG to display the entire path.  Don't include any margin or padding.
-      svg.viewBox.baseVal.x = fullBBox.x;
-      svg.viewBox.baseVal.y = fullBBox.y;
-      svg.viewBox.baseVal.width = fullBBox.width;
-      svg.viewBox.baseVal.height = fullBBox.height;
-      // And scale the stroke-width to look approximately the same to the user
-      // regardless of the scale.  The exact numbers were based on tweaking things
-      // and seeing what looked good.
-      svg.style.setProperty(
-        "--stroke-width",
-        (
-          Math.hypot(fullBBox.width, fullBBox.height) * 0.008305657597434369
-        ).toString()
-      );
-    }
   }
 
   return {
@@ -250,6 +272,10 @@ function createPathDebugger(pathShape?: PathShape) {
       pathShape = newValue;
       updateDisplay();
     },
+    get selectedIndex() {
+      return selectedIndex;
+    },
+    listeners,
   };
 }
 
@@ -257,6 +283,60 @@ const mainPathDebugger = createPathDebugger();
 {
   const marker = getById("insertPathDebuggerHere", Element);
   marker.parentElement!.insertBefore(mainPathDebugger.topLevelElement, marker);
+}
+
+const secondDebugger = createPathDebugger();
+{
+  const marker = getById("insertProcessingPathDebuggerHere", Element);
+  marker.parentElement!.insertBefore(secondDebugger.topLevelElement, marker);
+  function redraw() {
+    const pathShape = mainPathDebugger.pathShape;
+    if (!pathShape) {
+      secondDebugger.pathShape = undefined;
+    } else {
+      const selectedIndex = mainPathDebugger.selectedIndex;
+      const processingType = assertClass(
+        document.querySelector(
+          'input[type="radio"][name="processingType"]:checked'
+        ),
+        HTMLInputElement
+      ).value;
+      switch (processingType) {
+        case "delete": {
+          if (selectedIndex > -1) {
+            secondDebugger.pathShape = new PathShape(
+              pathShape.commands.toSpliced(selectedIndex, 1)
+            );
+          } else {
+            secondDebugger.pathShape = pathShape;
+          }
+          break;
+        }
+        case "mergeWithNext": {
+          // TODO
+          secondDebugger.pathShape = undefined;
+          break;
+        }
+        case "deleteThenMerge": {
+          // TODO
+          secondDebugger.pathShape = undefined;
+          break;
+        }
+        case "flip": {
+          // TODO
+          secondDebugger.pathShape = undefined;
+          break;
+        }
+        default: {
+          throw new Error("wtf");
+        }
+      }
+    }
+  }
+  mainPathDebugger.listeners.push(redraw);
+  document
+    .querySelectorAll('input[type="radio"][name="processingType"]')
+    .forEach((element) => element.addEventListener("click", redraw));
 }
 
 button.addEventListener("click", () => {
@@ -537,3 +617,5 @@ input.addEventListener("keyup", (event) => {
     });
   });
 }
+
+button.click();

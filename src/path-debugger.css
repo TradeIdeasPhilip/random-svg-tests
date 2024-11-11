@@ -32,7 +32,7 @@ code {
   grid-column-end: 2;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   max-width: calc(min(60ch, 100vw - 2em));
 }
 
@@ -60,10 +60,6 @@ p {
 
 h1 {
   margin-bottom: 0.33em;
-}
-
-textarea {
-  align-self: stretch;
 }
 
 h1 + p {
@@ -116,7 +112,6 @@ td.hover {
   flex-direction: row;
   align-items: stretch;
   flex-wrap: wrap;
-  align-self: stretch;
 }
 
 #singlePathMainInput input {
@@ -144,6 +139,20 @@ td.hover {
 
 .segments {
   align-self: center;
+  border: solid black 0.02em;
+  border-spacing: 0;
+  border-collapse: collapse;
+  margin-top: 0.25em;
+}
+
+.segments th:not([colspan]) {
+  border-bottom: 0.02em black solid;
+}
+
+.segments td,
+.segments th {
+  border-left: 0.02em black solid;
+  border-right: 0.02em black solid;
 }
 
 .segments td {
@@ -153,6 +162,7 @@ td.hover {
 .segments td:nth-child(1) {
   background-color: black;
   font-weight: bold;
+  border-top: 0.02em white solid;
 }
 
 .segments td:nth-child(2) {
@@ -165,15 +175,23 @@ td.hover {
   top: -0.5lh;
   background-color: transparent;
 }
-path {
-  stroke-width: 2.25;
-  stroke: darkblue;
-  fill: none;
-}
 
 .segments td.error {
   /* text-decoration: 7% red wavy line-through;  */
   color: #d30000;
+}
+
+#processingRadioButtons {
+  display: flex;
+  gap: 0.5em;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+path {
+  stroke-width: 2.25;
+  stroke: darkblue;
+  fill: none;
 }
 
 svg.angles {

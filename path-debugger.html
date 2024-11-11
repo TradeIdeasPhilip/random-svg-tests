@@ -10,6 +10,7 @@
   <body>
     <div id="fakeBody">
       <h1>Path Debugger</h1>
+      <h2>Input</h2>
       <div id="singlePathMainInput">
         <input
           id="pathInputElement"
@@ -21,14 +22,53 @@
         <span id="singlePathErrorMessage"></span><span>(Click to locate.)</span>
       </div>
 
+      <h2>Verbatim</h2>
       <div id="insertPathDebuggerHere"></div>
+
+      <h2>Processed</h2>
+      <p>Select a segment from the previous section.</p>
+      <div id="processingRadioButtons">
+        <span>
+          <input
+            type="radio"
+            name="processingType"
+            id="r0"
+            value="delete"
+            checked
+          />
+          <label for="r0"> Delete</label>
+        </span>
+        <span>
+          <input
+            type="radio"
+            name="processingType"
+            id="r1"
+            value="mergeWithNext"
+          />
+          <label for="r1"> Merge with Next</label>
+        </span>
+        <span>
+          <input
+            type="radio"
+            name="processingType"
+            id="r2"
+            value="deleteThenMerge"
+          />
+          <label for="r2"> Delete then Merge</label>
+        </span>
+        <span>
+          <input type="radio" name="processingType" id="r3" value="flip" />
+          <label for="r3"> Flip</label>
+        </span>
+      </div>
+      <div id="insertProcessingPathDebuggerHere"></div>
 
       <h1>By Angle</h1>
       <p>
-        This tests the <code>QCommand.angles()</code> and
-        <code>QCommand.tryAngles()</code> commands. Each column shows a
-        different starting angle. Each row shows a different ending angle. Each
-        curve goes from the top left corner to the bottom right corner. The
+        This tests the <code>QCommand.angles()</code> function. Each column
+        shows a different starting angle. Each row shows a different ending
+        angle. Each curve goes from the top left corner to the bottom right
+        corner. The
         <span style="color: darkorange; font-weight: normal">orange</span>
         segments show the starting and ending angles.
       </p>
@@ -71,8 +111,8 @@
         happen because of a bug. (I found and fixed a bug this way.) This can
         also happen in another exceptional circumstance. If one of the end
         points points directly at the other, and the other doesn't point
-        directly away from the first, <code>QCommand.tryAngles()</code> will
-        return a straight line.
+        directly away from the first, <code>QCommand.angles()</code> will return
+        a straight line.
       </p>
       <table id="byAngle"></table>
       <h1>More</h1>

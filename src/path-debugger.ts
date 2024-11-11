@@ -313,8 +313,32 @@ const secondDebugger = createPathDebugger();
           break;
         }
         case "mergeWithNext": {
-          // TODO
-          secondDebugger.pathShape = undefined;
+          const originalCommands = pathShape.commands;
+          if (
+            selectedIndex < 0 ||
+            selectedIndex >= originalCommands.length - 1
+          ) {
+            // Nothing is selected, or the last segment is selected.
+            // Display nothing.
+            secondDebugger.pathShape = undefined;
+          } else {
+            const first = originalCommands[selectedIndex];
+            const second = originalCommands[selectedIndex + 1];
+            if (!(first instanceof QCommand && second instanceof QCommand)) {
+              throw new Error("wtf");
+            }
+            const replacement = QCommand.angles(
+              first.x0,
+              first.y0,
+              first.requestedIncomingAngle,
+              second.x,
+              second.y,
+              second.requestedOutgoingAngle
+            );
+            secondDebugger.pathShape = new PathShape(
+              originalCommands.toSpliced(selectedIndex, 2, replacement)
+            );
+          }
           break;
         }
         case "deleteThenMerge": {

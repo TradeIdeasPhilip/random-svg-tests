@@ -5,19 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sky Writing</title>
     <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
-    <script type="module" crossorigin src="./assets/שִׁשָּׁה-RE2iY9Td.js"></script>
+    <script type="module" crossorigin src="./assets/שִׁשָּׁה-6PNQR37g.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-DWuUZUgy.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-CsOzd0ZV.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-BZC9YcLk.js">
     <link rel="modulepreload" crossorigin href="./assets/letters-more-BQP86_Gw.js">
     <link rel="modulepreload" crossorigin href="./assets/math-to-path-CmBV3YOL.js">
-    <link rel="stylesheet" crossorigin href="./assets/שִׁשָּׁה-i3dqWJvR.css">
+    <link rel="modulepreload" crossorigin href="./assets/path-debugger-widget-CbKrLFvj.js">
+    <link rel="stylesheet" crossorigin href="./assets/path-debugger-widget-DSnmVqyX.css">
+    <link rel="stylesheet" crossorigin href="./assets/שִׁשָּׁה-BqYEndZC.css">
   </head>
   <body>
     <div id="fakeBody">
       <h1>Type something here</h1>
-      <textarea id="input" rows="3">@ ° ? @ ° ? @ ° ? @ ° ? ~~~</textarea>
+      <textarea id="input" rows="3">
+◯ ° ◯ ° ◯ ° ◯ ° ◯ ° ◯ ° ◯ ° ◯ ° ◯ ° ◯ ° ◯ ° ◯ ° </textarea
+      >
       <p>Available characters: <span id="available"></span></p>
       <div id="configMain">
         <div id="typeList">
@@ -83,6 +87,14 @@
         </style>
         <g id="main"></g>
       </svg>
+      <h1>Zoomed In</h1>
+      <p>
+        Click on one of the letters above to see more details about that letter.
+      </p>
+      <h2>Before</h2>
+      <div id="debuggerBefore"></div>
+      <h2>After</h2>
+      <div id="debuggerAfter"></div>
       <h1>What is this?</h1>
       <p>
         This is a new take on the demos I've created in

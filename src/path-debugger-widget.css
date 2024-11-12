@@ -1,0 +1,94 @@
+.pathDebugger {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: stretch;
+}
+
+.pathDebugger svg {
+  background-color: black;
+  max-width: 100vmin;
+  overflow: visible;
+  max-height: 50vh;
+  align-self: center;
+  --stroke-width: 2.25;
+}
+
+.pathDebugger svg path.hover {
+  stroke-width: calc(var(--stroke-width) / 2.25 * 7);
+}
+
+.pathDebugger svg path {
+  stroke-width: var(--stroke-width);
+}
+
+.pathDebugger svg path.selected {
+  stroke: white !important;
+}
+
+.pathDebugger table td.selected {
+  color: white !important;
+}
+
+.pathDebugger svg path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.pathDebugger table {
+  align-self: stretch;
+  border: solid black 0.02em;
+  border-spacing: 0;
+  border-collapse: collapse;
+  margin-top: 0.25em;
+}
+
+.pathDebugger table th:not([colspan]) {
+  border-bottom: 0.02em black solid;
+}
+
+
+td.hover {
+  background-color: lightgray;
+}
+
+.pathDebugger table td,
+.pathDebugger table th {
+  border-left: 0.02em black solid;
+  border-right: 0.02em black solid;
+}
+
+.pathDebugger table td {
+  text-align: right;
+}
+
+.pathDebugger table td.index-column {
+  background-color: black;
+  font-weight: bold;
+  border-top: 0.02em white solid;
+}
+
+.pathDebugger table td:nth-child(2) {
+  text-align: center;
+  font-family: "Courier Prime", monospace;
+}
+
+.pathDebugger table td:nth-child(8) {
+  position: relative;
+  top: -0.5lh;
+  background-color: transparent;
+}
+
+.pathDebugger table td.error {
+  /* text-decoration: 7% red wavy line-through;  */
+  color: #d30000;
+}
+
+.pathDebugger table .empty {
+  background-color: #ececec;
+  text-align: center;
+  font-size: 150%;
+  font-style: italic;
+  font-weight: normal;
+}

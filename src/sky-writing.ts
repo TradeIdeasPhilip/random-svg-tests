@@ -13,6 +13,7 @@ import {
 import { PathShape, QCommand } from "./path-shape";
 import { lerpPoints, Point } from "./math-to-path";
 import { makeLineFont } from "./line-font";
+import { createPathDebugger } from "./path-debugger-widget";
 
 // MARK: One time setup
 
@@ -27,6 +28,11 @@ const completionRatioInput = getById("completionRatio", HTMLInputElement);
   const span = getById("available", HTMLSpanElement);
   span.innerText = [...normal].sort().join(" ");
 }
+
+const debuggerBefore = createPathDebugger();
+debuggerBefore.insertBefore("debuggerBefore");
+const debuggerAfter = createPathDebugger();
+debuggerAfter.insertBefore("debuggerAfter");
 
 // MARK: AnimationController
 
@@ -550,9 +556,12 @@ class Rough extends AnimationController {
     t2.forEach((letter) => {
       letter.element.addEventListener("click", () => {
         console.log(letter);
-        letter.shape.dump();
-        letter.shape1.dump();
+        debuggerBefore.pathShape = letter.shape;
+        debuggerAfter.pathShape = letter.shape1;
+        //letter.shape.dump();
+        //letter.shape1.dump();
       });
+      letter.element.style.cursor="grab";
     });
     mainSvg.ownerSVGElement!.viewBox.baseVal.height =
       textLayout.baseline + textLayout.font.get("0")!.fontMetrics.bottom;

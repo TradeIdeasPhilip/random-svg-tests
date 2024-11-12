@@ -52,6 +52,7 @@ h1 + p {
 
 svg {
   background-color: rgb(26, 217, 255);
+  cursor: crosshair;
 }
 
 #available {

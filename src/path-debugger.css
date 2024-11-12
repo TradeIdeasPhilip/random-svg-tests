@@ -70,47 +70,6 @@ h2 + p {
   text-indent: 0;
 }
 
-.pathDebugger {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  align-self: stretch;
-}
-
-#singlePathSvg {
-  background-color: black;
-  max-width: 100vmin;
-  overflow: visible;
-  max-height: 50vh;
-  align-self: center;
-  --stroke-width: 2.25;
-}
-
-#singlePathSvg path.hover {
-  stroke-width: calc(var(--stroke-width) / 2.25 * 7);
-}
-
-#singlePathSvg path {
-  stroke-width: var(--stroke-width);
-}
-
-td.hover {
-  background-color: lightgray;
-}
-
-#singlePathSvg path.selected {
-  stroke: white !important;
-}
-
-.segments td.selected {
-  color: white !important;
-}
-
-#singlePathSvg path {
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 #singlePathMainInput {
   display: flex;
   flex-direction: row;
@@ -141,50 +100,6 @@ td.hover {
   display: none;
 }
 
-.segments {
-  align-self: center;
-  border: solid black 0.02em;
-  border-spacing: 0;
-  border-collapse: collapse;
-  margin-top: 0.25em;
-}
-
-.segments th:not([colspan]) {
-  border-bottom: 0.02em black solid;
-}
-
-.segments td,
-.segments th {
-  border-left: 0.02em black solid;
-  border-right: 0.02em black solid;
-}
-
-.segments td {
-  text-align: right;
-}
-
-.segments td:nth-child(1) {
-  background-color: black;
-  font-weight: bold;
-  border-top: 0.02em white solid;
-}
-
-.segments td:nth-child(2) {
-  text-align: center;
-  font-family: "Courier Prime", monospace;
-}
-
-.segments td:nth-child(8) {
-  position: relative;
-  top: -0.5lh;
-  background-color: transparent;
-}
-
-.segments td.error {
-  /* text-decoration: 7% red wavy line-through;  */
-  color: #d30000;
-}
-
 #processingRadioButtons {
   display: flex;
   gap: 0.5em;
@@ -192,12 +107,6 @@ td.hover {
   justify-content: space-between;
   margin-top: 0.5em;
   margin-bottom: 0.5em;
-}
-
-path {
-  stroke-width: 2.25;
-  stroke: darkblue;
-  fill: none;
 }
 
 svg.angles {
@@ -215,4 +124,5 @@ svg.angles line {
 
 svg.angles path {
   stroke-width: 0.04;
+  stroke: darkblue;
 }

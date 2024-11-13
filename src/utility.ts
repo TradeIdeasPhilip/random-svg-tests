@@ -339,7 +339,7 @@ export type ReadOnlyRect = Readonly<RealSvgRect>;
  * @param r2 A non-empty rectangle.
  * @returns The smallest rectangle that completely contains both inputs.
  */
-export function RectUnion(r1: ReadOnlyRect, r2: ReadOnlyRect): ReadOnlyRect {
+export function rectUnion(r1: ReadOnlyRect, r2: ReadOnlyRect): ReadOnlyRect {
   const x = Math.min(r1.x, r2.x);
   const y = Math.min(r1.y, r2.y);
   const right = Math.max(r1.x + r1.width, r2.x + r2.width);
@@ -347,4 +347,8 @@ export function RectUnion(r1: ReadOnlyRect, r2: ReadOnlyRect): ReadOnlyRect {
   const width = right - x;
   const height = bottom - y;
   return { x, y, width, height };
+}
+
+export function rectAddPoint(r: ReadOnlyRect, x: number, y: number) {
+  return rectUnion(r, { x, y, width: 0, height: 0 });
 }

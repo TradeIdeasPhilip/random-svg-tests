@@ -14,6 +14,13 @@
   --stroke-width: 2.25;
 }
 
+.pathDebugger .control-point {
+  transform: translate(var(--x), var(--y))
+    scale(calc(var(--stroke-width) * 1.5));
+  stroke: white;
+  stroke-width: 0.25;
+}
+
 .pathDebugger svg path.hover {
   stroke-width: calc(var(--stroke-width) / 2.25 * 7);
 }
@@ -47,7 +54,6 @@
 .pathDebugger table th:not([colspan]) {
   border-bottom: 0.02em black solid;
 }
-
 
 td.hover {
   background-color: lightgray;

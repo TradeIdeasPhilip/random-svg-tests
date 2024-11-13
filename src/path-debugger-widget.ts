@@ -1,8 +1,14 @@
 import { assertClass } from "phil-lib/misc";
-import "./path-debugger-widget.css"
+import "./path-debugger-widget.css";
 import { PathShape, QCommand } from "./path-shape";
 
-import { RealSvgRect, RectUnion, degreesPerRadian, angleBetween } from "./utility";
+import {
+  RealSvgRect,
+  rectUnion,
+  degreesPerRadian,
+  angleBetween,
+  rectAddPoint,
+} from "./utility";
 import { getById } from "phil-lib/client-misc";
 
 export function createPathDebugger(pathShape?: PathShape) {
@@ -56,21 +62,50 @@ export function createPathDebugger(pathShape?: PathShape) {
           "path"
         );
         pathElement.style.d = new PathShape([command]).cssPath;
-        const color = `hsl(${2.4 * index}rad ${60 + Math.sin(index) * 40}% 50%)`;
+        const color = `hsl(${2.4 * index}rad ${
+          60 + Math.sin(index) * 40
+        }% 50%)`;
         pathElement.style.stroke = color;
         svg.appendChild(pathElement);
         const bBox: RealSvgRect = pathElement.getBBox();
         if (fullBBox) {
-          fullBBox = RectUnion(fullBBox, bBox);
+          fullBBox = rectUnion(fullBBox, bBox);
         } else {
           fullBBox = bBox;
         }
+        const controlPoints: SVGCircleElement[] = [];
+        if (command instanceof QCommand) {
+          const circle = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "circle"
+          );
+          circle.classList.add("control-point");
+          const x = command.x1;
+          const y = command.y1;
+          circle.cx.baseVal.value = 0;
+          circle.cy.baseVal.value = 0;
+          circle.r.baseVal.value = 1;
+          const MYSTERY_FACTOR = 0.75; // TODO WTF?
+          circle.style.setProperty(
+            "--x",
+            (x * MYSTERY_FACTOR).toFixed(6) + "pt"
+          );
+          circle.style.setProperty(
+            "--y",
+            (y * MYSTERY_FACTOR).toFixed(6) + "pt"
+          );
+          circle.style.fill = color;
+          svg.appendChild(circle);
+          controlPoints.push(circle);
+          fullBBox = rectAddPoint(fullBBox, x, y);
+        }
+
         const rowElement = segmentsTable.insertRow();
         rowElement.dataset["temporary"] = "😎";
         const indexCell = rowElement.insertCell();
         indexCell.innerText = index.toString();
         indexCell.style.color = color;
-        indexCell.classList.add("index-column")
+        indexCell.classList.add("index-column");
         const commandCell = rowElement.insertCell();
         commandCell.innerText = command.command;
         const lengthCell = rowElement.insertCell();
@@ -86,7 +121,8 @@ export function createPathDebugger(pathShape?: PathShape) {
             showAngle(incomingRequestedCell, creationInfo.angle0);
             showAngle(outgoingRequestedCell, creationInfo.angle);
             if (!creationInfo.success) {
-              [incomingRequestedCell, outgoingRequestedCell].forEach((cell) => cell.classList.add("error")
+              [incomingRequestedCell, outgoingRequestedCell].forEach((cell) =>
+                cell.classList.add("error")
               );
             }
           }
@@ -128,7 +164,8 @@ export function createPathDebugger(pathShape?: PathShape) {
               topLevelElement
                 .querySelectorAll(".selected")
                 .forEach((element) => element.classList.remove("selected"));
-              [pathElement, indexCell].forEach((element) => element.classList.add("selected")
+              [pathElement, indexCell].forEach((element) =>
+                element.classList.add("selected")
               );
               selectedIndex = index;
               notifyListeners();
@@ -153,13 +190,13 @@ export function createPathDebugger(pathShape?: PathShape) {
         );
       }
     }
-    if(! (pathShape &&(pathShape.commands.length > 0))) {
+    if (!(pathShape && pathShape.commands.length > 0)) {
       const rowElement = segmentsTable.insertRow();
       rowElement.dataset["temporary"] = "🎃";
-      const cellElement=rowElement.insertCell();
-      cellElement.colSpan=8;
+      const cellElement = rowElement.insertCell();
+      cellElement.colSpan = 8;
       cellElement.classList.add("empty");
-      cellElement.innerText="Empty";
+      cellElement.innerText = "Empty";
     }
 
     notifyListeners();
@@ -179,7 +216,7 @@ export function createPathDebugger(pathShape?: PathShape) {
 
   updateDisplay();
 
-  function insertBefore(element : Element|string) {
+  function insertBefore(element: Element | string) {
     if (typeof element === "string") {
       element = getById(element, Element);
     }

@@ -29,8 +29,15 @@ const completionRatioInput = getById("completionRatio", HTMLInputElement);
   span.innerText = [...normal].sort().join(" ");
 }
 
+/**
+ * The image before the morph starts.
+ */
 const debuggerBefore = createPathDebugger();
 debuggerBefore.insertBefore("debuggerBefore");
+
+/**
+ * The image after the morph is complete.
+ */
 const debuggerAfter = createPathDebugger();
 debuggerAfter.insertBefore("debuggerAfter");
 
@@ -561,7 +568,7 @@ class Rough extends AnimationController {
         //letter.shape.dump();
         //letter.shape1.dump();
       });
-      letter.element.style.cursor="grab";
+      letter.element.style.cursor = "grab";
     });
     mainSvg.ownerSVGElement!.viewBox.baseVal.height =
       textLayout.baseline + textLayout.font.get("0")!.fontMetrics.bottom;

@@ -21,6 +21,10 @@
   stroke-width: 0.25;
 }
 
+.pathDebugger .control-point.error {
+  stroke: red;
+}
+
 .pathDebugger svg path.hover {
   stroke-width: calc(var(--stroke-width) / 2.25 * 7);
 }

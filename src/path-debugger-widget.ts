@@ -80,6 +80,12 @@ export function createPathDebugger(pathShape?: PathShape) {
             "circle"
           );
           circle.classList.add("control-point");
+          if (
+            command.creationInfo.source == "angles" &&
+            !command.creationInfo.success
+          ) {
+            circle.classList.add("error");
+          }
           const x = command.x1;
           const y = command.y1;
           circle.cx.baseVal.value = 0;

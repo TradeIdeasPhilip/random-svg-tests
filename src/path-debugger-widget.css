@@ -33,6 +33,10 @@
   stroke-width: var(--stroke-width);
 }
 
+.pathDebugger svg circle.selected {
+  fill: white !important;
+}
+
 .pathDebugger svg path.selected {
   stroke: white !important;
 }

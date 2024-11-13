@@ -565,6 +565,7 @@ class Rough extends AnimationController {
         console.log(letter);
         debuggerBefore.pathShape = letter.shape;
         debuggerAfter.pathShape = letter.shape1;
+        navigator.clipboard.writeText(JSON.stringify(letter.shape1));
         //letter.shape.dump();
         //letter.shape1.dump();
       });

@@ -44,6 +44,20 @@ export function createPathDebugger(pathShape?: PathShape) {
   const segmentsTable = assertClass(svg.nextElementSibling, HTMLTableElement);
 
   let selectedIndex = -1;
+  const showsSelection: Array<ReadonlyArray<Element>> = [];
+  function select(newIndex: number) {
+    topLevelElement
+      .querySelectorAll(".selected")
+      .forEach((element) => element.classList.remove("selected"));
+    const toSelect = showsSelection[newIndex];
+    if (toSelect) {
+      toSelect.forEach((element) => element.classList.add("selected"));
+      selectedIndex = newIndex;
+    } else {
+      selectedIndex = -1;
+    }
+    notifyListeners();
+  }
 
   function updateDisplay() {
     // Delete old stuff.
@@ -52,11 +66,12 @@ export function createPathDebugger(pathShape?: PathShape) {
       if (dataRow.firstElementChild) dataRow.remove();
     });
     selectedIndex = -1;
+    showsSelection.length = 0;
     if (pathShape) {
       // Draw the new stuff.
       let fullBBox: undefined | RealSvgRect;
       const commands = pathShape.commands;
-      commands.map((command, index) => {
+      commands.forEach((command, index) => {
         const pathElement = document.createElementNS(
           "http://www.w3.org/2000/svg",
           "path"
@@ -147,37 +162,33 @@ export function createPathDebugger(pathShape?: PathShape) {
         if (difference !== undefined) {
           showAngle(differenceCell, difference);
         }
-        {
-          const normalCells: readonly HTMLTableCellElement[] = [
-            indexCell,
-            commandCell,
-            lengthCell,
-            incomingRequestedCell,
-            outgoingRequestedCell,
-            incomingCell,
-            outgoingCell,
-          ];
-          const selectableElements = [pathElement, ...normalCells];
-          const adjust = (action: "add" | "remove") => {
+        const normalCells: readonly HTMLTableCellElement[] = [
+          indexCell,
+          commandCell,
+          lengthCell,
+          incomingRequestedCell,
+          outgoingRequestedCell,
+          incomingCell,
+          outgoingCell,
+        ];
+        const selectableElements = [
+          pathElement,
+          ...controlPoints,
+          ...normalCells,
+        ];
+        showsSelection.push([pathElement, ...controlPoints, indexCell]);
+        selectableElements.forEach((listener) => {
+          const adjustHover = (action: "add" | "remove") => {
             selectableElements.forEach((display) => {
               display.classList[action]("hover");
             });
           };
-          selectableElements.forEach((listener) => {
-            listener.addEventListener("mouseenter", () => adjust("add"));
-            listener.addEventListener("mouseleave", () => adjust("remove"));
-            listener.addEventListener("click", () => {
-              topLevelElement
-                .querySelectorAll(".selected")
-                .forEach((element) => element.classList.remove("selected"));
-              [pathElement, indexCell].forEach((element) =>
-                element.classList.add("selected")
-              );
-              selectedIndex = index;
-              notifyListeners();
-            });
+          listener.addEventListener("mouseenter", () => adjustHover("add"));
+          listener.addEventListener("mouseleave", () => adjustHover("remove"));
+          listener.addEventListener("click", () => {
+            select(index);
           });
-        }
+        });
       });
       if (fullBBox) {
         // Tell the SVG to display the entire path.  Don't include any margin or padding.
@@ -241,6 +252,9 @@ export function createPathDebugger(pathShape?: PathShape) {
     insertBefore,
     get selectedIndex() {
       return selectedIndex;
+    },
+    set selectedIndex(newValue) {
+      select(newValue);
     },
     listeners,
   };

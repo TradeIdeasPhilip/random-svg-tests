@@ -114,14 +114,9 @@ secondDebugger.insertBefore("insertProcessingPathDebuggerHere");
       ).value;
       const originalCommands = pathShape.commands;
       switch (processingType) {
-        case "delete": {
-          if (selectedIndex > -1) {
-            secondDebugger.pathShape = new PathShape(
-              originalCommands.toSpliced(selectedIndex, 1)
-            );
-          } else {
-            secondDebugger.pathShape = pathShape;
-          }
+        case "select": {
+          secondDebugger.pathShape = pathShape;
+          secondDebugger.selectedIndex = selectedIndex;
           break;
         }
         case "mergeWithNext": {
@@ -149,6 +144,7 @@ secondDebugger.insertBefore("insertProcessingPathDebuggerHere");
             secondDebugger.pathShape = new PathShape(
               originalCommands.toSpliced(selectedIndex, 2, replacement)
             );
+            secondDebugger.selectedIndex = selectedIndex;
           }
           break;
         }
@@ -202,12 +198,8 @@ secondDebugger.insertBefore("insertProcessingPathDebuggerHere");
               newSecond
             );
             secondDebugger.pathShape = new PathShape(newCommands);
+            secondDebugger.selectedIndex = selectedIndex - 1;
           }
-          break;
-        }
-        case "flip": {
-          // TODO
-          secondDebugger.pathShape = undefined;
           break;
         }
         default: {
@@ -335,6 +327,11 @@ button.addEventListener("click", () => {
     console.log(code);
   }
     */
+
+  // Do this so it's easy to paste the next text string.
+  input.selectionStart = 0;
+  input.selectionEnd = Number.MAX_SAFE_INTEGER;
+  input.focus();
 });
 
 input.addEventListener("keyup", (event) => {

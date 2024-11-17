@@ -192,10 +192,18 @@ export function createPathDebugger(pathShape?: PathShape) {
       });
       if (fullBBox) {
         // Tell the SVG to display the entire path.  Don't include any margin or padding.
-        svg.viewBox.baseVal.x = fullBBox.x;
-        svg.viewBox.baseVal.y = fullBBox.y;
-        svg.viewBox.baseVal.width = fullBBox.width;
-        svg.viewBox.baseVal.height = fullBBox.height;
+        let { x, y, width, height } = fullBBox;
+        if (width == 0 && height != 0) {
+          width = height;
+          x -= width / 2;
+        } else if (width != 0 && height == 0) {
+          height = width;
+          y -= height / 2;
+        }
+        svg.viewBox.baseVal.x = x;
+        svg.viewBox.baseVal.y = y;
+        svg.viewBox.baseVal.width = width;
+        svg.viewBox.baseVal.height = height;
         // And scale the stroke-width to look approximately the same to the user
         // regardless of the scale.  The exact numbers were based on tweaking things
         // and seeing what looked good.

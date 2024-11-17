@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Path Debugger</title>
     <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
-    <script type="module" crossorigin src="./assets/שְׁמוֹנָה-CY2CVjpT.js"></script>
+    <script type="module" crossorigin src="./assets/שְׁמוֹנָה-DolT2-CU.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-DWuUZUgy.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-BHSQpXni.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-T33T0rPM.js">
-    <link rel="modulepreload" crossorigin href="./assets/path-debugger-widget-ByBcRFrX.js">
+    <link rel="modulepreload" crossorigin href="./assets/path-debugger-widget-Rds6Yxwh.js">
     <link rel="stylesheet" crossorigin href="./assets/path-debugger-widget-BebvZRDj.css">
     <link rel="stylesheet" crossorigin href="./assets/שְׁמוֹנָה-Ck5Zxoqe.css">
   </head>
@@ -36,32 +36,26 @@
       <p>Select a segment from the previous section.</p>
       <div id="processingRadioButtons">
         <span>
-          <input
-            type="radio"
-            name="processingType"
-            id="r0"
-            value="select"
-            checked
-          />
-          <label for="r0"> Select</label>
+          <label>
+            <input type="radio" name="processingType" value="select" checked />
+            Select</label
+          >
         </span>
         <span>
-          <input
-            type="radio"
-            name="processingType"
-            id="r1"
-            value="mergeWithNext"
-          />
-          <label for="r1"> Merge with Next</label>
+          <label>
+            <input type="radio" name="processingType" value="mergeWithNext" />
+            Merge with Next</label
+          >
         </span>
         <span>
-          <input
-            type="radio"
-            name="processingType"
-            id="r2"
-            value="deleteThenMerge"
-          />
-          <label for="r2"> Delete then Merge</label>
+          <label
+            ><input
+              type="radio"
+              name="processingType"
+              value="deleteThenMerge"
+            />
+            Delete then Merge</label
+          >
         </span>
       </div>
       <div id="insertProcessingPathDebuggerHere"></div>

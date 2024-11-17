@@ -266,10 +266,22 @@ class Rough extends AnimationController {
       }
     });
     const after = new Array<QCommand>();
-    shape.splitOnMove().forEach((connectedShape): void => {
-      const commands = connectedShape.commands;
-      const sharedPoints: ReadonlyArray<Point> = commands.flatMap(
-        (command, index) => {
+    new PathShape(before).splitOnMove().forEach((connectedShape): void => {
+      const commandInfo = connectedShape.commands.map((command) => {
+        if (!(command instanceof QCommand)) {
+          throw new Error("wtf");
+        }
+        const element = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "path"
+        );
+        const d = new PathShape([command]).rawPath;
+        element.setAttribute("d", d);
+        const length = element.getTotalLength();
+        return { command, length };
+      });
+      const sharedPoints: ReadonlyArray<Point> = commandInfo.flatMap(
+        ({ command }, index) => {
           if (index == 0) {
             return [];
           } else {
@@ -280,9 +292,9 @@ class Rough extends AnimationController {
 
       function adjust(
         initial: Point,
-        scale?: "½"
+        limit: number
       ): Point & { offset: Point; initial: Point } {
-        const r = roughness * (scale ? Math.SQRT1_2 : 1) * random();
+        const r = Math.min(roughness, limit) * random();
         const θ = random() * Math.PI * 2;
         const offset = polarToRectangular(r, θ);
         const x = initial.x + offset.x;
@@ -290,49 +302,51 @@ class Rough extends AnimationController {
         return { x, y, offset, initial };
       }
 
-      const firstCommand = commands[0];
+      const firstCommandInfo = commandInfo[0];
       const endPoints = [
-        adjust({ x: firstCommand.x0, y: firstCommand.y0 }, "½"),
+        adjust(
+          {
+            x: firstCommandInfo.command.x0,
+            y: firstCommandInfo.command.y0,
+          },
+          firstCommandInfo.length
+        ),
       ];
-      sharedPoints.forEach((point) => {
-        endPoints.push(adjust(point));
+      sharedPoints.forEach((point, index) => {
+        const before = commandInfo[index];
+        const after = commandInfo[index + 1];
+        const limit = Math.min(before.length, after.length) / 2;
+        endPoints.push(adjust(point, limit));
       });
-      const lastCommand = commands[commands.length - 1];
-      endPoints.push(adjust(lastCommand));
+      const lastCommandInfo = commandInfo[commandInfo.length - 1];
+      endPoints.push(adjust(lastCommandInfo.command, lastCommandInfo.length));
 
       if (
-        endPoints.length != commands.length + 1 ||
-        commands.length != sharedPoints.length + 1
+        endPoints.length != commandInfo.length + 1 ||
+        commandInfo.length != sharedPoints.length + 1
       ) {
         throw new Error("wtf");
       }
 
-      commands.forEach((command, index): void => {
+      commandInfo.forEach((commandInfo, index): void => {
         const from = endPoints[index];
         const to = endPoints[index + 1];
-        const middle1: Point =
-          command instanceof QCommand
-            ? { x: command.x1, y: command.y1 }
-            : lerpPoints(from, to, Math.random());
+        let middle: Point = {
+          x: commandInfo.command.x1,
+          y: commandInfo.command.y1,
+        };
 
         // Adjust to match the average of the adjustments of the two end points.
-        const middle2 = {
-          x: middle1.x + (from.offset.x + to.offset.x) / 2,
-          y: middle1.y + (from.offset.y + to.offset.y) / 2,
+        middle = {
+          x: middle.x + (from.offset.x + to.offset.x) / 2,
+          y: middle.y + (from.offset.y + to.offset.y) / 2,
         };
 
         // Add additional randomness.
-        const middle3 = adjust(middle2, "½");
+        middle = adjust(middle, commandInfo.length);
 
         after.push(
-          QCommand.controlPoints(
-            from.x,
-            from.y,
-            middle3.x,
-            middle3.y,
-            to.x,
-            to.y
-          )
+          QCommand.controlPoints(from.x, from.y, middle.x, middle.y, to.x, to.y)
         );
         {
           if (index > 0) {
@@ -344,19 +358,77 @@ class Rough extends AnimationController {
               )
             ) {
               // This was a smooth connection before randomizing.  Make it smooth again.
-              const last = after.pop()!;
-              const previous = after.pop()!;
+              const originalLast = after.pop()!;
+              const originalPrevious = after.pop()!;
               const average =
-                previous.requestedOutgoingAngle +
+                originalPrevious.requestedOutgoingAngle +
                 angleBetween(
-                  previous.requestedOutgoingAngle,
-                  last.requestedIncomingAngle
+                  originalPrevious.requestedOutgoingAngle,
+                  originalLast.requestedIncomingAngle
                 ) /
                   2;
-              const previous1 = previous.newAngles(undefined, average);
-              after.push(previous1);
-              const last1 = last.newAngles(average, undefined);
-              after.push(last1);
+              let previous: QCommand = originalPrevious.newAngles(
+                undefined,
+                average
+              );
+              let last: QCommand = originalLast.newAngles(average, undefined);
+              function somethingFailed() {
+                return [previous, last].some(
+                  (command) =>
+                    command.creationInfo.source == "angles" &&
+                    !command.creationInfo.success
+                );
+              }
+              if (somethingFailed()) {
+                const replacement = QCommand.angles(
+                  previous.x0,
+                  previous.y0,
+                  previous.incomingAngle,
+                  last.x,
+                  last.y,
+                  last.outgoingAngle
+                );
+                if (replacement.creationInfo.success) {
+                  const pathElement = document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "path"
+                  );
+                  pathElement.setAttribute(
+                    "d",
+                    new PathShape([replacement]).rawPath
+                  );
+                  const totalLength = pathElement.getTotalLength();
+                  const center = totalLength / 5;
+                  const offset = totalLength / 200;
+                  const a = pathElement.getPointAtLength(center - offset);
+                  const b = pathElement.getPointAtLength(center + offset);
+                  const centerPoint = lerpPoints(a, b, 0.5);
+                  const angleAtCenter = Math.atan2(b.y - a.y, b.x - a.x);
+                  previous = QCommand.angles(
+                    previous.x0,
+                    previous.y0,
+                    previous.incomingAngle,
+                    centerPoint.x,
+                    centerPoint.y,
+                    angleAtCenter
+                  );
+                  last = QCommand.angles(
+                    centerPoint.x,
+                    centerPoint.y,
+                    angleAtCenter,
+                    last.x,
+                    last.y,
+                    last.outgoingAngle
+                  );
+                  console.log("merged", previous, last);
+                }
+              }
+              if (somethingFailed()) {
+                previous = originalPrevious;
+                last = originalLast;
+              }
+              after.push(previous);
+              after.push(last);
             }
           }
         }
@@ -563,7 +635,7 @@ class Rough extends AnimationController {
     t2.forEach((letter) => {
       letter.element.addEventListener("click", () => {
         console.log(letter);
-        debuggerBefore.pathShape = letter.shape;
+        debuggerBefore.pathShape = letter.shape0;
         debuggerAfter.pathShape = letter.shape1;
         navigator.clipboard.writeText(JSON.stringify(letter.shape1));
         //letter.shape.dump();

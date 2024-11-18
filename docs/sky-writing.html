@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sky Writing</title>
     <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
-    <script type="module" crossorigin src="./assets/שִׁשָּׁה-z6WnLHwb.js"></script>
+    <script type="module" crossorigin src="./assets/שִׁשָּׁה-BaMs3zfQ.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-DWuUZUgy.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-BHSQpXni.js">
@@ -14,12 +14,15 @@
     <link rel="modulepreload" crossorigin href="./assets/math-to-path-BWrqRrmX.js">
     <link rel="modulepreload" crossorigin href="./assets/path-debugger-widget-Rds6Yxwh.js">
     <link rel="stylesheet" crossorigin href="./assets/path-debugger-widget-BebvZRDj.css">
-    <link rel="stylesheet" crossorigin href="./assets/שִׁשָּׁה-BqYEndZC.css">
+    <link rel="stylesheet" crossorigin href="./assets/שִׁשָּׁה-DZKRtV6M.css">
   </head>
   <body>
     <div id="fakeBody">
       <h1>Type something here</h1>
-      <textarea id="input" rows="3">♡♡♡ ♡♡♡ ♡♡♡ ♡♡♡</textarea>
+      <textarea id="input" rows="3">
+♡♡♡ ♡♡♡ ♡♡♡ ♡♡♡ {{{}}}
+↑ These characters show off some ongoing problems with my "rough" algorithm.</textarea
+      >
       <p>Available characters: <span id="available"></span></p>
       <div id="configMain">
         <div id="typeList">
@@ -88,10 +91,29 @@
       <h1>Zoomed In</h1>
       <p>
         Click on one of the letters above to see more details about that letter.
+        (Currently this only works for the <i>rough</i> option.) You can see
+        some results below. You can see additional information in the console.
+        And this automatically copies information that you can paste into
+        <a href="./path-debugger.html">./path-debugger.html</a> for even more
+        options.
       </p>
       <h2>After</h2>
+      <p>
+        This is the item you clicked on <i>after</i> it was made completely
+        rough.
+      </p>
       <div id="debuggerAfter"></div>
       <h2>Before</h2>
+      <p>
+        This is the item you clicked on after minimal processing. It should look
+        just like the original to the end user. However, it will typically
+        convert all commands to Q commands and split some commands into smaller
+        pieces.
+      </p>
+      <p>
+        If you want to morph between <i>normal</i> and <i>rough</i> options,
+        start from this, not the original.
+      </p>
       <div id="debuggerBefore"></div>
       <h1>What is this?</h1>
       <p>

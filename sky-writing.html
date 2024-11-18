@@ -10,7 +10,10 @@
   <body>
     <div id="fakeBody">
       <h1>Type something here</h1>
-      <textarea id="input" rows="3">♡♡♡ ♡♡♡ ♡♡♡ ♡♡♡</textarea>
+      <textarea id="input" rows="3">
+♡♡♡ ♡♡♡ ♡♡♡ ♡♡♡ {{{}}}
+↑ These characters show off some ongoing problems with my "rough" algorithm.</textarea
+      >
       <p>Available characters: <span id="available"></span></p>
       <div id="configMain">
         <div id="typeList">
@@ -79,10 +82,29 @@
       <h1>Zoomed In</h1>
       <p>
         Click on one of the letters above to see more details about that letter.
+        (Currently this only works for the <i>rough</i> option.) You can see
+        some results below. You can see additional information in the console.
+        And this automatically copies information that you can paste into
+        <a href="./path-debugger.html">./path-debugger.html</a> for even more
+        options.
       </p>
       <h2>After</h2>
+      <p>
+        This is the item you clicked on <i>after</i> it was made completely
+        rough.
+      </p>
       <div id="debuggerAfter"></div>
       <h2>Before</h2>
+      <p>
+        This is the item you clicked on after minimal processing. It should look
+        just like the original to the end user. However, it will typically
+        convert all commands to Q commands and split some commands into smaller
+        pieces.
+      </p>
+      <p>
+        If you want to morph between <i>normal</i> and <i>rough</i> options,
+        start from this, not the original.
+      </p>
       <div id="debuggerBefore"></div>
       <h1>What is this?</h1>
       <p>

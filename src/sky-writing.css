@@ -50,6 +50,10 @@ h1 + p {
   text-indent: 0;
 }
 
+h2 + p {
+  text-indent: 0;
+}
+
 svg {
   background-color: rgb(26, 217, 255);
   cursor: crosshair;

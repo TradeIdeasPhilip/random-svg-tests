@@ -1,13 +1,15 @@
 import { PathShape, PathShapeError, QCommand } from "./path-shape";
 import "./path-debugger.css";
 import { getById } from "phil-lib/client-misc";
-import { assertClass, initializedArray } from "phil-lib/misc";
 import {
   angleBetween,
+  assertClass,
   degreesPerRadian,
+  initializedArray,
   polarToRectangular,
   radiansPerDegree,
-} from "./utility";
+} from "phil-lib/misc";
+
 import { createPathDebugger } from "./path-debugger-widget";
 
 /**

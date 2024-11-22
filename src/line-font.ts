@@ -1,5 +1,8 @@
-import { initializedArray, makeBoundedLinear } from "phil-lib/misc";
-import { polarToRectangular } from "./utility";
+import {
+  initializedArray,
+  makeBoundedLinear,
+  polarToRectangular,
+} from "phil-lib/misc";
 import { DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
 import { PathShape, PathBuilder, LCommand, QCommand } from "./path-shape";
 

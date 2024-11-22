@@ -2,18 +2,18 @@ import { getById } from "phil-lib/client-misc";
 import "./sky-writing.css";
 import { TextLayout } from "./letters-more";
 import { describeFont, DescriptionOfLetter, Font } from "./letters-base";
-import {
-  angleBetween,
-  assertFinite,
-  HasSeed,
-  polarToRectangular,
-  radiansPerDegree,
-  Random,
-} from "./utility";
 import { PathShape, QCommand } from "./path-shape";
 import { lerpPoints, Point } from "./math-to-path";
 import { makeLineFont } from "./line-font";
 import { createPathDebugger } from "./path-debugger-widget";
+import {
+  assertFinite,
+  angleBetween,
+  radiansPerDegree,
+  polarToRectangular,
+  HasSeed,
+  Random,
+} from "phil-lib/misc";
 
 // MARK: One time setup
 

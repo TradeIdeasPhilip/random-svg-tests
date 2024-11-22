@@ -1,14 +1,15 @@
-import { initializedArray, makeLinear } from "phil-lib/misc";
 import {
   angleBetween,
   assertFinite,
   degreesPerRadian,
+  initializedArray,
   lerp,
+  makeLinear,
+  parseFloatX,
   polarToRectangular,
   positiveModulo,
   radiansPerDegree,
-  parseFloatX,
-} from "./utility";
+} from "phil-lib/misc";
 
 export type Command = {
   /**

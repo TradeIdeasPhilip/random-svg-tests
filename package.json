@@ -13,7 +13,7 @@
     "vite": "^5.2.0"
   },
   "dependencies": {
-    "phil-lib": "^1.1.2",
+    "phil-lib": "^1.4.0",
     "roughjs": "^4.6.6"
   }
 }

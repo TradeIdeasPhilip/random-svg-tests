@@ -1,12 +1,24 @@
 import { getById } from "phil-lib/client-misc";
 import "./style.css";
-import { initializedArray, makeLinear, sleep } from "phil-lib/misc";
+import {
+  initializedArray,
+  makeLinear,
+  sleep,
+  assertFinite,
+  lerp,
+  rotateArray,
+  shuffleArray,
+} from "phil-lib/misc";
 import { PathShape, Command } from "./path-shape";
 import { makeLineFont } from "./line-font";
 import rough from "roughjs";
 import { Options } from "roughjs/bin/core";
-import { describeFont, DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
-import { assertFinite, lerp, rotateArray, shuffleArray } from "./utility";
+import {
+  describeFont,
+  DescriptionOfLetter,
+  Font,
+  FontMetrics,
+} from "./letters-base";
 import { TextLayout, Writer } from "./letters-more";
 
 const svg = getById("main", SVGSVGElement);
@@ -74,7 +86,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
 
 {
   const writer = new Writer(svg);
-  const {normal}=describeFont(writer.font);
+  const { normal } = describeFont(writer.font);
 
   writer.show(normal);
   writer.CRLF();

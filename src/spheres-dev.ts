@@ -2,19 +2,16 @@ import "./style.css";
 
 import {
   assertClass,
+  dateToFileName,
   initializedArray,
   LinearFunction,
   makeLinear,
+  phi,
   pick,
+  polarToRectangular,
   sleep,
 } from "phil-lib/misc";
-import { getById } from "phil-lib/client-misc";
-import {
-  AnimationLoop,
-  dateToFileName,
-  phi,
-  polarToRectangular,
-} from "./utility";
+import { AnimationLoop, getById } from "phil-lib/client-misc";
 
 // MARK: Point
 /**

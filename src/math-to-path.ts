@@ -1,5 +1,9 @@
-import { initializedArray, makeLinear } from "phil-lib/misc";
-import { lerp, polarToRectangular } from "./utility";
+import {
+  initializedArray,
+  lerp,
+  makeLinear,
+  polarToRectangular,
+} from "phil-lib/misc";
 
 export type Point = { readonly x: number; readonly y: number };
 

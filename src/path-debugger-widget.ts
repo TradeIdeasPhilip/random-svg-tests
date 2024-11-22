@@ -1,14 +1,14 @@
-import { assertClass } from "phil-lib/misc";
+import {
+  angleBetween,
+  assertClass,
+  degreesPerRadian,
+  RealSvgRect,
+  rectAddPoint,
+  rectUnion,
+} from "phil-lib/misc";
 import "./path-debugger-widget.css";
 import { PathShape, QCommand } from "./path-shape";
 
-import {
-  RealSvgRect,
-  rectUnion,
-  degreesPerRadian,
-  angleBetween,
-  rectAddPoint,
-} from "./utility";
 import { getById } from "phil-lib/client-misc";
 
 export function createPathDebugger(pathShape?: PathShape) {

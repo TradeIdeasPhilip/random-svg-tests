@@ -1,8 +1,12 @@
 import "./spheres-starfield.css";
 
-import { getById } from "phil-lib/client-misc";
-import { AnimationLoop, phi, polarToRectangular } from "./utility";
-import { makeBoundedLinear, makeLinear } from "phil-lib/misc";
+import { AnimationLoop, getById } from "phil-lib/client-misc";
+import {
+  makeBoundedLinear,
+  makeLinear,
+  phi,
+  polarToRectangular,
+} from "phil-lib/misc";
 
 const svg = getById("main", SVGElement);
 

@@ -892,33 +892,37 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
   // MARK: a
   {
     const base = digitWidth;
-    const extra = strokeWidth / 2;
+    /**
+     * This will cause the starting point to touch the curve shortly before the curve turns straight.
+     */
+    const extra = base * 0.05;
     const advance = base + extra;
     const center = base / 2;
-    const shape = PathBuilder.M(center, capitalMiddle)
+    const shape = PathBuilder.M(base, capitalBottomMiddle)
+      .Q_VH(center, capitalMiddle)
       .Q_HV(left, capitalBottomMiddle)
       .Q_VH(center, baseline)
-      .Q_HV(base, capitalBottomMiddle)
-      .Q_VH(center, capitalMiddle)
-      .M(advance, capitalMiddle)
-      .L(advance, baseline).pathShape;
+      .Q_HV(advance, capitalMiddle)
+      .V(baseline).pathShape;
     add("a", shape, advance);
   }
   // MARK: b
   {
     const base = digitWidth;
-    const extra = strokeWidth / 2;
+    /**
+     * This will cause the starting point to touch the curve shortly before the curve turns straight.
+     */
+    const extra = base * 0.05;
     const advance = base + extra;
     const circleLeft = extra;
     const circleCenter = extra + base / 2;
     const circleRight = advance;
-    const shape = PathBuilder.M(left, capitalTop)
-      .V(baseline)
-      .M(circleLeft, capitalBottomMiddle)
+    const shape = PathBuilder.M(circleLeft, capitalBottomMiddle)
       .Q_VH(circleCenter, baseline)
       .Q_HV(circleRight, capitalBottomMiddle)
       .Q_VH(circleCenter, capitalMiddle)
-      .Q_HV(circleLeft, capitalBottomMiddle).pathShape;
+      .Q_HV(left, baseline)
+      .V(capitalTop).pathShape;
     add("b", shape, advance);
   }
   // MARK: c
@@ -939,16 +943,18 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
   // MARK: d
   {
     const base = digitWidth;
-    const extra = strokeWidth / 2;
+    /**
+     * This will cause the starting point to touch the curve shortly before the curve turns straight.
+     */
+    const extra = base * 0.05;
     const advance = base + extra;
     const center = base / 2;
-    const shape = PathBuilder.M(center, capitalMiddle)
+    const shape = PathBuilder.M(advance, capitalTop)
+      .L(advance, baseline)
+      .Q_VH(center, capitalMiddle)
       .Q_HV(left, capitalBottomMiddle)
       .Q_VH(center, baseline)
-      .Q_HV(base, capitalBottomMiddle)
-      .Q_VH(center, capitalMiddle)
-      .M(advance, capitalTop)
-      .L(advance, baseline).pathShape;
+      .Q_HV(base, capitalBottomMiddle).pathShape;
     add("d", shape, advance);
   }
   // MARK: e
@@ -981,15 +987,17 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
   // MARK: g
   {
     const base = digitWidth;
-    const extra = strokeWidth / 2;
+    /**
+     * This will cause the starting point to touch the curve shortly before the curve turns straight.
+     */
+    const extra = base * 0.05;
     const advance = base + extra;
     const center = base / 2;
-    const shape = PathBuilder.M(center, capitalMiddle)
+    const shape = PathBuilder.M(base, capitalBottomMiddle)
+      .Q_VH(center, capitalMiddle)
       .Q_HV(left, capitalBottomMiddle)
       .Q_VH(center, baseline)
-      .Q_HV(base, capitalBottomMiddle)
-      .Q_VH(center, capitalMiddle)
-      .M(advance, capitalMiddle)
+      .Q_HV(advance, capitalMiddle)
       .V(baseline)
       .Q_VH(center, descender)
       .H(left + offsetForSmallCurves).pathShape;
@@ -1195,34 +1203,39 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
   // MARK: p
   {
     const base = digitWidth;
-    const extra = strokeWidth / 2;
+    /**
+     * This will cause the starting point to touch the curve shortly before the curve turns straight.
+     */
+    const extra = digitWidth * 0.05;
     const advance = base + extra;
     const circleLeft = extra;
     const circleCenter = extra + base / 2;
     const circleRight = advance;
-    const shape = PathBuilder.M(left, capitalMiddle)
-      .V(descender)
-      .M(circleLeft, capitalBottomMiddle)
+    const shape = PathBuilder.M(circleLeft, capitalBottomMiddle)
       .Q_VH(circleCenter, capitalMiddle)
       .Q_HV(circleRight, capitalBottomMiddle)
       .Q_VH(circleCenter, baseline)
-      .Q_HV(circleLeft, capitalBottomMiddle).pathShape;
+      .Q_HV(left, capitalMiddle)
+      .V(descender).pathShape;
     add("p", shape, advance);
   }
   // MARK: q
   {
     const circleRight = digitWidth;
     const circleCenter = circleRight / 2;
-    const lineX = circleRight + strokeWidth / 2;
+    /**
+     * This will cause the starting point to touch the curve shortly before the curve turns straight.
+     */
+    const extra = digitWidth * 0.05;
+    const lineX = circleRight + extra;
     const curlyWidth = Math.abs(baseline - descender);
     const curlyCenter = lineX + curlyWidth / 2;
     const advance = lineX + curlyWidth;
-    const shape = PathBuilder.M(circleCenter, capitalMiddle)
+    const shape = PathBuilder.M(circleRight, capitalBottomMiddle)
+      .Q_VH(circleCenter, capitalMiddle)
       .Q_HV(left, capitalBottomMiddle)
       .Q_VH(circleCenter, baseline)
-      .Q_HV(circleRight, capitalBottomMiddle)
-      .Q_VH(circleCenter, capitalMiddle)
-      .M(lineX, capitalMiddle)
+      .Q_HV(lineX, capitalMiddle)
       .V(baseline)
       .Q_VH(curlyCenter, descender)
       .Q_HV(advance, baseline).pathShape;

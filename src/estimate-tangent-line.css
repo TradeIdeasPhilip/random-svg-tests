@@ -1,0 +1,85 @@
+@import url("https://fonts.googleapis.com/css2?family=Special+Elite&display=swap");
+
+body {
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+svg {
+  font-family: "Special Elite", system-ui;
+  width: 100vw;
+  height: 100vh;
+  --input-color: royalblue;
+  --ideal-color: orange;
+  --estimation-color: crimson;
+}
+
+#fullCircle {
+  fill: none;
+  stroke-width: 0.04;
+  stroke: var(--input-color);
+}
+
+#halfCircle {
+  fill: none;
+  stroke-width: 0.04;
+  stroke: var(--input-color);
+  stroke-linecap: round;
+}
+
+line {
+  stroke-width: 0.04;
+}
+
+#requestedDot {
+  fill: var(--input-color);
+}
+
+#idealLine {
+  stroke: var(--ideal-color);
+}
+
+circle.approximation {
+  fill: var(--estimation-color);
+}
+
+#approximateLine {
+  stroke: var(--estimation-color);
+}
+
+#time {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 1.5em;
+}
+
+#legend {
+  transform: translate(-3.4px, -0.7px) scale(0.7);
+}
+
+text {
+  font-size: 0.2pt;
+  /* text-anchor: middle; */
+}
+
+.border text {
+  stroke: white;
+  stroke-width: 0.05px;
+  stroke-linejoin: round;
+}
+
+.legendInput {
+  fill: var(--input-color);
+}
+
+.legendIdeal {
+  fill: var(--ideal-color);
+}
+
+.legendEstimated {
+  fill: var(--estimation-color);
+}

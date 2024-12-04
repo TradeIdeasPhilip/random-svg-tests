@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Estimate Tangent Line</title>
+    <script type="module" crossorigin src="./assets/תֵשַׁע-CPg_GpNX.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
+    <link rel="modulepreload" crossorigin href="./assets/client-misc-CqK8Npau.js">
+    <link rel="stylesheet" crossorigin href="./assets/תֵשַׁע-DFujjUQy.css">
+  </head>
+  <body>
+    <svg
+      id="main"
+      version="1.1"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <circle id="fullCircle" cx="0" cy="0" r="1"></circle>
+      <path id="halfCircle" d="M 0,-1 A 1,1 180 0 1 0,1"></path>
+      <line id="idealLine" x1="-4" y1="-1" x2="4" y2="-1"></line>
+      <circle
+        id="leftDot"
+        class="approximation dot"
+        cx="0"
+        cy="-1"
+        r="0.07"
+      ></circle>
+      <circle
+        id="rightDot"
+        class="approximation dot"
+        cx="0"
+        cy="-1"
+        r="0.07"
+      ></circle>
+      <line id="approximateLine" x1="-2" y1="-1" x2="2" y2="-1"></line>
+      <circle id="requestedDot" cx="0" cy="-1" r="0.05"></circle>
+      <g id="legend">
+        <g>
+          <text>Legend:</text>
+          <text y="0.4" class="legendInput">Path and Point (Inputs)</text>
+          <text y="0.8" class="legendIdeal">Actual Tangent Line</text>
+          <text y="1.1" class="legendIdeal">(Desired Output)</text>
+          <text y="1.5" class="legendEstimated">Estimated Tangent Line</text>
+          <text y="1.8" class="legendEstimated">(Actual Output)</text>
+          <text y="2.1" class="legendEstimated">
+            Precision Issues: &numsp;&numsp;&numsp;%
+          </text>
+          <text
+            y="2.1"
+            class="legendEstimated"
+            x="2.4692 2.625 2.785"
+            data-precisionIssues
+          >
+            100
+          </text>
+        </g>
+      </g>
+    </svg>
+    <input id="time" type="range" min="0" max="1" value="0" step="0.0001" />
+  </body>
+  <div data-pi>Precision Issues: &numsp;&numsp;&numsp;%</div>
+</html>

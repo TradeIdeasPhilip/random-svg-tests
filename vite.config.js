@@ -23,6 +23,7 @@ export default defineConfig({
         שִׁשָּׁה: resolve(__dirname, "sky-writing.html"),
         שִׁבְעָה: resolve(__dirname, "curves.html"),
         שְׁמוֹנָה: resolve(__dirname, "path-debugger.html"),
+        תֵשַׁע: resolve(__dirname, "estimate-tangent-line.html"),
       },
     },
   },

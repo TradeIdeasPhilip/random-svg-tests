@@ -57,7 +57,7 @@ export class TextLayout {
     });
   }
   private static WORD_BREAK = /^(\n+| +|[^ \n]+)(.*)/ms;
-  addText(toAdd: string) {
+  addText(toAdd: string, alignment:"left"|"center"|"right"="left") {
     const invalid = new Set<string>();
     const result: {
       x: number;
@@ -65,6 +65,17 @@ export class TextLayout {
       description: DescriptionOfLetter;
       char: string;
     }[] = [];
+    const onThisLine = [...result]; // It's tempting to move this variable into a field in the object.
+    const doAlignment= () =>{
+      if (alignment != "left") {
+        const spaceOnRight = this.rightMargin - this.x;
+         if (spaceOnRight > 0) {
+          const spaceToAdd = (alignment=="right")?spaceOnRight:(spaceOnRight/2);
+          onThisLine.forEach(char => char.x+=spaceToAdd);
+         } 
+      }
+      onThisLine.length = 0;
+    }
     while (true) {
       const pieces = TextLayout.WORD_BREAK.exec(toAdd);
       if (!pieces) {
@@ -73,6 +84,7 @@ export class TextLayout {
       const thisWord = pieces[1];
       toAdd = pieces[2];
       if (thisWord[0] == "\n") {
+        doAlignment();
         this.carriageReturn();
         this.lineFeed((thisWord.length * 4) / 3);
       } else if (thisWord[0] == " ") {
@@ -100,6 +112,7 @@ export class TextLayout {
           }
         });
         if (this.x + x > this.rightMargin && this.x > this.leftMargin) {
+          doAlignment();
           this.carriageReturn();
           this.lineFeed();
         }
@@ -107,10 +120,12 @@ export class TextLayout {
           charInfo.x += this.x;
           charInfo.baseline = this.baseline;
           result.push(charInfo);
+          onThisLine.push(charInfo);
         });
         this.x += x;
       }
     }
+    doAlignment();
     if (invalid.size > 0) {
       console.warn(invalid);
     }

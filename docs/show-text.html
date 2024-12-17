@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Show Text</title>
+    <script type="module" crossorigin src="./assets/עֶשֶׂר-B6jgOSPt.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
+    <link rel="modulepreload" crossorigin href="./assets/client-misc-CqK8Npau.js">
+    <link rel="modulepreload" crossorigin href="./assets/utility-CcMiQaH1.js">
+    <link rel="modulepreload" crossorigin href="./assets/path-shape-BXOkZTxi.js">
+    <link rel="modulepreload" crossorigin href="./assets/letters-more-D_4o2xKt.js">
+    <link rel="modulepreload" crossorigin href="./assets/math-to-path-D11qeOG5.js">
+    <link rel="modulepreload" crossorigin href="./assets/rough-lib-DZc4J2vG.js">
+    <link rel="stylesheet" crossorigin href="./assets/עֶשֶׂר-PvRBbrlm.css">
+  </head>
+  <body>
+    <div id="controls" data-hideBeforeScreenshot>
+      <div>Type something here:</div>
+      <textarea id="input" rows="4">
+Numerical Differentiation
+&
+Finite Differences</textarea
+      >
+      <div class="across">
+        <label><input type="radio" name="align" value="left" /> Left</label>
+        <label><input type="radio" name="align" value="center" checked />
+          Center</label
+        >
+        <label><input type="radio" name="align" value="right" /> Right</label>
+      </div>
+      <div class="across">
+        Random seed: <input id="randomSeed" value="[-1267311041,46,1956317995,793248000]" /><button id="draw">Draw</button>
+      </div>
+      <div class="separator"></div>
+      <div class="across">
+        Total time in seconds: <input id="timeInSeconds" value="14"/><button id="start" disabled>
+          Start
+        </button>
+      </div>
+      <input id="time" type="range" min="0" max="1" value="0" step="0.0001" disabled />
+    </div>
+    <svg
+      id="main"
+      version="1.1"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      preserveAspectRatio="xMidYMid meet"
+      viewBox="0 0 100 50"
+    >
+      <g id="handwriting"></g>
+      <g id="morph"></g>
+    </svg><div id="debugInfo" style="display: none" data-showBeforeScreenshot>
+      #debugInfo
+    </div></body>
+</html>

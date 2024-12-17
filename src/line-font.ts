@@ -284,6 +284,7 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
         .Q_angles(x4, middle, dNorthEast).pathShape;
       //shape.dump();
       add("~", shape, advance);
+      //≈ Almost equal to.
     }
     {
       // MARK: +

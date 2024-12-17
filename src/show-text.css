@@ -1,0 +1,88 @@
+@import url("https://fonts.googleapis.com/css2?family=Oregano:ital@0;1&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Yuji+Mai&display=swap");
+
+body {
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+:root {
+  font-family: "Oregano", serif;
+  font-size: 4vw;
+}
+
+button,
+input,
+textarea {
+  font-size: 0.75rem;
+}
+
+#controls {
+  display: flex;
+  margin: 0.5em;
+  flex-direction: column;
+}
+
+.across {
+  display: flex;
+  flex-direction: row;
+  gap: 0.25em;
+  justify-content: space-evenly;
+}
+
+.across > input {
+  flex-grow: 1;
+}
+
+label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.15em;
+}
+
+#controls .separator {
+  height: 0.5em;
+}
+
+svg {
+  width: 100vw;
+  height: 100vh;
+  background-color: black;
+}
+
+path {
+  fill: none;
+  stroke: hwb(180deg 0% 25.07%);
+  stroke-width: 0.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#handwriting {
+  --t: replace-me;
+  --total-length: replace-me;
+  --total-position: calc(var(--t)*var(--total-length));
+}
+
+#handwriting > path {
+  --offset: replace-me;
+  --length: replace-me;
+  --position: calc(
+    clamp(-0.0001, var(--total-position) - var(--offset), var(--length))
+  );
+  stroke-dasharray: 0, calc(var(--length) + 1), calc(var(--length) + 1), 0;
+  stroke-dashoffset: calc(0 - var(--position));
+}
+
+#debugInfo {
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  color: #2be2c1;
+  text-shadow: white 0.1em 0em 0.1em, white -0.1em 0em 0.1em,
+    white 0em 0.1em 0.1em, white 0em -0.1em 0.1em;
+  font-family: "Yuji Mai", monospace;
+}

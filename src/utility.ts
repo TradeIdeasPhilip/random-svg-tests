@@ -1,4 +1,4 @@
-import { assertClass } from "phil-lib/misc";
+import { assertClass, pick, sum } from "phil-lib/misc";
 
 const previousCountPrivate = new Map<string, number>();
 /**
@@ -57,4 +57,179 @@ export function selectorQueryAll<T extends Element>(
     );
   }
   return result;
+}
+
+type RandomFunction = {
+  readonly currentSeed: string;
+  (): number;
+};
+
+/**
+ * This provides a random number generator that can be seeded.
+ * `Math.rand()` cannot be seeded.  Using a seed will allow
+ * me to repeat things in the debugger when my program acts
+ * strange.
+ *
+ * I temporarily copied this from phil-lib so I could add some
+ * features.  TODO merge it back in.
+ */
+export class Random {
+  private constructor() {
+    throw new Error("wtf");
+  }
+  /**
+   * Creates a new random number generator using the sfc32 algorithm.
+   *
+   * sfc32 (Simple Fast Counter) is part of the [PractRand](http://pracrand.sourceforge.net/)
+   * random number testing suite (which it passes of course).
+   * sfc32 has a 128-bit state and is very fast in JS.
+   *
+   * [Source](https://stackoverflow.com/a/47593316/971955)
+   * @param a A 32 bit integer.  The 1st part of the seed.
+   * @param b A 32 bit integer.  The 2nd part of the seed.
+   * @param c A 32 bit integer.  The 3rd part of the seed.
+   * @param d A 32 bit integer.  The 4th part of the seed.
+   * @returns A function that will act a lot like `Math.rand()`, but it starts from the given seed.
+   */
+  private static sfc32(
+    a: number,
+    b: number,
+    c: number,
+    d: number
+  ): RandomFunction {
+    function random() {
+      a |= 0;
+      b |= 0;
+      c |= 0;
+      d |= 0;
+      let t = (((a + b) | 0) + d) | 0;
+      d = (d + 1) | 0;
+      a = b ^ (b >>> 9);
+      b = (c + (c << 3)) | 0;
+      c = (c << 21) | (c >>> 11);
+      c = (c + t) | 0;
+      return (t >>> 0) / 4294967296;
+    }
+    const result = random as RandomFunction;
+    Object.defineProperty(result, "currentSeed", {
+      get() {
+        return JSON.stringify([a, b, c, d]);
+      },
+    });
+    return result;
+  }
+  static #nextSeedInt = 42;
+  static seedIsValid(seed: string): boolean {
+    try {
+      this.create(seed);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  static create(seed = this.newSeed()): RandomFunction {
+    console.info(seed);
+    const seedObject: unknown = JSON.parse(seed);
+    if (!(seedObject instanceof Array)) {
+      throw new Error("invalid input");
+    }
+    if (seedObject.length != 4) {
+      throw new Error("invalid input");
+    }
+    const [a, b, c, d] = seedObject;
+    if (
+      !(
+        typeof a == "number" &&
+        typeof b == "number" &&
+        typeof c == "number" &&
+        typeof d == "number"
+      )
+    ) {
+      throw new Error("invalid input");
+    }
+    return this.sfc32(a, b, c, d);
+  }
+  /**
+   *
+   * @returns A new seed value appropriate for use in a call to `Random.create()`.
+   * This will be reasonably random.
+   *
+   * The seed is intended to be opaque, a magic cookie.
+   * It's something that's easy to copy and paste.
+   * Don't try to parse or create one of these.
+   */
+  static newSeed() {
+    const ints: number[] = [];
+    ints.push(Date.now() | 0);
+    ints.push(this.#nextSeedInt++ | 0);
+    ints.push((Math.random() * 2 ** 31) | 0);
+    ints.push((performance.now() * 10000) | 0);
+    const seed = JSON.stringify(ints);
+    return seed;
+  }
+  static test() {
+    const maxGenerators = 10;
+    const iterationsPerCycle = 20;
+    const generators = [this.create()];
+    while (generators.length <= maxGenerators) {
+      for (let iteration = 0; iteration < iterationsPerCycle; iteration++) {
+        const results = generators.map((generator) => generator());
+        for (let i = 1; i < results.length; i++) {
+          if (results[i] !== results[0]) {
+            debugger;
+            throw new Error("wtf");
+          }
+        }
+      }
+      const currentSeed = pick(generators).currentSeed;
+      generators.forEach((generator) => {
+        if (generator.currentSeed != currentSeed) {
+          debugger;
+          throw new Error("wtf");
+        }
+      });
+      generators.push(this.create(currentSeed)!);
+    }
+  }
+}
+
+(window as any).Random = Random;
+
+export function assertValidT(t: number) {
+  if (!(isFinite(t) && t >= 0 && t <= 1)) {
+    throw new Error(`t should be between 0 and 1, inclusive. t == ${t}`);
+  }
+}
+
+export function makeTSplitter(...weights: number[]) {
+  weights.forEach((weight) => {
+    if (!(weight >= 0 && weight < Number.MAX_SAFE_INTEGER)) {
+      throw new Error("wtf");
+    }
+  });
+  const total = sum(weights);
+  if (total == 0) {
+    throw new Error("wtf");
+  }
+  const splitter =(t:number) => {
+    assertValidT(t);
+    t *= total;
+    for (let index = 0; index < weights.length; index++) {
+      const weight = weights[index];
+      if (t <= weight) {
+        t /= weight;
+        return {t, index};
+      }
+      t -= weight;
+    }
+    throw new Error("wtf");
+  }
+  return splitter;
+}
+
+export function assertNonNullable<T>(value : T) : NonNullable<T> {
+  if (value === undefined || value === null) {
+    throw new Error("wtf");
+  }
+  return value;
 }

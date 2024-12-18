@@ -227,6 +227,13 @@ export function makeTSplitter(...weights: number[]) {
   return splitter;
 }
 
+/**
+ * Asserts that the value is not `undefined` or `null`.
+ * Similar to ! or NonNullable, but also performs the check at runtime.
+ * @param value The value to check and return.
+ * @returns The given value.
+ * @throws If `value === undefined || value === null`.
+ */
 export function assertNonNullable<T>(value : T) : NonNullable<T> {
   if (value === undefined || value === null) {
     throw new Error("wtf");

@@ -4,7 +4,6 @@ import {
   assertClass,
   FIGURE_SPACE,
   FULL_CIRCLE,
-  lerp,
   makeBoundedLinear,
   makeLinear,
   polarToRectangular,
@@ -19,7 +18,6 @@ const leftDot = getById("leftDot", SVGCircleElement);
 const rightDot = getById("rightDot", SVGCircleElement);
 const approximateLine = getById("approximateLine", SVGLineElement);
 const timeInput = getById("time", HTMLInputElement);
-const debugInfoDiv = getById("debugInfo", HTMLDivElement);
 
 {
   const top = legend.firstElementChild!;
@@ -117,12 +115,6 @@ function showHalfCircle(t: number) {
   attenuate(halfCircleStrength(t));
 }
 
-/**
- * This is only for debugging.
- * I wanted to make sure I wasn't skipping or duplicating any frames.
- */
-let nextFrameNumber = 0;
-
 function initIntroduction() {
   const splitter = makeTSplitter(3, 1);
   const getPosition = [
@@ -154,11 +146,32 @@ function doubleEaseInOut(t: number): number {
   return base(t * scale) / scale;
 }
 
+/**
+ *
+ * @param cycleCount Very arbitrary.  The voiceover for this part is slow.  My original plan was to use ½ of one cycle.
+ */
+function makePopper(cycleCount = 3) {
+  const scale = (FULL_CIRCLE / 2) * cycleCount;
+  /**  The output will get here sometimes. And it will spend a lot of time near here.  And it will start and end here. */
+  const slowExtreme = 0;
+  /**
+   * The output will get to here sometimes, but it will quickly move away.
+   */
+  const fastExtreme = 0.25;
+  const scaleOutput = makeLinear(1, slowExtreme, 0, fastExtreme);
+  function popper(t: number) {
+    const θ = t * scale;
+    const unscaledResult = Math.abs(Math.cos(θ));
+    const result = scaleOutput(unscaledResult);
+    return result;
+  }
+  return popper;
+}
 function initMain() {
   const start0 = (1 * 60 + 36) * 60 + 56;
   const start1 = (1 * 60 + 40) * 60 + 9;
   const start2 = (1 * 60 + 57) * 60 + 0;
-  const start3 = (2 * 60 + 11) * 60 + 30;
+  //const start3 = (2 * 60 + 11) * 60 + 30;
   const start4 = (2 * 60 + 16) * 60 + 22;
   const acts = [
     {
@@ -172,14 +185,9 @@ function initMain() {
       timingFunction: doubleEaseInOut,
     },
     {
-      weight: start3 - start2,
+      weight: start4 - start2,
       display: showHalfCircle,
-      timingFunction: makeLinear(0, 0.25, 1, 0.0224),
-    },
-    {
-      weight: start4 - start3,
-      display: showHalfCircle,
-      timingFunction: makeLinear(0, 0.0224, 1, 0),
+      timingFunction: makePopper(),
     },
   ];
   const splitter = makeTSplitter(...acts.map((act) => act.weight));
@@ -189,41 +197,6 @@ function initMain() {
     display(timingFunction(split.t));
   }
   console.log(start4 - start0, (start4 - start0) / 60);
-  return showFrame;
-}
-
-function initSimpleDemo() {
-  function showFrame(t: number) {
-    {
-      const debugString = `Frame #${nextFrameNumber}, t=${t.toFixed(5)}`;
-      nextFrameNumber++;
-      debugInfoDiv.innerText = debugString;
-    }
-    const firstPart = 0.5;
-    const repeatCount = 3;
-    if (t < firstPart) {
-      const t1 = t / firstPart;
-      const t2 = (t1 * repeatCount) % 1;
-      showFullCircle(t2);
-    } else {
-      const t1 = (t - firstPart) / (1 - firstPart);
-      const t2 = (t1 * repeatCount) % 1;
-      const limit = 0.25; // Go this far, then go back to 0.
-      if (t2 < 0.5) {
-        // First half of the cycle: Angle getting larger.
-
-        const t3 = t2 * 2;
-
-        const t4 = lerp(0, limit, t3);
-        showHalfCircle(t4);
-      } else {
-        // Second half of cycle, angle getting smaller.
-        const t3 = t2 * 2 - 1;
-        const t4 = lerp(limit, 0, t3);
-        showHalfCircle(t4);
-      }
-    }
-  }
   return showFrame;
 }
 
@@ -239,10 +212,6 @@ function setScript(script: unknown) {
     }
     case "half circle": {
       showFrame = showHalfCircle;
-      break;
-    }
-    case "simple demo": {
-      showFrame = initSimpleDemo();
       break;
     }
     case "introduction": {

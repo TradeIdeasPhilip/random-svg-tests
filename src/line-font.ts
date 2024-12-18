@@ -303,6 +303,65 @@ export function makeLineFont(fontMetrics: number | FontMetrics): Font {
       add("-", shape, advance);
     }
     {
+      // MARK: ±
+      const advance = digitWidth * 0.75;
+      const space = 2 * strokeWidth;
+      const height = advance + space;
+      const top = capitalMiddle - height / 2;
+      const bottom = top + height;
+      const topOfPlus = top;
+      const bottomOfPlus = top + advance;
+      const middleOfPlus = (topOfPlus + bottomOfPlus) / 2;
+      const left = 0;
+      const right = advance;
+      const center = advance / 2;
+      const shape = new PathShape([
+        new LCommand(left, middleOfPlus, right, middleOfPlus),
+        new LCommand(center, topOfPlus, center, bottomOfPlus),
+        new LCommand(left, bottom, right, bottom),
+      ]);
+      add("±", shape, advance);
+    }
+    {
+      // MARK: ÷
+      const advance = digitWidth * 0.75;
+      const left = 0;
+      const center = advance / 2;
+      const right = advance;
+      const space = 2 * strokeWidth;
+      const middle = capitalMiddle;
+      const shape = new PathShape([
+        new LCommand(left, middle, right, middle),
+        new LCommand(
+          center,
+          middle - space - dotHeight,
+          center,
+          middle - space
+        ),
+        new LCommand(
+          center,
+          middle + space,
+          center,
+          middle + space + dotHeight
+        ),
+      ]);
+      PathBuilder.M(left, capitalMiddle).H(advance).pathShape;
+      add("÷", shape, advance);
+    }
+    {
+      // MARK: ×
+      const advance = digitWidth * 0.75 * Math.SQRT1_2;
+      const top = capitalMiddle - advance / 2;
+      const bottom = capitalMiddle + advance / 2;
+      const left = 0;
+      const right = advance;
+      const shape = new PathShape([
+        new LCommand(left, top, right, bottom),
+        new LCommand(right, top, left, bottom),
+      ]);
+      add("×", shape, advance);
+    }
+    {
       // MARK: *
       const outerRadius = (digitWidth / 2) * 0.9;
       const spokes = 5;

@@ -85,7 +85,7 @@ class Simple extends AnimationController {
     textLayout.restart();
     const text = inputTextArea.value;
     const t = textLayout.addText(text);
-    textLayout.displayText(t, mainSvg);
+    TextLayout.displayText(t, mainSvg);
     mainSvg.ownerSVGElement!.viewBox.baseVal.height =
       textLayout.baseline + textLayout.font.get("0")!.fontMetrics.bottom;
   }
@@ -414,7 +414,7 @@ class Rough extends AnimationController {
     textLayout.restart();
     const text = inputTextArea.value;
     const t = textLayout.addText(text);
-    const t1 = textLayout.displayText(t, mainSvg);
+    const t1 = TextLayout.displayText(t, mainSvg);
     const t2 = Rough.makeRough(t1);
     t2.forEach((letter) => {
       letter.element.addEventListener("click", () => {

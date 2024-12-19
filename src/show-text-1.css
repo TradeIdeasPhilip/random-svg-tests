@@ -2,8 +2,20 @@ svg {
   background-color: black;
 }
 path {
-fill: none;
-    stroke: hwb(180deg 0% 25.07%);
-    stroke-width: 0.2;
-    stroke-linecap: round;
-    stroke-linejoin: round;}
+  fill: none;
+  stroke-width: 0.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+path.blue {
+  stroke: hwb(180deg 0% 25.07%);
+}
+
+path.white {
+  stroke: white;
+}
+
+path.gold {
+  stroke: hwb(47.34deg 8.63% 5.88%);
+}

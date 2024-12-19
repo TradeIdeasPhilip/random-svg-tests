@@ -41,7 +41,7 @@ export class TextLayout {
       )
     );
   }
-  displayText<
+  static displayText<
     T extends {
       readonly x: number;
       readonly baseline: number;
@@ -57,7 +57,7 @@ export class TextLayout {
     });
   }
   private static WORD_BREAK = /^(\n+| +|[^ \n]+)(.*)/ms;
-  addText(toAdd: string, alignment:"left"|"center"|"right"="left") {
+  addText(toAdd: string, alignment: "left" | "center" | "right" = "left") {
     const invalid = new Set<string>();
     const result: {
       x: number;
@@ -66,16 +66,17 @@ export class TextLayout {
       char: string;
     }[] = [];
     const onThisLine = [...result]; // It's tempting to move this variable into a field in the object.
-    const doAlignment= () =>{
+    const doAlignment = () => {
       if (alignment != "left") {
         const spaceOnRight = this.rightMargin - this.x;
-         if (spaceOnRight > 0) {
-          const spaceToAdd = (alignment=="right")?spaceOnRight:(spaceOnRight/2);
-          onThisLine.forEach(char => char.x+=spaceToAdd);
-         } 
+        if (spaceOnRight > 0) {
+          const spaceToAdd =
+            alignment == "right" ? spaceOnRight : spaceOnRight / 2;
+          onThisLine.forEach((char) => (char.x += spaceToAdd));
+        }
       }
       onThisLine.length = 0;
-    }
+    };
     while (true) {
       const pieces = TextLayout.WORD_BREAK.exec(toAdd);
       if (!pieces) {

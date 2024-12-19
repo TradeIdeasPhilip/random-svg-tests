@@ -21,7 +21,7 @@ const inputFormatter = Intl.NumberFormat(undefined, {
   useGrouping: true,
   maximumFractionDigits: 4,
 });
-const outputFormatter = Intl.NumberFormat(undefined, {
+const meanFormatter = Intl.NumberFormat(undefined, {
   useGrouping: true,
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -32,30 +32,28 @@ const errorFormatter = Intl.NumberFormat(undefined, {
   maximumFractionDigits: 4,
 });
 
-function formatOutput(output: number, error: number) {
-  const errorMessage = "#DIV/0!";
-  const o = isFinite(output) ? outputFormatter.format(output) : errorMessage;
-  const e = isFinite(error) ? errorFormatter.format(error) : errorMessage;
-  return o + " ± " + e;
-}
+const XL_ERROR_MESSAGE = "#DIV/0!";
 
 function setUpText() {
   const baseValues = [10001, 1001, 101, 11, 2, 1.1, 1.01, 1.001, 1.0001, 1];
   // need to set a font size based on the number of rows and the size of the svg.
   const values = baseValues.map((baseValue) => {
-    const input = `(${inputFormatter.format(
-      baseValue
-    )} ± 1) ÷ (${inputFormatter.format(baseValue)} ± 1)`;
-    //→ 1.00 ± 0.0000
+    const baseValueString = inputFormatter.format(baseValue);
     const maxIn = baseValue + 1;
     const minIn = baseValue - 1;
     const maxOut = maxIn / minIn;
     const minOut = minIn / maxIn;
-    const out = (maxOut + minOut) / 2;
-    const error = maxOut - out;
-    const output = `${input} → ${formatOutput(out, error)}`;
-    console.log(output);
-    return { output, error };
+    const mean = (maxOut + minOut) / 2;
+    const error = maxOut - mean;
+    const taggedUnion =
+      isFinite(mean) && isFinite(error)
+        ? {
+            finite: true as const,
+            meanString: meanFormatter.format(mean),
+            errorString: errorFormatter.format(error),
+          }
+        : { finite: false as const };
+    return { baseValue, baseValueString, mean, error, ...taggedUnion };
   });
 
   let seed = randomSeedInput.value;
@@ -64,6 +62,7 @@ function setUpText() {
     randomSeedInput.value = seed;
   }
   const random = Random.create(seed);
+  random; // Coming soon: "rough" text.
 
   handwritingG.innerHTML = "";
   morphG.innerHTML = "";
@@ -71,8 +70,32 @@ function setUpText() {
   textLayout.font = makeLineFont(2.7);
   textLayout.lineHeight = 3.7;
   textLayout.restart();
-  const original = textLayout.addText(values.map((i) => i.output).join("\n"));
-  textLayout.displayText(original, handwritingG);
+  function addAndTag(text: string, colorName: "blue" | "gold" | "white") {
+    const added = textLayout.addText(text);
+    const result = added.map((letter) => ({ colorName, ...letter }));
+    return result;
+  }
+  const original = values.flatMap((row) => {
+    const result = [
+      addAndTag("(" + row.baseValueString, "blue"),
+      addAndTag(" ± 1", "white"),
+      addAndTag(") ÷ (" + row.baseValueString, "blue"),
+      addAndTag(" ± 1", "white"),
+      addAndTag(") → ", "blue"),
+    ];
+    if (row.finite) {
+      result.push(
+        addAndTag(row.meanString, "blue"),
+        addAndTag(" ± " + row.errorString, "white")
+      );
+    } else {
+      result.push(addAndTag(XL_ERROR_MESSAGE, "gold"));
+    }
+    textLayout.CRLF();
+    return result;
+  });
+  const visible = TextLayout.displayText(original.flat(), handwritingG);
+  visible.forEach((letter) => letter.element.classList.add(letter.colorName));
 }
 
 let previousAnimationLoop: AnimationLoop | undefined;

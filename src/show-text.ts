@@ -88,7 +88,7 @@ function setUpText(text = inputTextArea.value) {
     const description = { shape: roughShape };
     return { ...letter, roughShape, normalShape, description };
   });
-  const morph = textLayout.displayText(roughed, morphG);
+  const morph = TextLayout.displayText(roughed, morphG);
   const morphAnimations = morph.map((letter) => {
     letter.element.style.stroke = letter.color;
     const keyframes: Keyframe[] = [

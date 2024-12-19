@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Show Text 1</title>
+    <script type="module" src="/src/show-text-1.ts"></script>
+  </head>
+  <body>
+    <div id="controls" data-hideBeforeScreenshot>
+      <div class="across">
+        Random seed:
+        <input
+          id="randomSeed"
+          value="[-1267311041,9946,1956317995,79324800]"
+        /><button id="draw">Draw</button>
+      </div>
+      <div class="separator"></div>
+      <div class="across">
+        Total time in seconds: <input id="timeInSeconds" value="14" /><button
+          id="start"
+          disabled
+        >
+          Start
+        </button>
+      </div>
+      <input
+        id="time"
+        type="range"
+        min="0"
+        max="1"
+        value="0"
+        step="0.0001"
+        disabled
+      />
+    </div>
+    <svg
+      id="main"
+      version="1.1"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      preserveAspectRatio="xMidYMid meet"
+      viewBox="0 0 100 50"
+    >
+      <g id="handwriting"></g>
+      <g id="morph"></g>
+    </svg>
+  </body>
+</html>

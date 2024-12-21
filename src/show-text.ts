@@ -194,6 +194,9 @@ startButton.addEventListener("click", () => {
     }
     if (time > endTime) {
       animationLoop.cancel();
+      // TODO WTF put this somewhere better than (window as any)
+      // Note that this also exists in show-text-1.ts
+      (window as any).showFrame(1);
     } else {
       const t = getT(time);
       timeRangeElement.value = t.toString();

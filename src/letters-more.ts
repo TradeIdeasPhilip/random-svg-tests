@@ -2,7 +2,33 @@ import { DescriptionOfLetter, Font } from "./letters-base";
 import { makeLineFont } from "./line-font";
 import { PathShape } from "./path-shape";
 
+export type LetterLayoutInfo = {
+  readonly x: number;
+  readonly baseline: number;
+  readonly description: DescriptionOfLetter;
+  readonly char: string;
+};
+
 export class TextLayout {
+  /*
+  startMeasuringWidth() {
+    const initialBaseline = this.baseline;
+    const initialX = this.x;
+    const getWidth = () => {
+      if (initialBaseline != this.baseline) {
+        // This is only intended to check the width of a single line.
+        throw new Error("vertical motion detected");
+      }
+      const result = this.x - initialX;
+      if (result >= 0) {
+        return result;
+      } else {
+        throw new Error("backward motion detected");
+      }
+    };
+    return getWidth;
+  }
+    */
   restart(x = 5, baseline = this.lineHeight) {
     this.leftMargin = x;
     this.x = x;
@@ -28,7 +54,7 @@ export class TextLayout {
     return this.font.get(key);
   }
   static join(
-    letters: {
+    letters: readonly {
       readonly x: number;
       readonly baseline: number;
       readonly description: { readonly shape: PathShape };
@@ -57,7 +83,10 @@ export class TextLayout {
     });
   }
   private static WORD_BREAK = /^(\n+| +|[^ \n]+)(.*)/ms;
-  addText(toAdd: string, alignment: "left" | "center" | "right" = "left") {
+  addText(
+    toAdd: string,
+    alignment: "left" | "center" | "right" = "left"
+  ): readonly LetterLayoutInfo[] {
     const invalid = new Set<string>();
     const result: {
       x: number;

@@ -25,6 +25,7 @@ export default defineConfig({
         שְׁמוֹנָה: resolve(__dirname, "path-debugger.html"),
         תֵשַׁע: resolve(__dirname, "estimate-tangent-line.html"),
         עֶשֶׂר:resolve(__dirname, "show-text.html"),
+        十一:resolve(__dirname, "show-text-1.html"),
       },
     },
   },

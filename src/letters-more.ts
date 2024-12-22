@@ -10,25 +10,6 @@ export type LetterLayoutInfo = {
 };
 
 export class TextLayout {
-  /*
-  startMeasuringWidth() {
-    const initialBaseline = this.baseline;
-    const initialX = this.x;
-    const getWidth = () => {
-      if (initialBaseline != this.baseline) {
-        // This is only intended to check the width of a single line.
-        throw new Error("vertical motion detected");
-      }
-      const result = this.x - initialX;
-      if (result >= 0) {
-        return result;
-      } else {
-        throw new Error("backward motion detected");
-      }
-    };
-    return getWidth;
-  }
-    */
   restart(x = 5, baseline = this.lineHeight) {
     this.leftMargin = x;
     this.x = x;

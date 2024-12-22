@@ -140,7 +140,7 @@ function setUpText() {
     }
   );
 
-  let left = 5;
+  let left = 7;
   const maxInputWidth = Math.max(
     ...original.map((row) => row.inputLayoutInfo.width)
   );
@@ -174,7 +174,7 @@ function setUpText() {
     type InputLetter = ReadonlyTextSegment["letters"][number];
     type OutputLetter = InputLetter & { group: Group };
     const allLetters: OutputLetter[] = [];
-    const baseline = (rowIndex + 1) * 4.8;
+    const baseline = (rowIndex + 1) * 4.8 * 1.125;
     function addAndTransform(Δx: number, group: Group, letters: InputLetter[]) {
       letters.forEach((letter) => {
         allLetters.push({ ...letter, x: letter.x + Δx, baseline, group });

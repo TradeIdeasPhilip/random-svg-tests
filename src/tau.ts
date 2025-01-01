@@ -2,6 +2,8 @@ import { getById } from "phil-lib/client-misc";
 import "./tau.css";
 import { assertValidT, makeTSplitter, selectorQueryAll } from "./utility";
 import { initializedArray, makeLinear, positiveModulo } from "phil-lib/misc";
+import { PathShape } from "./path-shape";
+import { TextLayout } from "./letters-more";
 
 const tauPath = getById("tau", SVGPathElement);
 const tauPathLength = tauPath.getTotalLength();
@@ -96,7 +98,7 @@ const danceRepeatCount = 3;
 
 const splitter = makeTSplitter(1, 1, danceRepeatCount);
 
-function showFrame(t: number) {
+function showMain(t: number) {
   assertValidT(t);
   mainHandwriting.hide();
   spreadPoints.hide();
@@ -120,6 +122,89 @@ function showFrame(t: number) {
       throw new Error("wtf");
     }
   }
+}
+
+class Handwriting {
+  weight = 1;
+  soFar = 0.01;
+  constructor(public readonly parent: SVGGElement) {}
+  add(letter: { x: number; baseline: number; shape: PathShape }) {
+    const segments = letter.shape.splitOnMove().map((shape) => {
+      const element = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "path"
+      );
+      element.setAttribute("d", shape.rawPath);
+      element.style.transform = `translate(${letter.x}px, ${letter.baseline}px)`;
+      this.parent.appendChild(element);
+      const before = this.soFar;
+      const length = element.getTotalLength();
+      const after = before + length;
+      this.soFar = after;
+      element.style.setProperty("--offset", before.toString());
+      element.style.setProperty("--length", length.toString());
+      return { element, before, length, after };
+    });
+    this.updateTotalLength();
+    return segments;
+  }
+  updateTotalLength() {
+    const totalLength = this.soFar;
+    this.parent.style.setProperty("--total-length", totalLength.toString());
+  }
+}
+
+/**
+ * Draws the discussion on the left with the handwriting effect.
+ */
+const conversationHandwriting: Animator["show"] = (() => {
+  const parent = getById("conversation-handwriting", SVGGElement);
+  const handwriting = new Handwriting(parent);
+  const textLayout = new TextLayout(40);
+  textLayout.rightMargin = 1000;
+  textLayout.CRLF();
+  textLayout.baseline += 10;
+  function say(text: string, className: "student" | "teacher") {
+    const leftMargin = className == "student" ? 120 : 45;
+    textLayout.x = textLayout.leftMargin = leftMargin;
+    const layoutInfo = textLayout.addText(text);
+    layoutInfo.forEach((letter) => {
+      handwriting
+        .add({
+          baseline: letter.baseline,
+          x: letter.x,
+          shape: letter.description.shape,
+        })
+        .forEach(({ element }) => {
+          element.classList.add(className);
+        });
+    });
+    textLayout.baseline += 10;
+    textLayout.CRLF();
+  }
+  say("Did you see the latest 3Blue1Brown video?", "teacher");
+  say("Yes.  It looks amazing!", "student");
+  say(
+    "Would you like to see something similar with tau instead of pi?",
+    "teacher"
+  );
+  say("Of course!", "student");
+  say(
+    "I have some real stuff on the way.  I just really ♡ some of those animations so I had to try them myself.",
+    "teacher"
+  );
+  function show(t: number): void {
+    parent.style.setProperty("--t", t.toString());
+
+    assertValidT(t);
+  }
+  return show;
+})();
+
+function showFrame(t: number) {
+  assertValidT(t);
+  showMain(t);
+  conversationHandwriting(t);
 }
 
 {

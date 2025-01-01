@@ -206,6 +206,7 @@ startButton.addEventListener("click", () => {
   previousAnimationLoop = animationLoop;
 });
 
+// MARK: initScreenCapture()
 function initScreenCapture() {
   setUpText();
   document

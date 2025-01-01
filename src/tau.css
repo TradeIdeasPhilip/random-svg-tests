@@ -54,6 +54,34 @@ path.blue {
   transform-origin: bottom;
 }
 
+#conversation-handwriting {
+  --t: replace-me;
+  --total-length: replace-me;
+  --total-position: calc(var(--t) * var(--total-length));
+}
+
+#conversation-handwriting > path {
+  stroke-width: 5;
+  fill: none;
+  --offset: replace-me;
+  --length: replace-me;
+  --position: calc(
+    clamp(-0.0001, var(--total-position) - var(--offset), var(--length))
+  );
+  stroke-dasharray: 0, calc(var(--length) + 1), calc(var(--length) + 1), 0;
+  stroke-dashoffset: calc(0 - var(--position));
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+#conversation-handwriting .teacher {
+  stroke: #6b5d51;
+}
+
+#conversation-handwriting .student {
+  stroke: hwb(180deg 0% 25.07%);
+}
+
 path.gold {
   stroke: hwb(47.34deg 8.63% 5.88%);
   background-color: #6b5d51;

@@ -7,56 +7,73 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: clip;
+  background-color: lightpink;
 }
 
 svg {
   font-family: "Special Elite", system-ui;
   width: 100vw;
   height: 100vh;
-  --input-color: royalblue;
-  --ideal-color: orange;
-  --estimation-color: crimson;
 }
 
-#fullCircle {
-  fill: none;
-  stroke-width: 0.04;
-  stroke: var(--input-color);
+path.blue {
+  stroke: hwb(180deg 0% 25.07%);
 }
 
-#halfCircle {
-  fill: none;
-  stroke-width: 0.04;
-  stroke: var(--input-color);
+.main-path-translate {
+  transform: translate(430px, -475px) scale(5);
+  stroke: white;
+}
+
+.main-path {
+  stroke-width: 2;
   stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-line {
-  stroke-width: 0.04;
+#dance line {
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke: hwb(47.34deg 8.63% 5.88%);
 }
 
-#requestedDot {
-  fill: var(--input-color);
+#dance circle {
+  stroke: none;
+  fill: #ff6ac2;
+  filter: url(#blurMe);
 }
 
-#idealLine {
-  stroke: var(--ideal-color);
+.student-path {
+  fill: hwb(180deg 0% 25.07%);
 }
 
-circle.approximation {
-  fill: var(--estimation-color);
+.teacher-path {
+  fill: #6b5d51;
+  transform: scale(1.5) scaleX(-1);
+  transform-origin: bottom;
 }
 
-#approximateLine {
-  stroke: var(--estimation-color);
+path.gold {
+  stroke: hwb(47.34deg 8.63% 5.88%);
+  background-color: #6b5d51;
+}
+
+#background {
+  fill: black;
+  stroke: none;
 }
 
 #debugInput {
+  background: white;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  margin: 1.5em;
+  margin: 0.5em;
+  padding: 0.5em;
+  border-radius: 0.5em;
+  border: solid black 0.05em;
   display: flex;
   flex-direction: column;
   align-items: stretch;

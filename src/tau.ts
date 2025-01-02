@@ -1,7 +1,12 @@
 import { getById } from "phil-lib/client-misc";
 import "./tau.css";
 import { assertValidT, makeTSplitter, selectorQueryAll } from "./utility";
-import { initializedArray, makeLinear, positiveModulo } from "phil-lib/misc";
+import {
+  initializedArray,
+  makeBoundedLinear,
+  makeLinear,
+  positiveModulo,
+} from "phil-lib/misc";
 import { PathShape } from "./path-shape";
 import { TextLayout } from "./letters-more";
 
@@ -193,9 +198,10 @@ const conversationHandwriting: Animator["show"] = (() => {
     "I have some real stuff on the way.  I just really ♡ some of those animations so I had to try them myself.",
     "teacher"
   );
-  function show(t: number): void {
-    parent.style.setProperty("--t", t.toString());
+  const timingFunction = makeBoundedLinear(0.05, 0, 0.8, 1);
 
+  function show(t: number): void {
+    parent.style.setProperty("--t", timingFunction(t).toFixed(6));
     assertValidT(t);
   }
   return show;

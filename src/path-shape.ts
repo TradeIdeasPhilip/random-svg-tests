@@ -11,6 +11,7 @@ import {
   radiansPerDegree,
 } from "phil-lib/misc";
 
+// MARK: Command
 export type Command = {
   /**
    * The initial x value.
@@ -55,6 +56,7 @@ export type Command = {
   // split into pieces
 };
 
+// MARK: LCommand
 export class LCommand implements Command {
   /**
    * This was an interesting idea, but the `PathShape.rawPath`
@@ -73,6 +75,18 @@ export class LCommand implements Command {
     assertFinite(x0, y0, x, y);
     this.asString = `L ${x},${y}`;
     this.outgoingAngle = this.incomingAngle = Math.atan2(y - y0, x - x0);
+  }
+  /**
+   * Like you are reading values from an `l` command.
+   * A lower case "l."
+   * @param x0 The start of this line.
+   * @param y0 The start of this line.
+   * @param dx The end of this line measured relative to x0.
+   * @param dy The end of this line measured relative to y0.
+   * @returns A new `LCommand` object.
+   */
+  static relative(x0: number, y0: number, dx: number, dy: number) {
+    return new this(x0, y0, dx + x0, dy + y0);
   }
   readonly incomingAngle;
   readonly outgoingAngle;
@@ -94,6 +108,8 @@ export class LCommand implements Command {
     );
   }
 }
+
+// MARK: QCommand
 
 /**
  * What function was used to create this object?
@@ -273,6 +289,27 @@ export class QCommand implements Command {
   ) {
     return new this(x0, y0, x1, y1, x, y, { source: "controlPoints" });
   }
+  /**
+   * Like you are reading values from a `c` command.
+   * A lower case "c."
+   * @param x0 The start of this curve.
+   * @param y0 The start of this curve.
+   * @param dx1 A control point measured relative to x0.
+   * @param dy1 A control point measured relative to y0.
+   * @param dx A control point measured relative to x0.
+   * @param dy A control point measured relative to y0.
+   * @returns A new `CCommand` object.
+   */
+  static relative(
+    x0: number,
+    y0: number,
+    dx1: number,
+    dy1: number,
+    dx: number,
+    dy: number
+  ) {
+    return this.controlPoints(x0, y0, dx1 + x0, dy1 + y0, dx + x0, dy + y0);
+  }
   private constructor(
     public readonly x0: number,
     public readonly y0: number,
@@ -331,6 +368,13 @@ export class QCommand implements Command {
   }
 }
 
+// MARK: CCommand
+/**
+ * A cubic Bézier segment.
+ *
+ * I don't use this much myself.
+ * It's mostly aimed at imported curves.
+ */
 class CCommand implements Command {
   reverse() {
     return new CCommand(
@@ -406,6 +450,8 @@ class CCommand implements Command {
     return this;
   }
 }
+
+// MARK: PathBuilder
 
 /**
  * This class helps you build a path in a somewhat traditional way.
@@ -807,6 +853,8 @@ export class PathBuilder {
   }
 }
 
+// MARK: PathShape Support
+
 type ParametricFunction = (t: number) => Point;
 
 /**
@@ -836,25 +884,49 @@ function getDirection(f: ParametricFunction, t: number, ε: number) {
 
 const afterCommand = " *";
 const number = "(-?[0-9]+\\.?[0-9]*)";
-const between = " *[, ] *";
+/**
+ * Between two arguments you can have
+ * * One or more spaces,
+ * * a comma with optional spaces around it, _or_
+ * * if the second argument starts with a minus then the empty string can separate two arguments.
+ */
+const between = "(?: *[, ] *|(?=-))";
 const mCommand = new RegExp(
   `^M${afterCommand}${number}${between}${number}(.*)$`
+);
+const mCommandRelative = new RegExp(
+  `^m${afterCommand}${number}${between}${number}(.*)$`
 );
 const lCommand = new RegExp(
   `^L${afterCommand}${number}${between}${number}(.*)$`
 );
+const lCommandContinuation = new RegExp(
+  `^${between}${number}${between}${number}(.*)$`
+);
+const lCommandRelative = new RegExp(
+  `^l${afterCommand}${number}${between}${number}(.*)$`
+);
+const hCommandRelative = new RegExp(`^h${afterCommand}${number}(.*)$`);
+const vCommandRelative = new RegExp(`^v${afterCommand}${number}(.*)$`);
 const qCommand = new RegExp(
   `^Q${afterCommand}${number}${between}${number}${between}${number}${between}${number}(.*)$`
+);
+const qCommandContinuation = new RegExp(
+  `^${between}${number}${between}${number}${between}${number}${between}${number}(.*)$`
+);
+const qCommandRelative = new RegExp(
+  `^q${afterCommand}${number}${between}${number}${between}${number}${between}${number}(.*)$`
 );
 const cCommand = new RegExp(
   `^C${afterCommand}${number}${between}${number}${between}${number}${between}${number}${between}${number}${between}${number}(.*)$`
 );
 const cCommandContinuation = new RegExp(
-  `^${afterCommand}${number}${between}${number}${between}${number}${between}${number}${between}${number}${between}${number}(.*)$`
+  `^${between}${number}${between}${number}${between}${number}${between}${number}${between}${number}${between}${number}(.*)$`
 );
 const cCommandRelative = new RegExp(
   `^c${afterCommand}${number}${between}${number}${between}${number}${between}${number}${between}${number}${between}${number}(.*)$`
 );
+const zCommand = new RegExp("^[zZ](.*)$");
 
 /**
  * If the user enters a path string (like in `path.debugger.html`) that is invalid
@@ -865,6 +937,8 @@ export class PathShapeError extends Error {
     super(message);
   }
 }
+
+// MARK: PathShape
 
 /**
  * This is a way to manipulate a path shape.
@@ -907,34 +981,57 @@ export class PathShape {
       }
       return result;
     };
-    let x0 = NaN;
-    let y0 = NaN;
+    let x0 = 0;
+    let y0 = 0;
     const commands: Command[] = [];
     const push = (command: Command) => {
       commands.push(command);
       x0 = command.x;
       y0 = command.y;
     };
-    let hasMoved = false;
+    let recentMove: { readonly x0: number; readonly y0: number } | undefined;
     while (true) {
       // Remove leading whitespace.
       remaining = remaining.replace(/^ */, "");
       if (remaining == "") {
         break;
       }
-      found = mCommand.exec(remaining);
-      if (found) {
+      if ((found = mCommand.exec(remaining))) {
         x0 = parseOrThrow(found[1]);
         y0 = parseOrThrow(found[2]);
-        hasMoved = true;
+        recentMove = { x0, y0 };
         remaining = found[3];
         continue;
       }
-      if (!hasMoved) {
+      if ((found = mCommandRelative.exec(remaining))) {
+        x0 += parseOrThrow(found[1]);
+        y0 += parseOrThrow(found[2]);
+        recentMove = { x0, y0 };
+        remaining = found[3];
+        while ((found = lCommandContinuation.exec(remaining))) {
+          const current = LCommand.relative(
+            x0,
+            y0,
+            parseOrThrow(found[1]),
+            parseOrThrow(found[2])
+          );
+          push(current);
+          remaining = found[3];
+        }
+        continue;
+      }
+      if (!recentMove) {
         throw fail("Must start with an M command.");
       }
-      found = lCommand.exec(remaining);
-      if (found) {
+      if ((found = zCommand.exec(remaining))) {
+        if (x0 != recentMove.x0 || y0 != recentMove.y0) {
+          const current = new LCommand(x0, y0, recentMove.x0, recentMove.y0);
+          push(current);
+        }
+        remaining = found[1];
+        continue;
+      }
+      if ((found = lCommand.exec(remaining))) {
         const x = parseOrThrow(found[1]);
         const y = parseOrThrow(found[2]);
         const current = new LCommand(x0, y0, x, y);
@@ -942,8 +1039,32 @@ export class PathShape {
         remaining = found[3];
         continue;
       }
-      found = qCommand.exec(remaining);
-      if (found) {
+      if ((found = lCommandRelative.exec(remaining))) {
+        while (found) {
+          const dx = parseOrThrow(found[1]);
+          const dy = parseOrThrow(found[2]);
+          const current = LCommand.relative(x0, y0, dx, dy);
+          push(current);
+          remaining = found[3];
+          found = lCommandContinuation.exec(remaining);
+        }
+        continue;
+      }
+      if ((found = hCommandRelative.exec(remaining))) {
+        const dx = parseOrThrow(found[1]);
+        const current = new LCommand(x0, y0, x0 + dx, y0);
+        push(current);
+        remaining = found[2];
+        continue;
+      }
+      if ((found = vCommandRelative.exec(remaining))) {
+        const dy = parseOrThrow(found[1]);
+        const current = new LCommand(x0, y0, x0, y0 + dy);
+        push(current);
+        remaining = found[2];
+        continue;
+      }
+      if ((found = qCommand.exec(remaining))) {
         const x1 = parseOrThrow(found[1]);
         const y1 = parseOrThrow(found[2]);
         const x = parseOrThrow(found[3]);
@@ -953,8 +1074,20 @@ export class PathShape {
         remaining = found[5];
         continue;
       }
-      found = cCommand.exec(remaining);
-      if (found) {
+      if ((found = qCommandRelative.exec(remaining))) {
+        while (found) {
+          const dx1 = parseOrThrow(found[1]);
+          const dy1 = parseOrThrow(found[2]);
+          const dx = parseOrThrow(found[3]);
+          const dy = parseOrThrow(found[4]);
+          const current = QCommand.relative(x0, y0, dx1, dy1, dx, dy);
+          push(current);
+          remaining = found[5];
+          found = qCommandContinuation.exec(remaining);
+        }
+        continue;
+      }
+      if ((found = cCommand.exec(remaining))) {
         while (found) {
           const x1 = parseOrThrow(found[1]);
           const y1 = parseOrThrow(found[2]);
@@ -969,8 +1102,7 @@ export class PathShape {
         }
         continue;
       }
-      found = cCommandRelative.exec(remaining);
-      if (found) {
+      if ((found = cCommandRelative.exec(remaining))) {
         while (found) {
           const x1 = parseOrThrow(found[1]);
           const y1 = parseOrThrow(found[2]);

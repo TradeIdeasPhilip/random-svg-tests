@@ -11,6 +11,8 @@ import {
   radiansPerDegree,
 } from "phil-lib/misc";
 
+const formatForSvg=new Intl.NumberFormat("en-US",{maximumSignificantDigits:8}).format;
+
 // MARK: Command
 export type Command = {
   /**
@@ -73,7 +75,7 @@ export class LCommand implements Command {
     public readonly y: number
   ) {
     assertFinite(x0, y0, x, y);
-    this.asString = `L ${x},${y}`;
+    this.asString = `L ${formatForSvg(x)},${formatForSvg(y)}`;
     this.outgoingAngle = this.incomingAngle = Math.atan2(y - y0, x - x0);
   }
   /**
@@ -320,7 +322,7 @@ export class QCommand implements Command {
     public readonly creationInfo: QCreationInfo
   ) {
     assertFinite(x0, y0, x1, y1, x, y);
-    this.asString = `Q ${x1},${y1} ${x},${y}`;
+    this.asString = `Q ${formatForSvg(x1)},${formatForSvg(y1)} ${formatForSvg(x)},${formatForSvg(y)}`;
   }
   get incomingAngle() {
     return Math.atan2(this.y1 - this.y0, this.x1 - this.x0);
@@ -399,7 +401,7 @@ class CCommand implements Command {
     public readonly y: number
   ) {
     assertFinite(x0, y0, x1, y1, x2, y2, x, y);
-    this.asString = `C ${x1},${y1} ${x2},${y2} ${x},${y}`;
+    this.asString = `C ${formatForSvg(x1)},${formatForSvg(y1)} ${formatForSvg(x2)},${formatForSvg(y2)} ${formatForSvg(x)},${formatForSvg(y)}`;
   }
   /**
    * Like you are reading values from a `c` command.
@@ -1351,7 +1353,7 @@ export class PathShape {
         const result: string[] = [];
         const previousCommand = this.commands[index - 1];
         if (PathShape.needAnM(previousCommand, command)) {
-          result.push(`M ${command.x0},${command.y0}`);
+          result.push(`M ${formatForSvg(command.x0)},${formatForSvg(command.y0)}`);
         }
         result.push(command.asString);
         return result;

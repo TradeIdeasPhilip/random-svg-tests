@@ -1,6 +1,11 @@
 import { getById } from "phil-lib/client-misc";
 import "./tau.css";
-import { assertValidT, makeTSplitter, selectorQueryAll } from "./utility";
+import {
+  assertValidT,
+  makeTSplitter,
+  Random,
+  selectorQueryAll,
+} from "./utility";
 import {
   initializedArray,
   makeBoundedLinear,
@@ -9,6 +14,7 @@ import {
 } from "phil-lib/misc";
 import { PathShape } from "./path-shape";
 import { TextLayout } from "./letters-more";
+import { makeRoughShape } from "./rough-lib";
 
 const tauPath = getById("tau", SVGPathElement);
 const tauPathLength = tauPath.getTotalLength();
@@ -53,14 +59,59 @@ const danceCircles = selectorQueryAll(
   pointCount
 );
 
+const dancingTauPath = selectorQueryAll(
+  "#dance .main-path",
+  SVGPathElement,
+  1,
+  1
+)[0];
+
+const danceBorderAnimation = (() => {
+  const originalShape = PathShape.fromString(tauPath.getAttribute("d")!);
+  const seeds = [
+    "[865414075,46,1165012143,288037704]",
+    "[888652358,42,1959707975,1083510000]",
+    "[888761724,43,1169051802,-2117776296]",
+  ];
+  const roughShapes = seeds.map((seed) => {
+    const roughness = 25;
+    const random = Random.create(seed);
+    const shape = makeRoughShape(originalShape, roughness, random);
+    if (shape.after.commands.length != originalShape.commands.length) {
+      throw new Error("wtf");
+    }
+    return shape;
+  });
+  const originalPath = roughShapes[0].before.cssPath;
+  const roughPaths = roughShapes.map((shape) => shape.after.cssPath);
+  const animation = dancingTauPath.animate(
+    [
+      { offset: 0, d: originalPath },
+      { offset: 0.1, d: originalPath },
+      { offset: 0.2, d: roughPaths[0] },
+      { offset: 0.4, d: roughPaths[0] },
+      { offset: 0.5, d: originalPath },
+      { offset: 0.7, d: roughPaths[1] },
+      { offset: 0.9, d: roughPaths[2] },
+      { offset: 1, d: originalPath },
+    ],
+    { duration: 1, fill: "both" }
+  );
+  animation.pause();
+  return animation;
+})();
+
 const spreadPoints: Animator = (() => {
   function show(t: number): void {
     assertValidT(t);
     danceElement.style.display = "";
     danceLines.forEach((circle) => (circle.style.display = "none"));
+    danceBorderAnimation.currentTime = 0;
     const points = initializedArray(pointCount, (n) => {
       const offset = positiveModulo((t * (n + 1)) / pointCount, 1);
-      return tauPath.getPointAtLength(tauPathLength * offset);
+      return dancingTauPath.getPointAtLength(
+        dancingTauPath.getTotalLength() * offset
+      );
     });
     points.forEach((point, index) => {
       const circle = danceCircles[index];
@@ -74,24 +125,30 @@ const spreadPoints: Animator = (() => {
   return { show, hide };
 })();
 
-const mainDance: Animator = (() => {
-  function show(t: number): void {
-    assertValidT(t);
-    danceElement.style.display = "";
-    danceLines.forEach((circle) => (circle.style.display = ""));
-    const points = initializedArray(pointCount, (n) => {
-      const offset = positiveModulo(t + n / pointCount, 1);
-      return tauPath.getPointAtLength(tauPathLength * offset);
-    });
-    points.forEach((point, index) => {
-      const line = danceLines[index];
-      const circle = danceCircles[index];
-      line.x1.baseVal.value = circle.cx.baseVal.value = point.x;
-      line.y1.baseVal.value = circle.cy.baseVal.value = point.y;
-      const nextPoint = points[index + 1] ?? points[0];
-      line.x2.baseVal.value = nextPoint.x;
-      line.y2.baseVal.value = nextPoint.y;
-    });
+const mainDance = (() => {
+  function show(t: number, repeatCount: number): void {
+    function updatePoints(t: number) {
+      assertValidT(t);
+      danceElement.style.display = "";
+      danceLines.forEach((circle) => (circle.style.display = ""));
+      const points = initializedArray(pointCount, (n) => {
+        const offset = positiveModulo(t + n / pointCount, 1);
+        return dancingTauPath.getPointAtLength(
+          dancingTauPath.getTotalLength() * offset
+        );
+      });
+      points.forEach((point, index) => {
+        const line = danceLines[index];
+        const circle = danceCircles[index];
+        line.x1.baseVal.value = circle.cx.baseVal.value = point.x;
+        line.y1.baseVal.value = circle.cy.baseVal.value = point.y;
+        const nextPoint = points[index + 1] ?? points[0];
+        line.x2.baseVal.value = nextPoint.x;
+        line.y2.baseVal.value = nextPoint.y;
+      });
+    }
+    danceBorderAnimation.currentTime = t;
+    updatePoints((t * repeatCount) % 1);
   }
   function hide(): void {
     danceElement.style.display = "none";
@@ -119,8 +176,7 @@ function showMain(t: number) {
       break;
     }
     case 2: {
-      const t1 = (component.t * danceRepeatCount) % 1;
-      mainDance.show(t1);
+      mainDance.show(component.t, danceRepeatCount);
       break;
     }
     default: {
@@ -159,11 +215,17 @@ class Handwriting {
   }
 }
 
+const conversationHandwritingGroup = getById(
+  "conversation-handwriting",
+  SVGGElement
+);
+const thumbnailTextGroup = getById("thumbnail-text", SVGGElement);
+
 /**
  * Draws the discussion on the left with the handwriting effect.
  */
 const conversationHandwriting: Animator["show"] = (() => {
-  const parent = getById("conversation-handwriting", SVGGElement);
+  const parent = conversationHandwritingGroup;
   const handwriting = new Handwriting(parent);
   const textLayout = new TextLayout(40);
   textLayout.rightMargin = 1000;
@@ -222,3 +284,36 @@ function showFrame(t: number) {
   timeInput.addEventListener("input", showNow);
   showNow();
 }
+
+// MARK: initScreenCapture()
+function initScreenCapture(scene: unknown) {
+  switch (scene) {
+    case "main": {
+      thumbnailTextGroup.style.display = "none";
+      break;
+    }
+    case "thumbnail": {
+      conversationHandwritingGroup.style.display = "none";
+      break;
+    }
+    default: {
+      throw new Error(`unknown scene: ${scene}`);
+    }
+  }
+  document
+    .querySelectorAll("[data-hideBeforeScreenshot]")
+    .forEach((element) => {
+      if (!(element instanceof SVGElement || element instanceof HTMLElement)) {
+        throw new Error("wtf");
+      }
+      element.style.display = "none";
+    });
+  return {
+    source: "tau.ts",
+    devicePixelRatio: devicePixelRatio,
+    scene,
+  };
+}
+
+(window as any).initScreenCapture = initScreenCapture;
+(window as any).showFrame = showFrame;

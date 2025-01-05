@@ -16,14 +16,15 @@
       viewBox="0 0 1920 1080"
     >
       <defs>
-        <!-- Source: 
+        <!-- Original source: 
          https://commons.wikimedia.org/wiki/File:Greek_lc_tau.svg#/media/File:Greek_lc_tau.svg
          By Mrmw, LibreOffice User - Own work based on: Greek letter tau serif+sans.svg:, 
          Public Domain, https://commons.wikimedia.org/w/index.php?curid=90753943
+         I cleaned up a little with unkink() in path-debugger.ts.
           -->
         <path
           id="tau"
-          d="m217.7 147.93-5.3726 53.177q-1.2972 13.896-1.2972 27.793 0 26.496 6.1147 32.24 6.2997 5.5587 14.267 5.5587 17.787 0 21.123-22.42h6.8557q-6.1147 51.509-40.948 51.509-36.501 0-36.501-41.874 0-21.122 4.0749-52.621l6.8557-53.362h-18.343q-15.193 0-23.716 5.1882-8.3378 5.0027-15.564 20.381h-6.6702q5.9292-20.381 14.081-32.24 8.1528-12.044 15.564-16.12 7.4117-4.2616 22.049-4.2616h91.16v27.052z"
+          d="M 217.7,147.93 L 212.3274,201.107 Q 211.0302,213.94645 211.0302,228.9 Q 211.0302,255.57274 217.1449,261.14 Q 223.2502,266.6987 231.4119,266.6987 Q 249.1989,266.6987 252.5349,244.2787 L 259.3906,244.2787 Q 253.2759,295.7877 218.4426,295.7877 Q 181.9416,295.7877 181.9416,253.9137 Q 181.9416,233.01008 186.0165,201.2927 L 192.8722,147.9307 L 174.5292,147.9307 Q 159.39785,147.9307 150.8132,153.1189 Q 142.45157,158.17231 135.2492,173.4999 L 128.579,173.4999 Q 134.4619,153.27806 142.66,141.2599 Q 150.8129,129.308 158.224,125.1399 Q 165.80134,120.8783 180.273,120.8783 L 271.433,120.8783 L 271.433,147.9303 L 217.7,147.93"
         />
         <filter id="blurMe">
           <feGaussianBlur in="SourceGraphic" stdDeviation="0.75" />
@@ -37,7 +38,7 @@
       <g class="main-path-translate">
         <use xlink:href="#tau" id="main-handwriting" class="main-path"></use>
         <g id="dance">
-          <use xlink:href="#tau" class="main-path"></use>
+          <path class="main-path"></path>
           <circle r="4"></circle>
           <circle r="4"></circle>
           <circle r="4"></circle>
@@ -49,6 +50,11 @@
         </g>
       </g>
       <g id="conversation-handwriting"></g>
+      <g id="thumbnail-text">
+        <text y="180">Professor Ersatz</text>
+        <text y="360">and</text>
+        <text y="540">The Tau Critters</text>
+      </g>
     </svg>
     <div id="debugInput" data-hideBeforeScreenshot>
       <div>

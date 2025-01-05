@@ -6,11 +6,14 @@ import {
   assertClass,
   degreesPerRadian,
   initializedArray,
+  parseFloatX,
   polarToRectangular,
   radiansPerDegree,
 } from "phil-lib/misc";
 
 import { createPathDebugger } from "./path-debugger-widget";
+import { Random } from "./utility";
+import { makeRoughShape } from "./rough-lib";
 
 /**
  * If there are three straight lines in a row, and the middle one is tiny,
@@ -95,6 +98,10 @@ import { createPathDebugger } from "./path-debugger-widget";
 const input = getById("pathInputElement", HTMLInputElement);
 const button = getById("displaySinglePath", HTMLButtonElement);
 const errorElement = getById("singlePathErrorMessage", HTMLSpanElement);
+
+const randomSeedInput = getById("randomSeed", HTMLInputElement);
+const roughnessInput = getById("roughness", HTMLInputElement);
+const displayRoughButton = getById("displayRough", HTMLButtonElement);
 
 const mainPathDebugger = createPathDebugger();
 mainPathDebugger.insertBefore("insertPathDebuggerHere");
@@ -256,113 +263,7 @@ button.addEventListener("click", () => {
   const pathShape = PathShape.fromString(asString);
   mainPathDebugger.pathShape = pathShape;
 
-  /**
-   * The following is how I created a path for the & character.
-   * It's ugly, but it worked.  I think it's a good start.
-   *
-   * I found a bitmap image I liked.
-   * I loaded that into Inkscape.
-   * I picked a few spots that seemed like good endpoints for QCommands.
-   * I focused on places where I could get 90 degree angles, when possible, because it was easier to think about.
-   * I tried to draw the path in Inkscape, but Inkscape does not support quadratic curves.
-   * You have to use cubic curves.
-   * I used Inkscape just to get a rough sense of what I was looking at.
-   * I was focused on the tangent lines at each of my points.
-   * Then I saved my image file and used a text editor to find the path string.
-   * PathShape.fromString() now understands C and c commands.
-   * And I added a special conversion in the code below.
-   * It will interpret the C commands the way I intended them.
-   * It will create Q commands preserving the positions and angles.
-   * And the code below got rid of the kinks.
-   * And it made some angles snap to a cardinal direction.
-   * I don't know how to do those two things in Inkscape.
-   *
-   * I need to find a better vector graphics editor.
-   * path-debugger.* was very helpful.
-   *
-   * Initial string that feeds into this:
-   * "M 159.43363,236.57893 C 139.39225,211.71673 116.17009,188.00602 85.374138,137.83294 79.442993,121.43379 68.706413,107.78059 71.487983,86.40274 70.012084,75.635902 75.543692,68.372817 90.517159,65.830661 c 21.193741,1.982131 19.627371,12.092873 22.629291,20.57208 5.01399,12.845433 -15.622616,33.019609 -28.286615,50.915899 -13.036541,15.12654 -22.269361,34.60019 -25.715102,60.68764 -2.353207,23.26949 10.162985,35.15145 28.286612,40.62986 18.916925,0.15644 35.598375,-30.16544 50.401595,-79.20251";
-   */
-  /*
-  const commands = fullPathShape.commands.map((original) =>
-    QCommand.angles(
-      original.x0,
-      original.y0,
-      original.incomingAngle,
-      original.x,
-      original.y,
-      original.outgoingAngle
-    )
-  );
-  commands.forEach((first, firstIndex, array) => {
-    const secondIndex = firstIndex + 1;
-    const second = array.at(secondIndex);
-    if (second) {
-      let newAngle =
-        first.outgoingAngle +
-        angleBetween(first.outgoingAngle, second.incomingAngle) / 2;
-      // console.log(
-      //   (newAngle * degreesPerRadian).toFixed(2) + "°",
-      //   ((angleBetween(0, newAngle * 4) / 4) * degreesPerRadian).toFixed(2) +
-      //     "°"
-      // );
-      const cutoff = 23 * radiansPerDegree;
-      for (let i = 0; i < 4; i++) {
-        const cardinal = (FULL_CIRCLE / 4) * i;
-        if (Math.abs(angleBetween(cardinal, newAngle)) < cutoff) {
-          newAngle = cardinal;
-        }
-      }
-      const first1 = first.newAngles(undefined, newAngle);
-      const second1 = second.newAngles(newAngle, undefined);
-      array[firstIndex] = first1;
-      array[secondIndex] = second1;
-    }
-  });
-  if (commands.length > 0) {
-    let minX = commands[0].x0;
-    let maxX = minX;
-    let minY = commands[0].y0;
-    let maxY = minY;
-    commands.forEach((command) => {
-      const { x, y } = command;
-      minX = Math.min(x, minX);
-      minY = Math.min(y, minY);
-      maxX = Math.max(x, maxX);
-      maxY = Math.max(y, maxY);
-    });
-    const newY = makeLinear(minY, -1, maxY, 0);
-    const originalHeight = maxY - minY;
-    const originalWidth = maxX - minX;
-    const finalWidth = originalWidth / originalHeight;
-    const newX = makeLinear(minX, 0, maxX, finalWidth);
-    for (let i = 0; i < commands.length; i++) {
-      const original = commands[i];
-      const scaled = QCommand.controlPoints(
-        newX(original.x0),
-        newY(original.y0),
-        newX(original.x1),
-        newY(original.y1),
-        newX(original.x),
-        newY(original.y)
-      );
-      commands[i] = scaled;
-    }
-    let code = "";
-    code += "const scaleFactor = fontMetrics.mHeight;\n";
-    code += `const advance = ${finalWidth}*scaleFactor;\n`;
-    code += "const commands:QCommand[]=[];\n";
-    commands.forEach((command) => {
-      code += `commands.push(QCommand.controlPoints(
-      ${command.x0} * scaleFactor, ${command.y0}* scaleFactor,
-      ${command.x1}* scaleFactor, ${command.y1}* scaleFactor,
-      ${command.x}* scaleFactor, ${command.y} * scaleFactor
-    ) );\n`;
-    });
-    code += 'add("&", new PathShape(commands), advance);\n';
-    console.log(code);
-  }
-    */
+  //console.log(unkink(pathShape, 2 * radiansPerDegree).rawPath);
 
   // Do this so it's easy to paste the next text string.
   input.selectionStart = 0;
@@ -406,9 +307,11 @@ input.addEventListener("keyup", (event) => {
   };
   input.addEventListener("input", inputListener);
   input.value =
-    // This is a lower case tau that I copied from wikipedia.
-    // I had to add new features to PathShape.fromString() for it to understand this string.
-    "m217.7 147.93-5.3726 53.177q-1.2972 13.896-1.2972 27.793 0 26.496 6.1147 32.24 6.2997 5.5587 14.267 5.5587 17.787 0 21.123-22.42h6.8557q-6.1147 51.509-40.948 51.509-36.501 0-36.501-41.874 0-21.122 4.0749-52.621l6.8557-53.362h-18.343q-15.193 0-23.716 5.1882-8.3378 5.0027-15.564 20.381h-6.6702q5.9292-20.381 14.081-32.24 8.1528-12.044 15.564-16.12 7.4117-4.2616 22.049-4.2616h91.16v27.052z";
+    // This is the same as the next row but I used unkink() to clean it up a little bit.
+    "M 217.7,147.93 L 212.3274,201.107 Q 211.0302,213.94645 211.0302,228.9 Q 211.0302,255.57274 217.1449,261.14 Q 223.2502,266.6987 231.4119,266.6987 Q 249.1989,266.6987 252.5349,244.2787 L 259.3906,244.2787 Q 253.2759,295.7877 218.4426,295.7877 Q 181.9416,295.7877 181.9416,253.9137 Q 181.9416,233.01008 186.0165,201.2927 L 192.8722,147.9307 L 174.5292,147.9307 Q 159.39785,147.9307 150.8132,153.1189 Q 142.45157,158.17231 135.2492,173.4999 L 128.579,173.4999 Q 134.4619,153.27806 142.66,141.2599 Q 150.8129,129.308 158.224,125.1399 Q 165.80134,120.8783 180.273,120.8783 L 271.433,120.8783 L 271.433,147.9303 L 217.7,147.93";
+  // This is a lower case tau that I copied from wikipedia.
+  // I had to add new features to PathShape.fromString() for it to understand this string.
+  // ("m217.7 147.93-5.3726 53.177q-1.2972 13.896-1.2972 27.793 0 26.496 6.1147 32.24 6.2997 5.5587 14.267 5.5587 17.787 0 21.123-22.42h6.8557q-6.1147 51.509-40.948 51.509-36.501 0-36.501-41.874 0-21.122 4.0749-52.621l6.8557-53.362h-18.343q-15.193 0-23.716 5.1882-8.3378 5.0027-15.564 20.381h-6.6702q5.9292-20.381 14.081-32.24 8.1528-12.044 15.564-16.12 7.4117-4.2616 22.049-4.2616h91.16v27.052z");
   // This is a heart where the recreate option works and helps!
   // '{"commands":[{"command":"Q","x0":3.4887549340077686,"y0":-5.280275296438213,"x1":3.3240358327531427,"y1":-6.603270946497333,"x":3.986127753487767,"y":-6.945992424474607,"creationInfo":{"source":"angles","success":true,"angle":-0.477655307967376,"angle0":-1.69466355563386}},{"command":"Q","x0":3.986127753487767,"y0":-6.945992424474607,"x1":4.480941645468803,"y1":-7.20212505964597,"x":4.909574006894274,"y":-6.919048098782132,"creationInfo":{"source":"angles","success":true,"angle":0.5836648235165767,"angle0":-0.477655307967376}},{"command":"Q","x0":4.909574006894274,"y0":-6.919048098782132,"x1":5.161356230086409,"y1":-6.790075622391445,"x":5.391585826873779,"y":-6.651408910751343,"creationInfo":{"source":"angles","success":true,"angle":0.5421071297267503,"angle0":0.47339017798323246}},{"command":"Q","x0":5.391585826873779,"y0":-6.651408910751343,"x1":6.730367034445631,"y1":-5.845064330167255,"x":7.027256081149708,"y":-5.194728789900199,"creationInfo":{"source":"angles","success":true,"angle":1.1425363287394048,"angle0":0.5421071297267503}},{"command":"Q","x0":7.027256081149708,"y0":-5.194728789900199,"x1":7.754352753646234,"y1":-3.602023324394345,"x":4.193712100677284,"y":0.42449758198971194,"creationInfo":{"source":"angles","success":true,"angle":2.29486772798718,"angle0":1.1425363287394048}},{"command":"Q","x0":4.193712100677284,"y0":0.42449758198971194,"x1":3.518577720366601,"y1":-0.14254705569255727,"x":2.959092378616333,"y":-0.6853286027908325,"creationInfo":{"source":"angles","success":true,"angle":-2.371347368637816,"angle0":-2.4429920947222046}},{"command":"Q","x0":2.959092378616333,"y0":-0.6853286027908325,"x1":2.3354159292244066,"y1":-1.2903847907343782,"x":1.8486189246177673,"y":-1.8415732979774475,"creationInfo":{"source":"angles","success":true,"angle":-2.294238815702362,"angle0":-2.371347368637816}},{"command":"Q","x0":1.8486189246177673,"y0":-1.8415732979774475,"x1":-1.2821837697078784,"y1":-5.386505676828815,"x":1.8393135751921135,"y":-6.893847698517759,"creationInfo":{"source":"angles","success":true,"angle":-0.4498667187414722,"angle0":-2.294238815702362}},{"command":"Q","x0":1.8393135751921135,"y0":-6.893847698517759,"x1":3.5137578853675318,"y1":-7.702421274858965,"x":3.4548192956830346,"y":-6.81906598197989,"creationInfo":{"source":"angles","success":true,"angle":1.6374188551224442,"angle0":-0.4498667187414722}},{"command":"Q","x0":3.4548192956830346,"y0":-6.81906598197989,"x1":3.319461386978055,"y1":-4.790359056217831,"x":3.5514152019515546,"y":-4.386794653044557,"creationInfo":{"source":"angles","success":true,"angle":1.0491403112818258,"angle0":1.6374188551224442}}]}';
   // This is a heart where some of the curves seem to be going backwards!
@@ -543,3 +446,79 @@ input.addEventListener("keyup", (event) => {
 }
 
 button.click();
+
+displayRoughButton.addEventListener("click", () => {
+  let seed = randomSeedInput.value;
+  if (!Random.seedIsValid(seed)) {
+    seed = Random.newSeed();
+    randomSeedInput.value = seed;
+  }
+  const random = Random.create(seed);
+  let roughness = parseFloatX(roughnessInput.value);
+  if (roughness === undefined || roughness < 0) {
+    // TODO gray the button out to avoid this case.
+    alert("Invalid roughness");
+  } else {
+    console.log(roughness);
+    const baseString = input.value;
+    const baseShape = PathShape.fromString(baseString);
+    const roughShape = makeRoughShape(baseShape, roughness, random).after;
+    console.log(roughness, baseShape, roughShape);
+    mainPathDebugger.pathShape = roughShape;
+  }
+});
+
+/**
+ * Try to remove small, unintentional kinks.  I.e. make the path smoother.
+ * @param original Create an unkinked version of this.
+ * @param maxError If the difference in the incoming and outgoing angles are less than this,
+ * assume that the intent was was to make them identical.
+ * I.e. remove any kinks smaller than this.
+ * If a kink is larger than this, assume it was intentional and leave it.
+ *
+ * This value is in radians.
+ */
+export function unkink(original: PathShape, maxError: number) {
+  if (original.commands.length < 2) {
+    // Kinks only appear *between* commands.  So there can't be any kinks unless there are at least two commands.
+    return original;
+  }
+  const newCommands = [...original.commands];
+  for (let firstIndex = 0; firstIndex < newCommands.length - 1; firstIndex++) {
+    const secondIndex = firstIndex + 1;
+    const first = newCommands[firstIndex];
+    const second = newCommands[secondIndex];
+    const difference = angleBetween(first.outgoingAngle, second.incomingAngle);
+    const absDifference = Math.abs(difference);
+    const minError = radiansPerDegree * 0.000001;
+    if (absDifference <= maxError && absDifference > minError) {
+      // Try  to remove the kink.
+      if (first instanceof QCommand) {
+        if (second instanceof QCommand) {
+          const newAngle = first.outgoingAngle + difference / 2;
+          newCommands[firstIndex] = first.newAngles(undefined, newAngle);
+          newCommands[secondIndex] = second.newAngles(newAngle, undefined);
+          console.log(
+            newCommands[firstIndex].outgoingAngle,
+            newCommands[secondIndex].incomingAngle,
+            newAngle,
+            difference / radiansPerDegree
+          );
+        } else {
+          newCommands[firstIndex] = first.newAngles(
+            undefined,
+            second.incomingAngle
+          );
+        }
+      } else {
+        if (second instanceof QCommand) {
+          newCommands[secondIndex] = second.newAngles(
+            first.outgoingAngle,
+            undefined
+          );
+        }
+      }
+    }
+  }
+  return new PathShape(newCommands);
+}

@@ -123,27 +123,10 @@ path.gold {
   transform: translate(-3.4px, -0.7px) scale(0.7);
 }
 
-text {
-  font-size: 0.2pt;
-  /* text-anchor: middle; */
-}
-
 .border text {
   stroke: white;
   stroke-width: 0.05px;
   stroke-linejoin: round;
-}
-
-.legendInput {
-  fill: var(--input-color);
-}
-
-.legendIdeal {
-  fill: var(--ideal-color);
-}
-
-.legendEstimated {
-  fill: var(--estimation-color);
 }
 
 #debugInfo {
@@ -155,4 +138,22 @@ text {
     white 0em 0.1em 0.1em, white 0em -0.1em 0.1em;
   font-size: 3rem;
   font-family: "Yuji Mai", monospace;
+}
+
+#thumbnail-text {
+  font-size: 80pt;
+  text-anchor: middle;
+  transform: translateX(550px);
+}
+
+#thumbnail-text text:nth-child(1) {
+  fill: #6b5d51;
+}
+
+#thumbnail-text text:nth-child(2) {
+  fill: white;
+}
+
+#thumbnail-text text:nth-child(3) {
+  fill: hwb(180deg 0% 25.07%);
 }

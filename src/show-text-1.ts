@@ -67,7 +67,6 @@ function setUpText() {
     randomSeedInput.value = seed;
   }
   const random = Random.create(seed);
-  random; // Coming soon: "rough" text.
 
   handwritingG.innerHTML = "";
   morphG.innerHTML = "";

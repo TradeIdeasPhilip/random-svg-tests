@@ -211,19 +211,19 @@ export function makeTSplitter(...weights: number[]) {
   if (total == 0) {
     throw new Error("wtf");
   }
-  const splitter =(t:number) => {
+  const splitter = (t: number) => {
     assertValidT(t);
     t *= total;
     for (let index = 0; index < weights.length; index++) {
       const weight = weights[index];
       if (t <= weight) {
         t /= weight;
-        return {t, index};
+        return { t, index };
       }
       t -= weight;
     }
     throw new Error("wtf");
-  }
+  };
   return splitter;
 }
 
@@ -234,9 +234,41 @@ export function makeTSplitter(...weights: number[]) {
  * @returns The given value.
  * @throws If `value === undefined || value === null`.
  */
-export function assertNonNullable<T>(value : T) : NonNullable<T> {
+export function assertNonNullable<T>(value: T): NonNullable<T> {
   if (value === undefined || value === null) {
     throw new Error("wtf");
   }
   return value;
+}
+
+/**
+ * Creates a new function f() from one number to another where:
+ *   * y = f(x) defines a parabola,
+ *   * f(0) = 0,
+ *   * f(1) = 1, and
+ *   * f′(1) ÷ f′(0) = r
+ *
+ * This is nice for timing functions.
+ * If showFrame(t) moves a circle from left to right at a constant pace,
+ * and f = constantAcceleration(2),
+ * then showFrame(f(t)) would show the circle move along the same path,
+ * but constantly accelerating.
+ * @param r The ratio between the derivative at x=1 and at x=0.
+ *
+ * 1 means constant speed, 0 acceleration.
+ * I.e. a straight line.
+ * This returns the identity function.
+ *
+ * Larger numbers lead to faster acceleration.
+ * Smaller numbers lead to faster deceleration, i.e. slowing down.
+ *
+ * A negative value will cause the function to overshoot the value f(x)=1 and pull back to 1.
+ * That's usually bad for a timing function.
+ * @returns The new function.
+ */
+export function constantAcceleration(r: number) {
+  const b = 2 / (r + 1);
+  const a = 1 - b;
+  const result = (t: number) => a * t * t + b * t;
+  return result;
 }

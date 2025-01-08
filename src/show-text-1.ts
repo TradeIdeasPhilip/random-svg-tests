@@ -1,11 +1,12 @@
 import "./show-text-1.css";
 import { AnimationLoop, getById } from "phil-lib/client-misc";
 import { LinearFunction, makeLinear, parseIntX } from "phil-lib/misc";
-import { assertValidT, makeTSplitter, Random } from "./utility";
+import { assertValidT, constantAcceleration, makeTSplitter, Random } from "./utility";
 import { LetterLayoutInfo, TextLayout } from "./letters-more";
 import { makeLineFont } from "./line-font";
 import { Font, FontMetrics } from "./letters-base";
 import { makeRoughShape } from "./rough-lib";
+import { HandwritingEffect } from "./handwriting-effect";
 
 const randomSeedInput = getById("randomSeed", HTMLInputElement);
 const drawButton = getById("draw", HTMLButtonElement);
@@ -34,15 +35,17 @@ const errorFormatter = Intl.NumberFormat(undefined, {
   maximumFractionDigits: 4,
 });
 
-const XL_ERROR_MESSAGE = "#DIV/0!";
-
 type ColorName = "blue" | "gold" | "white";
 type ColorfulLayoutInfo = LetterLayoutInfo & { readonly colorName: ColorName };
 
 function setUpText() {
-  const baseValues = [10001, 1001, 101, 11, 2, 1.1, 1.01, 1.001, 1.0001, 1];
-  // need to set a font size based on the number of rows and the size of the svg.
-  const values = baseValues.map((baseValue) => {
+  type NumberStrings={ baseValueString: string } & (
+    | { finite: true; meanString: string; errorString: string }
+    | { finite: false; errorMessage: string });
+  function numberInfo(
+    baseValue: number
+  ): 
+  NumberStrings{
     const baseValueString = inputFormatter.format(baseValue);
     const maxIn = baseValue + 1;
     const minIn = baseValue - 1;
@@ -50,16 +53,29 @@ function setUpText() {
     const minOut = minIn / maxIn;
     const mean = (maxOut + minOut) / 2;
     const error = maxOut - mean;
-    const taggedUnion =
-      isFinite(mean) && isFinite(error)
-        ? {
-            finite: true as const,
-            meanString: meanFormatter.format(mean),
-            errorString: errorFormatter.format(error),
-          }
-        : { finite: false as const };
-    return { baseValue, baseValueString, mean, error, ...taggedUnion };
-  });
+    if (isFinite(mean) && isFinite(error)) {
+      return {
+        baseValueString,
+        finite: true,
+        meanString: meanFormatter.format(mean),
+        errorString: errorFormatter.format(error),
+      };
+    } else {
+      return { baseValueString, finite: false, errorMessage: "#DIV/0!" };
+    }
+  }
+  const rows:{strings:NumberStrings, finalRough:number|"bad"|"very bad" }[]= [
+    { strings: numberInfo(10001), finalRough: 0 },
+    { strings: numberInfo(1001), finalRough: 0 },
+    { strings: numberInfo(101), finalRough: 0 },
+    { strings: numberInfo(11), finalRough: 0.2 },
+    { strings: numberInfo(2), finalRough: 0.9 },
+    { strings: numberInfo(1.1), finalRough: 1 },
+    { strings: numberInfo(1.01), finalRough: "bad" },
+    { strings: numberInfo(1.001), finalRough: "bad"},
+    { strings: numberInfo(1.0001), finalRough: "very bad" },
+    { strings: numberInfo(1), finalRough: 0 },
+  ];
 
   let seed = randomSeedInput.value;
   if (!Random.seedIsValid(seed)) {
@@ -115,33 +131,44 @@ function setUpText() {
   const t = new TextSegment(font);
   const division = t.single(" ÷ ", "blue");
   const arrow = t.single(" → ", "blue");
-  const original = values.map(
+  const rows1 = rows.map(
     (
       row
-    ): typeof row & {
-      inputLayoutInfo: ReadonlyTextSegment;
-      messageLayoutInfo?: ReadonlyTextSegment;
-      meanLayoutInfo?: ReadonlyTextSegment;
-      errorLayoutInfo?: ReadonlyTextSegment;
-    } => {
-      t.addAndTag("(" + row.baseValueString, "blue");
+    ): { inputLayoutInfo: ReadonlyTextSegment } & (
+      | {
+          finite: false;
+          messageLayoutInfo: ReadonlyTextSegment;
+        }
+      | {
+          finite: true;
+          meanLayoutInfo: ReadonlyTextSegment;
+          errorLayoutInfo: ReadonlyTextSegment;
+        }
+    ) => {
+      const strings = row.strings;
+      t.addAndTag("(" + strings.baseValueString, "blue");
       t.addAndTag(" ± 1", "white");
       t.addAndTag(")", "blue");
       const inputLayoutInfo = t.extract();
-      if (row.finite) {
-        const meanLayoutInfo = t.single(row.meanString, "blue");
-        const errorLayoutInfo = t.single(" ± " + row.errorString, "white");
-        return { ...row, inputLayoutInfo, meanLayoutInfo, errorLayoutInfo };
+      if (strings.finite) {
+        const meanLayoutInfo = t.single(strings.meanString, "blue");
+        const errorLayoutInfo = t.single(" ± " + strings.errorString, "white");
+        return {
+          inputLayoutInfo,
+          finite: true,
+          meanLayoutInfo,
+          errorLayoutInfo,
+        };
       } else {
-        const messageLayoutInfo = t.single(XL_ERROR_MESSAGE, "gold");
-        return { ...row, inputLayoutInfo, messageLayoutInfo };
+        const messageLayoutInfo = t.single(strings.errorMessage, "gold");
+        return { inputLayoutInfo,  finite: false, messageLayoutInfo };
       }
     }
   );
 
   let left = 7;
   const maxInputWidth = Math.max(
-    ...original.map((row) => row.inputLayoutInfo.width)
+    ...rows1.map((row) => row.inputLayoutInfo.width)
   );
   const inputCenter1 = left + maxInputWidth / 2;
   left += maxInputWidth;
@@ -152,24 +179,20 @@ function setUpText() {
   const arrowLeft = left;
   left += arrow.width;
   const maxMeanWidth = Math.max(
-    ...original.flatMap((row) =>
-      row.meanLayoutInfo ? [row.meanLayoutInfo.width] : []
-    )
+    ...rows1.flatMap((row) => (row.finite ? [row.meanLayoutInfo.width] : []))
   );
   const outputLeft = left;
   left += maxMeanWidth;
   const meanRight = left;
   const maxErrorWidth = Math.max(
-    ...original.flatMap((row) =>
-      row.errorLayoutInfo ? [row.errorLayoutInfo.width] : []
-    )
+    ...rows1.flatMap((row) => (row.finite ? [row.errorLayoutInfo.width] : []))
   );
   left += maxErrorWidth;
   const errorRight = left;
   const outputRight = left;
 
   type Group = "base" | "mean" | "error";
-  const inPosition = original.map((row, rowIndex) => {
+  const inPosition = rows1.map((row, rowIndex) => { 
     type InputLetter = ReadonlyTextSegment["letters"][number];
     type OutputLetter = InputLetter & { group: Group };
     const allLetters: OutputLetter[] = [];
@@ -185,7 +208,7 @@ function setUpText() {
     const inputOffset2 = inputOffset1 - inputCenter1 + inputCenter2;
     addAndTransform(inputOffset2, "base", row.inputLayoutInfo.letters);
     addAndTransform(arrowLeft, "base", arrow.letters);
-    if (row.messageLayoutInfo) {
+    if (!row.finite) {
       const availableWidth = outputRight - outputLeft;
       const extraSpace = availableWidth - row.messageLayoutInfo.width;
       const left = outputLeft + extraSpace / 2;
@@ -211,8 +234,8 @@ function setUpText() {
     return { ...letter, roughShape, normalShape, description };
   });
   const morph = TextLayout.displayText(roughed, morphG);
+
   const morphAnimations = morph.map((letter) => {
-    //    letter.element.style.stroke = letter.color;
     letter.element.classList.add(letter.colorName);
     const keyframes: Keyframe[] = [
       { offset: 0, d: letter.roughShape.cssPath },
@@ -243,27 +266,17 @@ function setUpText() {
     });
   };
   {
-    let soFar = 0.01;
-    roughed.forEach((letter) => {
-      letter.roughShape.splitOnMove().map((shape) => {
-        const element = document.createElementNS(
-          "http://www.w3.org/2000/svg",
-          "path"
-        );
-        element.setAttribute("d", shape.rawPath);
-        element.style.transform = `translate(${letter.x}px, ${letter.baseline}px)`;
-        //element.style.stroke = letter.color;
+    const handwritingEffect = new HandwritingEffect(handwritingG);
+    roughed.forEach(letter => {
+      const pieces = handwritingEffect.add({
+        baseline: letter.baseline,
+        x: letter.x,
+        shape: letter.description.shape,
+      })
+      pieces.forEach(({element}) => {
         element.classList.add(letter.colorName);
-        handwritingG.appendChild(element);
-        const before = soFar;
-        const length = element.getTotalLength();
-        const after = before + length;
-        soFar = after;
-        element.style.setProperty("--offset", before.toString());
-        element.style.setProperty("--length", length.toString());
+
       });
-      const totalLength = soFar;
-      handwritingG.style.setProperty("--total-length", totalLength.toString());
     });
   }
   const hideHandwriting = () => {
@@ -295,9 +308,6 @@ function setUpText() {
   };
   (window as any).showFrame = showFrame;
   startButton.disabled = false;
-
-  //const visible = TextLayout.displayText(inPosition.flat(), handwritingG);
-  //visible.forEach((letter) => letter.element.classList.add(letter.colorName));
 }
 
 let previousAnimationLoop: AnimationLoop | undefined;
@@ -312,6 +322,7 @@ startButton.addEventListener("click", () => {
   }
   let endTime = 0;
   let getT: LinearFunction | undefined;
+  const timingFunction=constantAcceleration(3);
   const animationLoop = new AnimationLoop((time) => {
     if (!getT) {
       endTime = time + timeInSeconds * 1000;
@@ -321,8 +332,9 @@ startButton.addEventListener("click", () => {
       animationLoop.cancel();
       (window as any).showFrame(1);
     } else {
-      const t = getT(time);
-      timeRangeElement.value = t.toString();
+      const linear = getT(time);
+      const t = timingFunction(linear);
+       timeRangeElement.value = t.toString();
       // TODO WTF put this somewhere better than (window as any)
       // Note that this was copied as is from show-text.ts
       (window as any).showFrame(t);

@@ -15,6 +15,7 @@ import {
 import { PathShape } from "./path-shape";
 import { TextLayout } from "./letters-more";
 import { makeRoughShape } from "./rough-lib";
+import { HandwritingEffect } from "./handwriting-effect";
 
 const tauPath = getById("tau", SVGPathElement);
 const tauPathLength = tauPath.getTotalLength();
@@ -185,36 +186,6 @@ function showMain(t: number) {
   }
 }
 
-class Handwriting {
-  weight = 1;
-  soFar = 0.01;
-  constructor(public readonly parent: SVGGElement) {}
-  add(letter: { x: number; baseline: number; shape: PathShape }) {
-    const segments = letter.shape.splitOnMove().map((shape) => {
-      const element = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "path"
-      );
-      element.setAttribute("d", shape.rawPath);
-      element.style.transform = `translate(${letter.x}px, ${letter.baseline}px)`;
-      this.parent.appendChild(element);
-      const before = this.soFar;
-      const length = element.getTotalLength();
-      const after = before + length;
-      this.soFar = after;
-      element.style.setProperty("--offset", before.toString());
-      element.style.setProperty("--length", length.toString());
-      return { element, before, length, after };
-    });
-    this.updateTotalLength();
-    return segments;
-  }
-  updateTotalLength() {
-    const totalLength = this.soFar;
-    this.parent.style.setProperty("--total-length", totalLength.toString());
-  }
-}
-
 const conversationHandwritingGroup = getById(
   "conversation-handwriting",
   SVGGElement
@@ -226,7 +197,7 @@ const thumbnailTextGroup = getById("thumbnail-text", SVGGElement);
  */
 const conversationHandwriting: Animator["show"] = (() => {
   const parent = conversationHandwritingGroup;
-  const handwriting = new Handwriting(parent);
+  const handwriting = new HandwritingEffect(parent);
   const textLayout = new TextLayout(40);
   textLayout.rightMargin = 1000;
   textLayout.CRLF();
@@ -285,21 +256,38 @@ function showFrame(t: number) {
   showNow();
 }
 
-// MARK: initScreenCapture()
-function initScreenCapture(scene: unknown) {
+function showScene(scene: unknown) {
   switch (scene) {
     case "main": {
       thumbnailTextGroup.style.display = "none";
+      conversationHandwritingGroup.style.display = "";
       break;
     }
     case "thumbnail": {
       conversationHandwritingGroup.style.display = "none";
+      thumbnailTextGroup.style.display = "";
       break;
     }
     default: {
       throw new Error(`unknown scene: ${scene}`);
     }
   }
+}
+
+{
+  const showThumbnailInput = getById("showThumbnail", HTMLInputElement);
+  function checkNow() {
+    const showThumbnail = showThumbnailInput.checked;
+    const scene = showThumbnail ? "thumbnail" : "main";
+    showScene(scene);
+  }
+  showThumbnailInput.addEventListener("click", checkNow);
+  checkNow();
+}
+
+// MARK: initScreenCapture()
+function initScreenCapture(scene: unknown) {
+  showScene(scene);
   document
     .querySelectorAll("[data-hideBeforeScreenshot]")
     .forEach((element) => {
@@ -315,5 +303,7 @@ function initScreenCapture(scene: unknown) {
   };
 }
 
-(window as any).initScreenCapture = initScreenCapture;
-(window as any).showFrame = showFrame;
+const GLOBAL = window as any;
+GLOBAL.initScreenCapture = initScreenCapture;
+GLOBAL.showFrame = showFrame;
+GLOBAL.showScene = showScene;

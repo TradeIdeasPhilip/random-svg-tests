@@ -1,0 +1,18 @@
+.handwriting-effect-parent {
+  --t: replace-me;
+  --total-length: replace-me;
+  --total-position: calc(var(--t) * var(--total-length));
+}
+
+.handwriting-effect-parent > path {
+  fill: none;
+  --offset: replace-me;
+  --length: replace-me;
+  --position: calc(
+    clamp(-0.0001, var(--total-position) - var(--offset), var(--length))
+  );
+  stroke-dasharray: 0, calc(var(--length) + 1), calc(var(--length) + 1), 0;
+  stroke-dashoffset: calc(0 - var(--position));
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}

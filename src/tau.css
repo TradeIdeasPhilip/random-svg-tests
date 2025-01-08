@@ -54,24 +54,8 @@ path.blue {
   transform-origin: bottom;
 }
 
-#conversation-handwriting {
-  --t: replace-me;
-  --total-length: replace-me;
-  --total-position: calc(var(--t) * var(--total-length));
-}
-
 #conversation-handwriting > path {
   stroke-width: 5;
-  fill: none;
-  --offset: replace-me;
-  --length: replace-me;
-  --position: calc(
-    clamp(-0.0001, var(--total-position) - var(--offset), var(--length))
-  );
-  stroke-dasharray: 0, calc(var(--length) + 1), calc(var(--length) + 1), 0;
-  stroke-dashoffset: calc(0 - var(--position));
-  stroke-linejoin: round;
-  stroke-linecap: round;
 }
 
 #conversation-handwriting .teacher {
@@ -107,16 +91,14 @@ path.gold {
   align-items: stretch;
 }
 
-#debugInput div {
+#debugInputTop {
   font-family: "Special Elite", system-ui;
   display: flex;
   flex-direction: row;
-  justify-content: space-around;
+  justify-content: space-evenly;
+  align-items: baseline;
   flex-wrap: wrap;
-}
-
-#debugInput div label {
-  padding: 0.2em;
+  gap: 0.75em;
 }
 
 #legend {

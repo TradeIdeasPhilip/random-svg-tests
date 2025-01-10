@@ -103,6 +103,14 @@ export class FontMetrics {
 }
 
 export class DescriptionOfLetter {
+  /**
+   * Create a new `DescriptionOfLetter` object exactly like this one but with a different shape.
+   * @param newShape Replace the existing shape with this.
+   * @returns The new `DescriptionOfLetter` object.
+   */
+  reshape(newShape: PathShape) {
+    return new DescriptionOfLetter(newShape, this.advance, this.fontMetrics);
+  }
   readonly #shapeFactory: () => PathShape;
   get shape() {
     return this.#shapeFactory();

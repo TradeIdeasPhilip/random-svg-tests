@@ -340,6 +340,11 @@ function setUpText() {
   const showMorph = (t: number) => {
     assertValidT(t);
     morphG.style.display = "";
+    /**
+     * If the entire thing plays for `extra + 1` seconds,
+     * then main part will finish in 1 second, and the last
+     * `extra` seconds will have a few numbers dancing in place, but nothing else.
+     */
     const extra = 0.5;
     const scaled = t * morphAnimations.length * (extra + 1);
     morphAnimations.forEach((animation, index) => {

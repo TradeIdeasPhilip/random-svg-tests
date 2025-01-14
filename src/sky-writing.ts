@@ -5,7 +5,7 @@ import { describeFont, DescriptionOfLetter, Font } from "./letters-base";
 import { PathShape } from "./path-shape";
 import { makeLineFont } from "./line-font";
 import { createPathDebugger } from "./path-debugger-widget";
-import { assertFinite, HasSeed, Random } from "phil-lib/misc";
+import { assertFinite, degreesPerRadian, HasSeed, Random } from "phil-lib/misc";
 import { makeRoughShape } from "./rough-lib";
 
 // MARK: One time setup
@@ -486,3 +486,16 @@ selectAnimation();
 document.querySelectorAll('input[name="type"]').forEach((element) => {
   element.addEventListener("click", selectAnimation);
 });
+
+function testCircleApproximation() {
+  const chars = [..."♡◯◡"];
+const  font = makeLineFont(42);
+  chars.forEach(char => {
+    console.log(char);
+    console.table(
+    font.get(char)!.shape.commands.map((command) =>{
+      return {incoming : command.incomingAngle*degreesPerRadian,outgoing:command.outgoingAngle*degreesPerRadian}
+    }));
+  })
+}
+testCircleApproximation();

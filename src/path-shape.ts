@@ -11,7 +11,9 @@ import {
   radiansPerDegree,
 } from "phil-lib/misc";
 
-const formatForSvg=new Intl.NumberFormat("en-US",{maximumSignificantDigits:8}).format;
+const formatForSvg = new Intl.NumberFormat("en-US", {
+  maximumSignificantDigits: 8,
+}).format;
 
 // MARK: Command
 export type Command = {
@@ -322,7 +324,9 @@ export class QCommand implements Command {
     public readonly creationInfo: QCreationInfo
   ) {
     assertFinite(x0, y0, x1, y1, x, y);
-    this.asString = `Q ${formatForSvg(x1)},${formatForSvg(y1)} ${formatForSvg(x)},${formatForSvg(y)}`;
+    this.asString = `Q ${formatForSvg(x1)},${formatForSvg(y1)} ${formatForSvg(
+      x
+    )},${formatForSvg(y)}`;
   }
   get incomingAngle() {
     return Math.atan2(this.y1 - this.y0, this.x1 - this.x0);
@@ -401,7 +405,9 @@ class CCommand implements Command {
     public readonly y: number
   ) {
     assertFinite(x0, y0, x1, y1, x2, y2, x, y);
-    this.asString = `C ${formatForSvg(x1)},${formatForSvg(y1)} ${formatForSvg(x2)},${formatForSvg(y2)} ${formatForSvg(x)},${formatForSvg(y)}`;
+    this.asString = `C ${formatForSvg(x1)},${formatForSvg(y1)} ${formatForSvg(
+      x2
+    )},${formatForSvg(y2)} ${formatForSvg(x)},${formatForSvg(y)}`;
   }
   /**
    * Like you are reading values from a `c` command.
@@ -863,12 +869,17 @@ type ParametricFunction = (t: number) => Point;
  * What direction is the output of the given function moving at the given time?
  *
  * Basically a derivative in more dimensions.
+ *
+ * This "quick" version of the function is not always as accurate as I'd like.
+ * "Quickly" is a relative term.
+ * (None of this code has been optimized yet.)
+ * See `getDirection()` for a more accurate version of this function.
  * @param f Find the derivative of this function.
  * @param t Take the derivative at this time.
  * @param ε A small value that we can add to t or subtract from t, to estimate the derivative.
  * @returns An angle, in a form suitable for Math.tan().  Or NaN in case of any errors.
  */
-function getDirection(f: ParametricFunction, t: number, ε: number) {
+function getDirectionQuickly(f: ParametricFunction, t: number, ε: number) {
   if (!(t >= 0 && t <= 1)) {
     throw new Error("Expected 0 ≤ t ≤ 1");
   }
@@ -882,6 +893,31 @@ function getDirection(f: ParametricFunction, t: number, ε: number) {
     return NaN;
   }
   return Math.atan2(Δy, Δx);
+}
+
+/**
+ * What direction is the output of the given function moving at the given time?
+ *
+ * Basically a derivative in more dimensions.
+ * @param f Find the derivative of this function.
+ * @param t Take the derivative at this time.
+ * @param ε A small value that we can add to t or subtract from t, to estimate the derivative.
+ * @returns An angle, in a form suitable for Math.tan().  Or NaN in case of any errors.
+ */
+function getDirection(f: ParametricFunction, t: number, ε: number) {
+  // We can't ask for the value at 0, so we extrapolate from two nearby points.
+  const ε2 = ε * 2;
+  const ε1 = ε;
+  const θ2 = getDirectionQuickly(f, t, ε2);
+  const θ1 = getDirectionQuickly(f, t, ε1);
+  const θDiff = θ2 - θ1;
+  const θ0 = θ1 - θDiff;
+  console.table([
+    { type: "ε×1", offset: ε1, result: θ1 },
+    { type: "ε×2", offset: ε2, result: θ2 },
+    { type: "ε×0", offset: 0, result: θ0 },
+  ]);
+  return θ0;
 }
 
 const afterCommand = " *";
@@ -1353,7 +1389,9 @@ export class PathShape {
         const result: string[] = [];
         const previousCommand = this.commands[index - 1];
         if (PathShape.needAnM(previousCommand, command)) {
-          result.push(`M ${formatForSvg(command.x0)},${formatForSvg(command.y0)}`);
+          result.push(
+            `M ${formatForSvg(command.x0)},${formatForSvg(command.y0)}`
+          );
         }
         result.push(command.asString);
         return result;

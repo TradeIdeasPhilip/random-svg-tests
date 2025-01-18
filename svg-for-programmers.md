@@ -43,7 +43,7 @@ You can embed an SVG into an HTML document, sharing the same DOM, CSS files, eve
 ### svg
 
 include the namespace. multiple ways to show off the namespace.
-Most features that are available to hmtlelements are also available to svgelements
+Most features that are available to `HTMLElement` objects are also available to `SVGElement` objects.
 
 lots of boilerplate
 css for the size, only a suggestion for an svg file

@@ -4,20 +4,39 @@
     .local {
     fill:crimson;
     }
+    #middle {
+      stroke:black;
+      stroke-width:0.003;
+    }
+    #middle:hover {
+      font-style: italic;
+    }
+    #bottom {
+      animation: 3s ease-in infinite alternate slide;
+    }
+    @keyframes slide {
+      0% {
+      transform: translateX(-0.1px);
+      }
+      100% {
+      transform: translateX(0.1px);
+      }
+    }
   </style>
   <!-- Importing a style from an external file only works in very specific conditions -->
   <!--   <link xmlns="http://www.w3.org/1999/xhtml" rel="stylesheet" href="svg.css"/> -->
   <circle r="0.5" fill="lime" stroke-width="0.1" stroke="green" cx="0.5" cy="0.5"></circle>
-  <text class="local" style="font-size:0.18" y="0.3" x="0.5" text-anchor="middle"
+  <text id="top" class="local" style="font-size:0.18px" y="0.3" x="0.5" text-anchor="middle"
     alignment-baseline="middle">Local CSS</text>
-  <text style="font-size:0.18" y="0.5" x="0.5" text-anchor="middle" alignment-baseline="middle"
+  <text id="middle" style="font-size:0.18px" y="0.5" x="0.5" text-anchor="middle" alignment-baseline="middle"
     fill="whitesmoke">Placeholder</text>
-  <text class="file" style="font-size:0.18" y="0.7" x="0.5" text-anchor="middle"
+  <text id="bottom" style="font-size:0.18px" y="0.7" x="0.5" text-anchor="middle"
     alignment-baseline="middle"
-  >JavaScript</text>
-  <script type="text/javascript">
+  >♡ → ☆</text>
+  <!-- Running JavaScript, even locally, only works in very specific conditions -->
+  <!--  <script type="text/javascript">
  <![CDATA[
    document.querySelector(".file").style.fill="blue";
    ]]>
- </script>
+ </script> -->
 </svg>

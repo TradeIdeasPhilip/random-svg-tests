@@ -7,7 +7,7 @@
 ## What I Wish Someone Had Told Me
 
 The first few times I looked at SVG, I was very scared.
-And more than a little bit frustrating.
+And more than a little bit frustrated.
 
 Now that I'm finally comfortable with it, it really isn't that hard.
 If you know how to modify the DOM with JavaScript and CSS, you already have a strong foundation.
@@ -54,7 +54,7 @@ show svg on top of other things, but less mouse clicks pass through.
 ### circle
 
 problem with the r compared to the cx and cy.
-One option is scale things.
+One option is to scale things.
 Start showing off transform property.
 
 element.setAttribute() vs element.style vs element.?.baseValue.value
@@ -74,7 +74,7 @@ used to make things easier to access from code, e.g. deleting everything in one 
 
 "Low Level" access to a path.
 
-### Use 
+### Use
 
 keep things simple
 properties can't be overwritten easily
@@ -83,12 +83,11 @@ I.e. start with the base model, and add things after you use the thing
 And the base model is always hidden, so you don't have to configure it more
 Makes life easier.
 
-### String
+### \<text\>
 
 optical sizing
 baseline and centering issues
 How do links look on a mac!!!?
-
 
 svg animations vs css animations vs animation API vs animation class.
 
@@ -102,3 +101,6 @@ round solves a lot of problems.
 
 create in html and save as it's own document
 See public/template.svg
+
+Local \<style\> vs importing.
+And check on local JavaScript vs importing.

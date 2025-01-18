@@ -2,14 +2,22 @@
   viewBox="0 0 1 1">
   <style>
     .local {
-      fill:crimson;
+    fill:crimson;
     }
   </style>
-  <link xmlns="http://www.w3.org/1999/xhtml" rel="stylesheet" href="svg.css"/>
+  <!-- Importing a style from an external file only works in very specific conditions -->
+  <!--   <link xmlns="http://www.w3.org/1999/xhtml" rel="stylesheet" href="svg.css"/> -->
   <circle r="0.5" fill="lime" stroke-width="0.1" stroke="green" cx="0.5" cy="0.5"></circle>
-  <text class="local"  style="font-size:0.18" y="0.3" x="0.5" text-anchor="middle" alignment-baseline="middle">Local CSS</text>
+  <text class="local" style="font-size:0.18" y="0.3" x="0.5" text-anchor="middle"
+    alignment-baseline="middle">Local CSS</text>
   <text style="font-size:0.18" y="0.5" x="0.5" text-anchor="middle" alignment-baseline="middle"
     fill="whitesmoke">Placeholder</text>
-  <text class="file" style="font-size:0.18" y="0.7" x="0.5" text-anchor="middle" alignment-baseline="middle"
- >CSS File</text>
+  <text class="file" style="font-size:0.18" y="0.7" x="0.5" text-anchor="middle"
+    alignment-baseline="middle"
+  >JavaScript</text>
+  <script type="text/javascript">
+ <![CDATA[
+   document.querySelector(".file").style.fill="blue";
+   ]]>
+ </script>
 </svg>

@@ -39,4 +39,5 @@
    document.querySelector(".file").style.fill="blue";
    ]]>
  </script> -->
+  <image href="./Dilbert.png" x="0" y="0" width="0.2" height="0.5"></image>  
 </svg>

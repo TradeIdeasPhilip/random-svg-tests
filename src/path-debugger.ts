@@ -522,3 +522,33 @@ export function unkink(original: PathShape, maxError: number) {
   }
   return new PathShape(newCommands);
 }
+
+/*
+async function getDataUrl(url: string) {
+  const image = document.createElement("img");
+  image.src = url;
+  await image.decode();
+  const height = image.naturalHeight;
+  const width = image.naturalWidth;
+  if (height == 0 || width == 0) {
+    // The documentation suggests that decode() will throw an exception if there is a problem.
+    // However, as I recall the promise resolves to undefined as soon as the image succeeds or fails.
+    // I'm using this test to know if it failed.
+    throw new Error("problem with image");
+  }
+  const canvas = document.createElement("canvas");
+  const scale = 1 / 3;
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("wtf");
+  }
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL();
+}
+
+(async () => {
+  console.log(await getDataUrl("/Dilbert.png"));
+})();
+*/

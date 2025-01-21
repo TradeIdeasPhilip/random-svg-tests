@@ -272,3 +272,31 @@ export function constantAcceleration(r: number) {
   const result = (t: number) => a * t * t + b * t;
   return result;
 }
+
+/**
+ * Convert an image into a data url.
+ * @param url A url that points to an image.
+ * @returns A data url that represents the same image.
+ */
+export async function getDataUrl(url: string) {
+  const image = document.createElement("img");
+  image.src = url;
+  await image.decode();
+  const height = image.naturalHeight;
+  const width = image.naturalWidth;
+  if (height == 0 || width == 0) {
+    // The documentation suggests that decode() will throw an exception if there is a problem.
+    // However, as I recall the promise resolves to undefined as soon as the image succeeds or fails.
+    // I'm using this test to know if it failed.
+    throw new Error("problem with image");
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("wtf");
+  }
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL();
+}

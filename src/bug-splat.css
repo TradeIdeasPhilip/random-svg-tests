@@ -1,0 +1,21 @@
+svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+}
+circle {
+  transform-origin: 110px 13px;
+  fill: #cc5500;
+}
+text {
+  fill: #cc5500;
+  text-anchor: middle;
+}
+
+text:first-of-type {
+  stroke-width: 5px;
+  stroke-linejoin: round;
+  stroke: white;
+}

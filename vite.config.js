@@ -27,6 +27,8 @@ export default defineConfig({
         עֶשֶׂר: resolve(__dirname, "show-text.html"),
         十一: resolve(__dirname, "show-text-1.html"),
         δώδεκα: resolve(__dirname, "tau.html"),
+        trèz: resolve(__dirname, "bug-splat.html"),
+        katërmbëdhjetë: resolve(__dirname, "moon.html"),
       },
     },
   },

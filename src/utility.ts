@@ -59,6 +59,13 @@ export function selectorQueryAll<T extends Element>(
   return result;
 }
 
+export function selectorQuery<T extends Element>(
+  selector: string,
+  ty: { new (): T }
+): T {
+  return selectorQueryAll(selector, ty, 1, 1)[0];
+}
+
 type RandomFunction = {
   readonly currentSeed: string;
   (): number;

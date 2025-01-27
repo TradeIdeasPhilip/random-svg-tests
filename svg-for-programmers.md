@@ -54,6 +54,10 @@ Another section describes how to create, modify and save SVG files from a web pa
 
 ## Elements
 
+## \<line>
+
+Start with a very simple, but useful tag.
+
 ### svg
 
 include the namespace. multiple ways to show off the namespace.
@@ -184,3 +188,13 @@ As long as you're focused on looks, quadratics will cover almost everything.
 I haven't looked into cubics yet.
 I know they have more magic, but quadratics have really covered my needs to date.
 In the worst case I've had to use twice as many quadratics to get the same quality as with cubics.
+
+I don't really like the A command at all.
+Specifying a curve can be tricky at best.
+But I really ran into trouble when I tried to squish a semi-circle into a line segment in a smooth animation.
+Whenever I got close to a line segment, I'd get unexpected problems and the path would jump around for a frame or two.
+
+The limit of an ellipse is _not_ a line segment.
+Sometimes I like to pretend that it is.
+A Q command can do a line much more reliably than an A command.
+See https://github.com/TradeIdeasPhilip/hidden-variables/blob/5f03b623f4d72a3d7e639686e476e03fee4de816/src/main.ts#L237 for the relevant code and comments.

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Ideally I'd disable the cache using http headers, 
+         but I don't think I can do that on github pages.
+         Notice that only the html page needs this because everything else gets hashed. -->
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta charset="UTF-8" />
+    <!-- vite.svg was located in ./public/ -->
+    <link rel="icon" type="image/svg+xml" href="/moon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🌔</title>
+    <script type="module" src="/src/moon.ts"></script>
+    <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
+  </head>
+  <body>
+    <h1>Moon</h1>
+    <div>
+      Original image source:
+      <a href="https://www.svgrepo.com/svg/440424/moon-full-moon"
+        >https://www.svgrepo.com/svg/440424/moon-full-moon</a
+      >
+    </div>
+    <img src="./moon.svg" style="max-width: 100vmin" />
+    <svg
+      id="main"
+      version="1.1"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      preserveAspectRatio="xMidYMid meet"
+      viewBox="0 0 100 56.25"
+    ></svg>
+    <iframe
+      id="preview"
+      style="
+        width: 50%;
+        transform-origin: top left;
+        transform: scale(2);
+        box-sizing: border-box;
+      "
+      src="./template.svg"
+      >आपका ब्राउजर आईफ्रेम्स का समर्थन नहीं करता है।</iframe
+    >
+  </body>
+</html>

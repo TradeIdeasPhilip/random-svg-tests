@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Ideally I'd disable the cache using http headers, 
+         but I don't think I can do that on github pages.
+         Notice that only the html page needs this because everything else gets hashed. -->
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta charset="UTF-8" />
+    <!-- vite.svg was located in ./public/ -->
+    <link rel="icon" type="image/svg+xml" href="/template.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🐞</title>
+    <script type="module" src="/src/bug-splat.ts"></script>
+    <!-- Do NOT include or reference CSS here.  See main.ts for the preferred way to include a css file. -->
+  </head>
+  <body>
+    <!-- Copied from https://developer.mozilla.org/en-US/docs/Web/SVG/Element/feTurbulence,
+         with small modifications. -->
+    <svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+      <filter id="displacementFilter">
+        <feTurbulence
+          type="turbulence"
+          baseFrequency="0.05"
+          numOctaves="2"
+          result="turbulence"
+        />
+        <feDisplacementMap
+          in2="turbulence"
+          in="SourceGraphic"
+          scale="50"
+          xChannelSelector="R"
+          yChannelSelector="G"
+        />
+      </filter>
+
+      <circle
+        cx="100"
+        cy="100"
+        r="100"
+        style="filter: url(#displacementFilter)"
+      />
+      <text x="110" y="160"></text>
+      <text x="110" y="160"></text>
+    </svg>
+  </body>
+</html>

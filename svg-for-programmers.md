@@ -153,6 +153,9 @@ You have no access to event handlers.
 In certain specific cases I've seen these work.
 You can see the syntax and other notes in [sample-1.svg](https://github.com/TradeIdeasPhilip/random-svg-tests/blob/master/public/sample-1.svg?short_path=365f33e).
 
+Can you use an external font? **TODO** I need to try.
+Can you embed an SVG font?
+
 ### Creating, modifying, and saving an SVG _file_ from HTML & JavaScript
 
 I've got an example of this.

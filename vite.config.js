@@ -29,6 +29,7 @@ export default defineConfig({
         δώδεκα: resolve(__dirname, "tau.html"),
         trèz: resolve(__dirname, "bug-splat.html"),
         katërmbëdhjetë: resolve(__dirname, "moon.html"),
+        پانزده: resolve(__dirname, "tangent-line-2.html"),
       },
     },
   },

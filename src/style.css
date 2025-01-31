@@ -34,3 +34,7 @@ code {
   font-weight: 400;
   font-size: 85%;
 }
+
+a:visited {
+  color: #c000c0;
+}

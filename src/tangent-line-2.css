@@ -1,0 +1,9 @@
+.compare {
+  fill: none;
+  stroke-width: 0.05px;
+  stroke: blue;
+}
+
+.compare circle {
+  stroke: black;
+}

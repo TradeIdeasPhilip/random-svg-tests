@@ -36,8 +36,8 @@ export function previousCount(key: string): number {
  *
  * @param selector What you are looking for.  E.g. `"[data-precisionIssues]"`
  * @param ty The expected type of the items.  E.g. `SVGTextElement`
- * @param min The minimum number of items allowed.
- * @param max The maximum number of items allowed.
+ * @param min The minimum number of items allowed.  Defaults to 1.
+ * @param max The maximum number of items allowed.  Defaults to Infinity.
  * @returns An array containing all of the objects that matches the selector.
  * @throws If we don't get the right number of objects or if any of the objects have the wrong type.
  */

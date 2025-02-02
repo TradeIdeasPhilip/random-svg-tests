@@ -3,11 +3,40 @@ import "./style.css";
 import "./tangent-line-2.css";
 import { FULL_CIRCLE, initializedArray, makeLinear } from "phil-lib/misc";
 import { PathShape, QCommand } from "./path-shape";
+import { selectorQueryAll } from "./utility";
 
 const WIDTH = 1920;
 const HEIGHT = 1080;
 
 const svg = getById("main", SVGSVGElement);
+
+ {
+  const legend = getById("legend", SVGTextElement);
+  const totalLength = legend.getComputedTextLength();
+  const breaks = ["Gold", "Gold = goal. ", "Gold = goal.  Blue"].map(
+    (prefix) => {
+      const mainLength = legend.getSubStringLength(0, prefix.length);
+      const spaceLength = legend.getSubStringLength(prefix.length, 1);
+      const splitPosition = mainLength + spaceLength / 2;
+      return splitPosition / totalLength;
+    }
+  );
+  const stops = selectorQueryAll(
+    "#legendGradient stop",
+    SVGStopElement,
+    (breaks.length + 1) * 2,
+    (breaks.length + 1) * 2
+  );
+  breaks.forEach((offset, index) => {
+    const relevantStops = stops.slice(index * 2 + 1, index * 2 + 3);
+    if (relevantStops.length != 2) {
+      throw new Error("wtf");
+    }
+    relevantStops.forEach((stop) => {
+      stop.offset.baseVal = offset;
+    });
+  });
+}
 
 type Request = {
   readonly x: number;

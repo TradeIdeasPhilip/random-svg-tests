@@ -24,6 +24,7 @@ text {
 
 text#legend {
   dominant-baseline: hanging;
+  fill: url(#legendGradient);
 }
 
 text.caption {

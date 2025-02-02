@@ -106,6 +106,11 @@ Makes life easier.
 optical sizing
 baseline and centering issues
 How do links look on a mac!!!?
+How to draw a decent border.
+`text-anchor` and ~~alignment-baseline~~ and `dominant-baseline` css properties not ~~text-align~~
+hanging worked, but not top or text-top
+<text> has no presentation attributes?!
+need to check but i'm pretty sure I've used it on a circle with no problems.
 
 svg animations vs css animations vs animation API vs animation class.
 

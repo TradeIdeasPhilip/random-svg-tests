@@ -372,6 +372,55 @@ export class QCommand implements Command {
       this.y
     );
   }
+  split(at: number): [QCommand, QCommand] {
+    //https://math.stackexchange.com/questions/1408478/subdividing-a-b%C3%A9zier-curve-into-n-curves
+    const { x, x0, x1, y, y0, y1 } = this;
+    const x0_first = x0;
+    const y0_first = y0;
+    const x1_first = (1 - at) * x0 + at * x1;
+    const y1_first = (1 - at) * y0 + at * y1;
+    const x_first = (1 - at) ** 2 * x0 + 2 * (1 - at) * at * x1 + at ** 2 * x; // 𝑃1,2=(1−𝑧)2𝑃0+2(1−𝑧)𝑧𝑃1+𝑧2𝑃2
+    const y_first = (1 - at) ** 2 * y0 + 2 * (1 - at) * at * y1 + at ** 2 * y; // 𝑃1,2=(1−𝑧)2𝑃0+2(1−𝑧)𝑧𝑃1+𝑧2𝑃2
+    const first_command = QCommand.controlPoints(
+      x0_first,
+      y0_first,
+      x1_first,
+      y1_first,
+      x_first,
+      y_first
+    );
+    const x0_second = x_first;
+    const y0_second = y_first;
+    const x1_second = (1 - at) * x1 + at * x;
+    const y1_second = (1 - at) * y1 + at * y;
+    const x_second = x;
+    const y_second = y;
+    const second_command = QCommand.controlPoints(
+      x0_second,
+      y0_second,
+      x1_second,
+      y1_second,
+      x_second,
+      y_second
+    );
+    return [first_command, second_command];
+  }
+  multiSplit(count: number): QCommand[] {
+    assertFinite(count);
+    if (count < 1 || (count | 0) != count) {
+      throw new Error("wtf");
+    }
+    const result: QCommand[] = [];
+    let remaining: QCommand = this;
+    while (count > 1) {
+      const at = 1 / count;
+      let small: QCommand;
+      [small, remaining] = remaining.split(at);
+      result.push(small);
+    }
+    result.push(remaining);
+    return result;
+  }
 }
 
 // MARK: CCommand
@@ -1384,16 +1433,19 @@ export class PathShape {
    * Something that you might feed to the `d` __attribute__ of a `<path>` element.
    */
   get rawPath() {
-    return this.commands
-      .flatMap((command, index) => {
-        const result: string[] = [];
-        const previousCommand = this.commands[index - 1];
-        if (PathShape.needAnM(previousCommand, command)) {
-          result.push(
-            `M ${formatForSvg(command.x0)},${formatForSvg(command.y0)}`
-          );
+    // TODO
+    // Should do a full loopback test.  Currently I think we will interpret a Z or z correctly.
+    // However, sometimes we insert a spurious Z.
+
+    return this.splitOnMove()
+      .flatMap((segment) => {
+        const result = [
+          `M ${formatForSvg(segment.startX)},${formatForSvg(segment.startY)}`,
+        ];
+        segment.commands.forEach((command) => result.push(command.asString));
+        if (segment.startX == segment.endX && segment.startY == segment.endY) {
+          result.push("Z");
         }
-        result.push(command.asString);
         return result;
       })
       .join(" ");

@@ -19,7 +19,7 @@ type Request = {
 const DEFAULTS: Request = {
   x: WIDTH / 2,
   y: HEIGHT / 2,
-  zoom: 100,
+  zoom: 275,
   cssPath: "",
 };
 
@@ -36,18 +36,19 @@ function makeCompareElement(request: Partial<Request>) {
   circle.r.baseVal.value = 1;
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
   path.style.d = r.cssPath;
-  topG.append(path, circle);
+  const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  topG.append(circle, path, text);
   svg.appendChild(topG);
-  return { topG, circle, path };
+  return { topG, circle, path, text };
 }
 
 function nthLocation(n: number) {
-  const ACROSS = 8;
-  const DOWN = 4;
+  const ACROSS = 2;
+  const DOWN = 1;
   const column = Math.floor(n / DOWN);
   const row = n % DOWN;
   const x = ((column + 0.5) * WIDTH) / ACROSS;
-  const y = ((row + 0.5) * WIDTH) / ACROSS;
+  const y = ((row + 0.5) * HEIGHT) / DOWN;
   return { x, y };
 }
 
@@ -58,14 +59,7 @@ function nextLocation() {
   return result;
 }
 
-/* 
-makeCompareElement({
-  cssPath: "path('M 0 -1 L 1 0 0 1 -1 0 Z')",
-  ...nextLocation(),
-});
- */
-
-[3, 4, 5, 6, 7, 8, 9, 10].forEach((numberOfSides) => {
+function getPoints(numberOfSides: number) {
   const FIRST_ANGLE = -FULL_CIRCLE / 4;
   const LAST_ANGLE = FIRST_ANGLE + FULL_CIRCLE;
   const nthAngle = makeLinear(0, FIRST_ANGLE, numberOfSides, LAST_ANGLE);
@@ -76,12 +70,22 @@ makeCompareElement({
     const tangentAngle = angle + FULL_CIRCLE / 4;
     return { x, y, tangentAngle };
   });
-  const polygon: QCommand[] = [];
-  const curved: QCommand[] = [];
-  points.forEach((point, index, array) => {
+  return points;
+}
+
+function drawShape(qCommands: readonly QCommand[]) {
+  const cssPath = new PathShape(qCommands).cssPath;
+  return makeCompareElement({
+    cssPath,
+    ...nextLocation(),
+  });
+}
+
+[3].forEach((numberOfSides) => {
+  const points = getPoints(numberOfSides);
+  const qCommands = points.map((point, index, array) => {
     const nextPoint = array[(index + 1) % array.length];
-    const line = QCommand.line2(point, nextPoint);
-    const curve = QCommand.angles(
+    return QCommand.angles(
       point.x,
       point.y,
       point.tangentAngle,
@@ -89,14 +93,49 @@ makeCompareElement({
       nextPoint.y,
       nextPoint.tangentAngle
     );
-    polygon.push(line);
-    curved.push(curve);
   });
-  [polygon, curved].forEach((qCommands) => {
-    const cssPath = new PathShape(qCommands).cssPath;
-    makeCompareElement({
-      cssPath,
-      ...nextLocation(),
-    });
-  });
+  drawShape(qCommands).text.textContent = numberOfSides.toString();
 });
+
+[5].forEach((numberOfSides) => {
+  const points = getPoints(numberOfSides);
+  const qCommands = points.map((point, index, array) => {
+    const nextPoint = array[(index + 1) % array.length];
+    const line = QCommand.line2(point, nextPoint);
+    return line;
+  });
+  drawShape(qCommands).text.textContent = numberOfSides.toString();
+});
+
+//makeCompareElement
+/**
+ * start with a big circle (6 parabolas)
+ * immediately animate to the 3 parabolas state.
+ * Draw a 3 and pause for an appropriate amount of time.
+ * animate to the 4, draw 4, pause and repeat.
+ *
+ * polygons.
+ * Start the triangle by handwriting it.
+ * All other transitions work the same as above.
+ *
+ * make the circle wink out and back in for each cycle of the parabola
+ * but not for the polygons
+ * and the parabolas update more slowly.
+ * and display more polygons than parabolas
+ * use a simple handwriting effect to wink in and out.
+ *
+ * legend:
+ * ideal = white
+ * approximation = gold
+ * gold covers white = perfect
+ * The words "gold" and "white" are colored as named.
+ * All other words are in blue
+ *
+ *
+ * then parabola demo on left and polygon demo on the right
+ * number in the center of each circle
+ * The old number disappears instantly when the morphing starts.
+ * The new number gets handwriting-ed in.
+ *
+ * "parabolas" / "lines" at the bottom
+ */

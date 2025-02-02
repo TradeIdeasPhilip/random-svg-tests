@@ -1,9 +1,31 @@
 .compare {
   fill: none;
   stroke-width: 0.05px;
-  stroke: blue;
+  stroke: royalblue;
 }
 
 .compare circle {
-  stroke: black;
+  stroke: hwb(47.34deg 8.63% 5.88%);
+}
+
+.compare text {
+  stroke: none;
+  font-size: 0.5px;
+  font-weight: bold;
+  dominant-baseline: central;
+  text-anchor: middle;
+}
+
+text {
+  fill: white;
+  font-size: 100px;
+  font-weight: normal;
+}
+
+text#legend {
+  dominant-baseline: hanging;
+}
+
+text.caption {
+  text-anchor: middle;
 }

@@ -417,6 +417,7 @@ export class QCommand implements Command {
       let small: QCommand;
       [small, remaining] = remaining.split(at);
       result.push(small);
+      count--;
     }
     result.push(remaining);
     return result;

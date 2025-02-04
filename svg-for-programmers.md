@@ -118,9 +118,10 @@ line dash array
 examples of motion
 Split the path at each M to make it look better.
 rounded vs not rounded end caps
+stroke-linejoin stroke-miterlimit
 
-endcaps and corners
 round solves a lot of problems.
+Does the miter limit f with the tight bounds in a bbox()?
 
 create in html and save as it's own document
 See public/template.svg

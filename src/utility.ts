@@ -1,4 +1,4 @@
-import { assertClass, pick, sum } from "phil-lib/misc";
+import { assertClass, makeBoundedLinear, pick, sum } from "phil-lib/misc";
 
 const previousCountPrivate = new Map<string, number>();
 /**
@@ -202,12 +202,33 @@ export class Random {
 
 (window as any).Random = Random;
 
+/**
+ * Assert that `t` is between 0 and 1, inclusive.
+ * This type of value is used to control a lot of animations.
+ * 0 is the start of the animation, 1 is the end.
+ * @param
+ */
 export function assertValidT(t: number) {
   if (!(isFinite(t) && t >= 0 && t <= 1)) {
     throw new Error(`t should be between 0 and 1, inclusive. t == ${t}`);
   }
 }
 
+/**
+ * A way to split up the schedule of an animation into smaller parts for the sub-animations.
+ * Typically you'd call this once in the setup part of the main program.
+ * This will return a function that you will call once for each animation frame.
+ * @param weights A list of numbers saying how long to stay in each bin.
+ * These are automatically scaled so the entire animation will take a time of 1.
+ * If bin 1 has a weight of 1 and bin 2 as a weights of time, the animation will spend twice as much time in bin 2 as in bin 1.
+ * @returns A splitter function.
+ * This function will take in a number between 0 and 1 (inclusive) for the time relative to the entire animation.
+ * It will return an object with two properties.
+ * `index` says which bin you are in.
+ * `t` says the time (0 to 1 inclusive) within the current bin.
+ * @see assertValidT() For information about times.
+ * @see makeTSplitterA() For a variant of this function.
+ */
 export function makeTSplitter(...weights: number[]) {
   weights.forEach((weight) => {
     if (!(weight >= 0 && weight < Number.MAX_SAFE_INTEGER)) {
@@ -230,6 +251,55 @@ export function makeTSplitter(...weights: number[]) {
       t -= weight;
     }
     throw new Error("wtf");
+  };
+  return splitter;
+}
+
+/**
+ * A way to split up the schedule of an animation into smaller parts for the sub-animations.
+ * Typically you'd call this once in the setup part of the main program.
+ * This will return a function that you will call once for each animation frame.
+ * @param preWeight The amount of time to wait before starting normal operations.
+ * Each bin has a weight of one.
+ * * 0 means to start on the first bin immediately.
+ * * 2.5 means to wait 2½✖️ as long before the first bin as we spend on any one bin.
+ *   During that time the display will be frozen at the start of the first bin.
+ * * -1.25 means to completely skip the first bin and start ¼ of the way into the second bin.
+ * @param binCount How many bins to split the time into.
+ * Each is given an equal amount of time.
+ * @param postWeight The amount of time between the end of the last bin and end of the entire animation.
+ * Each bin has a weight of one.
+ * * 0 means to end the last bin at exactly the end of the entire animation.
+ * * 2.5 means to wait 2½✖️ as long after the last bin as we spend on any one bin.
+ *   During that time the display will be frozen at the end of the last bin.
+ * * -1.25 means to completely skip the last bin and end ¾ of the way into the second to last bin.
+ * @returns A splitter function.
+ * This function will take in a number between 0 and 1 (inclusive) for the time relative to the entire animation.
+ * It will return an object with two properties.
+ * `index` says which bin you are in.
+ * `t` says the time (0 to 1 inclusive) within the current bin.
+ * @see assertValidT() For information about times.
+ * @see makeTSplitter() For a more flexible version of this function.
+ */
+export function makeTSplitterA(
+  preWeight: number,
+  binCount: number,
+  postWeight: number
+) {
+  const totalWeight = preWeight + binCount + postWeight;
+  const importantPart = makeBoundedLinear(
+    preWeight / totalWeight,
+    0,
+    (preWeight + binCount) / totalWeight,
+    1
+  );
+  const splitter = (t: number) => {
+    assertValidT(t);
+    const biggerT = importantPart(t) * binCount;
+    const index = Math.min(biggerT | 0, binCount - 1);
+    const tWithinBin = biggerT - index;
+    assertValidT(tWithinBin);
+    return { t: tWithinBin, index };
   };
   return splitter;
 }
@@ -306,4 +376,19 @@ export async function getDataUrl(url: string) {
   }
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
   return canvas.toDataURL();
+}
+
+/**
+ * Greatest Common Divisor.
+ */
+export function gcd(a: number, b: number) {
+  if (!b) {
+    return a;
+  }
+  return gcd(b, a % b);
+}
+
+/** Least Common Multiple */
+export function lcm(a: number, b: number) {
+  return (a * b) / gcd(a, b);
 }

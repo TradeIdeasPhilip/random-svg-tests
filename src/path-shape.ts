@@ -372,6 +372,11 @@ export class QCommand implements Command {
       this.y
     );
   }
+  /**
+   *
+   * @param at 0 for the start, 1 for the end, 0.5 for right in the middle.
+   * @returns A pair of commands which together trace the same path as `this`.
+   */
   split(at: number): [QCommand, QCommand] {
     //https://math.stackexchange.com/questions/1408478/subdividing-a-b%C3%A9zier-curve-into-n-curves
     const { x, x0, x1, y, y0, y1 } = this;

@@ -9,7 +9,13 @@ import {
   makeLinear,
 } from "phil-lib/misc";
 import { PathShape, QCommand } from "./path-shape";
-import { assertValidT, lcm, makeTSplitterA, selectorQueryAll } from "./utility";
+import {
+  assertValidT,
+  lcm,
+  makeTSplitter,
+  makeTSplitterA,
+  selectorQueryAll,
+} from "./utility";
 
 const WIDTH = 1920;
 const HEIGHT = 1080;
@@ -127,38 +133,48 @@ function getPoints(numberOfSides: number) {
   return points;
 }
 
-function setCount(
-  compareElement: CompareElement,
-  count: number,
-  opacity: number
-) {
-  const textElement = compareElement.text;
-  textElement.textContent = count.toString();
-  textElement.style.opacity = opacity.toString();
+class CompareElementController {
+  constructor(private readonly compareElement: Readonly<CompareElement>) {}
+  /**
+   * By default (linear timing function) this seemed to move from blank to apparently full bright in almost no time.
+   * I tried some simple and smooth options, but I couldn't make those works.
+   */
+  static #opacityTimingFunction = makeBoundedLinear(0.2, 0, 1, 1);
+  setCount(count: number, opacity: number) {
+    const textElement = this.compareElement.text;
+    textElement.textContent = count.toString();
+    opacity = CompareElementController.#opacityTimingFunction(opacity);
+    textElement.style.opacity = opacity.toString();
+  }
+  #dAnimation: Animation | undefined;
+  setD(
+    paths: {
+      start: PathShape;
+      end: PathShape;
+    },
+    t: number
+  ) {
+    this.#dAnimation?.cancel();
+    const pathElement = this.compareElement.path;
+    const animation = pathElement.animate(
+      [{ d: paths.start.cssPath }, { d: paths.end.cssPath }],
+      { duration: 1, fill: "both" }
+    );
+    animation.pause();
+    animation.currentTime = t;
+    this.#dAnimation = animation;
+  }
+  setCircleStrokeWidth(width: number) {
+    this.compareElement.circle.style.strokeWidth = width.toString();
+  }
 }
 
-function setD(
-  compareElement: CompareElement,
-  paths: {
-    start: PathShape;
-    end: PathShape;
-  },
-  t: number
-) {
-  const pathElement = compareElement.path;
-  pathElement.getAnimations().forEach((animation) => animation.cancel());
-  const animation = pathElement.animate(
-    [{ d: paths.start.cssPath }, { d: paths.end.cssPath }],
-    { duration: 1, fill: "both" }
-  );
-  animation.pause();
-  animation.currentTime = t;
-}
-
-const parabolaDisplay = makeCompareElement({ x: WIDTH / 4, y: HEIGHT / 2 });
-parabolaDisplay.text.textContent = "#";
-const lineDisplay = makeCompareElement({ x: (WIDTH * 3) / 4, y: HEIGHT / 2 });
-lineDisplay.text.textContent = "#";
+const parabolaController = new CompareElementController(
+  makeCompareElement({ x: WIDTH / 4, y: HEIGHT / 2 })
+);
+const lineController = new CompareElementController(
+  makeCompareElement({ x: (WIDTH * 3) / 4, y: HEIGHT / 2 })
+);
 /*
 [].forEach((numberOfSides) => {
   const points = getPoints(numberOfSides);
@@ -186,7 +202,6 @@ lineDisplay.text.textContent = "#";
   drawShape(qCommands).text.textContent = numberOfSides.toString();
 });
 */
-//makeCompareElement
 /**
  * start with a big circle (6 parabolas)
  * immediately animate to the 3 parabolas state.
@@ -236,17 +251,22 @@ lineDisplay.text.textContent = "#";
  * I will hide the gold circle from both sides.
  * This will be more obvious on the polygon, but more important for the parabolas.
  * The polygon one will help people know when I'm removing it from the parabola one.
+ *
+ * Don't hide the circle!  Briefly double the stroke-width.
+ * Or multiply it by something near 2, try it out to see what works best.
+ * Probably a fun animation, maybe with some anticipation and overshoot.
+ *
+ * No, I tried the stroke-width and it didn't look great.
+ * Use a gradient or a clip path to make the circle disappear then reappear.
+ * https://developer.mozilla.org/en-US/docs/Web/SVG/Element/clipPath
+ * Try something simple like hiding the top most part, and moving the line down and back up.
  */
 
-const parabolaCounts = [...count(3, 13)];
-const parabolaStartDelay = -0.5;
-const parabolaEndDelay = 3;
-const parabolaScheduler = makeTSplitterA(
-  parabolaStartDelay,
-  parabolaCounts.length,
-  parabolaEndDelay
-);
-const parabolaPaths = parabolaCounts.map((numberOfSides) => {
+const counts = [...count(3, 13)];
+const startDelay = -0.5;
+const endDelay = 0;
+const scheduler = makeTSplitterA(startDelay, counts.length, endDelay);
+const parabolaPaths = counts.map((numberOfSides) => {
   const points = getPoints(numberOfSides);
   const qCommands = points.map((point, index, array): QCommand => {
     const nextPoint = array[(index + 1) % array.length];
@@ -261,47 +281,99 @@ const parabolaPaths = parabolaCounts.map((numberOfSides) => {
   });
   return qCommands;
 });
-/*parabolaPaths[-1] = [
-  { x: -0.3, y: -1.2 },
-  { x: 1.05, y: -0.5 },
-  { x: 0.9, y: 0.5 },
-  { x: -0.43, y: 1.3 },
-  { x: -1.05, y: 0.01 },
-].map((point, index, array) => {
-  return QCommand.line2(point, array[(index + 1) % array.length]);
-}); parabolaPaths[0];*/
-const pairedParabolaPaths = parabolaPaths.map((idealEnd, index) => {
-  const idealStart = parabolaPaths[index - 1] ?? idealEnd;
-  const LCM = lcm(idealStart.length, idealEnd.length);
-  const [start, end] = [idealStart, idealEnd].map((commands) => {
-    const expandBy = LCM / commands.length;
-    const newCommands = commands.flatMap((command) =>
-      command.multiSplit(expandBy)
-    );
-    return new PathShape(newCommands);
+const linePaths = counts.map((numberOfSides) => {
+  const points = getPoints(numberOfSides);
+  const qCommands = points.map((point, index, array): QCommand => {
+    const nextPoint = array[(index + 1) % array.length];
+    return QCommand.line2(point, nextPoint);
   });
-  return { start, end };
+  return qCommands;
+});
+const [pairedParabolaPaths] = [parabolaPaths].map((originalPaths) => {
+  return originalPaths.map((idealEnd, index) => {
+    const idealStart = originalPaths[index - 1] ?? idealEnd;
+    const LCM = lcm(idealStart.length, idealEnd.length);
+    const [start, end] = [idealStart, idealEnd].map((commands) => {
+      const expandBy = LCM / commands.length;
+      const newCommands = commands.flatMap((command) =>
+        command.multiSplit(expandBy)
+      );
+      return new PathShape(newCommands);
+    });
+    return { start, end };
+  });
 });
 
-const parabolaTransition = makeBoundedLinear(0, 0, -parabolaStartDelay, 1);
+const pairedLinePaths = linePaths.map((idealEnd, index) => {
+  const end = new PathShape(idealEnd);
+  const idealStart = linePaths[index - 1];
+  if (!idealStart) {
+    return { start: end, end };
+  } else if (idealStart.length != idealEnd.length - 1) {
+    throw new Error("wtf");
+  } else {
+    const length = idealStart.length;
+    const newStart = [...idealStart];
+    if (length % 2 == 0) {
+      const newMiddleIndex = length / 2;
+      const beforeNewMiddle = newStart[newMiddleIndex - 1];
+      const { x, y } = beforeNewMiddle;
+      const newMiddle = QCommand.controlPoints(x, y, x, y, x, y);
+      newStart.splice(newMiddleIndex, 0, newMiddle);
+    } else {
+      const originalMiddleIndex = (length - 1) / 2;
+      const originalMiddle = newStart[originalMiddleIndex];
+      const newMiddle = originalMiddle.split(0.5);
+      newStart.splice(originalMiddleIndex, 1, ...newMiddle);
+    }
+    const start = new PathShape(newStart);
+    const end = new PathShape(idealEnd);
+    if (start.commands.length != end.commands.length) {
+      throw new Error("wtf");
+    }
+    return { start, end };
+  }
+});
 
-function showParabolaFrame(t: number) {
-  const current = parabolaScheduler(t);
-  const count = parabolaCounts[current.index];
-  const transitionProgress =
-    current.index == 90 ? 1 : parabolaTransition(current.t);
-  setCount(parabolaDisplay, count, transitionProgress);
-  setD(parabolaDisplay, pairedParabolaPaths[current.index], transitionProgress);
-}
+const morphSchedule = makeBoundedLinear(0, 0, -startDelay, 1);
+const afterMorphSchedule = makeBoundedLinear(-startDelay, 0, 1, 1);
 
-function showLineFrame(t: number) {
-  t;
-}
+const baseStrokeWidth = 0.05;
+//const midStrokeWidth = 2 * baseStrokeWidth;
+const maxStrokeWidth = 3 * baseStrokeWidth;
+//const circleSchedule = makeTSplitter(2, 1, 2, 1, 1, 1, 2);
+const circleSchedule = makeTSplitter(2, 1, 2, 1, 2);
+/* const circleFunctions = [
+  () => baseStrokeWidth,
+  makeLinear(0, baseStrokeWidth, 1, midStrokeWidth),
+  () => midStrokeWidth,
+  makeLinear(0, midStrokeWidth, 1, maxStrokeWidth),
+  () => maxStrokeWidth,
+  makeLinear(0, maxStrokeWidth, 1, baseStrokeWidth),
+  () => baseStrokeWidth,
+]; */
+const circleFunctions = [
+  () => baseStrokeWidth,
+  makeLinear(0, baseStrokeWidth, 1, maxStrokeWidth),
+  () => maxStrokeWidth,
+  makeLinear(0, maxStrokeWidth, 1, baseStrokeWidth),
+  () => baseStrokeWidth,
+];
 
 function showFrame(t: number) {
   assertValidT(t);
-  showParabolaFrame(t);
-  showLineFrame(t);
+  const current = scheduler(t);
+  const count = counts[current.index];
+  const morphProgress = morphSchedule(current.t);
+  parabolaController.setCount(count, morphProgress);
+  parabolaController.setD(pairedParabolaPaths[current.index], morphProgress);
+  lineController.setCount(count, morphProgress);
+  lineController.setD(pairedLinePaths[current.index], morphProgress);
+  const afterMorphProgress = afterMorphSchedule(current.t);
+  const circleStatus = circleSchedule(afterMorphProgress);
+  const circleStrokeWidth = circleFunctions[circleStatus.index](circleStatus.t);
+  parabolaController.setCircleStrokeWidth(circleStrokeWidth);
+  lineController.setCircleStrokeWidth(circleStrokeWidth);
 }
 
 function initScreenCapture(script: unknown) {

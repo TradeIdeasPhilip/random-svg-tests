@@ -9,21 +9,15 @@ import {
   makeLinear,
 } from "phil-lib/misc";
 import { PathShape, QCommand } from "./path-shape";
-import {
-  assertValidT,
-  lcm,
-  makeTSplitter,
-  makeTSplitterA,
-  selectorQueryAll,
-} from "./utility";
+import { assertValidT, lcm, makeTSplitterA, selectorQueryAll } from "./utility";
 
 const WIDTH = 1920;
 const HEIGHT = 1080;
 
 const svg = getById("main", SVGSVGElement);
 
-{
-  const legend = getById("legend", SVGTextElement);
+const legend = getById("legend", SVGTextElement);
+function updateLegend() {
   const totalLength = legend.getComputedTextLength();
   // This has multiple issues.  I've seen this fail when the fonts were acting up.
   // I think the real font was coming in slowly, maybe after the script ran.
@@ -51,6 +45,14 @@ const svg = getById("main", SVGSVGElement);
     });
   });
 }
+updateLegend();
+const legendObserver = new ResizeObserver((entries) => {
+  console.log(entries);
+  entries.forEach((_entry) => {
+    updateLegend();
+  });
+});
+legendObserver.observe(legend);
 
 type Request = {
   readonly x: number;
@@ -164,8 +166,15 @@ class CompareElementController {
     animation.currentTime = t;
     this.#dAnimation = animation;
   }
-  setCircleStrokeWidth(width: number) {
-    this.compareElement.circle.style.strokeWidth = width.toString();
+  /**
+   *
+   * @param toHide 0, the default means show everything.
+   * 0.5 means to hide the top half.
+   * 0.99 means to hide the top 99%.
+   */
+  hideCircle(toHide: number) {
+    const clipPath = `xywh(0% ${toHide * 100}% 100% 100%)`;
+    this.compareElement.circle.style.clipPath = clipPath;
   }
 }
 
@@ -336,29 +345,17 @@ const pairedLinePaths = linePaths.map((idealEnd, index) => {
 });
 
 const morphSchedule = makeBoundedLinear(0, 0, -startDelay, 1);
-const afterMorphSchedule = makeBoundedLinear(-startDelay, 0, 1, 1);
+//const afterMorphSchedule = makeBoundedLinear(-startDelay, 0, 1, 1);
 
-const baseStrokeWidth = 0.05;
-//const midStrokeWidth = 2 * baseStrokeWidth;
-const maxStrokeWidth = 3 * baseStrokeWidth;
-//const circleSchedule = makeTSplitter(2, 1, 2, 1, 1, 1, 2);
-const circleSchedule = makeTSplitter(2, 1, 2, 1, 2);
-/* const circleFunctions = [
-  () => baseStrokeWidth,
-  makeLinear(0, baseStrokeWidth, 1, midStrokeWidth),
-  () => midStrokeWidth,
-  makeLinear(0, midStrokeWidth, 1, maxStrokeWidth),
-  () => maxStrokeWidth,
-  makeLinear(0, maxStrokeWidth, 1, baseStrokeWidth),
-  () => baseStrokeWidth,
-]; */
-const circleFunctions = [
-  () => baseStrokeWidth,
-  makeLinear(0, baseStrokeWidth, 1, maxStrokeWidth),
-  () => maxStrokeWidth,
-  makeLinear(0, maxStrokeWidth, 1, baseStrokeWidth),
-  () => baseStrokeWidth,
-];
+//const circleSchedule = makeTSplitter(2, 1, 2, 1, 2);
+
+// const circleFunctions = [
+//   () => 0,
+//   makeLinear(0, 0, 1, 1),
+//   () => 1,
+//   makeLinear(0, 1, 1, 0),
+//   () => 0,
+// ];
 
 function showFrame(t: number) {
   assertValidT(t);
@@ -369,14 +366,22 @@ function showFrame(t: number) {
   parabolaController.setD(pairedParabolaPaths[current.index], morphProgress);
   lineController.setCount(count, morphProgress);
   lineController.setD(pairedLinePaths[current.index], morphProgress);
-  const afterMorphProgress = afterMorphSchedule(current.t);
-  const circleStatus = circleSchedule(afterMorphProgress);
-  const circleStrokeWidth = circleFunctions[circleStatus.index](circleStatus.t);
-  parabolaController.setCircleStrokeWidth(circleStrokeWidth);
-  lineController.setCircleStrokeWidth(circleStrokeWidth);
+  //const afterMorphProgress = afterMorphSchedule(current.t);
+  //const circleStatus = circleSchedule(afterMorphProgress);
+  //const amountToHide = circleFunctions[circleStatus.index](circleStatus.t);
+  //parabolaController.hideCircle(amountToHide);
+  //lineController.hideCircle(amountToHide);
 }
 
 function initScreenCapture(script: unknown) {
+  document
+    .querySelectorAll("[data-hideBeforeScreenshot]")
+    .forEach((element) => {
+      if (!(element instanceof SVGElement || element instanceof HTMLElement)) {
+        throw new Error("wtf");
+      }
+      element.style.display = "none";
+    });
   return {
     source: "tangent-line-2.ts",
     devicePixelRatio: devicePixelRatio,

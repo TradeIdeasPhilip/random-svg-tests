@@ -79,7 +79,7 @@ element.setAttribute() vs element.style vs element.?.baseValue.value
 
 ### rectangle & transform
 
-top left corner!! Fixable but annoying
+top left corner!! Fixable but annoying. Height and width cannot be negative!
 
 A great place to show off the transform property.
 
@@ -111,6 +111,11 @@ How to draw a decent border.
 hanging worked, but not top or text-top
 <text> has no presentation attributes?!
 need to check but i'm pretty sure I've used it on a circle with no problems.
+
+**why to use setAttribute sometimes.**
+const y = mainSvg.createSVGLength();
+y.value = (index+2)\*1;
+textElement.y.baseVal.initialize(y);
 
 svg animations vs css animations vs animation API vs animation class.
 

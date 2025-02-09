@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dx</title>
+    <script type="module" src="/src/dx.ts"></script>
+  </head>
+  <body>
+    <svg
+      id="main"
+      version="1.1"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      preserveAspectRatio="xMidYMid meet"
+      viewBox="0 0 16 9"
+    >
+      <rect x="0" y="0" width="16" height="9"></rect>
+      <g class="legend">
+        <text>
+          <tspan>Legend:</tspan>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <tspan class="original">Original</tspan>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <tspan class="big-change">Big Change</tspan>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <tspan class="small-change">Small Change</tspan>
+        </text>
+      </g>
+
+      <g data-equation="0">
+        <text>
+          f₀(x) =
+          <tspan class="original">1</tspan>
+        </text>
+        <text>
+          f₀(x + dx) =
+          <tspan class="original">1</tspan>
+          =
+        </text>
+        <circle class="original" r="0.05" cx="6.5"></circle>
+      </g>
+      <g data-equation="1">
+        <text>
+          f₁(x) =
+          <tspan class="original">x</tspan>
+        </text>
+        <text>
+          f₁(x + dx) =
+          <tspan class="original">x</tspan>
+          +
+          <tspan class="big-change">dx</tspan>
+          =
+        </text>
+        <line class="original-stroke" x1="7.5" x2="8.5"></line>
+        <line class="big-change-stroke" x1="8.5" x2="8.75"></line>
+        <text x="9">=</text>
+        <line class="original-stroke" x1="9.5" x2="10.5"></line>
+        <text x="10.7">+</text>
+        <line class="big-change-stroke" x1="11.15" x2="11.4"></line>
+      </g>
+      <g data-equation="2">
+        <text>
+          f₂(x) =
+          <tspan class="original">x²</tspan>
+        </text>
+        <text>
+          f₂(x + dx) =
+          <tspan class="original">x²</tspan>
+          +
+          <tspan class="big-change">2x·dx</tspan>
+          +
+          <tspan class="medium-change">(dx)²</tspan>
+        </text>
+        <text x="9.4">=</text>
+        <g data-together>
+          <rect class="original" x="0" y="-0.5" width="1" height="1"></rect>
+          <rect
+            class="big-change"
+            x="0"
+            y="-0.75"
+            width="1"
+            height="0.25"
+          ></rect>
+          <rect
+            class="big-change"
+            x="1"
+            y="-0.5"
+            width="0.25"
+            height="1"
+          ></rect>
+          <rect
+            class="medium-change"
+            x="1"
+            y="-0.75"
+            width="0.25"
+            height="0.25"
+          ></rect>
+        </g>
+        <text x="11.2">=</text>
+        <rect class="original" x="11.6" y="-0.5" width="1" height="1"></rect>
+        <text x="12.7">+ 2·</text>
+        <rect
+          class="big-change"
+          x="13.55"
+          y="-0.5"
+          width="0.25"
+          height="1"
+        ></rect>
+        <text x="13.9">+</text>
+        <rect
+          class="medium-change"
+          x="14.3"
+          y="-0.125"
+          width="0.25"
+          height="0.25"
+        ></rect>
+      </g>
+      <g data-equation="3">
+        <text>
+          f₃(x) =
+          <tspan class="original">x³</tspan>
+        </text>
+        <text>
+          f₃(x + dx) =
+          <tspan class="original">x³</tspan>
+          +
+          <tspan class="big-change">3x²·dx</tspan>
+          +
+          <tspan class="medium-change">3x·(dx)²</tspan>
+          +
+          <tspan class="small-change">(dx)³</tspan>
+        </text>
+      </g>
+      <g data-equation="4">
+        <text>
+          f₄(x) =
+          <tspan class="original">x⁴</tspan>
+        </text>
+        <text>
+          f₄(x + dx) =
+          <tspan class="original">x⁴</tspan>
+          +
+          <tspan class="big-change">4x³·dx</tspan>
+          +
+          <tspan class="medium-change">6x²·(dx)²</tspan>
+          +
+          <tspan class="small-change">4x(dx)³</tspan>
+          +
+          <tspan class="small-change">(dx)⁴</tspan>
+        </text>
+      </g>
+      <g id="tesseract">
+        <text>
+          <tspan id="numerator">f₄(x + dx) - f₄(x)</tspan>
+          =
+          <tspan class="big-change">4x³</tspan>
+          +
+          <tspan class="medium-change">6x²·dx</tspan>
+          +
+          <tspan class="small-change">4x(dx)²</tspan>
+          +
+          <tspan class="small-change">(dx)³</tspan>
+        </text>
+        <text y="-0.35">f₄(x + dx) - f₄(x)</text>
+        <line id="dividing-line" x2="3.34885"></line>
+        <text y="0.35" x="1.674425" id="denominator">dx</text>
+      </g>
+    </svg>
+    <div id="debugInput" data-hideBeforeScreenshot>
+      <div id="debugInputTop">
+        <span>dev mode:</span><span>slider = time.</span>
+        <!--         <label><input type="checkbox" id="showThumbnail" disabled />show thumbnail</label>       -->
+        <a href=".">more and related</a>
+      </div>
+      <input id="time" type="range" min="0" max="1" value="0" step="0.0001" />
+    </div>
+  </body>
+</html>

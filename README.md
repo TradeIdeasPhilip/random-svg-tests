@@ -77,6 +77,9 @@ I want to understand and monitor the health of the system, so I can push the lim
 I need to know what's a reasonable FPS, so I know how to interpret the current FPS.
 I haven't found any discussion of this on the internet.
 
+This looks promising:  https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver
+It gives JavaScript access to the same info in the performance tab, which I don't yet know how to use.
+
 ## Letters
 
 [This](https://tradeideasphilip.github.io/random-svg-tests/letters.html) shows some some productive work I've done with SVG and text.

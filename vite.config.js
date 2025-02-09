@@ -30,6 +30,7 @@ export default defineConfig({
         trèz: resolve(__dirname, "bug-splat.html"),
         katërmbëdhjetë: resolve(__dirname, "moon.html"),
         پانزده: resolve(__dirname, "tangent-line-2.html"),
+        mẹrindilogun: resolve(__dirname, "dx.html"),
       },
     },
   },

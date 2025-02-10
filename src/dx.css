@@ -48,23 +48,27 @@
 }
 
 g[data-equation="0"] {
-  transform: translateY(1.75px);
+  transform: translateY(1.5px);
 }
 
 g[data-equation="1"] {
-  transform: translateY(3px);
+  transform: translateY(2.5px);
 }
 
 g[data-equation="2"] {
-  transform: translateY(4.25px);
+  transform: translateY(3.75px);
 }
 
 g[data-equation="2"] [data-together] {
   transform: translateX(9.8px);
 }
 
-g[data-equation="3"] {
-  transform: translateY(5.5px);
+g#cube {
+  transform: translateY(5.5px) translateX(0.6px);
+}
+
+g#cube [data-together] {
+  transform: translateX(9.1px);
 }
 
 g[data-equation="4"] {

@@ -1,33 +1,69 @@
 import "./style.css";
 import "./dx.css";
 import { getById } from "phil-lib/client-misc";
+import { selectorQueryAll } from "./utility";
 
 const WIDTH = 16;
-const HEIGHT = 9;HEIGHT;
-
-const equations = [
-  "f₀(x) = 1 		f₀(x + dx) = 1",
-  "f₁(x) = x		f₁(x + dx)= x + dx",
-  "f₂(x) = x²		f₂(x + dx) = x² + 2x · dx + (dx)²",
-  "f₃(x) = x³		f₃(x + dx) = x³ + 3x² · dx + 3x · (dx)² + (dx)³",
-  "f₄(x) = x⁴		f₄(x + dx) = x⁴ + 4x³ · dx + 6x² · (dx)² + 4x(dx)³ + (dx)⁴",
-  "f₄(x) = x⁴		(f₄(x + dx) - f₄(x)) ÷ dx = 4x³ + 6x² · dx + 4x(dx)² + (dx)³",
-];
+const HEIGHT = 9;
+WIDTH * HEIGHT;
 
 const mainSvg = getById("main", SVGSVGElement);
+mainSvg;
 
-equations.forEach((equation, index) => {
-  const textElement = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "text"
-  );
-  textElement.textContent = equation;
-  const y = mainSvg.createSVGLength();
-  y.value = (index + 2) * 1;
-  textElement.y.baseVal.initialize(y);
-  const x = mainSvg.createSVGLength();
-  x.value = WIDTH / 2;
-  textElement.x.baseVal.initialize(x);
-  // This got moved to the html file statically.
-  //mainSvg.append(textElement);
-});
+const dxSizeInput = getById("dxSize", HTMLInputElement);
+
+{
+  function updateFromInput() {
+    const newSize = dxSizeInput.valueAsNumber;
+    setDxSize(newSize);
+  }
+  dxSizeInput.addEventListener("input", updateFromInput);
+}
+
+function setDxSize(newSize: number) {
+  selectorQueryAll(
+    '[data-equation="1"] .big-change-stroke',
+    SVGLineElement,
+    2,
+    2
+  ).forEach((line) => {
+    const from = line.x1.baseVal.value;
+    const to = from + newSize;
+    line.x2.baseVal.value = to;
+  });
+  selectorQueryAll(
+    '[data-equation="2"] [data-animate]',
+    SVGRectElement
+  ).forEach((rectElement) => {
+    let adjustWidth = false;
+    let adjustHeight = false;
+    switch (rectElement.dataset["animate"]) {
+      case "horizontal": {
+        adjustHeight = true;
+        break;
+      }
+      case "vertical": {
+        adjustWidth = true;
+        break;
+      }
+      case "square": {
+        adjustHeight = true;
+        adjustWidth = true;
+        break;
+      }
+    }
+    if (!(adjustHeight || adjustWidth)) {
+      throw new Error("wtf");
+    }
+    if (adjustWidth) {
+      rectElement.width.baseVal.value = newSize;
+    }
+    if (adjustHeight) {
+      const bottom =
+        rectElement.height.baseVal.value + rectElement.y.baseVal.value;
+      const top = bottom - newSize;
+      rectElement.y.baseVal.value = top;
+      rectElement.height.baseVal.value = newSize;
+    }
+  });
+}

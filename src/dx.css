@@ -35,7 +35,11 @@
 }
 
 .medium-change {
-  fill: gold;
+  fill: url(#mediumGradient);
+}
+
+.medium-change-stroke {
+  fill: url(#mediumGradient);
 }
 
 .placeholder {

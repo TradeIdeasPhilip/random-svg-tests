@@ -18,6 +18,39 @@ const dxSizeInput = getById("dxSize", HTMLInputElement);
     setDxSize(newSize);
   }
   dxSizeInput.addEventListener("input", updateFromInput);
+  updateFromInput();
+}
+
+const colorsBase: readonly number[] = [0, 1, 1, 2, 2, 3];
+const colorStops = selectorQueryAll(
+  "#mediumGradient stop",
+  SVGStopElement,
+  colorsBase.length,
+  colorsBase.length
+);
+
+/**
+ *
+ * @param newColor 0 for red, 1 for yellow, 2 for green.
+ * Any value in between will work.
+ */
+function setColor(newColor: number) {
+  colorStops.forEach((colorStop, index) => {
+    const base = colorsBase[index];
+    const newPosition = Math.min(1, Math.max(0, base - newColor));
+    colorStop.offset.baseVal = newPosition;
+  });
+}
+
+const colorInput = getById("color", HTMLInputElement);
+
+{
+  function updateFromInput() {
+    const newColor = colorInput.valueAsNumber;
+    setColor(newColor);
+  }
+  colorInput.addEventListener("input", updateFromInput);
+  updateFromInput();
 }
 
 function setDxSize(newSize: number) {

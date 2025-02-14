@@ -209,68 +209,6 @@
       />
       <input id="color" type="range" min="0" max="2" value="1" step="0.0001" />
     </div>
-    <div
-      style="max-width: 30em; margin-left: calc(max(0.5em, (100vw - 30em) / 2))"
-    >
-      <p>
-        Cube needs degrees of skew and length. I'm drawing 3 lines between the
-        front face and the back face. (The fourth is hidden in the back.) Each
-        of those needs to be parallel and the same length.
-      </p>
-      <p>
-        Sorta. The edges of the two side squares will make those three lines.
-        Where those two squares meet, their sides will have to be identical. But
-        one will be done with a skew x and the other with a skew y.
-      </p>
-      <p>
-        Simplest version: 45° for all angles. Maybe -45° for one or both. But
-        the length will be identical for both. That will be scale-x and scale-y.
-      </p>
-      <p>The rest shouldn't be hard. Just trig. 🤓</p>
-    </div>
-
-    <hr />
-    <svg
-      id="tester"
-      version="1.1"
-      xmlns="http://www.w3.org/2000/svg"
-      xmlns:xlink="http://www.w3.org/1999/xlink"
-      preserveAspectRatio="xMidYMid meet"
-      viewBox="0 0 5 5"
-      style="max-width: 30em"
-    >
-      <style>
-        #tester .front {
-          transform: translate(2px, 3px);
-          fill: #00c000;
-        }
-
-        #tester .top {
-          fill: gold;
-          transform: translate(2px, 2px) skewX(-30deg) scaleY(0.33333333);
-        }
-        #tester .right {
-          /* Copy the scaleY value from above, then divide by √3 to get scaleX */
-          transform: translate(3px, 3px) skewY(-60deg) scaleX(0.19245009);
-          fill: blue;
-        }
-        #tester line {
-          stroke: silver;
-          stroke-width: 0.01;
-        }
-      </style>
-      <rect class="front" x="0" y="-1" height="1" width="1"></rect>
-      <rect class="top" x="0" y="-1" height="1" width="1"></rect>
-      <rect class="right" x="0" y="-1" height="1" width="1"></rect>
-      <line x1="0" x2="5" y1="1" y2="1"></line>
-      <line x1="0" x2="5" y1="2" y2="2"></line>
-      <line x1="0" x2="5" y1="3" y2="3"></line>
-      <line x1="0" x2="5" y1="4" y2="4"></line>
-      <line y1="0" y2="5" x1="1" x2="1"></line>
-      <line y1="0" y2="5" x1="2" x2="2"></line>
-      <line y1="0" y2="5" x1="3" x2="3"></line>
-      <line y1="0" y2="5" x1="4" x2="4"></line>
-    </svg>
 
     <hr />
 
@@ -280,7 +218,7 @@
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
       preserveAspectRatio="xMidYMid meet"
-      viewBox="0 0 4 4"
+      viewBox="0.5 1 2.5 2.5"
       style="max-width: 30em"
     >
       <style>
@@ -378,6 +316,19 @@
           ></rect>
         </g>
       </g>
+    </svg>
+
+    <hr>
+
+    <svg
+    id="test_pieces"
+    version="1.1"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    preserveAspectRatio="xMidYMid meet"
+    viewBox="0.5 1 2.5 2.5"
+    style="max-width: 30em"
+  >
     </svg>
   </body>
 </html>

@@ -212,3 +212,10 @@ The limit of an ellipse is _not_ a line segment.
 Sometimes I like to pretend that it is.
 A Q command can do a line much more reliably than an A command.
 See https://github.com/TradeIdeasPhilip/hidden-variables/blob/5f03b623f4d72a3d7e639686e476e03fee4de816/src/main.ts#L237 for the relevant code and comments.
+
+Don't use \<style> inside an \<svg> inside an \<html>.
+That will work just like a \<style> at the top of the html or css references.
+I.e. it applies to the entire html including all embedded svg's
+That was not what I was expecting.
+It is the preferred way for a stand alone svg file.
+In any case, don't forget to use the CSS syntax, e.g. `transform: translate(2px,2px) skewX(-30deg) scaleY(0.33333333);` instead of `transform: translate(2,2) skewX(-30) scaleY(0.33333333);`.

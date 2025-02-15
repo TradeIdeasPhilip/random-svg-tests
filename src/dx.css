@@ -108,3 +108,12 @@ text#denominator {
   stroke-width: 0.05;
   text-anchor: start;
 }
+
+.top {
+  transform: translate(var(--x), var(--y)) skewX(-30deg) scaleY(0.33333333);
+  filter: brightness(1.2);
+}
+.right {
+  transform: translate(var(--x), var(--y)) skewY(-60deg) scaleX(0.19245009);
+  filter: brightness(0.8);
+}

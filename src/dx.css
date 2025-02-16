@@ -35,11 +35,11 @@
 }
 
 .medium-change {
-  fill: url(#mediumGradient);
+  fill: url(#radialGradient);
 }
 
 .medium-change-stroke {
-  fill: url(#mediumGradient);
+  fill: url(#radialGradient);
 }
 
 .placeholder {

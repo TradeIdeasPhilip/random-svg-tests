@@ -2,6 +2,7 @@ import "./style.css";
 import "./dx.css";
 import { getById } from "phil-lib/client-misc";
 import { selectorQueryAll } from "./utility";
+import { makeLinear } from "phil-lib/misc";
 
 const WIDTH = 16;
 const HEIGHT = 9;
@@ -21,13 +22,17 @@ const dxSizeInput = getById("dxSize", HTMLInputElement);
   updateFromInput();
 }
 
-const colorsBase: readonly number[] = [0, 1, 1, 2, 2, 3];
 const colorStops = selectorQueryAll(
-  "#mediumGradient stop",
+  "#radialGradient stop",
   SVGStopElement,
-  colorsBase.length,
-  colorsBase.length
+  2,
+  2
 );
+
+const colorInfo = [
+  { color: "red", offset: makeLinear(0, 1, 1, 0) },
+  { color: "#00c000", offset: makeLinear(1, 0, 2, 1) },
+];
 
 /**
  *
@@ -35,11 +40,13 @@ const colorStops = selectorQueryAll(
  * Any value in between will work.
  */
 function setColor(newColor: number) {
-  colorStops.forEach((colorStop, index) => {
-    const base = colorsBase[index];
-    const newPosition = Math.min(1, Math.max(0, base - newColor));
-    colorStop.offset.baseVal = newPosition;
+  const index = newColor < 1 ? 0 : 1;
+  const { color, offset } = colorInfo[index];
+  const offsetValue = offset(newColor);
+  colorStops.forEach((colorStop) => {
+    colorStop.offset.baseVal = offsetValue;
   });
+  colorStops[0].setAttribute("stop-color", color);
 }
 
 const colorInput = getById("color", HTMLInputElement);

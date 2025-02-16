@@ -76,6 +76,7 @@ One option is to scale things.
 Start showing off transform property.
 
 element.setAttribute() vs element.style vs element.?.baseValue.value
+e.g.  `colorStops[0].setAttribute("stop-color", color);` because there is no corresponding property.
 
 ### rectangle & transform
 

@@ -339,10 +339,23 @@
           ></rect>
         </g>
       </g>
+      <g data-equation="4">
+        <text>
+          f₄(x) =
+          <tspan class="original">x⁴</tspan>
+        </text>
+        <text>
+          <tspan style="font-weight: 900">(</tspan>
+          f₄(x + dx) -
+          <tspan class="original">f₄(x)</tspan>
+          <tspan style="font-weight: 900">)</tspan>
+          ÷
+          <tspan class="big-change">dx</tspan>
+          =
+        </text>
+      </g>
       <g id="tesseract">
         <text>
-          <tspan id="numerator">f₄(x + dx) - f₄(x)</tspan>
-          =
           <tspan class="big-change">4x³</tspan>
           +
           <tspan class="medium-change">6x²·dx</tspan>
@@ -350,10 +363,116 @@
           <tspan class="small-change">4x(dx)²</tspan>
           +
           <tspan class="small-change">(dx)³</tspan>
+          =
         </text>
-        <text y="-0.35">f₄(x + dx) - f₄(x)</text>
-        <line id="dividing-line" x2="3.34885"></line>
-        <text y="0.35" x="1.674425" id="denominator">dx</text>
+      </g>
+      <g id="tesseract-images">
+        <text>4·</text>
+        <g data-big="3">
+          <rect class="big-change" x="0" y="-1" height="1" width="1"></rect>
+          <rect
+            class="big-change top"
+            style="--x: 0; --y: -1px"
+            x="0"
+            y="-1"
+            height="1"
+            width="1"
+          ></rect>
+          <rect
+            class="big-change right"
+            style="--x: 1px; --y: 0px"
+            x="0"
+            y="-1"
+            height="1"
+            width="1"
+          ></rect>
+        </g>
+        <text>+ 6·</text>
+        <g data-big="2">
+          <rect
+            class="medium-change"
+            data-animate="vertical"
+            x="0"
+            y="-1"
+            height="1"
+            width="0.25"
+          ></rect>
+          <rect
+            class="medium-change top"
+            style="--x: 0; --y: -1px"
+            data-animate="vertical"
+            x="0"
+            y="-1"
+            height="1"
+            width="0.25"
+          ></rect>
+          <rect
+            class="medium-change right"
+            style="--x: var(--dx-size); --y: 0"
+            x="0"
+            y="-1"
+            height="1"
+            width="1"
+          ></rect>
+        </g>
+        <text>+ 4·</text>
+        <g data-big="1">
+          <rect
+            class="small-change"
+            data-animate="vertical"
+            x="0"
+            y="-1"
+            height="1"
+            width="0.25"
+          ></rect>
+          <rect
+            class="small-change top"
+            style="--x: 0; --y: -1px"
+            data-animate="square"
+            x="0"
+            y="-0.25"
+            height="0.25"
+            width="0.25"
+          ></rect>
+          <rect
+            class="small-change right"
+            style="--x: var(--dx-size); --y: 0"
+            data-animate="vertical"
+            x="0"
+            y="-1"
+            height="1"
+            width="0.25"
+          ></rect>
+        </g>
+        <text>+</text>
+        <g data-big="0">
+          <rect
+            class="small-change"
+            data-animate="square"
+            x="0"
+            y="-0.25"
+            height="0.25"
+            width="0.25"
+          ></rect>
+          <rect
+            class="small-change top"
+            style="--x: 0; --y: calc(0px - var(--dx-size))"
+            data-animate="square"
+            x="0"
+            y="-0.25"
+            height="0.25"
+            width="0.25"
+          ></rect>
+          <rect
+            class="small-change right"
+            style="--x: var(--dx-size); --y: 0"
+            data-animate="square"
+            x="0"
+            y="-0.25"
+            height="0.25"
+            width="0.25"
+          ></rect>
+        </g>
       </g>
     </svg>
     <div id="debugInput" data-hideBeforeScreenshot>

@@ -54,6 +54,7 @@ const colorInput = getById("color", HTMLInputElement);
 }
 
 function setDxSize(newSize: number) {
+  document.body.style.setProperty("--dx-size", `${newSize}px`);
   selectorQueryAll(
     '[data-equation="1"] .big-change-stroke',
     SVGLineElement,
@@ -64,39 +65,38 @@ function setDxSize(newSize: number) {
     const to = from + newSize;
     line.x2.baseVal.value = to;
   });
-  selectorQueryAll(
-    '[data-equation="2"] [data-animate]',
-    SVGRectElement
-  ).forEach((rectElement) => {
-    let adjustWidth = false;
-    let adjustHeight = false;
-    switch (rectElement.dataset["animate"]) {
-      case "horizontal": {
-        adjustHeight = true;
-        break;
+  selectorQueryAll("rect[data-animate]", SVGRectElement).forEach(
+    (rectElement) => {
+      let adjustWidth = false;
+      let adjustHeight = false;
+      switch (rectElement.dataset["animate"]) {
+        case "horizontal": {
+          adjustHeight = true;
+          break;
+        }
+        case "vertical": {
+          adjustWidth = true;
+          break;
+        }
+        case "square": {
+          adjustHeight = true;
+          adjustWidth = true;
+          break;
+        }
       }
-      case "vertical": {
-        adjustWidth = true;
-        break;
+      if (!(adjustHeight || adjustWidth)) {
+        throw new Error("wtf");
       }
-      case "square": {
-        adjustHeight = true;
-        adjustWidth = true;
-        break;
+      if (adjustWidth) {
+        rectElement.width.baseVal.value = newSize;
+      }
+      if (adjustHeight) {
+        const bottom =
+          rectElement.height.baseVal.value + rectElement.y.baseVal.value;
+        const top = bottom - newSize;
+        rectElement.y.baseVal.value = top;
+        rectElement.height.baseVal.value = newSize;
       }
     }
-    if (!(adjustHeight || adjustWidth)) {
-      throw new Error("wtf");
-    }
-    if (adjustWidth) {
-      rectElement.width.baseVal.value = newSize;
-    }
-    if (adjustHeight) {
-      const bottom =
-        rectElement.height.baseVal.value + rectElement.y.baseVal.value;
-      const top = bottom - newSize;
-      rectElement.y.baseVal.value = top;
-      rectElement.height.baseVal.value = newSize;
-    }
-  });
+  );
 }

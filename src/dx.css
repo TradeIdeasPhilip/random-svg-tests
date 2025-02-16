@@ -67,20 +67,24 @@ g[data-equation="2"] [data-together] {
   transform: translateX(9.8px);
 }
 
+g[data-equation="3"] {
+  transform: translateY(5px);
+}
+
 g#cube {
-  transform: translateY(5px) translateX(0.6px);
+  transform: translateY(5px) translateX(0.8px);
   --baseline: 0.75px;
 }
 
-g#cube text:nth-of-type(2) {
+g#cube text:nth-of-type(1) {
   transform: translateY(var(--baseline));
 }
 
-g#cube [data-all] {
+g#cube [data-combined] {
   transform: translate(6.8px, 1.25px);
 }
 
-g#cube text:nth-of-type(3) {
+g#cube text:nth-of-type(2) {
   transform: translate(8.5px, var(--baseline));
 }
 
@@ -88,7 +92,7 @@ g#cube [data-big="3"] {
   transform: translate(8.95px, 1.25px);
 }
 
-g#cube text:nth-of-type(4) {
+g#cube text:nth-of-type(3) {
   transform: translate(10.3px, var(--baseline));
 }
 
@@ -96,7 +100,7 @@ g#cube [data-big="2"] {
   transform: translate(11.2px, 1.25px);
 }
 
-g#cube text:nth-of-type(5) {
+g#cube text:nth-of-type(4) {
   transform: translate(11.8px, var(--baseline));
 }
 
@@ -104,7 +108,7 @@ g#cube [data-big="1"] {
   transform: translate(12.7px, 1.25px);
 }
 
-g#cube text:nth-of-type(6) {
+g#cube text:nth-of-type(5) {
   transform: translate(13.2px, var(--baseline));
 }
 

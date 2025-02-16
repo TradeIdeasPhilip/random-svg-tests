@@ -6,7 +6,7 @@
     <title>dx</title>
     <script type="module" src="/src/dx.ts"></script>
   </head>
-  <body>
+  <body style="--dx-size: 0.25px">
     <svg
       id="main"
       version="1.1"
@@ -122,18 +122,24 @@
           width="0.25"
           height="1"
         ></rect>
-        <text x="13.9">+</text>
+        <text x="13.95">+</text>
         <rect
           class="medium-change"
           data-animate="square"
-          x="14.3"
+          x="14.4"
           y="-0.125"
           width="0.25"
           height="0.25"
         ></rect>
       </g>
+      <g data-equation="3">
+        <text>
+          f₃(x) =
+          <tspan class="original">x³</tspan>
+        </text>
+        <text>f₃(x + dx) =</text>
+      </g>
       <g id="cube">
-        <text>(x + dx)³ =</text>
         <text>
           <tspan class="original">x³</tspan>
           +
@@ -144,7 +150,7 @@
           <tspan class="small-change">(dx)³</tspan>
           =
         </text>
-        <g data-all>
+        <g data-combined>
           <rect class="original" x="0" y="-1" width="1" height="1"></rect>
           <rect
             class="big-change"
@@ -171,7 +177,7 @@
             height="0.25"
           ></rect>
 
-          <g class="top" style="--x: 0; --y: -1.25px">
+          <g class="top" style="--x: 0; --y: calc(-1px - var(--dx-size))">
             <rect class="big-change" x="0" y="-1" width="1" height="1"></rect>
             <rect
               class="medium-change"
@@ -198,7 +204,7 @@
               height="0.25"
             ></rect>
           </g>
-          <g class="right" style="--x: 1.25px; --y: 0">
+          <g class="right" style="--x: calc(1px + var(--dx-size)); --y: 0">
             <rect class="big-change" x="0" y="-1" width="1" height="1"></rect>
             <rect
               class="medium-change"
@@ -248,10 +254,18 @@
         </g>
         <text>+ 3·</text>
         <g data-big="2">
-          <rect class="big-change" x="0" y="-1" height="1" width="0.25"></rect>
+          <rect
+            class="big-change"
+            data-animate="vertical"
+            x="0"
+            y="-1"
+            height="1"
+            width="0.25"
+          ></rect>
           <rect
             class="big-change top"
             style="--x: 0; --y: -1px"
+            data-animate="vertical"
             x="0"
             y="-1"
             height="1"
@@ -259,7 +273,7 @@
           ></rect>
           <rect
             class="big-change right"
-            style="--x: 0.25px; --y: 0"
+            style="--x: var(--dx-size); --y: 0"
             x="0"
             y="-1"
             height="1"
@@ -270,6 +284,7 @@
         <g data-big="1">
           <rect
             class="medium-change"
+            data-animate="vertical"
             x="0"
             y="-1"
             height="1"
@@ -278,6 +293,7 @@
           <rect
             class="medium-change top"
             style="--x: 0; --y: -1px"
+            data-animate="square"
             x="0"
             y="-0.25"
             height="0.25"
@@ -285,7 +301,8 @@
           ></rect>
           <rect
             class="medium-change right"
-            style="--x: 0.25px; --y: 0"
+            style="--x: var(--dx-size); --y: 0"
+            data-animate="vertical"
             x="0"
             y="-1"
             height="1"
@@ -296,6 +313,7 @@
         <g data-big="0">
           <rect
             class="small-change"
+            data-animate="square"
             x="0"
             y="-0.25"
             height="0.25"
@@ -303,7 +321,8 @@
           ></rect>
           <rect
             class="small-change top"
-            style="--x: 0; --y: -0.25px"
+            style="--x: 0; --y: calc(0px - var(--dx-size))"
+            data-animate="square"
             x="0"
             y="-0.25"
             height="0.25"
@@ -311,7 +330,8 @@
           ></rect>
           <rect
             class="small-change right"
-            style="--x: 0.25px; --y: 0"
+            style="--x: var(--dx-size); --y: 0"
+            data-animate="square"
             x="0"
             y="-0.25"
             height="0.25"
@@ -370,10 +390,10 @@
         }
         #test3 .top {
           --x: 0;
-          --y: -1.25px;
+          --y: calc(-1px - var(--dx-size));
         }
         #test3 .right {
-          --x: 1.25px;
+          --x: calc(1px + var(--dx-size));
           --y: 0;
         }
       </style>

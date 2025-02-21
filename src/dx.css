@@ -42,6 +42,32 @@
   fill: url(#radialGradient);
 }
 
+#birthday-party > path:nth-child(2) {
+  animation: birthday-party-green 1s linear infinite;
+}
+
+@keyframes birthday-party-green {
+  0% {
+    transform: translateY(-3px);
+  }
+  100% {
+    transform: translateY(3px);
+  }
+}
+
+#birthday-party > path:nth-child(3) {
+  animation: birthday-party-red 1s linear infinite;
+}
+
+@keyframes birthday-party-red {
+  0% {
+    transform: translateX(-2px);
+  }
+  100% {
+    transform: translateX(2px);
+  }
+}
+
 .placeholder {
   fill: none;
 }
@@ -131,6 +157,10 @@ g[data-equation] text:nth-child(2) {
 
 #tesseract {
   transform: translateY(8.25px) translateX(1px);
+}
+
+#tesseract text {
+  transform: translateX(-0.25px);
 }
 
 g#tesseract-images {

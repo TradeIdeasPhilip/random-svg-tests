@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>dx</title>
-    <script type="module" crossorigin src="./assets/mẹrindilogun-slolfD_8.js"></script>
+    <script type="module" crossorigin src="./assets/mẹrindilogun-ZjfAQnQg.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-CLGTS8fC.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-1LRynplM.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-CiDAvosU.js">
-    <link rel="stylesheet" crossorigin href="./assets/mẹrindilogun-SmIW7hFC.css">
+    <link rel="stylesheet" crossorigin href="./assets/mẹrindilogun-DOO4Xskb.css">
     <link rel="stylesheet" crossorigin href="./assets/style-DQ03UEvS.css">
   </head>
   <body style="--dx-size: 0.25px">
@@ -26,9 +26,73 @@
           <stop offset="75%" stop-color="red" />
           <stop offset="75%" stop-color="gold" />
         </radialGradient>
+        <pattern
+          id="star"
+          viewBox="0,0,10,10"
+          width="10%"
+          height="10%"
+          preserveAspectRatio="none"
+        >
+          <rect
+            x="-0.05"
+            y="-0.05"
+            width="10.1"
+            height="10.1"
+            fill="white"
+          ></rect>
+          <polygon points="0,0 2,5 0,10 5,8 10,10 8,5 10,0 5,2" fill="violet" />
+        </pattern>
+        <pattern
+          id="birthday-party"
+          viewBox="0 0 12 12"
+          width=".3"
+          height=".3"
+          patternUnits="userSpaceOnUse"
+          preserveAspectRatio="none"
+        >
+          <rect x="0" y="0" height="12" width="12" fill="white"></rect>
+          <path
+            d="M0,-6 L12,0 M0,0 L12,6 M0,6 L12,12 M0,12 L12,18"
+            style="
+              stroke-width: 2.5px;
+              fill: none;
+              stroke: #00c000;
+              stroke: royalblue;
+              stroke-linecap: round;
+            "
+          ></path>
+          <path
+            d="M-4,0 L0,12 M0,0 L4,12 M4,0 L8,12 M8,0 L12,12 M12,0 L16,12"
+            style="
+              stroke-width: 0.75px;
+              fill: none;
+              stroke: red;
+              stroke-linecap: round;
+            "
+          ></path>
+        </pattern>
       </defs>
 
       <rect x="0" y="0" width="16" height="9"></rect>
+      <g id="highlights">
+        <rect
+          id="highlight"
+          x="2"
+          y="1"
+          width="3.1"
+          height="2.2"
+          rx="1"
+          style="fill: darkgray; filter: blur(0.25px); display: none"
+        />
+        <ellipse
+          id="spotlight"
+          cx="1.25"
+          cy="3.3"
+          rx="1.3"
+          ry="2.5"
+          style="fill: darkgray; filter: blur(0.25px)"
+        />
+      </g>
       <g class="legend">
         <text>
           <tspan>Legend:</tspan>
@@ -351,9 +415,7 @@
           f₄(x + dx) -
           <tspan class="original">f₄(x)</tspan>
           <tspan style="font-weight: 900">)</tspan>
-          ÷
-          <tspan class="big-change">dx</tspan>
-          =
+          ÷ dx =
         </text>
       </g>
       <g id="tesseract">
@@ -362,7 +424,7 @@
           +
           <tspan class="medium-change">6x²·dx</tspan>
           +
-          <tspan class="small-change">4x(dx)²</tspan>
+          <tspan class="small-change">4x·(dx)²</tspan>
           +
           <tspan class="small-change">(dx)³</tspan>
           =
@@ -492,6 +554,7 @@
         step="0.0001"
       />
       <input id="color" type="range" min="0" max="2" value="1" step="0.0001" />
+      <input id="frameNumber" type="range" step="1" />
     </div>
 
     <hr />

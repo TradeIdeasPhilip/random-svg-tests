@@ -76,7 +76,7 @@ One option is to scale things.
 Start showing off transform property.
 
 element.setAttribute() vs element.style vs element.?.baseValue.value
-e.g.  `colorStops[0].setAttribute("stop-color", color);` because there is no corresponding property.
+e.g. `colorStops[0].setAttribute("stop-color", color);` because there is no corresponding property.
 
 ### rectangle & transform
 
@@ -220,3 +220,8 @@ I.e. it applies to the entire html including all embedded svg's
 That was not what I was expecting.
 It is the preferred way for a stand alone svg file.
 In any case, don't forget to use the CSS syntax, e.g. `transform: translate(2px,2px) skewX(-30deg) scaleY(0.33333333);` instead of `transform: translate(2,2) skewX(-30) scaleY(0.33333333);`.
+
+https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/paint-order
+I often do this myself.
+This is required to keep text readable.
+paint-order="stroke" id="stroke-under"

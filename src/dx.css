@@ -211,3 +211,7 @@ g#tesseract-images [data-big="0"] {
   transform: translate(var(--x), var(--y)) skewY(-60deg) scaleX(0.19245009);
   filter: brightness(0.8);
 }
+
+#highlights path {
+  fill: darkgray; filter: blur(0.25px);
+}

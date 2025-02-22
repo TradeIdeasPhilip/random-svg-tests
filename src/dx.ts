@@ -7,7 +7,10 @@ import {
   lerp,
   makeBoundedLinear,
   makeLinear,
+  parseFloatX,
+  parseIntX,
 } from "phil-lib/misc";
+import { PathBuilder } from "./path-shape";
 
 const WIDTH = 16;
 const HEIGHT = 9;
@@ -120,8 +123,8 @@ function setDxSize(newSize: number) {
 // MARK: for Demo Video
 
 let frameOffset = 0;
+const FPS = 60;
 function getFrameNumber(minute: number, second: number, frameNumber: number) {
-  const FPS = 60;
   return (minute * 60 + second) * FPS + frameNumber - frameOffset;
 }
 
@@ -343,8 +346,366 @@ function initScreenCapture(script: unknown) {
 WINDOW.initScreenCapture = initScreenCapture;
 
 /**
-
-8 second loop, all yellow, size is a sine wave covering the entire range, beginning and ending at the lowest value.
-(Ouch.  That’s not how we normally do it.  Duplicatinging the first and last Fram.  Probably not important 1 frame out of 8 sec * 60 fps.  Annoying)
- * 
+ *
+ * @deprecated This doesn't work any more and probably won't be replaced.
  */
+function dumpSpotlight() {
+  const items: object[] = [];
+  document.querySelectorAll("ellipse").forEach((element) => {
+    const style = getComputedStyle(element);
+    const cx = style.cx;
+    const cy = style.cy;
+    const rx = style.rx;
+    const ry = style.ry;
+    const e = { cx, cy, rx, ry };
+    items.push(e);
+  });
+  return items;
+}
+
+/**
+ *
+ * @deprecated This doesn't work any more and probably won't be replaced.
+ */
+function setSpotlight(
+  { cx, cy, rx, ry }: { cx: string; cy: string; rx: string; ry: string },
+  instance = 0
+) {
+  const style = document.querySelectorAll("ellipse")[instance].style;
+  style.cx = cx;
+  style.cy = cy;
+  style.rx = rx;
+  style.ry = ry;
+  style.transformOrigin = `${cx} ${cy}`;
+}
+
+WINDOW.dumpSpotlight = dumpSpotlight;
+WINDOW.setSpotlight = setSpotlight;
+
+type Pixels = number | string;
+
+const highlightsGroup = getById("highlights", SVGGElement);
+
+type QShape = {
+  readonly cx: Pixels;
+  readonly cy: Pixels;
+  readonly rx: Pixels;
+  readonly ry: Pixels;
+  readonly rotate?: string;
+};
+
+function showSpotlights(shapes: readonly QShape[]) {
+  function asNumber(pixels: Pixels) {
+    if (typeof pixels == "number") {
+      return pixels;
+    } else {
+      const striped = /^(.*?)(px)?$/.exec(pixels)?.[1];
+      const parsed = parseFloatX(striped);
+      if (parsed === undefined) {
+        throw new Error("wtf");
+      }
+      return parsed;
+    }
+  }
+  highlightsGroup.innerHTML = "";
+  shapes.forEach((shape) => {
+    const cx = asNumber(shape.cx);
+    const cy = asNumber(shape.cy);
+    const rx = asNumber(shape.rx);
+    const ry = asNumber(shape.ry);
+    const x0 = cx - rx;
+    const x1 = cx + rx;
+    const y0 = cy - ry;
+    const y1 = cy + ry;
+    const pathBuilder = PathBuilder.M(x0, cy)
+      .Q_VH(cx, y0)
+      .Q_HV(x1, cy)
+      .Q_VH(cx, y1)
+      .Q_HV(x0, cy);
+    const d = pathBuilder.pathShape.cssPath;
+    const element = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "path"
+    );
+    element.style.d = d;
+    if (shape.rotate !== undefined) {
+      element.style.transformOrigin = `${cx}px ${cy}px`;
+      element.style.transform = `rotate(${shape.rotate})`;
+    }
+    highlightsGroup.appendChild(element);
+  });
+}
+
+type ScriptItem = {
+  start: string;
+  end?: string;
+  notes: string;
+  shapes: QShape[];
+};
+
+const spotlightScript: ScriptItem[] = [
+  {
+    start: "0:15:30",
+    end: "0:24:45",
+    notes: "This left column.",
+    shapes: [
+      {
+        cx: "1.5px",
+        cy: "3.3px",
+        rx: "1.5px",
+        ry: "2.5px",
+      },
+      {
+        cx: "1.5px",
+        cy: "7.45px",
+        rx: "1.3px",
+        ry: "0.5px",
+      },
+    ],
+  },
+  {
+    start: "0:26:00",
+    notes: "1",
+    shapes: [
+      {
+        cx: "2.25px",
+        cy: "1.5px",
+        rx: "0.5px",
+        ry: "0.5px",
+      },
+    ],
+  },
+  {
+    start: "0:28:26",
+    notes: "x",
+    shapes: [
+      {
+        cx: "2.25px",
+        cy: "2.75px",
+        rx: "0.5px",
+        ry: "0.5px",
+      },
+    ],
+  },
+  {
+    start: "0:32:15",
+    notes: "x^2",
+    shapes: [
+      {
+        cx: "2.25px",
+        cy: "4px",
+        rx: "0.5px",
+        ry: "0.5px",
+      },
+    ],
+  },
+  {
+    start: "0:34:20",
+    notes: "x^3",
+    shapes: [
+      {
+        cx: "2.25px",
+        cy: "5.25px",
+        rx: "0.5px",
+        ry: "0.5px",
+      },
+    ],
+  },
+  {
+    start: "0:36:15",
+    end: "0:37:45",
+    notes: "x^4",
+    shapes: [
+      {
+        cx: "2.25px",
+        cy: "7.5px",
+        rx: "0.5px",
+        ry: "0.5px",
+      },
+    ],
+  },
+  {
+    start: "0:45:30",
+    end: "1:00:00",
+    notes:
+      "The second column says what if we add some small thing to this.  Highlight all +dx ’s in the second column",
+    shapes: [
+      {
+        cx: "4.4px",
+        cy: "3.3px",
+        rx: "0.6px",
+        ry: "2.5px",
+      },
+      {
+        cx: "4.7px",
+        cy: "7.4px",
+        rx: "0.6px",
+        ry: "0.5px",
+      },
+    ],
+  },
+  {
+    start: "1:04:00",
+    end: "1:18:00",
+    notes: "X is a real word number.  Highlight the x’s before the +dx’s.",
+    shapes: [
+      {
+        cx: "3.65px",
+        cy: "3.3px",
+        rx: "0.5px",
+        ry: "2.5px",
+      },
+      {
+        cx: "3.95px",
+        cy: "7.4px",
+        rx: "0.5px",
+        ry: "0.5px",
+      },
+    ],
+  },
+  {
+    start: "1:18:16",
+    end: "1:46:45",
+    notes: "Highlight the +dx’s again",
+    shapes: [
+      {
+        cx: "4.4px",
+        cy: "3.3px",
+        rx: "0.6px",
+        ry: "2.5px",
+      },
+      {
+        cx: "4.7px",
+        cy: "7.4px",
+        rx: "0.6px",
+        ry: "0.5px",
+      },
+    ],
+  },
+  {
+    start: "3:25:30",
+    end: "3:30:00",
+    notes: "highlight the 3 yellow images",
+    shapes: [
+      { cy: "6.3px", cx: "13.25px", ry: "3px", rx: "0.75px", rotate: "31deg" },
+    ],
+  },
+  {
+    start: "3:30:00",
+    end: "3:31:21",
+    notes: "add the first 2 reds",
+    shapes: [
+      { cy: "6.3px", cx: "13.8px", ry: "3px", rx: "1.3px", rotate: "31deg" },
+    ],
+  },
+  {
+    start: "3:31:21",
+    end: "3:33:00",
+    notes: "add the last red",
+    shapes: [
+      { cy: "6.5px", cx: "14.1px", ry: "3px", rx: "1.75px", rotate: "31deg" },
+    ],
+  },
+
+  //
+  {
+    start: "3:37:30",
+    end: "3:43:46",
+    notes: "highlight the 3 green pictures",
+    shapes: [
+      { cy: "6px", cx: "11.85px", ry: "3.5px", rx: "1.2px", rotate: "40deg" },
+    ],
+  },
+];
+
+spotlightScript.forEach((scriptItem, index, array) => {
+  if (scriptItem.end === undefined) {
+    const nextItem = array[index + 1];
+    scriptItem.end = nextItem.start;
+  }
+});
+
+class Spotlight {
+  static frameTimeToFrameNumber(time: string) {
+    const pieces = /^([0-9]+):([0-9]+):([0-9]+)$/.exec(time);
+    if (!pieces) {
+      throw new Error("wtf");
+    }
+    const minutes = parseIntX(pieces[0]);
+    const seconds = parseIntX(pieces[1]);
+    const frames = parseIntX(pieces[2]);
+    if (
+      minutes === undefined ||
+      seconds === undefined ||
+      frames === undefined
+    ) {
+      throw new Error("wtf");
+    }
+    const result = (minutes * 60 + seconds) * FPS + frames;
+    return result;
+  }
+  readonly #commands = new Array<{
+    startFrame: number;
+    endFrame: number;
+    shape: QShape;
+    mergeBefore: boolean;
+    mergeAfter: boolean;
+  }>();
+  add(startTime: string, endTime: string, shape: QShape) {
+    const startFrame = Spotlight.frameTimeToFrameNumber(startTime);
+    const endFrame = Spotlight.frameTimeToFrameNumber(endTime);
+    const previousCommand = this.#commands.at(-1);
+    let mergeBefore = false;
+    if (previousCommand) {
+      if (startFrame < previousCommand.startFrame) {
+        throw new Error("wtf");
+      }
+      mergeBefore = startFrame == previousCommand.endFrame;
+      previousCommand.mergeAfter = mergeBefore;
+    }
+    this.#commands.push({
+      startFrame,
+      endFrame,
+      shape,
+      mergeBefore,
+      mergeAfter: false,
+    });
+  }
+  getKeyframes(): Keyframe[] {
+    type Result = {
+      easing: string;
+      offset: number;
+      d: string;
+      transformOrigin: string;
+      transform: string;
+    };
+    const result = new Array<Result>();
+    this.#commands.forEach((command) => {});
+    return result;
+  }
+}
+//  -   -
+// ...
+// 1:48:45 - 1:57:00 - X ^ 0 is a point   highlight everything after the 2nd = sign on the row, starting with blue text
+
+/*
+1:48:45 - 1:57:00 - X ^ 0 is a point   highlight just the point.
+1:57:00 - 2:10:56 - line    highlight the input and the output, which are both x + dx.
+2:10:56 - 2:28:30 - x^2   one around the colorful text, one around all of the pictures.
+2:28:30 - 2:32:47  x^3     highlight just the combined cube.
+2:40:40 - 2:56:00 - highlight the blue f4(x), and white - right before it.
+2:56:00 - 3:06:44 - highlight the ÷dx
+3:25:30 - 3:30:00    - highlight the 3 yellow images
+3:30:00 - 3:31:21 - add the first 2 reds
+3:31:21 -  3:33:00 - add the last red
+3:37:30 - 3:43:46 - highlight the 3 green pictures.
+3:43:46 - 3:56:30 - back to all yellow and red highlighted 
+ */
+
+WINDOW.showSpotlights = showSpotlights;
+
+function ssl(index: number) {
+  showSpotlights(spotlightScript[index].shapes);
+}
+
+WINDOW.ssl = ssl;

@@ -3,11 +3,12 @@ import "./dx.css";
 import { getById } from "phil-lib/client-misc";
 import { selectorQueryAll } from "./utility";
 import {
+  assertFinite,
   FULL_CIRCLE,
+  initializedArray,
   lerp,
   makeBoundedLinear,
   makeLinear,
-  parseFloatX,
   parseIntX,
 } from "phil-lib/misc";
 import { PathBuilder } from "./path-shape";
@@ -122,19 +123,12 @@ function setDxSize(newSize: number) {
 
 // MARK: for Demo Video
 
-let frameOffset = 0;
 const FPS = 60;
 function getFrameNumber(minute: number, second: number, frameNumber: number) {
-  return (minute * 60 + second) * FPS + frameNumber - frameOffset;
+  return (minute * 60 + second) * FPS + frameNumber;
 }
 
-function getStartTime() {
-  return getFrameNumber(4, 4, 18);
-}
-frameOffset = getStartTime();
-
-/** This is 8 seconds before the interesting action starts */
-const T_start = getStartTime();
+const T_start = 0;
 if (T_start) {
   throw new Error("wtf");
 }
@@ -144,7 +138,7 @@ if (T_start) {
  */
 const T_switchToSmallDx = getFrameNumber(4, 12, 18);
 
-const STANDARD_WAVELENGTH = T_switchToSmallDx - T_start;
+const STANDARD_WAVELENGTH = 8 * FPS;
 
 const T_startChangingYellowToRed = getFrameNumber(4, 19, 52);
 const T_doneChangingToRed = getFrameNumber(4, 26, 36);
@@ -184,10 +178,11 @@ console.table({
       0:32:15 -   x^2
       0:34:20 - x^3
       0:36:15 - 0:37:45 - x^4
-      0:42:30 - 0:45:30 - The blue part (of the picture) is the original
+      0:42:30 - 0:45:30 - The blue part (of the picture) is the original -- skipped
       0:45:30 - 1:00:00 - The second column says what if we add some small thing to this.  Highlight all +dx ’s in the second column
       1:04:00 - 1:18:00   - X is a real word number.  Highlight the x’s before the +dx’s.
       1:18:16 - 1:46:45  - Highlight the +dx’s again
+
       1:48:45 - 1:57:00 - X ^ 0 is a point   highlight everything after the 2nd = sign on the row, starting with blue text
       1:57:00 - 2:10:56 - line
       2:10:56 - 2:28:30 - x^2
@@ -231,7 +226,7 @@ const MIN_DX = 0.05;
 const MAX_DX = 0.25;
 
 const initialSineWave = makeSineWave({
-  startTime: T_start,
+  startTime: T_switchToSmallDx - STANDARD_WAVELENGTH,
   startPhase: TOP - FULL_CIRCLE / 2,
   endTime: T_switchToSmallDx,
   endPhase: TOP + FULL_CIRCLE / 2,
@@ -306,13 +301,394 @@ function showFrameColor(frameNumber: number) {
   }
 }
 
+type ScriptItem = {
+  start: string;
+  end?: string;
+  notes: string;
+  shapes: QShape[];
+};
+
+const spotlightScript: ScriptItem[] = [
+  {
+    start: "0:15:30",
+    end: "0:24:45",
+    notes: "This left column.",
+    shapes: [
+      {
+        cx: 1.5,
+        cy: 3.3,
+        rx: 1.5,
+        ry: 2.5,
+      },
+      {
+        cx: 1.5,
+        cy: 7.45,
+        rx: 1.3,
+        ry: 0.5,
+      },
+    ],
+  },
+  {
+    start: "0:26:00",
+    notes: "1",
+    shapes: [
+      {
+        cx: 2.25,
+        cy: 1.5,
+        rx: 0.5,
+        ry: 0.5,
+      },
+    ],
+  },
+  {
+    start: "0:28:26",
+    notes: "x",
+    shapes: [
+      {
+        cx: 2.25,
+        cy: 2.75,
+        rx: 0.5,
+        ry: 0.5,
+      },
+    ],
+  },
+  {
+    start: "0:32:15",
+    notes: "x^2",
+    shapes: [
+      {
+        cx: 2.25,
+        cy: 4,
+        rx: 0.5,
+        ry: 0.5,
+      },
+    ],
+  },
+  {
+    start: "0:34:20",
+    notes: "x^3",
+    shapes: [
+      {
+        cx: 2.25,
+        cy: 5.25,
+        rx: 0.5,
+        ry: 0.5,
+      },
+    ],
+  },
+  {
+    start: "0:36:15",
+    end: "0:37:45",
+    notes: "x^4",
+    shapes: [
+      {
+        cx: 2.25,
+        cy: 7.5,
+        rx: 0.5,
+        ry: 0.5,
+      },
+    ],
+  },
+  {
+    start: "0:45:30",
+    end: "1:00:00",
+    notes:
+      "The second column says what if we add some small thing to this.  Highlight all +dx ’s in the second column",
+    shapes: [
+      {
+        cx: 4.4,
+        cy: 3.3,
+        rx: 0.6,
+        ry: 2.5,
+      },
+      {
+        cx: 4.7,
+        cy: 7.4,
+        rx: 0.6,
+        ry: 0.5,
+      },
+    ],
+  },
+  {
+    start: "1:04:00",
+    end: "1:18:00",
+    notes: "X is a real word number.  Highlight the x’s before the +dx’s.",
+    shapes: [
+      {
+        cx: 3.65,
+        cy: 3.3,
+        rx: 0.5,
+        ry: 2.5,
+      },
+      {
+        cx: 3.95,
+        cy: 7.4,
+        rx: 0.5,
+        ry: 0.5,
+      },
+    ],
+  },
+  {
+    start: "1:18:16",
+    end: "1:46:45",
+    notes: "Highlight the +dx’s again",
+    shapes: [
+      {
+        cx: 4.4,
+        cy: 3.3,
+        rx: 0.6,
+        ry: 2.5,
+      },
+      {
+        cx: 4.7,
+        cy: 7.4,
+        rx: 0.6,
+        ry: 0.5,
+      },
+    ],
+  },
+
+  {
+    start: "1:48:45",
+    end: "1:57:00",
+    notes: "X ^ 0 is a point",
+    shapes: [
+      {
+        cx: 6.5,
+        cy: 1.5,
+        rx: 0.5,
+        ry: 0.6,
+      },
+    ],
+  },
+  {
+    start: "1:57:00",
+    end: "2:10:56",
+    notes: "line",
+    shapes: [
+      { cy: 2.75, cx: 6.2, ry: 0.6, rx: 0.8 },
+      { cy: 2.75, cx: 4.2, ry: 0.6, rx: 0.7 },
+    ],
+  },
+  {
+    start: "2:10:56",
+    end: "2:28:30",
+    notes: "x^2 - one around the colorful text, one around all of the pictures",
+    shapes: [
+      { cy: 3.9, cx: 12.2, ry: 0.9, rx: 2.5 },
+      { cy: 4, cx: 7.5, ry: 0.6, rx: 2.1 },
+    ],
+  },
+  {
+    start: "2:28:30",
+    end: "2:32:47",
+    notes: "x^3",
+    shapes: [{ cy: 5.8, cx: 8.3, ry: 1.3, rx: 1.1 }],
+  },
+  {
+    start: "2:40:40",
+    end: "2:56:00",
+    notes: "highlight the blue f4(x), and white - right before it.",
+    shapes: [{ cy: 7.5, cx: 6.1, rx: 0.8, ry: 0.6 }],
+  },
+  {
+    start: "2:56:00",
+    end: "3:06:44",
+    notes: "highlight the ÷dx",
+    shapes: [{ cy: 7.5, cx: 7.5, rx: 0.6, ry: 0.6 }],
+  },
+  {
+    start: "3:25:30",
+    end: "3:30:00",
+    notes: "highlight the 3 yellow images",
+    shapes: [{ cy: 6.3, cx: 13.25, ry: 3, rx: 0.75, rotate: "31deg" }],
+  },
+  {
+    start: "3:30:00",
+    end: "3:31:21",
+    notes: "add the first 2 reds",
+    shapes: [{ cy: 6.3, cx: 13.8, ry: 3, rx: 1.3, rotate: "31deg" }],
+  },
+  {
+    start: "3:31:21",
+    end: "3:33:00",
+    notes: "add the last red",
+    shapes: [{ cy: 6.5, cx: 14.1, ry: 3, rx: 1.75, rotate: "31deg" }],
+  },
+  {
+    start: "3:37:30",
+    end: "3:43:46",
+    notes: "highlight the 3 green pictures",
+    shapes: [{ cy: 6, cx: 11.85, ry: 3.5, rx: 1.2, rotate: "40deg" }],
+  },
+  {
+    start: "3:43:46",
+    end: "3:56:30",
+    notes: "back to all yellow and red highlighted",
+    shapes: [{ cy: 6.5, cx: 14.1, ry: 3, rx: 1.75, rotate: "31deg" }],
+  },
+];
+
+spotlightScript.forEach((scriptItem, index, array) => {
+  if (scriptItem.end === undefined) {
+    const nextItem = array[index + 1];
+    scriptItem.end = nextItem.start;
+  }
+});
+
+class Spotlight {
+  static frameTimeToFrameNumber(time: string) {
+    const pieces = /^([0-9]+):([0-9]+):([0-9]+)$/.exec(time);
+    if (!pieces) {
+      throw new Error("wtf");
+    }
+    const minutes = parseIntX(pieces[1]);
+    const seconds = parseIntX(pieces[2]);
+    const frames = parseIntX(pieces[3]);
+    if (
+      minutes === undefined ||
+      seconds === undefined ||
+      frames === undefined
+    ) {
+      throw new Error("wtf");
+    }
+    const result = getFrameNumber(minutes, seconds, frames);
+    return result;
+  }
+  readonly #commands = new Array<{
+    startFrame: number;
+    endFrame: number;
+    shape: QShape;
+    mergeBefore: boolean;
+    mergeAfter: boolean;
+  }>();
+  add(startTime: string, endTime: string, shape: QShape) {
+    const startFrame = Spotlight.frameTimeToFrameNumber(startTime);
+    const endFrame = Spotlight.frameTimeToFrameNumber(endTime);
+    if (startFrame > T_endOfVideo || endFrame > T_endOfVideo) {
+      throw new Error("wtf");
+    }
+    const previousCommand = this.#commands.at(-1);
+    let mergeBefore = false;
+    if (previousCommand) {
+      if (startFrame < previousCommand.startFrame) {
+        throw new Error("wtf");
+      }
+      mergeBefore = startFrame == previousCommand.endFrame;
+      previousCommand.mergeAfter = mergeBefore;
+    }
+    this.#commands.push({
+      startFrame,
+      endFrame,
+      shape,
+      mergeBefore,
+      mergeAfter: false,
+    });
+  }
+  static readonly TRANSITION_FRAME_COUNT = FPS / 2;
+  getKeyframes(): Keyframe[] {
+    type Result = {
+      easing: string;
+      offset: number;
+      d: string;
+      transformOrigin: string;
+      transform: string;
+    };
+    const result = new Array<Result>();
+    result.push({
+      easing: "linear",
+      offset: 0,
+      ...qShapePathInfo({ cx: 0, cy: 0, rx: 0, ry: 0 }),
+    });
+    this.#commands.forEach(
+      ({ endFrame, mergeAfter, mergeBefore, shape, startFrame }) => {
+        if (endFrame - startFrame < Spotlight.TRANSITION_FRAME_COUNT * 2) {
+          throw new Error("wtf");
+        }
+        if (!mergeBefore) {
+          const offset = startFrame;
+          const easing = "ease-in-out";
+          const info = qShapePathInfo({ ...shape, rx: 0, ry: 0 });
+          result.push({ offset, easing, ...info });
+        }
+        {
+          const info = qShapePathInfo(shape);
+          result.push({
+            offset: startFrame + Spotlight.TRANSITION_FRAME_COUNT,
+            easing: "linear",
+            ...info,
+          });
+          result.push({
+            offset: endFrame - Spotlight.TRANSITION_FRAME_COUNT,
+            easing: "ease-in-out",
+            ...info,
+          });
+        }
+        if (!mergeAfter) {
+          const offset = endFrame;
+          const easing = "linear";
+          const info = qShapePathInfo({ ...shape, rx: 0, ry: 0 });
+          result.push({ offset, easing, ...info });
+        }
+      }
+    );
+    result.forEach((item) => {
+      item.offset /= T_endOfVideo;
+      if (item.offset > 1) {
+        throw new Error("wtf");
+      }
+    });
+    return result;
+  }
+  static #animations: readonly Animation[] | undefined;
+  static showFrame(frameNumber: number) {
+    this.#animations ??= this.create().map((info) => info.animation);
+    this.#animations.forEach((animation) => {
+      animation.currentTime = frameNumber;
+    });
+  }
+
+  static create(
+    script: readonly ScriptItem[] = spotlightScript,
+    group = highlightsGroup
+  ) {
+    const resultCount = Math.max(...script.map((item) => item.shapes.length));
+    const spotlights = initializedArray(resultCount, () => new this());
+    script.forEach((scriptItem) => {
+      scriptItem.shapes.forEach((qShape, index) => {
+        const spotlight = spotlights[index];
+        spotlight.add(scriptItem.start, scriptItem.end!, qShape);
+      });
+    });
+    group.innerHTML = "";
+    const result = spotlights.map((spotlight) => {
+      const element = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "path"
+      );
+      group.appendChild(element);
+      const keyframes = spotlight.getKeyframes();
+      const animation = element.animate(keyframes, {
+        duration: T_endOfVideo /*(T_endOfVideo / FPS) * 1000*/,
+        fill: "both",
+      });
+      animation.pause();
+      return { spotlight, element, keyframes, animation };
+    });
+    return result;
+  }
+}
+
 function showFrame(frameNumber: number) {
   showFrameDx(frameNumber);
   showFrameColor(frameNumber);
+  Spotlight.showFrame(frameNumber);
 }
 
 const WINDOW = window as any;
 WINDOW.showFrame = showFrame;
+
+WINDOW.Spotlight = Spotlight;
 
 {
   const frameNumberInput = getById("frameNumber", HTMLInputElement);
@@ -345,345 +721,49 @@ function initScreenCapture(script: unknown) {
 
 WINDOW.initScreenCapture = initScreenCapture;
 
-/**
- *
- * @deprecated This doesn't work any more and probably won't be replaced.
- */
-function dumpSpotlight() {
-  const items: object[] = [];
-  document.querySelectorAll("ellipse").forEach((element) => {
-    const style = getComputedStyle(element);
-    const cx = style.cx;
-    const cy = style.cy;
-    const rx = style.rx;
-    const ry = style.ry;
-    const e = { cx, cy, rx, ry };
-    items.push(e);
-  });
-  return items;
-}
-
-/**
- *
- * @deprecated This doesn't work any more and probably won't be replaced.
- */
-function setSpotlight(
-  { cx, cy, rx, ry }: { cx: string; cy: string; rx: string; ry: string },
-  instance = 0
-) {
-  const style = document.querySelectorAll("ellipse")[instance].style;
-  style.cx = cx;
-  style.cy = cy;
-  style.rx = rx;
-  style.ry = ry;
-  style.transformOrigin = `${cx} ${cy}`;
-}
-
-WINDOW.dumpSpotlight = dumpSpotlight;
-WINDOW.setSpotlight = setSpotlight;
-
-type Pixels = number | string;
-
 const highlightsGroup = getById("highlights", SVGGElement);
 
 type QShape = {
-  readonly cx: Pixels;
-  readonly cy: Pixels;
-  readonly rx: Pixels;
-  readonly ry: Pixels;
+  readonly cx: number;
+  readonly cy: number;
+  readonly rx: number;
+  readonly ry: number;
   readonly rotate?: string;
 };
 
+function qShapePathInfo({ cx, cy, rx, ry, rotate }: QShape) {
+  assertFinite(cx, cy, rx, ry);
+  const x0 = cx - rx;
+  const x1 = cx + rx;
+  const y0 = cy - ry;
+  const y1 = cy + ry;
+  const pathBuilder = PathBuilder.M(x0, cy)
+    .Q_VH(cx, y0)
+    .Q_HV(x1, cy)
+    .Q_VH(cx, y1)
+    .Q_HV(x0, cy);
+  const d = pathBuilder.pathShape.cssPath;
+  const transformOrigin = `${cx}px ${cy}px`;
+  rotate ??= "0deg";
+  const transform = `rotate(${rotate})`;
+  return { d, transformOrigin, transform };
+}
+
 function showSpotlights(shapes: readonly QShape[]) {
-  function asNumber(pixels: Pixels) {
-    if (typeof pixels == "number") {
-      return pixels;
-    } else {
-      const striped = /^(.*?)(px)?$/.exec(pixels)?.[1];
-      const parsed = parseFloatX(striped);
-      if (parsed === undefined) {
-        throw new Error("wtf");
-      }
-      return parsed;
-    }
-  }
   highlightsGroup.innerHTML = "";
-  shapes.forEach((shape) => {
-    const cx = asNumber(shape.cx);
-    const cy = asNumber(shape.cy);
-    const rx = asNumber(shape.rx);
-    const ry = asNumber(shape.ry);
-    const x0 = cx - rx;
-    const x1 = cx + rx;
-    const y0 = cy - ry;
-    const y1 = cy + ry;
-    const pathBuilder = PathBuilder.M(x0, cy)
-      .Q_VH(cx, y0)
-      .Q_HV(x1, cy)
-      .Q_VH(cx, y1)
-      .Q_HV(x0, cy);
-    const d = pathBuilder.pathShape.cssPath;
+  shapes.forEach((qShape) => {
     const element = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "path"
     );
+    const { d, transformOrigin, transform } = qShapePathInfo(qShape);
     element.style.d = d;
-    if (shape.rotate !== undefined) {
-      element.style.transformOrigin = `${cx}px ${cy}px`;
-      element.style.transform = `rotate(${shape.rotate})`;
-    }
+    element.style.transformOrigin = transformOrigin;
+    element.style.transform = transform;
     highlightsGroup.appendChild(element);
   });
 }
 
-type ScriptItem = {
-  start: string;
-  end?: string;
-  notes: string;
-  shapes: QShape[];
-};
-
-const spotlightScript: ScriptItem[] = [
-  {
-    start: "0:15:30",
-    end: "0:24:45",
-    notes: "This left column.",
-    shapes: [
-      {
-        cx: "1.5px",
-        cy: "3.3px",
-        rx: "1.5px",
-        ry: "2.5px",
-      },
-      {
-        cx: "1.5px",
-        cy: "7.45px",
-        rx: "1.3px",
-        ry: "0.5px",
-      },
-    ],
-  },
-  {
-    start: "0:26:00",
-    notes: "1",
-    shapes: [
-      {
-        cx: "2.25px",
-        cy: "1.5px",
-        rx: "0.5px",
-        ry: "0.5px",
-      },
-    ],
-  },
-  {
-    start: "0:28:26",
-    notes: "x",
-    shapes: [
-      {
-        cx: "2.25px",
-        cy: "2.75px",
-        rx: "0.5px",
-        ry: "0.5px",
-      },
-    ],
-  },
-  {
-    start: "0:32:15",
-    notes: "x^2",
-    shapes: [
-      {
-        cx: "2.25px",
-        cy: "4px",
-        rx: "0.5px",
-        ry: "0.5px",
-      },
-    ],
-  },
-  {
-    start: "0:34:20",
-    notes: "x^3",
-    shapes: [
-      {
-        cx: "2.25px",
-        cy: "5.25px",
-        rx: "0.5px",
-        ry: "0.5px",
-      },
-    ],
-  },
-  {
-    start: "0:36:15",
-    end: "0:37:45",
-    notes: "x^4",
-    shapes: [
-      {
-        cx: "2.25px",
-        cy: "7.5px",
-        rx: "0.5px",
-        ry: "0.5px",
-      },
-    ],
-  },
-  {
-    start: "0:45:30",
-    end: "1:00:00",
-    notes:
-      "The second column says what if we add some small thing to this.  Highlight all +dx ’s in the second column",
-    shapes: [
-      {
-        cx: "4.4px",
-        cy: "3.3px",
-        rx: "0.6px",
-        ry: "2.5px",
-      },
-      {
-        cx: "4.7px",
-        cy: "7.4px",
-        rx: "0.6px",
-        ry: "0.5px",
-      },
-    ],
-  },
-  {
-    start: "1:04:00",
-    end: "1:18:00",
-    notes: "X is a real word number.  Highlight the x’s before the +dx’s.",
-    shapes: [
-      {
-        cx: "3.65px",
-        cy: "3.3px",
-        rx: "0.5px",
-        ry: "2.5px",
-      },
-      {
-        cx: "3.95px",
-        cy: "7.4px",
-        rx: "0.5px",
-        ry: "0.5px",
-      },
-    ],
-  },
-  {
-    start: "1:18:16",
-    end: "1:46:45",
-    notes: "Highlight the +dx’s again",
-    shapes: [
-      {
-        cx: "4.4px",
-        cy: "3.3px",
-        rx: "0.6px",
-        ry: "2.5px",
-      },
-      {
-        cx: "4.7px",
-        cy: "7.4px",
-        rx: "0.6px",
-        ry: "0.5px",
-      },
-    ],
-  },
-  {
-    start: "3:25:30",
-    end: "3:30:00",
-    notes: "highlight the 3 yellow images",
-    shapes: [
-      { cy: "6.3px", cx: "13.25px", ry: "3px", rx: "0.75px", rotate: "31deg" },
-    ],
-  },
-  {
-    start: "3:30:00",
-    end: "3:31:21",
-    notes: "add the first 2 reds",
-    shapes: [
-      { cy: "6.3px", cx: "13.8px", ry: "3px", rx: "1.3px", rotate: "31deg" },
-    ],
-  },
-  {
-    start: "3:31:21",
-    end: "3:33:00",
-    notes: "add the last red",
-    shapes: [
-      { cy: "6.5px", cx: "14.1px", ry: "3px", rx: "1.75px", rotate: "31deg" },
-    ],
-  },
-
-  //
-  {
-    start: "3:37:30",
-    end: "3:43:46",
-    notes: "highlight the 3 green pictures",
-    shapes: [
-      { cy: "6px", cx: "11.85px", ry: "3.5px", rx: "1.2px", rotate: "40deg" },
-    ],
-  },
-];
-
-spotlightScript.forEach((scriptItem, index, array) => {
-  if (scriptItem.end === undefined) {
-    const nextItem = array[index + 1];
-    scriptItem.end = nextItem.start;
-  }
-});
-
-class Spotlight {
-  static frameTimeToFrameNumber(time: string) {
-    const pieces = /^([0-9]+):([0-9]+):([0-9]+)$/.exec(time);
-    if (!pieces) {
-      throw new Error("wtf");
-    }
-    const minutes = parseIntX(pieces[0]);
-    const seconds = parseIntX(pieces[1]);
-    const frames = parseIntX(pieces[2]);
-    if (
-      minutes === undefined ||
-      seconds === undefined ||
-      frames === undefined
-    ) {
-      throw new Error("wtf");
-    }
-    const result = (minutes * 60 + seconds) * FPS + frames;
-    return result;
-  }
-  readonly #commands = new Array<{
-    startFrame: number;
-    endFrame: number;
-    shape: QShape;
-    mergeBefore: boolean;
-    mergeAfter: boolean;
-  }>();
-  add(startTime: string, endTime: string, shape: QShape) {
-    const startFrame = Spotlight.frameTimeToFrameNumber(startTime);
-    const endFrame = Spotlight.frameTimeToFrameNumber(endTime);
-    const previousCommand = this.#commands.at(-1);
-    let mergeBefore = false;
-    if (previousCommand) {
-      if (startFrame < previousCommand.startFrame) {
-        throw new Error("wtf");
-      }
-      mergeBefore = startFrame == previousCommand.endFrame;
-      previousCommand.mergeAfter = mergeBefore;
-    }
-    this.#commands.push({
-      startFrame,
-      endFrame,
-      shape,
-      mergeBefore,
-      mergeAfter: false,
-    });
-  }
-  getKeyframes(): Keyframe[] {
-    type Result = {
-      easing: string;
-      offset: number;
-      d: string;
-      transformOrigin: string;
-      transform: string;
-    };
-    const result = new Array<Result>();
-    this.#commands.forEach((command) => {});
-    return result;
-  }
-}
 //  -   -
 // ...
 // 1:48:45 - 1:57:00 - X ^ 0 is a point   highlight everything after the 2nd = sign on the row, starting with blue text

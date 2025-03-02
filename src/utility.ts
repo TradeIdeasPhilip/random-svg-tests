@@ -1,4 +1,11 @@
-import { assertClass, makeBoundedLinear, pick, sum } from "phil-lib/misc";
+import {
+  assertClass,
+  assertFinite,
+  makeBoundedLinear,
+  parseIntX,
+  pick,
+  sum,
+} from "phil-lib/misc";
 
 const previousCountPrivate = new Map<string, number>();
 /**
@@ -391,4 +398,51 @@ export function gcd(a: number, b: number) {
 /** Least Common Multiple */
 export function lcm(a: number, b: number) {
   return (a * b) / gcd(a, b);
+}
+
+/**
+ * This includes functions for converting from
+ * minutes, seconds and frames into just frames.
+ *
+ * All accessor functions are pre-bound to the object, so it's safe to say:
+ * `const convert = new GetFrameNumber(60).fromString;`
+ *
+ * This object is frozen to make sure the two functions and the accessor don't get out of sync.
+ */
+export class GetFrameNumber {
+  #framesPerSecond: number;
+  constructor(framesPerSecond: number = 60) {
+    assertFinite(framesPerSecond);
+    if (framesPerSecond < 1 || framesPerSecond != (framesPerSecond | 0)) {
+      throw new Error("wtf");
+    }
+    this.#framesPerSecond = framesPerSecond;
+    this.fromMSF = this.fromMSF.bind(this);
+    this.fromString = this.fromString.bind(this);
+    Object.freeze(this);
+  }
+  get framesPerSecond() {
+    return this.#framesPerSecond;
+  }
+  fromMSF(minute: number, second: number, frameNumber: number): number {
+    return (minute * 60 + second) * this.#framesPerSecond + frameNumber;
+  }
+  fromString(time: string): number {
+    const pieces = /^([0-9]+):([0-9]+):([0-9]+)$/.exec(time);
+    if (!pieces) {
+      throw new Error("wtf");
+    }
+    const minutes = parseIntX(pieces[1]);
+    const seconds = parseIntX(pieces[2]);
+    const frames = parseIntX(pieces[3]);
+    if (
+      minutes === undefined ||
+      seconds === undefined ||
+      frames === undefined
+    ) {
+      throw new Error("wtf");
+    }
+    const result = this.fromMSF(minutes, seconds, frames);
+    return result;
+  }
 }

@@ -1,0 +1,53 @@
+@import url("https://fonts.googleapis.com/css2?family=Life+Savers:wght@400;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fresca&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap");
+
+body {
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: clip;
+}
+
+svg {
+  font-family: "Playfair Display", serif;
+  font-size: 0.65px;
+  text-anchor: middle;
+  width: 100vw;
+  height: 100vh;
+  --input-color: royalblue;
+  --ideal-color: orange;
+  --estimation-color: crimson;
+}
+
+#main-text g.top {
+  transform: translate(8px, 1.5px);
+  fill: white;
+}
+
+#main-text g.left {
+  transform: translate(4px, 6px);
+  fill: orange;
+}
+
+#main-text g.right {
+  transform: translate(12px, 6px);
+  fill: royalblue;
+}
+
+#main-text text:nth-child(1) {
+  text-decoration: underline;
+  font-size: 0.75px;
+}
+#main-text text:nth-child(2) {
+  transform: translate(0, 1.15px);
+}
+
+#main-text text:nth-child(3) {
+  transform: translate(0, 2px);
+}
+
+.math {
+  font-style: italic;
+}

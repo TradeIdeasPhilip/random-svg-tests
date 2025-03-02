@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>txt 4 derivative</title>
+    <script type="module" src="/src/text-for-derivative.ts"></script>
+  </head>
+  <body>
+    <svg
+      id="main"
+      version="1.1"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      preserveAspectRatio="xMidYMid meet"
+      viewBox="0 0 16 9"
+    >
+      <rect x="0" y="0" width="16" height="9"></rect>
+      <g id="main-text">
+        <g class="top">
+          <text>Basic Definition</text>
+          <text>(one dimensional version)</text>
+          <text class="math">f′(x) = ( f(x + dx) - f(x) ) ÷ dx</text>
+        </g>
+        <g class="left">
+          <text>Highschool calculus:</text>
+          <text>
+            Make
+            <tspan class="math">dx</tspan>
+            really small,
+          </text>
+          <text>&lt; any “real” number.</text>
+        </g>
+        <g class="right">
+          <text>Numerical methods:</text>
+          <text>
+            Make
+            <tspan class="math">dx</tspan>
+            small enough.
+          </text>
+          <text>
+            Stop when
+            <tspan id="good-enough">good enough</tspan>
+            .
+          </text>
+        </g>
+      </g>
+    </svg>
+  </body>
+</html>

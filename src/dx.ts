@@ -1,7 +1,7 @@
 import "./style.css";
 import "./dx.css";
 import { getById } from "phil-lib/client-misc";
-import { selectorQueryAll } from "./utility";
+import { GetFrameNumber, selectorQueryAll } from "./utility";
 import {
   assertFinite,
   FULL_CIRCLE,
@@ -9,7 +9,6 @@ import {
   lerp,
   makeBoundedLinear,
   makeLinear,
-  parseIntX,
 } from "phil-lib/misc";
 import { PathBuilder } from "./path-shape";
 
@@ -123,10 +122,7 @@ function setDxSize(newSize: number) {
 
 // MARK: for Demo Video
 
-const FPS = 60;
-function getFrameNumber(minute: number, second: number, frameNumber: number) {
-  return (minute * 60 + second) * FPS + frameNumber;
-}
+const getFrameNumber = new GetFrameNumber(60);
 
 const T_start = 0;
 if (T_start) {
@@ -136,27 +132,27 @@ if (T_start) {
 /**
  * Limit the range of dx.  Keep it small.  Keep it changing, but always small.
  */
-const T_switchToSmallDx = getFrameNumber(4, 12, 18);
+const T_switchToSmallDx = getFrameNumber.fromMSF(4, 12, 18);
 
-const STANDARD_WAVELENGTH = 8 * FPS;
+const STANDARD_WAVELENGTH = 8 * getFrameNumber.framesPerSecond;
 
-const T_startChangingYellowToRed = getFrameNumber(4, 19, 52);
-const T_doneChangingToRed = getFrameNumber(4, 26, 36);
+const T_startChangingYellowToRed = getFrameNumber.fromMSF(4, 19, 52);
+const T_doneChangingToRed = getFrameNumber.fromMSF(4, 26, 36);
 
 /**
  * Set dx to its smallest possible value here.
  * Then a single trip all the way to the top.
  */
-const T_startMovingToBigDx = getFrameNumber(4, 27, 35);
+const T_startMovingToBigDx = getFrameNumber.fromMSF(4, 27, 35);
 /**
  * Set dx to its largest possible value here.
  * Then start oscillating again around the large values.
  */
-const T_finishedMovingToBigDx = getFrameNumber(4, 32, 9);
+const T_finishedMovingToBigDx = getFrameNumber.fromMSF(4, 32, 9);
 
-const T_startMovingFromRedToGreen = getFrameNumber(4, 41, 0);
-const T_endAtGreen = getFrameNumber(4, 50, 0);
-const T_endOfVideo = getFrameNumber(5, 17, 0);
+const T_startMovingFromRedToGreen = getFrameNumber.fromMSF(4, 41, 0);
+const T_endAtGreen = getFrameNumber.fromMSF(4, 50, 0);
+const T_endOfVideo = getFrameNumber.fromMSF(5, 17, 0);
 
 console.table({
   T_start, // ✖️
@@ -537,24 +533,6 @@ spotlightScript.forEach((scriptItem, index, array) => {
 });
 
 class Spotlight {
-  static frameTimeToFrameNumber(time: string) {
-    const pieces = /^([0-9]+):([0-9]+):([0-9]+)$/.exec(time);
-    if (!pieces) {
-      throw new Error("wtf");
-    }
-    const minutes = parseIntX(pieces[1]);
-    const seconds = parseIntX(pieces[2]);
-    const frames = parseIntX(pieces[3]);
-    if (
-      minutes === undefined ||
-      seconds === undefined ||
-      frames === undefined
-    ) {
-      throw new Error("wtf");
-    }
-    const result = getFrameNumber(minutes, seconds, frames);
-    return result;
-  }
   readonly #commands = new Array<{
     startFrame: number;
     endFrame: number;
@@ -563,8 +541,8 @@ class Spotlight {
     mergeAfter: boolean;
   }>();
   add(startTime: string, endTime: string, shape: QShape) {
-    const startFrame = Spotlight.frameTimeToFrameNumber(startTime);
-    const endFrame = Spotlight.frameTimeToFrameNumber(endTime);
+    const startFrame = getFrameNumber.fromString(startTime);
+    const endFrame = getFrameNumber.fromString(endTime);
     if (startFrame > T_endOfVideo || endFrame > T_endOfVideo) {
       throw new Error("wtf");
     }
@@ -585,7 +563,7 @@ class Spotlight {
       mergeAfter: false,
     });
   }
-  static readonly TRANSITION_FRAME_COUNT = FPS / 2;
+  static readonly TRANSITION_FRAME_COUNT = getFrameNumber.framesPerSecond / 2;
   getKeyframes(): Keyframe[] {
     type Result = {
       easing: string;
@@ -764,24 +742,6 @@ function showSpotlights(shapes: readonly QShape[]) {
   });
 }
 
-//  -   -
-// ...
-// 1:48:45 - 1:57:00 - X ^ 0 is a point   highlight everything after the 2nd = sign on the row, starting with blue text
-
-/*
-1:48:45 - 1:57:00 - X ^ 0 is a point   highlight just the point.
-1:57:00 - 2:10:56 - line    highlight the input and the output, which are both x + dx.
-2:10:56 - 2:28:30 - x^2   one around the colorful text, one around all of the pictures.
-2:28:30 - 2:32:47  x^3     highlight just the combined cube.
-2:40:40 - 2:56:00 - highlight the blue f4(x), and white - right before it.
-2:56:00 - 3:06:44 - highlight the ÷dx
-3:25:30 - 3:30:00    - highlight the 3 yellow images
-3:30:00 - 3:31:21 - add the first 2 reds
-3:31:21 -  3:33:00 - add the last red
-3:37:30 - 3:43:46 - highlight the 3 green pictures.
-3:43:46 - 3:56:30 - back to all yellow and red highlighted 
- */
-
 WINDOW.showSpotlights = showSpotlights;
 
 function ssl(index: number) {
@@ -789,3 +749,32 @@ function ssl(index: number) {
 }
 
 WINDOW.ssl = ssl;
+
+{
+  // This is part of an idea for showing how numbers can degrade when
+  // we abuse the precision of the numbers.
+  const numerator = 1234;
+  const denominator = 98765;
+  const correctValue = numerator / denominator;
+  const inputs = function* () {
+    for (let digits = 15; digits <= 22; digits += 0.25) {
+      yield digits;
+    }
+    return;
+  };
+  const badData = Array.from(inputs(), (digits) => {
+    const bigNumber = 10 ** digits;
+    const adjustedNumerator = bigNumber + numerator - bigNumber;
+    const adjustedDenominator = bigNumber + denominator - bigNumber;
+    const adjustedValue = adjustedNumerator / adjustedDenominator;
+    const error = (adjustedValue - correctValue) / correctValue;
+    return {
+      digits,
+      adjustedNumerator,
+      adjustedDenominator,
+      adjustedValue,
+      error,
+    };
+  });
+  console.table(badData);
+}

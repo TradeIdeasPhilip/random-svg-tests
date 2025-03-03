@@ -1,0 +1,78 @@
+@import url("https://fonts.googleapis.com/css2?family=Special+Elite&display=swap");
+
+body {
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: clip;
+  background-color: hwb(106.88deg 80.53% 0%);
+}
+
+svg {
+  width: 100vw;
+  max-height: 100vh;
+  background-color: powderblue;
+  font-family: "Special Elite", system-ui;
+  font-size: 0.5px;
+  stroke-width: 0.13333333;
+  --function-color: royalblue;
+  --ideal-color: orange;
+  --estimate-color: crimson;
+  --measurement-color: hsl(120deg 97.85% 37.3%);
+}
+
+#background {
+  fill: white;
+}
+
+.ideal-stroke {
+  stroke: var(--ideal-color);
+}
+
+.ideal-fill {
+  fill: var(--ideal-color);
+}
+
+.function-stroke {
+  stroke: var(--function-color);
+}
+
+.function-fill {
+  fill: var(--function-color);
+}
+
+.estimate-stroke {
+  stroke: var(--estimate-color);
+}
+
+.estimate-fill {
+  fill: var(--estimate-color);
+}
+
+.measurement-fill {
+  fill: var(--measurement-color);
+}
+
+#legend {
+  transform: translate(0.375px, 0);
+}
+
+#graph {
+  transform: translate(9px, 7px);
+}
+
+#scale-text-1 {
+  font-size: 0.25px;
+  dominant-baseline: middle;
+}
+
+#scale-text-2 {
+  font-size: 0.025px;
+  dominant-baseline: middle;
+}
+
+#scale-text-3 {
+  font-size: 0.0025px;
+  dominant-baseline: middle;
+}

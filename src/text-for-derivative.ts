@@ -157,36 +157,3 @@ function showFrame(frameNumber: number) {
 }
 
 GLOBAL.showFrame = showFrame;
-
-/**
- * Next:
- *
- * 0:25:16 - 1:25:00 for the whole list:
- * 1) Start from the intro demo
- * 2) initially two fairly small circles for the inputs.
- * 3) The circles are exactly the same size as the line, and drawn on top.
- * 4) At some point the circles get bigger and get fuzzy edges.
- * 5) The line is replaced my multiple lines spread out to show multiple possible lines that go through both circles.
- * 6) Use repeatable randomness to pick points from anywhere in the possible range.
- * 7) The line can be blurry or partially transparent.
- * 8) The closer the line was to the center of each point, the sharper the line will be.
- * 9) The line's blurriness will be based on the worst of the two points.
- * 10) The line will always be at least somewhat visible, even if the line crossed though the most transparent edge of the point.
- * 11) Get rid of the % precision issues thing.  (I don't want to try to sync that with the rest of this demo.)
- * 12) Eventually move the points close together and slowly move from almost touching to largely overlapping.
- *
- * 0:33:30 - But in the real world
- * 1:11:00 - 1:20:15 If you try to push the limit, it is fuzzy.
- * 1:25:00 - 1:43:30 If you really want to push the limits you need a better approach. ... more smarter math.
- * 1:43:30 - My solution was so simple.
- * 2:04:00 - 2:23:29 Let's take a closer look. ...  ... a second sample twice as far away.
- * 2:25:09-ish and I wanted to know the value at 0
- * 2:37:36 -  so all I did was extrapolate
- * 2:47:00 - so, why does this work so well?  ... was linear now quadratic
- * 3:09:11 - imagine a taylor expansion
- *
- * I need to match the new video content to the voiceover found here:
- * https://www.youtube.com/watch?v=qzbga-c3mk0
- * "better derivative, longer voiceover"
- *
- */

@@ -54,6 +54,10 @@ svg {
   fill: var(--measurement-color);
 }
 
+#measurementBlur stop {
+  stop-color: var(--measurement-color);
+}
+
 #legend {
   transform: translate(0.375px, 0);
 }
@@ -75,4 +79,9 @@ svg {
 #scale-text-3 {
   font-size: 0.0025px;
   dominant-baseline: middle;
+}
+
+.scale-background {
+  stroke: white;
+  stroke-width: 0.2em;
 }

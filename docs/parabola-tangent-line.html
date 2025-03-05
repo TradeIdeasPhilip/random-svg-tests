@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>⧽parabola tangent line</title>
-    <script type="module" crossorigin src="./assets/अठारह-CjD8CD7G.js"></script>
+    <script type="module" crossorigin src="./assets/अठारह-CyMf0O71.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-CLGTS8fC.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-1LRynplM.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-DC2vzgXJ.js">
-    <link rel="stylesheet" crossorigin href="./assets/अठारह-4Pem99o6.css">
+    <link rel="stylesheet" crossorigin href="./assets/अठारह-BwHRxqr1.css">
   </head>
   <body>
     <svg
@@ -20,16 +20,18 @@
       preserveAspectRatio="xMidYMid meet"
       viewBox="0 0 16 9"
     >
+      <defs>
+        <radialGradient id="measurementBlur">
+          <stop offset="0%" stop-opacity="1" />
+          <stop offset="16.7%" stop-opacity="0.8521437889662113" />
+          <stop offset="33.3%" stop-opacity="0.5272924240430485" />
+          <stop offset="50%" stop-opacity="0.23692775868212165" />
+          <stop offset="66.7%" stop-opacity="0.07730474044329971" />
+          <stop offset="83.3%" stop-opacity="0.01831563888873418" />
+          <stop offset="100%" stop-opacity="0.0031511115984444414" />
+        </radialGradient>
+      </defs>
       <rect id="background" x="0" y="0" width="16" height="9"></rect>
-      <g id="legend">
-        <text y="1">Legend:</text>
-        <text y="1.8" class="function-fill">Function (Input)</text>
-        <text y="2.6" class="ideal-fill">Actual Tangent Line</text>
-        <text y="3.2" class="ideal-fill">(Desired Output)</text>
-        <text y="4" class="measurement-fill">Measurements</text>
-        <text y="4.8" class="estimate-fill">Estimated Tangent Line</text>
-        <text y="5.4" class="estimate-fill">(Actual Output)</text>
-      </g>
       <g id="graph">
         <path
           id="function"
@@ -37,8 +39,18 @@
           fill="none"
           style="d: path('M -3 -9 Q 0 9 3 -9')"
         ></path>
-        <line class="ideal-stroke" x1="-3" x2="3"></line>
-        <line class="estimate-stroke" x1="-2" y1="4" x2="4" y2="-8"></line>
+        <line class="ideal-stroke" x1="-16" x2="16"></line>
+        <line
+          id="singleEstimate"
+          class="estimate-stroke"
+          x1="-25"
+          x2="25"
+        ></line>
+        <g id="estimateLines">
+          <line class="estimate-stroke"></line>
+          <line class="estimate-stroke"></line>
+          <line class="estimate-stroke"></line>
+        </g>
         <circle class="measurement-fill" r="0.06666666" cx="0" cy="0"></circle>
         <circle class="measurement-fill" r="0.06666666" cx="2" cy="-4"></circle>
         <g id="scale">
@@ -139,6 +151,15 @@
             <text y="-0.09">&numsp;(0, 0.09)</text>
           </g>
         </g>
+      </g>
+      <g id="legend">
+        <text y="1">Legend:</text>
+        <text y="1.8" class="function-fill">Function (Input)</text>
+        <text y="2.6" class="ideal-fill">Actual Tangent Line</text>
+        <text y="3.2" class="ideal-fill">(Desired Output)</text>
+        <text y="4" class="measurement-fill">Measurements</text>
+        <text y="4.8" class="estimate-fill">Estimated Tangent Line</text>
+        <text y="5.4" class="estimate-fill">(Actual Output)</text>
       </g>
     </svg>
   </body>

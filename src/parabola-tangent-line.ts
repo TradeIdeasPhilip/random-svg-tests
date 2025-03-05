@@ -1,17 +1,163 @@
 import { getById } from "phil-lib/client-misc";
 import "./parabola-tangent-line.css";
 import { selectorQuery, selectorQueryAll } from "./utility";
+import { assertClass, count, polarToRectangular } from "phil-lib/misc";
 
-const functionPath = getById("function", SVGPathElement);
-const [fixedCircle, movingCircle] = selectorQueryAll(
-  "circle.measurement-fill",
-  SVGCircleElement,
-  2,
-  2
-);
-const estimateLine = selectorQuery("line.estimate-stroke", SVGLineElement);
+function lineToBorders(
+  line: SVGLineElement,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number
+) {
+  // Assume x0,y0 is on the screen for the sake of a simple solution that will work today.
+  // x0,y0 will become the center of a line segment that will extend 20 units in each direction.
+  // 20 because that's enough to cover the current space with a little to spare.
+  const θ = Math.atan2(y1 - y0, x1 - x0);
+  const delta = polarToRectangular(20, θ);
+  line.x1.baseVal.value = x0 + delta.x;
+  line.y1.baseVal.value = y0 + delta.y;
+  line.x2.baseVal.value = x0 - delta.x;
+  line.y2.baseVal.value = y0 - delta.y;
+}
 
-console.log({ functionPath, fixedCircle, movingCircle, estimateLine });
+function show(...elements: (SVGElement | HTMLElement)[]) {
+  elements.forEach((element) => {
+    element.style.display = "";
+  });
+}
+
+function hide(...elements: (SVGElement | HTMLElement)[]) {
+  elements.forEach((element) => {
+    element.style.display = "none";
+  });
+}
+
+class GUI {
+  readonly #scale = getById("scale", SVGGElement);
+  readonly #functionPath = getById("function", SVGPathElement);
+  readonly #estimateLine = selectorQuery("#singleEstimate", SVGLineElement);
+  readonly #estimateLines = selectorQueryAll(
+    "#estimateLines line",
+    SVGLineElement
+  );
+  readonly #fixedCircle: SVGCircleElement;
+  readonly #movingCircle: SVGCircleElement;
+  private addBorders() {
+    // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/paint-order
+    const originals = selectorQueryAll("svg#main text", SVGTextElement);
+    originals.forEach((original) => {
+      const clone = assertClass(original.cloneNode(true), SVGTextElement);
+      clone.classList.add("scale-background");
+      original.parentElement!.insertBefore(clone, original);
+    });
+  }
+  private constructor() {
+    [this.#fixedCircle, this.#movingCircle] = selectorQueryAll(
+      "circle.measurement-fill",
+      SVGCircleElement,
+      2,
+      2
+    );
+    const period = 0.13333333 * 2;
+    const dutyCycle = period / this.#estimateLines.length;
+    const strokeDasharray = `${dutyCycle} ${period - dutyCycle}`;
+    this.#estimateLines.forEach((estimateLine, index) => {
+      estimateLine.style.strokeDasharray = strokeDasharray;
+      estimateLine.style.strokeDashoffset = (dutyCycle * index).toString();
+    });
+    this.addBorders();
+    this.update();
+  }
+  static readonly instance = new GUI();
+  #zoom = 1;
+  #dx = 2;
+  get dx() {
+    return this.#dx;
+  }
+  private update() {
+    const x = 0 + this.#dx;
+    const mathY = this.f(x);
+    const screenY = -mathY;
+    const zoom = this.#zoom;
+    const cx = x * zoom;
+    const cy = screenY * zoom;
+    this.#movingCircle.cx.baseVal.value = cx;
+    this.#movingCircle.cy.baseVal.value = cy;
+    let r: number;
+    let fill: string;
+    if (this.blurry) {
+      /**
+       * TODO this should be based on the frame number or time.
+       * It should change smoothly over time.
+       * @returns A small random value to add to the x or y.
+       */
+      function bump() {
+        const c = 0.13333333 / 5;
+        return (Math.random() * c - c / 2) * zoom;
+      }
+      hide(this.#estimateLine);
+      show(...this.#estimateLines);
+      this.#estimateLines.forEach((estimateLine) => {
+        lineToBorders(estimateLine, bump(), bump(), cx + bump(), cy + bump());
+      });
+      r = GUI.initialBlurRadius * zoom;
+      fill = "url(#measurementBlur)";
+    } else {
+      hide(...this.#estimateLines);
+      show(this.#estimateLine);
+      lineToBorders(this.#estimateLine, 0, 0, cx, cy);
+      r = 0.06666666;
+      fill = "var(--measurement-color)";
+    }
+    [this.#fixedCircle, this.#movingCircle].forEach((circle) => {
+      circle.r.baseVal.value = r;
+      circle.style.fill = fill;
+    });
+  }
+  #blurry = false;
+  get blurry() {
+    return this.#blurry;
+  }
+  set blurry(newValue) {
+    this.#blurry = newValue;
+    this.update();
+  }
+  set dx(newValue) {
+    this.#dx = newValue;
+    this.update();
+  }
+  private updatePath() {
+    const zoom = this.#zoom;
+    /**
+     * This path perfectly describes y=x*x between x=-3 and x=3.
+     *
+     * Notice that I negated y.
+     * In SVG larger y values are drawn lower on the page.
+     * In math class and most charts larger y appear higher on the page.
+     */
+    const d = `path('M ${-3 * zoom} ${-9 * zoom} Q ${0 * zoom} ${9 * zoom} ${
+      3 * zoom
+    } ${-9 * zoom}')`;
+    this.#functionPath.style.d = d;
+  }
+  get zoom() {
+    return this.#zoom;
+  }
+  set zoom(newValue) {
+    this.#zoom = newValue;
+    this.update();
+    this.updatePath();
+    this.#scale.style.transform = `scale(${newValue})`;
+  }
+  f(x: number) {
+    return x * x;
+  }
+  static readonly maxBlurRadius = 2.5;
+  static readonly initialBlurRadius = 0.25;
+}
+
+(window as any).GUI = GUI.instance;
 
 /**
  * Next:
@@ -78,3 +224,15 @@ console.log({ functionPath, fixedCircle, movingCircle, estimateLine });
  * "better derivative, longer voiceover"
  *
  */
+
+// I used this to create #measurementBlur
+/**
+ * A bell curve scaled so that the max value is 1.
+ * @param x Number of standard deviations from the norm.
+ * @returns A value between 1 and 0
+ */
+function bellIsh(x: number) {
+  return Math.exp(-x * x);
+}
+const bellCurveData = Array.from(count(0, 2.41, 0.4), (i) => bellIsh(i));
+console.log(bellCurveData);

@@ -1,8 +1,17 @@
-import { getById } from "phil-lib/client-misc";
+import { AnimationLoop, getById } from "phil-lib/client-misc";
 import "./parabola-tangent-line.css";
 import { selectorQuery, selectorQueryAll } from "./utility";
-import { assertClass, count, polarToRectangular } from "phil-lib/misc";
+import { assertClass, FULL_CIRCLE, polarToRectangular } from "phil-lib/misc";
 
+/**
+ * Make the given `<line>` element look like a line that goes on forever in each direction.
+ * Make it go past the edges of the screen.
+ * @param line Adjust this element.
+ * @param x0 x of one point on the line.
+ * @param y0 y of one point on the line.
+ * @param x1 x of a second point on a line.
+ * @param y1 y of a second point on a line.
+ */
 function lineToBorders(
   line: SVGLineElement,
   x0: number,
@@ -32,8 +41,55 @@ function hide(...elements: (SVGElement | HTMLElement)[]) {
     element.style.display = "none";
   });
 }
+/**
+ * Use this to simulate precision errors.
+ *
+ * The values will change continuously with time.
+ *
+ * The amplitude shows the max distance the function gets from 0.
+ * I.e. sin(x) would have an amplitude of 1 with a range between -1 and +1.
+ *
+ *
+ */
+type Jiggler = (
+  seconds: number,
+  amplitude: number
+) => { Δx: number; Δy: number };
+
+function makeJigglers(): Jiggler[] {
+  const primes = [
+    [29, 41],
+    [3, 5],
+    [37, 7],
+    [11, 13],
+    [31, 17],
+    [19, 23],
+    [103, 43],
+    [307, 71],
+  ];
+  const result = primes.map(([rx, ry]) => {
+    function jiggler(
+      seconds: number,
+      amplitude: number
+    ): { Δx: number; Δy: number } {
+      function jiggler1(r: number) {
+        const θ = (seconds * FULL_CIRCLE) / r;
+        const result = Math.sin(θ) * amplitude;
+        return result;
+      }
+      return { Δx: jiggler1(rx), Δy: jiggler1(ry) };
+    }
+    return jiggler;
+  });
+  return result;
+}
+const jigglers = makeJigglers();
 
 class GUI {
+  /**
+   * The numbers and tick marks along the x axis.
+   * I added this scale specifically because it's the most obvious way to show how zoomed in we are.
+   */
   readonly #scale = getById("scale", SVGGElement);
   readonly #functionPath = getById("function", SVGPathElement);
   readonly #estimateLine = selectorQuery("#singleEstimate", SVGLineElement);
@@ -41,7 +97,13 @@ class GUI {
     "#estimateLines line",
     SVGLineElement
   );
+  /**
+   * (0, 0)
+   */
   readonly #fixedCircle: SVGCircleElement;
+  /**
+   * (x + dx, f(x + dx))
+   */
   readonly #movingCircle: SVGCircleElement;
   private addBorders() {
     // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/paint-order
@@ -52,6 +114,13 @@ class GUI {
       original.parentElement!.insertBefore(clone, original);
     });
   }
+  /**
+   * If you want more than one of these, you'll have to create
+   * a copy of all the html elements for each instance of this
+   * class.
+   *
+   * That wouldn't be hard, but it's not required today.
+   */
   private constructor() {
     [this.#fixedCircle, this.#movingCircle] = selectorQueryAll(
       "circle.measurement-fill",
@@ -59,7 +128,11 @@ class GUI {
       2,
       2
     );
-    const period = 0.13333333 * 2;
+    /**
+     * This is set in the css file.
+     */
+    const strokeWidth = 0.13333333;
+    const period = strokeWidth * 2;
     const dutyCycle = period / this.#estimateLines.length;
     const strokeDasharray = `${dutyCycle} ${period - dutyCycle}`;
     this.#estimateLines.forEach((estimateLine, index) => {
@@ -75,6 +148,14 @@ class GUI {
   get dx() {
     return this.#dx;
   }
+  #timeInSeconds = 0;
+  set timeInSeconds(newValue: number) {
+    this.#timeInSeconds = newValue;
+    this.update();
+  }
+  get timeInSeconds() {
+    return this.#timeInSeconds;
+  }
   private update() {
     const x = 0 + this.#dx;
     const mathY = this.f(x);
@@ -87,21 +168,15 @@ class GUI {
     let r: number;
     let fill: string;
     if (this.blurry) {
-      /**
-       * TODO this should be based on the frame number or time.
-       * It should change smoothly over time.
-       * @returns A small random value to add to the x or y.
-       */
-      function bump() {
-        const c = 0.13333333 / 5;
-        return (Math.random() * c - c / 2) * zoom;
-      }
       hide(this.#estimateLine);
       show(...this.#estimateLines);
-      this.#estimateLines.forEach((estimateLine) => {
-        lineToBorders(estimateLine, bump(), bump(), cx + bump(), cy + bump());
+      this.#estimateLines.forEach((estimateLine, index) => {
+        const amplitude = 0.013333333 * this.zoom;
+        const from = jigglers[index * 2](this.timeInSeconds, amplitude);
+        const to = jigglers[index * 2 + 1](this.timeInSeconds, amplitude);
+        lineToBorders(estimateLine, from.Δx, from.Δy, cx + to.Δx, cy + to.Δy);
       });
-      r = GUI.initialBlurRadius * zoom;
+      r = GUI.initialBlurRadius * Math.sqrt(zoom);
       fill = "url(#measurementBlur)";
     } else {
       hide(...this.#estimateLines);
@@ -141,6 +216,11 @@ class GUI {
     } ${-9 * zoom}')`;
     this.#functionPath.style.d = d;
   }
+  /**
+   * 1.0 for the default / initial value.
+   * Larger to zoom in.
+   *
+   */
   get zoom() {
     return this.#zoom;
   }
@@ -150,10 +230,33 @@ class GUI {
     this.updatePath();
     this.#scale.style.transform = `scale(${newValue})`;
   }
+  /**
+   * This is the function that we are graphing.
+   */
   f(x: number) {
     return x * x;
   }
-  static readonly maxBlurRadius = 2.5;
+  #automaticTime?: AnimationLoop;
+  /**
+   * Set this to true to automatically and constantly update this.timeInSeconds.
+   * That's ideal for watching in realtime.
+   * Set this to false (the default) if you want to manually update this.timeInSeconds.
+   * That's ideal for recording a video.
+   */
+  get automaticTime() {
+    return !!this.#automaticTime;
+  }
+  set automaticTime(newValue: boolean) {
+    this.#automaticTime?.cancel();
+    this.#automaticTime = undefined;
+    if (newValue) {
+      this.#automaticTime = new AnimationLoop((time: DOMHighResTimeStamp) => {
+        if (this.blurry) {
+          this.timeInSeconds = time / 1000;
+        }
+      });
+    }
+  }
   static readonly initialBlurRadius = 0.25;
 }
 
@@ -161,27 +264,6 @@ class GUI {
 
 /**
  * Next:
- *
- * 0:25:16 - 1:43:30 for the whole list:
- * 1) Start from the intro demo
- * 2) initially two fairly small circles for the inputs.
- * 3) The circles are exactly the same size as the line, and drawn on top.
- * 4) At some point the circles get bigger and get fuzzy edges.
- * 5) The line is replaced my multiple lines spread out to show multiple possible lines that go through both circles.
- * 6) Use repeatable randomness to pick points from anywhere in the possible range.
- * 7) The line can be blurry or partially transparent.
- * 8) The closer the line was to the center of each point, the sharper the line will be.
- * 9) The line's blurriness will be based on the worst of the two points.
- * 10) The line will always be at least somewhat visible, even if the line crossed though the most transparent edge of the point.
- * 11) Get rid of the % precision issues thing.  (I don't want to try to sync that with the rest of this demo.)
- * 12) Eventually move the points close together and slowly move from almost touching to largely overlapping.
- *
- * Use a parabola for the function, y=x*x.
- * the point we care about is y′(0) = 0.
- * Draw a J shape, with a little bit to the left of x=0 just for context.
- * One point will be fixed at x=0.
- * dx will always be positive, so the second point will always be on the left,
- * like in my previous semi circle demo, but focused on the bottom of the path.
  *
  * Start far away from the inner point and quickly move toward it to show
  * the estimate getting better.
@@ -223,16 +305,27 @@ class GUI {
  * https://www.youtube.com/watch?v=qzbga-c3mk0
  * "better derivative, longer voiceover"
  *
+ * End at or around GUI.dx=0.025.  
+ * That looks great with fuzzy=true and zoom = 20;
+ * dx = 0.05 is much different.  That would even be a good place to pause.
+ * 0.025 sometimes allows a complete circle!  Smaller might do a lot of circles.
+ * zoom=50 works well with dx=0.025
+ * 
+ * The un-fuzzy (first) version can stop at zoom=50 and GUI.dx=0.005
+ * This barely shows any change in the line, but something is visible.
+ * dx=0.001 makes the line completely flat.
+ * dx=0.01 would also be a reasonable place to stop or at least slow down.
+
  */
 
-// I used this to create #measurementBlur
-/**
- * A bell curve scaled so that the max value is 1.
- * @param x Number of standard deviations from the norm.
- * @returns A value between 1 and 0
- */
-function bellIsh(x: number) {
-  return Math.exp(-x * x);
-}
-const bellCurveData = Array.from(count(0, 2.41, 0.4), (i) => bellIsh(i));
-console.log(bellCurveData);
+// I used this to create #measurementBlur:
+// /**
+//  * A bell curve scaled so that the max value is 1.
+//  * @param x Number of standard deviations from the norm.
+//  * @returns A value between 1 and 0
+//  */
+// function bellIsh(x: number) {
+//   return Math.exp(-x * x);
+// }
+// const bellCurveData = Array.from(count(0, 2.41, 0.4), (i) => bellIsh(i));
+// console.log(bellCurveData);

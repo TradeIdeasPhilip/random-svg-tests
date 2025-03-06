@@ -46,6 +46,10 @@ svg {
   stroke: var(--estimate-color);
 }
 
+#estimateLines line {
+  filter: blur(0.01px);
+}
+
 .estimate-fill {
   fill: var(--estimate-color);
 }

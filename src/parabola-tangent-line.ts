@@ -1,7 +1,14 @@
 import { AnimationLoop, getById } from "phil-lib/client-misc";
 import "./parabola-tangent-line.css";
 import { selectorQuery, selectorQueryAll } from "./utility";
-import { assertClass, FULL_CIRCLE, polarToRectangular } from "phil-lib/misc";
+import {
+  assertClass,
+  FULL_CIRCLE,
+  lerp,
+  LinearFunction,
+  makeLinear,
+  polarToRectangular,
+} from "phil-lib/misc";
 
 /**
  * Make the given `<line>` element look like a line that goes on forever in each direction.
@@ -260,11 +267,130 @@ class GUI {
   static readonly initialBlurRadius = 0.25;
 }
 
-(window as any).GUI = GUI.instance;
+const gui = GUI.instance;
+
+const GLOBAL = window as any;
+
+GLOBAL.GUI = GUI.instance;
+
+// MARK: Script
+lerp
+makeInterpolator
+function makeInterpolator(
+  samples: { readonly x: number; readonly y: number }[]
+): LinearFunction {
+  if (samples.length == 0) {
+    return () => {
+      throw new Error("empty");
+    };
+  }
+  const firstX = samples[0].x;
+  const pieces: { f: LinearFunction; x2: number }[] = [];
+  samples.forEach((sample, index) => {
+    const nextSample = samples[index + 1];
+    if (nextSample === undefined) {
+      // last
+    } else {
+      // not last.
+      if (sample.x > nextSample.x) {
+        throw new Error("x’s are out of order.");
+      }
+      if (sample.x < nextSample.x) {
+        const x1 = sample.x;
+        const y1 = sample.y;
+        const x2 = nextSample.x;
+        const y2 = nextSample.y;
+        // makeLinear() does not currently work if x1 == -Infinity or x2 == Infinity.
+        // Those cases allow us to return a y for every x.
+        const f = y1 == y2 ? () => y1 : makeLinear(x1, y1, x2, y2);
+        pieces.push({ f, x2 });
+      }
+    }
+  });
+  const result = (x: number) => {
+    if (x < firstX) {
+      throw new Error("x is too small");
+    }
+    for (let i = 0; i < pieces.length; i++) {
+      const piece = pieces[i];
+      if (x <= piece.x2) {
+        return piece.f(x);
+      }
+    }
+    throw new Error("x is too big");
+  };
+  return result;
+}
+
+const T_OFFSET = 22.5;
+const T_start = 22.5 - T_OFFSET;
+const T_fuzzyStart = 33.5 - T_OFFSET;
+const T_end = 60 + 15 - T_OFFSET;
+
+const idealDx = makeLinear(T_start, 2, T_fuzzyStart, 0.005);
+const fuzzyDx = makeLinear(T_fuzzyStart, 2, T_end, 0.005);
+const getDx = (timeInSeconds: number) =>
+  timeInSeconds < T_fuzzyStart
+    ? idealDx(timeInSeconds)
+    : fuzzyDx(timeInSeconds);
+
+function showFrame(timeInSeconds: number) {
+  gui.timeInSeconds = timeInSeconds - T_fuzzyStart;
+  gui.blurry = timeInSeconds >= T_fuzzyStart;
+  gui.dx = getDx(timeInSeconds);
+}
+
+let realtimeAnimation: AnimationLoop | undefined;
+
+function stopRealtimeAnimation() {
+  realtimeAnimation?.cancel();
+}
+
+function startRealtimeAnimation() {
+  gui.automaticTime = false;
+  stopRealtimeAnimation();
+  let startTime: DOMHighResTimeStamp | undefined;
+  realtimeAnimation = new AnimationLoop((time: DOMHighResTimeStamp) => {
+    startTime ??= time;
+    const timePassed = time - startTime;
+    showFrame(timePassed / 1000);
+  });
+}
+
+getById("start", HTMLButtonElement).addEventListener(
+  "click",
+  startRealtimeAnimation
+);
+getById("stop", HTMLButtonElement).addEventListener(
+  "click",
+  stopRealtimeAnimation
+);
+
+GLOBAL.startRealtimeAnimation = startRealtimeAnimation;
+
+function initScreenCapture(script: unknown) {
+  document
+    .querySelectorAll("[data-hideBeforeScreenshot]")
+    .forEach((element) => {
+      if (!(element instanceof SVGElement || element instanceof HTMLElement)) {
+        throw new Error("wtf");
+      }
+      element.style.display = "none";
+    });
+  gui.automaticTime = false;
+  return {
+    source: "parabola-tangent-line.ts",
+    script,
+    seconds: T_end - T_start,
+  };
+}
+
+GLOBAL.initScreenCapture = initScreenCapture;
+GLOBAL.showFrame = showFrame;
 
 /**
  * Next:
- *
+ * 0:22:30 
  * Start far away from the inner point and quickly move toward it to show
  * the estimate getting better.
  * Approach 0 at an exponentially decreasing rate.
@@ -285,9 +411,6 @@ class GUI {
  * Shortly after the clouds start to overlap, stop moving the closer,
  * or at least slow down tremendously so it's obvious how wildly the lines are swinging around.
  *
- * margin of error in the legend will have a triple image of each letter.
- * The letters will move independently.
- * The animation will mostly focus on being readable, but with some extremes to show when it's not.
  *
  * 0:33:30 - But in the real world
  * 1:11:00 - 1:20:15 If you try to push the limit, it is fuzzy.

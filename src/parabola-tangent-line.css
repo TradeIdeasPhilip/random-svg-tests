@@ -89,3 +89,9 @@ svg {
   stroke: white;
   stroke-width: 0.2em;
 }
+
+#debug {
+  position:absolute;
+  bottom :0.5em;
+  right:0.5em;
+}

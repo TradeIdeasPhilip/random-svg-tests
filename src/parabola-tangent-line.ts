@@ -140,11 +140,16 @@ class GUI {
      */
     const strokeWidth = 0.13333333;
     const period = strokeWidth * 2;
-    const dutyCycle = period / this.#estimateLines.length;
-    const strokeDasharray = `${dutyCycle} ${period - dutyCycle}`;
+    const partitionSize = period / this.#estimateLines.length;
+    const dutyCycle = partitionSize * 1.15;
+    const recoveryTime = period - dutyCycle;
+    if (recoveryTime < 0) {
+      throw new Error("wtf");
+    }
+    const strokeDasharray = `${dutyCycle} ${recoveryTime}`;
     this.#estimateLines.forEach((estimateLine, index) => {
       estimateLine.style.strokeDasharray = strokeDasharray;
-      estimateLine.style.strokeDashoffset = (dutyCycle * index).toString();
+      estimateLine.style.strokeDashoffset = (partitionSize * index).toString();
     });
     this.addBorders();
     this.update();
@@ -178,7 +183,7 @@ class GUI {
       hide(this.#estimateLine);
       show(...this.#estimateLines);
       this.#estimateLines.forEach((estimateLine, index) => {
-        const amplitude = 0.013333333 * this.zoom;
+        const amplitude = (0.013333333 / 4) * this.zoom;
         const from = jigglers[index * 2](this.timeInSeconds, amplitude);
         const to = jigglers[index * 2 + 1](this.timeInSeconds, amplitude);
         lineToBorders(estimateLine, from.Δx, from.Δy, cx + to.Δx, cy + to.Δy);
@@ -264,7 +269,7 @@ class GUI {
       });
     }
   }
-  static readonly initialBlurRadius = 0.25;
+  static readonly initialBlurRadius = 1 / 8;
 }
 
 const gui = GUI.instance;
@@ -274,8 +279,6 @@ const GLOBAL = window as any;
 GLOBAL.GUI = GUI.instance;
 
 // MARK: Script
-lerp
-makeInterpolator
 function makeInterpolator(
   samples: { readonly x: number; readonly y: number }[]
 ): LinearFunction {
@@ -325,19 +328,45 @@ function makeInterpolator(
 const T_OFFSET = 22.5;
 const T_start = 22.5 - T_OFFSET;
 const T_fuzzyStart = 33.5 - T_OFFSET;
-const T_end = 60 + 15 - T_OFFSET;
+const T_unlessYouGetTooClose = 54.5 - T_OFFSET;
+const T_end = 60 + 22 - T_OFFSET;
 
-const idealDx = makeLinear(T_start, 2, T_fuzzyStart, 0.005);
-const fuzzyDx = makeLinear(T_fuzzyStart, 2, T_end, 0.005);
-const getDx = (timeInSeconds: number) =>
-  timeInSeconds < T_fuzzyStart
-    ? idealDx(timeInSeconds)
-    : fuzzyDx(timeInSeconds);
+const getDx = makeInterpolator([
+  { x: T_start, y: 2 },
+  { x: lerp(T_start, T_fuzzyStart, 0.15), y: Math.sqrt(3) },
+  { x: lerp(T_start, T_fuzzyStart, 0.3), y: Math.sqrt(2) },
+  { x: lerp(T_start, T_fuzzyStart, 0.45), y: 1 },
+  { x: lerp(T_start, T_fuzzyStart, 0.95), y: 0.005 },
+  { x: T_fuzzyStart, y: 0.005 },
+  { x: T_fuzzyStart, y: 2 },
+  { x: lerp(T_fuzzyStart, T_unlessYouGetTooClose, 0.15), y: Math.sqrt(3) },
+  { x: lerp(T_fuzzyStart, T_unlessYouGetTooClose, 0.3), y: Math.sqrt(2) },
+  { x: lerp(T_fuzzyStart, T_unlessYouGetTooClose, 0.45), y: 1 },
+  { x: lerp(T_fuzzyStart, T_unlessYouGetTooClose, 0.95), y: 0.1 },
+  { x: T_unlessYouGetTooClose, y: 0.1 },
+  { x: lerp(T_unlessYouGetTooClose, T_end, 0.25), y: 0.1 },
+  { x: lerp(T_unlessYouGetTooClose, T_end, 0.5), y: 0.05 },
+  { x: lerp(T_unlessYouGetTooClose, T_end, 0.75), y: 0.005 },
+  { x: T_end, y: 0.005 },
+]);
+const getZoom = makeInterpolator([
+  { x: T_start, y: 1 },
+  { x: lerp(T_start, T_fuzzyStart, 0.55), y: 1 },
+  { x: lerp(T_start, T_fuzzyStart, 0.85), y: 6 },
+  { x: T_fuzzyStart, y: 6 },
+  { x: T_fuzzyStart, y: 1 },
+  { x: lerp(T_fuzzyStart, T_unlessYouGetTooClose, 0.55), y: 1 },
+  { x: lerp(T_fuzzyStart, T_unlessYouGetTooClose, 0.85), y: 6 },
+  { x: T_unlessYouGetTooClose, y: 6 },
+  { x: lerp(T_unlessYouGetTooClose, T_end, 0.3), y: 32 },
+  { x: T_end, y: 32 },
+]);
 
 function showFrame(timeInSeconds: number) {
   gui.timeInSeconds = timeInSeconds - T_fuzzyStart;
   gui.blurry = timeInSeconds >= T_fuzzyStart;
   gui.dx = getDx(timeInSeconds);
+  gui.zoom = getZoom(timeInSeconds);
 }
 
 let realtimeAnimation: AnimationLoop | undefined;
@@ -350,11 +379,17 @@ function startRealtimeAnimation() {
   gui.automaticTime = false;
   stopRealtimeAnimation();
   let startTime: DOMHighResTimeStamp | undefined;
-  realtimeAnimation = new AnimationLoop((time: DOMHighResTimeStamp) => {
+  const animation = new AnimationLoop((time: DOMHighResTimeStamp) => {
     startTime ??= time;
     const timePassed = time - startTime;
-    showFrame(timePassed / 1000);
+    const timeInSeconds = timePassed / 1000;
+    if (timeInSeconds > T_end) {
+      animation.cancel();
+    } else {
+      showFrame(timeInSeconds);
+    }
   });
+  realtimeAnimation = animation;
 }
 
 getById("start", HTMLButtonElement).addEventListener(
@@ -411,7 +446,6 @@ GLOBAL.showFrame = showFrame;
  * Shortly after the clouds start to overlap, stop moving the closer,
  * or at least slow down tremendously so it's obvious how wildly the lines are swinging around.
  *
- *
  * 0:33:30 - But in the real world
  * 1:11:00 - 1:20:15 If you try to push the limit, it is fuzzy.
  * 1:25:00 - 1:43:30 If you really want to push the limits you need a better approach. ... more smarter math.
@@ -428,17 +462,6 @@ GLOBAL.showFrame = showFrame;
  * https://www.youtube.com/watch?v=qzbga-c3mk0
  * "better derivative, longer voiceover"
  *
- * End at or around GUI.dx=0.025.  
- * That looks great with fuzzy=true and zoom = 20;
- * dx = 0.05 is much different.  That would even be a good place to pause.
- * 0.025 sometimes allows a complete circle!  Smaller might do a lot of circles.
- * zoom=50 works well with dx=0.025
- * 
- * The un-fuzzy (first) version can stop at zoom=50 and GUI.dx=0.005
- * This barely shows any change in the line, but something is visible.
- * dx=0.001 makes the line completely flat.
- * dx=0.01 would also be a reasonable place to stop or at least slow down.
-
  */
 
 // I used this to create #measurementBlur:

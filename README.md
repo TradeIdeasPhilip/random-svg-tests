@@ -15,6 +15,13 @@ Some of these demos work better on phones than others.
 I do most of my testing on Chrome on a Mac.
 I occasionally test on an Android phone.
 
+## Videos
+
+A lot of the files in this repo are used to create videos.
+I use [html-to-move](https://github.com/TradeIdeasPhilip/html-to-movie) to convert a web animation into an `*.MP4` file.
+That tool works with any web technologies.
+But it works especially well with SVG.
+
 ## [curves.ts](./src/curves.ts) / [math-to-path.ts](./src/math-to-path.ts)
 
 [This page](https://tradeideasphilip.github.io/random-svg-tests/curves.html) shows some simple examples of some tools that can create and manipulate paths.
@@ -77,7 +84,7 @@ I want to understand and monitor the health of the system, so I can push the lim
 I need to know what's a reasonable FPS, so I know how to interpret the current FPS.
 I haven't found any discussion of this on the internet.
 
-This looks promising:  https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver
+This looks promising: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver
 It gives JavaScript access to the same info in the performance tab, which I don't yet know how to use.
 
 ## Letters

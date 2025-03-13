@@ -63,7 +63,7 @@ svg {
 }
 
 #legend {
-  transform: translate(0.375px, 0);
+  transform: translate(0.375px, -0.125px);
 }
 
 #graph {
@@ -85,13 +85,13 @@ svg {
   dominant-baseline: middle;
 }
 
-.scale-background {
+.text-background {
   stroke: white;
   stroke-width: 0.2em;
 }
 
 #debug {
-  position:absolute;
-  bottom :0.5em;
-  right:0.5em;
+  position: absolute;
+  bottom: 0.5em;
+  right: 0.5em;
 }

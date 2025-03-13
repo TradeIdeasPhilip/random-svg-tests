@@ -92,6 +92,21 @@ function makeJigglers(): Jiggler[] {
 }
 const jigglers = makeJigglers();
 
+type Rotator = (seconds: number) => number;
+
+function makeRotator(factor: number): Rotator {
+  const amplitude = 10;
+  function rotator(seconds: number) {
+    const r = Math.sin(seconds * factor) * amplitude;
+    return r;
+  }
+  return rotator;
+}
+
+const rotators = [2, Math.E, Math.PI, 2 ** 1.5, 4, 3].map((factor) =>
+  makeRotator(factor)
+);
+
 class GUI {
   /**
    * The numbers and tick marks along the x axis.
@@ -104,6 +119,7 @@ class GUI {
     "#estimateLines line",
     SVGLineElement
   );
+  readonly #marginOfErrorG = selectorQuery("#margin-of-error", SVGGElement);
   /**
    * (0, 0)
    */
@@ -117,7 +133,7 @@ class GUI {
     const originals = selectorQueryAll("svg#main text", SVGTextElement);
     originals.forEach((original) => {
       const clone = assertClass(original.cloneNode(true), SVGTextElement);
-      clone.classList.add("scale-background");
+      clone.classList.add("text-background");
       original.parentElement!.insertBefore(clone, original);
     });
   }
@@ -152,8 +168,12 @@ class GUI {
       estimateLine.style.strokeDashoffset = (partitionSize * index).toString();
     });
     this.addBorders();
+    this.#blurMe = selectorQueryAll(".blur-me", SVGTSpanElement, 2, 2);
+    this.#shakeMe = selectorQueryAll(".shake-me", SVGTextElement, 2, 2);
     this.update();
   }
+  readonly #blurMe: readonly SVGTSpanElement[];
+  readonly #shakeMe: readonly SVGTextElement[];
   static readonly instance = new GUI();
   #zoom = 1;
   #dx = 2;
@@ -180,6 +200,7 @@ class GUI {
     let r: number;
     let fill: string;
     if (this.blurry) {
+      show(this.#marginOfErrorG);
       hide(this.#estimateLine);
       show(...this.#estimateLines);
       this.#estimateLines.forEach((estimateLine, index) => {
@@ -190,7 +211,26 @@ class GUI {
       });
       r = GUI.initialBlurRadius * Math.sqrt(zoom);
       fill = "url(#measurementBlur)";
+      {
+        const periodInSeconds = 2;
+        const amplitude =
+          1 -
+          Math.abs(
+            Math.cos((this.timeInSeconds * FULL_CIRCLE) / 2 / periodInSeconds)
+          );
+        const filter = `blur(${amplitude * 0.04}px)`;
+        this.#blurMe.forEach((element) => (element.style.filter = filter));
+      }
+      this.#shakeMe.forEach((element) => {
+        const rotations = rotators.map((rotator) =>
+          rotator(this.timeInSeconds)
+        );
+        rotations.push(0);
+        const value = rotations.join(" ");
+        element.setAttribute("rotate", value);
+      });
     } else {
+      hide(this.#marginOfErrorG);
       hide(...this.#estimateLines);
       show(this.#estimateLine);
       lineToBorders(this.#estimateLine, 0, 0, cx, cy);
@@ -425,7 +465,7 @@ GLOBAL.showFrame = showFrame;
 
 /**
  * Next:
- * 0:22:30 
+ * 0:22:30
  * Start far away from the inner point and quickly move toward it to show
  * the estimate getting better.
  * Approach 0 at an exponentially decreasing rate.
@@ -475,3 +515,38 @@ GLOBAL.showFrame = showFrame;
 // }
 // const bellCurveData = Array.from(count(0, 2.41, 0.4), (i) => bellIsh(i));
 // console.log(bellCurveData);
+
+// MARK: Tools
+
+function mouseEventToUserSpace(
+  event: MouseEvent,
+  element?: SVGGraphicsElement
+) {
+  const mousePoint = new DOMPointReadOnly(event.clientX, event.clientY);
+  element ??= event.target as SVGGraphicsElement;
+  const matrix = element.getScreenCTM()!.inverse();
+  const userSpacePoint = mousePoint.matrixTransform(matrix);
+  return { x: userSpacePoint.x, y: userSpacePoint.y };
+}
+
+function addTools(svgElement: SVGSVGElement) {
+  let lastDown = { x: 0, y: 0 };
+  svgElement.addEventListener("pointerdown", (event) => {
+    lastDown = mouseEventToUserSpace(event);
+    const target = event.target as SVGGraphicsElement;
+    target.setPointerCapture(event.pointerId);
+    console.log(lastDown, target);
+  });
+  svgElement.addEventListener("lostpointercapture", (event) => {
+    const endPoint = mouseEventToUserSpace(event);
+    const dx = endPoint.x - lastDown.x;
+    const dy = endPoint.y - lastDown.y;
+    if (dx != 0 || dy != 0) {
+      console.log({ ...endPoint, dx, dy });
+    }
+  });
+}
+
+selectorQueryAll("svg", SVGSVGElement).forEach((svgElement) =>
+  addTools(svgElement)
+);

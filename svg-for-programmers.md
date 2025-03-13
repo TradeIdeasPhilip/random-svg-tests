@@ -225,3 +225,20 @@ https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/paint-order
 I often do this myself.
 This is required to keep text readable.
 paint-order="stroke" id="stroke-under"
+
+`$0.rotate.baseVal.appendItem(1)` -> `TypeError: parameter 1 is not of type 'SVGNumber'.`
+This is an example of where I _can_ use typed objects but it's so much trouble,
+it's easier just to `setAttribute()`.
+
+```
+function resetSpacing() {
+  const length = text.ownerSVGElement.createSVGLength();
+  length.value = 10;
+  list.initialize(length);
+  printList();
+}
+```
+
+(from https://developer.mozilla.org/en-US/docs/Web/API/SVGLengthList)
+I was hoping it would be easier for a list of numbers than it was for a list of lengths.
+But, as shown in the error message above, an [SVGNumberList](https://developer.mozilla.org/en-US/docs/Web/API/SVGNumberList) is **not** a list of of numbers. It is a list of [SVGNumber](https://developer.mozilla.org/en-US/docs/Web/API/SVGNumber) objects. So I'd have to do something similar to the example above even in this simple case. This is when I decided it would be easier to just use `setAttribute()`.

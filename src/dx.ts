@@ -124,10 +124,11 @@ function setDxSize(newSize: number) {
 
 const getFrameNumber = new GetFrameNumber(60);
 
+/**
+ * Start of demo video.
+ * This script covers the entire demo video.
+ */
 const T_start = 0;
-if (T_start) {
-  throw new Error("wtf");
-}
 
 /**
  * Limit the range of dx.  Keep it small.  Keep it changing, but always small.
@@ -152,6 +153,11 @@ const T_finishedMovingToBigDx = getFrameNumber.fromMSF(4, 32, 9);
 
 const T_startMovingFromRedToGreen = getFrameNumber.fromMSF(4, 41, 0);
 const T_endAtGreen = getFrameNumber.fromMSF(4, 50, 0);
+
+/**
+ * Start of demo video.
+ * This script covers the entire demo video.
+ */
 const T_endOfVideo = getFrameNumber.fromMSF(5, 17, 0);
 
 console.table({
@@ -625,6 +631,9 @@ class Spotlight {
       animation.currentTime = frameNumber;
     });
   }
+  static disable() {
+    this.showFrame(0);
+  }
 
   static create(
     script: readonly ScriptItem[] = spotlightScript,
@@ -657,14 +666,40 @@ class Spotlight {
   }
 }
 
-function showFrame(frameNumber: number) {
+function showFrameDemo(frameNumber: number) {
   showFrameDx(frameNumber);
   showFrameColor(frameNumber);
   Spotlight.showFrame(frameNumber);
 }
 
+// MARK: Main video
+
+const TT_start = getFrameNumber.fromMSF(5, 23, 55);
+const TT_colorTransitionStart = getFrameNumber.fromMSF(5, 55, 52);
+const TT_colorTransitionEnd = getFrameNumber.fromMSF(6, 8, 0);
+const TT_end = getFrameNumber.fromMSF(6, 18, 36);
+
+const frameColorMain = makeBoundedLinear(
+  TT_colorTransitionStart,
+  RED,
+  TT_colorTransitionEnd,
+  GREEN
+);
+
+function showFrameMain(frameNumber: number) {
+  setDxSize(initialSineWave(frameNumber));
+  setColor(frameColorMain(frameNumber));
+}
+
 const WINDOW = window as any;
-WINDOW.showFrame = showFrame;
+WINDOW.showFrameDemo = showFrameDemo;
+WINDOW.showFrameMain = showFrameMain;
+
+let showFrame = showFrameMain;
+
+WINDOW.showFrame = (frame: number) => {
+  showFrame(frame);
+};
 
 WINDOW.Spotlight = Spotlight;
 
@@ -688,13 +723,34 @@ function initScreenCapture(script: unknown) {
       }
       element.style.display = "none";
     });
-  return {
-    source: "dx.ts",
-    devicePixelRatio: devicePixelRatio,
-    script,
-    firstFrame: T_start,
-    lastFrame: T_endOfVideo,
-  };
+  switch (script) {
+    case "demo": {
+      // https://www.youtube.com/watch?v=THZZlEpo684 A quick overview of dx — Calculus class & real world perspectives.
+      // https://www.youtube.com/watch?v=uRtn72SrE10 Low res preview
+      showFrame = showFrameDemo;
+      return {
+        source: "dx.ts",
+        devicePixelRatio: devicePixelRatio,
+        script,
+        firstFrame: T_start,
+        lastFrame: T_endOfVideo,
+      };
+    }
+    case "main": {
+      showFrame = showFrameMain;
+      Spotlight.disable();
+      return {
+        source: "dx.ts",
+        devicePixelRatio: devicePixelRatio,
+        script,
+        firstFrame: TT_start,
+        lastFrame: TT_end,
+      };
+    }
+    default: {
+      throw new Error(`Unknown script: ${JSON.stringify(script)}`);
+    }
+  }
 }
 
 WINDOW.initScreenCapture = initScreenCapture;
@@ -778,3 +834,13 @@ WINDOW.ssl = ssl;
   });
   console.table(badData);
 }
+
+/**
+ * Script:
+ * Start at 4:00:22, full red.
+ * 4:33:49 start transitioning toward yellow and eventually green.
+ * 4:47:33 It's all green now.
+ * 5:10:18 Done.
+ * The dx size is alternating just like at the beginning of the demo.
+ *
+ */

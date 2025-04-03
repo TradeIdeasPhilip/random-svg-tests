@@ -165,8 +165,105 @@
           <text y="6.8">(Not to Scale)</text>
         </g>
       </g>
+      <g id="formulae">
+        <rect x="0" y="0" width="16" height="9"></rect>
+        <text data-legend>
+          Legend:&nbsp;
+          <tspan data-small>small</tspan>,
+          <tspan data-smaller>smaller</tspan>,
+          <tspan data-even-smaller>even smaller</tspan>.
+        </text>
+        <g data-good-enough-heading>
+          <text y="-3.7">“Good enough” estimate:</text>
+        </g>
+        <g data-good-enough-body>
+          <text y="2.9" class="smaller">
+            f′(x) = ( f(x +
+            <tspan data-small>dx</tspan>) - f(x) ) ÷
+            <tspan data-small>dx</tspan>
+          </text>
+          <text y="3.3" class="smaller">
+                      f(x +
+            <tspan data-small>dx</tspan>) = c₀ + c₁·(x +
+            <tspan data-small>dx</tspan>) + c₂·(x +
+            <tspan data-small>dx</tspan>)² + c₃·(x +
+            <tspan data-small>dx</tspan>)³ + ...
+          </text>
+          <text y="3.7" class="smaller">
+                                = c₀ + c₁·x +
+            <tspan data-small>c₁·dx</tspan>
+            + c₂·x² +
+            <tspan data-small>2·c₂·x·dx</tspan>
+            +
+            <tspan data-smaller>c₂·dx²</tspan>
+            + c₃·x³ +
+            <tspan data-small>3·c₃·x²·dx</tspan>
+            +
+            <tspan data-smaller>3·c₃·x·dx²</tspan>
+            +
+            <tspan data-even-smaller>c₃·dx³</tspan>
+            + ...
+          </text>
+          <text y="4.1" class="smaller">f′(x) = (c₀ + c₁·x +
+            <tspan data-small>c₁·dx</tspan>
+            + c₂·x² +
+            <tspan data-small>2·c₂·x·dx</tspan>
+            +
+            <tspan data-smaller>c₂·dx²</tspan>
+            + c₃·x³ +
+            <tspan data-small>3·c₃·x²·dx</tspan>
+            +
+            <tspan data-smaller>3·c₃·x·dx²</tspan>
+            +
+            <tspan data-even-smaller>c₃·dx³</tspan> - (c₀ + c₁·x + c₂·x² + c₃·x³) + …) ÷ <tspan data-small>dx</tspan></text>
+          <text y="4.5" class="smaller">      = c₁ + 2·c₂·x + <tspan data-small>c₂·dx</tspan> + 3·c₃·x² + <tspan data-small>3·c₃·x·dx</tspan> + <tspan data-smaller>c₃·dx²</tspan> + ... </text>
+        </g>
+        <g data-new-improved-heading>
+          <text y="-3.7">New and improved estimate:</text>
+        </g>
+        <g data-new-improved-body>
+          <text y="2.9">
+            Simple algorithm applied to <tspan data-small>2dx</tspan>:&nbsp;&nbsp;<tspan data-new-improved-math>c₁ + 2·c₂·x + <tspan data-small>2·c₂·dx</tspan> + 3·c₃·x² + <tspan data-small>6·c₃·x·dx</tspan> + <tspan data-smaller>4·c₃·dx²</tspan> + ...</tspan> 
+          </text>
+          <text y="3.3">
+            Extrapolate to get new and improved output:&nbsp;&nbsp;2•(near estimate) - (far estimate)
+          </text>
+          <text y="3.7" data-new-improved-math>
+            f′(x) = 2·(c₁ + 2·c₂·x + <tspan data-small>c₂·dx</tspan> + 3·c₃·x² + <tspan data-small>3·c₃·x·dx</tspan> + <tspan data-smaller>c₃·dx²</tspan>) - (c₁ + 2·c₂·x + <tspan data-small>2·c₂·dx</tspan> + 3·c₃·x² + <tspan data-small>6·c₃·x·dx</tspan> + <tspan data-smaller>4·c₃·dx²</tspan>) + ...
+          </text>
+          <text y="4.1" data-new-improved-math>            
+                  = c₁ + 2·c₂·x + 3·c₃·x² - <tspan data-smaller>2·c₃·dx²</tspan> + ...
+          </text>
+        </g>
+        <g data-summary>
+          <text y="-4.4">f(x) = c₀ + c₁·x + c₂·x² + c₃·x³ + ... + cₙ·xⁿ + ...</text>
+          <text y="1.4">
+            f′(x) = c₁ + 2·c₂·x + 3·c₃·x² +
+            <tspan data-small>(c₂ + 3·c₃·x)·dx</tspan>
+            +   <tspan data-smaller>c₃·dx²</tspan>
+            +
+            ...
+          </text>
+          <text y="2">
+            f′(x) = c₁ + 2·c₂·x + 3·c₃·x²                    -
+            <tspan data-smaller>2·c₃·dx²</tspan>
+            +
+            ...
+          </text>
+          <text y="2.6">
+            f′(x) = c₁ + 2·c₂·x + 3·c₃·x²                               +
+            ...
+          </text>
+        </g>
+        <g data-headings>
+          <text y="-4.4">Input:</text>
+          <text y="1.4">“Good enough” result:</text>
+          <text y="2.0">New and improved result:</text>
+          <text y="2.6">Correct result:</text>
+        </g>
+      </g>
     </svg>
-    <div class="data-hideBeforeScreenshot" id="debug">
+    <div data-hideBeforeScreenshot id="debug">
       <button id="start">Start</button>
       <button id="stop">Stop</button>
       <a href=".">More</a>

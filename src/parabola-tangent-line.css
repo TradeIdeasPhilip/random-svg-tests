@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Special+Elite&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=PT+Mono&display=swap");
 
 body {
   padding: 0;
@@ -94,4 +95,82 @@ svg {
   position: absolute;
   bottom: 0.5em;
   right: 0.5em;
+}
+
+#formulae [data-small] {
+  /* Green */
+  fill:var(--measurement-color);
+}
+
+#formulae [data-smaller] {
+  /* Yellow-ish */
+  fill:var(--ideal-color);
+}
+
+#formulae [data-even-smaller] {
+/* Red */
+fill:var(--estimate-color);
+}
+
+#formulae rect {
+  fill: white;
+}
+
+#formulae [data-legend] {
+  transform: translate(3px, 0.75px);
+}
+
+#formulae [data-good-enough-heading] {
+  transform: translate(0.333px, 6px);
+  font-size: 0.3333px;
+  text-decoration: underline;
+}
+
+#formulae [data-good-enough-body] {
+  /* letter-spacing: -0.08px; would go with font-size=0.5.  It seems like I could solve this problem other ways, but I'm manually keeping these two fields in sync for the moment.*/
+  font-size: 0.333333px;
+  letter-spacing: -0.05333333px;
+   transform: translate(0.4px, -0.2px);
+   font-family: "PT Mono", monospace;
+ }
+ 
+ #formulae [data-new-improved-heading] {
+  transform: translate(0.333px, 8.7px);
+  font-size: 0.3333px;
+  text-decoration: underline;
+}
+
+#formulae [data-new-improved-body] {
+  font-size: 0.25px;
+   transform: translate(0.9px, 2.5px);
+ }
+ 
+ #formulae [data-new-improved-math] {
+  font-size: 0.25px;
+  letter-spacing: -0.04px;
+   font-family: "PT Mono", monospace;
+ }
+ 
+ #formulae [data-summary] {
+  /* letter-spacing: -0.08px;*/
+  font-size: 0.333333px;
+  letter-spacing: -0.05333333px;
+   transform: translate(6px, 6px);
+   font-family: "PT Mono", monospace;
+ }
+ 
+#formulae [data-headings] {
+  transform: translate(5.8px, 6px);
+  font-size: 0.3333px;
+  text-anchor: end;
+}
+
+.smaller {
+  font-size: 0.25px;
+  letter-spacing: -0.04px;
+}
+
+.even-smaller {
+  font-size: 0.2px;
+  letter-spacing: -0.032px;
 }

@@ -550,3 +550,43 @@ function addTools(svgElement: SVGSVGElement) {
 selectorQueryAll("svg", SVGSVGElement).forEach((svgElement) =>
   addTools(svgElement)
 );
+
+
+/*
+
+Input:
+f(x)= c₀ + c₁•x + c₂•x² + c₃•x³ + ... 
+
+Desired output:
+f′(x) = c₁ + 2•c₂•x + 3•c₃•x² + ...
+
+
+f(x+dx) = c₀ + c₁•(x+dx) + c₂•(x+dx)² + c₃•(x+dx)³ + ... 
+= c₀ + c₁•x + c₁•dx + c₂•x² + 2•c₂•x•dx + c₂•dx² + c₃•x³ + 3•c₃•x²•dx + 3•c₃•x•dx² + c₃•dx³ + ...
+
+
+Simple algorithm's output:
+( f(x+dx) - f(x) ) ÷ dx =
+(c₀ + c₁•x + c₁•dx + c₂•x² + 2•c₂•x•dx + c₂•dx² + c₃•x³ + 3•c₃•x²•dx + 3•c₃•x•dx² + c₃•dx³ - (c₀ + c₁•x + c₂•x² + c₃•x³) + ...) ÷ dx =
+c₁ + 2•c₂•x + c₂•dx  + 3•c₃•x² + 3•c₃•x•dx + c₃•dx²  + ... 
+
+Simple algorithm's error:
+error = 
+(output) - (Desired output) =
+c₁ + 2•c₂•x + c₂•dx  + 3•c₃•x² + 3•c₃•x•dx + c₃•dx² - (c₁ + 2•c₂•x + 3•c₃•x²) + ... =
+c₂•dx  + 3•c₃•x•dx + c₃•dx² + ...
+
+
+New and improved algorithm:
+
+simple algorithm applied to 2dx: c₁ + 2•c₂•x + 2•c₂•dx  + 3•c₃•x² + 6•c₃•x•dx + 4•c₃•dx²  + ... 
+
+Extrapolate to get new and improved output: 2•(near estimate) - (far estimate)
+2•(c₁ + 2•c₂•x + c₂•dx  + 3•c₃•x² + 3•c₃•x•dx + c₃•dx²) - (c₁ + 2•c₂•x + 2•c₂•dx  + 3•c₃•x² + 6•c₃•x•dx + 4•c₃•dx²) + ... 
+c₁ + 2•c₂•x+ 3•c₃•x² - 2•c₃•dx² + ...
+
+
+
+
+
+*/

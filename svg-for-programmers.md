@@ -44,7 +44,7 @@ An SVG document can be used a lot of ways.
 You can save an SVG file in one program, and load it in a different program, just like most image formats.
 
 However, **the most powerful way** to use SVG is to embed an SVG document inside an HTML document.
-This give you full access to JavaScript, user interaction, and all the things you are used to in HTML.
+This gives you full access to JavaScript, user interaction, and all the things you are used to in HTML.
 The bulk of this document will focus on SVG embedded in HTML.
 
 Depending on the context you might loose access to some features.

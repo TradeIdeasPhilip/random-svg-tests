@@ -4,6 +4,15 @@ import { defineConfig } from "vite";
 // Help for this config file:
 // https://vitejs.dev/config/#config-intellisense
 
+// I copy this file to every new project.
+//
+// Notice 3 things:
+// • The "target" defaults to esnext.
+// • Customize the "input" with your html files.
+// • The directory structure is perfect for publishing with GitHub Pages.
+//
+// More details: https://www.youtube.com/watch?v=8VJIBguoneM
+
 export default defineConfig({
   build: {
     target: "esnext",
@@ -29,7 +38,7 @@ export default defineConfig({
         δώδεκα: resolve(__dirname, "tau.html"),
         trèz: resolve(__dirname, "bug-splat.html"),
         katërmbëdhjetë: resolve(__dirname, "moon.html"),
-        پانزده: resolve(__dirname, "tangent-line-2.html"), //parabola-tangent-line.html
+        پانزده: resolve(__dirname, "tangent-line-2.html"),
         mẹrindilogun: resolve(__dirname, "dx.html"),
         ʻumikumāhiku: resolve(__dirname, "text-for-derivative.html"),
         अठारह: resolve(__dirname, "parabola-tangent-line.html"),

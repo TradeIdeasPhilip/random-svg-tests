@@ -960,22 +960,22 @@ function getDirectionQuickly(f: ParametricFunction, t: number, ε: number) {
  * @returns An angle, in a form suitable for Math.tan().  Or NaN in case of any errors.
  */
 function getDirection(f: ParametricFunction, t: number, ε: number) {
-  // We can't ask for getDirectionQuickly(f, t, 0), 
+  // We can't ask for getDirectionQuickly(f, t, 0),
   // so we extrapolate from two nearby inputs.
-  const θ2 = getDirectionQuickly(f, t, ε*2);
-  const θ1 = getDirectionQuickly(f, t, ε*1);
+  const θ2 = getDirectionQuickly(f, t, ε * 2);
+  const θ1 = getDirectionQuickly(f, t, ε * 1);
   const θDiff = θ2 - θ1;
   const θ0 = θ1 - θDiff;
   console.table([
-    { type: "ε × 2", offset: ε*2, result: θ2 },
-    { type: "ε × 1", offset: ε*1, result: θ1 },
+    { type: "ε × 2", offset: ε * 2, result: θ2 },
+    { type: "ε × 1", offset: ε * 1, result: θ1 },
     { type: "ε × 0", offset: 0, result: θ0 },
   ]);
   return θ0;
 }
 
 const afterCommand = " *";
-const number = "(-?[0-9]+\\.?[0-9]*)";
+const number = "(-?[0-9]+\\.?[0-9]*(?:[eE][-+]?[0-9]+)?)";
 /**
  * Between two arguments you can have
  * * One or more spaces,

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/moon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>÷</title>
+    <script type="module" src="/src/parametric-path.ts"></script>
+  </head>
+  <body>
+    <h1>Function</h1>
+    <p>
+      Return an object with <code>x</code> and <code>y</code> parameters, both
+      numbers.
+    </p>
+    <div style="display: flex; flex-direction: column">
+      <div>
+        <code>function (t /* A value between 0 and 1, inclusive. */) {</code>
+      </div>
+      <textarea
+        id="source"
+        style="margin-left: 2em; min-height: 5lh; height: 50vh"
+        autocorrect="off"
+        spellcheck="off"
+      >
+"use strict";
+const angle = t * 2 * Math.PI;
+const x = Math.cos(angle);
+const y = Math.sin(angle);      
+return { x, y };</textarea
+      >
+      <div><code>}</code></div>
+    </div>
+    <button id="go">Go</button>
+    <div id="error"></div>
+    <svg
+      id="filledSample"
+      viewBox="0 0 100 10"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid slice"
+      style="padding: 1.5em; overflow: visible"
+    >
+      <path></path>
+    </svg>
+    <div id="result"></div>
+  </body>
+</html>

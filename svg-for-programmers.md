@@ -118,6 +118,10 @@ const y = mainSvg.createSVGLength();
 y.value = (index+2)\*1;
 textElement.y.baseVal.initialize(y);
 
+**and also**
+https://github.com/TradeIdeasPhilip/classic-chuzzle/blob/c55b39f2c420bd78408848b24017a7947d53c9a0/src/display-output.ts#L359
+This one cached some values to avoid recreating them.
+
 svg animations vs css animations vs animation API vs animation class.
 
 line dash array

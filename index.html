@@ -42,7 +42,8 @@
       </li>
       <li>
         <a href="./sky-writing.html">./sky-writing.html</a> — An easy way to
-        customize the text effects from ./letters.html. (Mostly it's a test environment at this point.)
+        customize the text effects from ./letters.html. (Mostly it's a test
+        environment at this point.)
       </li>
       <li>
         <a href="./curves.html">./curves.html</a> — Some examples starting with
@@ -93,6 +94,75 @@
         <a href="https://www.youtube.com/watch?v=qzbga-c3mk0">Here</a> is a
         rough draft of the script before I added any graphics.
       </li>
+      <li>
+        <a href="./parametric-path.html">./parametric-path.html</a> — Create a
+        css path string from a parametric function.
+      </li>
     </ul>
+
+    <p>
+      Testing. See
+      <a href="https://www.youtube.com/watch?v=fh6c4EYawgY"
+        >https://www.youtube.com/watch?v=fh6c4EYawgY</a
+      >:
+    </p>
+    <svg width="0" height="0">
+      <defs>
+        <filter id="color-replace">
+          <feColorMatrix
+            type="matrix"
+            values="
+            0 2 0 0 0
+            0 0 0 0 0
+            0 0 0 0 0
+            0 0 0 1 0"
+          />
+        </filter>
+      </defs>
+    </svg>
+    <img
+      src="./Pirate-Adventure-TI-99-4A-Screenshot.png"
+      style="filter: url(#make-green-transparent); image-rendering: pixelated"
+    />
+    <svg width="0" height="0">
+      <defs>
+        <filter
+          id="make-green-transparent"
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+        >
+          <feComponentTransfer>
+            <!-- Preserve RGB for black (no change needed) -->
+            <feFuncR type="discrete" tableValues="0" />
+            <feFuncG type="discrete" tableValues="0" />
+            <feFuncB type="discrete" tableValues="0" />
+            <!-- Map green channel to alpha: high green (0.863) → 0, low green (0) → 1 -->
+            <feFuncA type="table" tableValues="1 0" />
+          </feComponentTransfer>
+        </filter>
+        <filter
+          id="make-green-transparent-m"
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+        >
+          <feColorMatrix
+            type="matrix"
+            values="
+            0 0 0 0 0
+            0 0 0 0 0
+            0 0 0 0 0
+            0 -1.158 0 0 1"
+          />
+        </filter>
+      </defs>
+    </svg>
+    <img
+      src="./Pirate-Adventure-TI-99-4A-Screenshot.png"
+      style="filter: url(#make-green-transparent-m); image-rendering: pixelated"
+    />
   </body>
 </html>

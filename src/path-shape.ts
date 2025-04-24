@@ -918,7 +918,7 @@ export class PathBuilder {
 
 // MARK: PathShape Support
 
-type ParametricFunction = (t: number) => Point;
+export type ParametricFunction = (t: number) => Point;
 
 /**
  * What direction is the output of the given function moving at the given time?
@@ -966,11 +966,6 @@ function getDirection(f: ParametricFunction, t: number, ε: number) {
   const θ1 = getDirectionQuickly(f, t, ε * 1);
   const θDiff = θ2 - θ1;
   const θ0 = θ1 - θDiff;
-  console.table([
-    { type: "ε × 2", offset: ε * 2, result: θ2 },
-    { type: "ε × 1", offset: ε * 1, result: θ1 },
-    { type: "ε × 0", offset: 0, result: θ0 },
-  ]);
   return θ0;
 }
 
@@ -1021,7 +1016,7 @@ const cCommandRelative = new RegExp(
 const zCommand = new RegExp("^[zZ](.*)$");
 
 /**
- * If the user enters a path string (like in `path.debugger.html`) that is invalid
+ * If the user enters a path string (like in `path-debugger.html`) that is invalid
  * we want to give a good error message back to the user.
  */
 export class PathShapeError extends Error {

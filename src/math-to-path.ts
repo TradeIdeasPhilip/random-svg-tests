@@ -86,6 +86,7 @@ function getDirection(f: VectorFunction, t: number, ε: number) {
  * These points are expected to describe a __smooth__ curve.
  * @param options Accuracy vs performance.
  * @returns A path string suitable for use with svg and css.
+ * @deprecated Consider using `PathBuilder.addParametricPath()` in ./path-shape.ts.
  */
 export function mathToPath(f: VectorFunction, options: Options = {}) {
   const numberOfSegments = Math.ceil(options.numberOfSegments ?? 10);

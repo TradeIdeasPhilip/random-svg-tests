@@ -42,6 +42,7 @@ export default defineConfig({
         mẹrindilogun: resolve(__dirname, "dx.html"),
         ʻumikumāhiku: resolve(__dirname, "text-for-derivative.html"),
         अठारह: resolve(__dirname, "parabola-tangent-line.html"),
+        девятнадцать: resolve(__dirname, "parametric-path.html"),
       },
     },
   },

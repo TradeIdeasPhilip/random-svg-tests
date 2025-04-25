@@ -1,5 +1,6 @@
 import { getById } from "phil-lib/client-misc";
 import "./style.css";
+import "./parametric-path.css";
 import { ParametricFunction, PathBuilder } from "./path-shape";
 import { selectorQuery } from "./utility";
 
@@ -11,7 +12,8 @@ const filledSampleSvg = getById("filledSample", SVGSVGElement);
 const filledSamplePath = selectorQuery("#filledSample path", SVGPathElement);
 
 goButton.addEventListener("click", () => {
-  const sourceText = sourceTextArea.value;
+  const sourceText =
+    '"use strict";\n' + sourceTextArea.value + "\nreturn { x, y };";
   let f: Function;
   try {
     f = new Function("t /* A value between 0 and 1, inclusive. */", sourceText);

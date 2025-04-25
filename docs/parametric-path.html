@@ -5,12 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="./moon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>÷</title>
-    <script type="module" crossorigin src="./assets/девятнадцать-4R8RKbLw.js"></script>
+    <script type="module" crossorigin src="./assets/девятнадцать-j5RKEVQ5.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-CLGTS8fC.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-1LRynplM.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-CowHUsb1.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-DC2vzgXJ.js">
+    <link rel="stylesheet" crossorigin href="./assets/девятнадцать-BQEdeJ2y.css">
     <link rel="stylesheet" crossorigin href="./assets/style-DQ03UEvS.css">
   </head>
   <body>
@@ -23,18 +24,22 @@
       <div>
         <code>function (t /* A value between 0 and 1, inclusive. */) {</code>
       </div>
+      <div>
+        <code style="margin-left: 2ch">"use strict";</code>
+      </div>
       <textarea
         id="source"
         style="margin-left: 2em; min-height: 5lh; height: 50vh"
         autocorrect="off"
         spellcheck="off"
       >
-"use strict";
 const angle = t * 2 * Math.PI;
 const x = Math.cos(angle);
-const y = Math.sin(angle);      
-return { x, y };</textarea
+const y = Math.sin(angle);</textarea
       >
+      <div>
+        <code style="margin-left: 2ch">return { x, y };</code>
+      </div>
       <div><code>}</code></div>
     </div>
     <button id="go">Go</button>

@@ -1,3 +1,14 @@
 body {
   margin: 0.5em;
 }
+
+[type="range"] {
+  min-width: 5em;
+}
+
+#resultHolder {
+  display: block; /* Ensures the element behaves as a block for proper line handling */
+  margin-left: 1em; /* Indents all lines by 1em */
+  text-indent: -1em; /* Pulls the first line back to offset the margin */
+  padding-left: 0; /* Remove padding since margin-left handles the indent */
+}

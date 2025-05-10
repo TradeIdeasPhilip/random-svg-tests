@@ -5,13 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="./moon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>÷</title>
-    <script type="module" crossorigin src="./assets/девятнадцать-j5RKEVQ5.js"></script>
+    <script type="module" crossorigin src="./assets/девятнадцать-hCZQO2pJ.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-CLGTS8fC.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-1LRynplM.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-CowHUsb1.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-DC2vzgXJ.js">
-    <link rel="stylesheet" crossorigin href="./assets/девятнадцать-BQEdeJ2y.css">
+    <link rel="stylesheet" crossorigin href="./assets/девятнадцать-CDHKEPYP.css">
     <link rel="stylesheet" crossorigin href="./assets/style-DQ03UEvS.css">
   </head>
   <body>
@@ -22,20 +22,31 @@
     </p>
     <div style="display: flex; flex-direction: column">
       <div>
-        <code>function (t /* A value between 0 and 1, inclusive. */) {</code>
+        <code>function (t /* A value between 0 and 1, inclusive. */,</code>
+      </div>
+      <div>
+        <code style="margin-left: 10ch">support) {</code>
       </div>
       <div>
         <code style="margin-left: 2ch">"use strict";</code>
       </div>
       <textarea
         id="source"
-        style="margin-left: 2em; min-height: 5lh; height: 50vh"
+        style="
+          margin-left: 1.66667rem;
+          min-height: 5lh;
+          height: 50vh;
+          font-size: inherit;
+        "
         autocorrect="off"
         spellcheck="off"
       >
-const angle = t * 2 * Math.PI;
-const x = Math.cos(angle);
-const y = Math.sin(angle);</textarea
+const height = 1;
+const width = height * support.a * 2;
+const angle = (t + support.b) * 2 * Math.PI;
+const x = width * Math.cos(angle);
+const y = height * Math.sin(angle);
+</textarea
       >
       <div>
         <code style="margin-left: 2ch">return { x, y };</code>
@@ -43,16 +54,21 @@ const y = Math.sin(angle);</textarea
       <div><code>}</code></div>
     </div>
     <button id="go">Go</button>
+    <input type="range" data-name="a" min="0" max="1" step="0.00001" />
+    <input type="range" data-name="b" min="0" max="1" step="0.00001" />
+    <input type="range" data-name="c" min="0" max="1" step="0.00001" />
     <div id="error"></div>
     <svg
       id="filledSample"
       viewBox="0 0 100 10"
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid slice"
-      style="padding: 1.5em; overflow: visible"
+      style="padding: 1.5em; overflow: visible; max-height: 45vh"
     >
       <path></path>
     </svg>
-    <div id="result"></div>
+    <div id="resultHolder">
+      <code id="result"></code>
+    </div>
   </body>
 </html>

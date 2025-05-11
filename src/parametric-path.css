@@ -12,3 +12,9 @@ body {
   text-indent: -1em; /* Pulls the first line back to offset the margin */
   padding-left: 0; /* Remove padding since margin-left handles the indent */
 }
+
+#outlineSample > path {
+  fill: none;
+  stroke: black;
+  stroke-width: var(--recommended-width);
+}

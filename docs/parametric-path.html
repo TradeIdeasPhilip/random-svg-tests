@@ -5,13 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="./moon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>÷</title>
-    <script type="module" crossorigin src="./assets/девятнадцать-hCZQO2pJ.js"></script>
+    <script type="module" crossorigin src="./assets/девятнадцать-DhqIXP9R.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-CLGTS8fC.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-1LRynplM.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-CowHUsb1.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-DC2vzgXJ.js">
-    <link rel="stylesheet" crossorigin href="./assets/девятнадцать-CDHKEPYP.css">
+    <link rel="stylesheet" crossorigin href="./assets/девятнадцать-CtDhUMgm.css">
     <link rel="stylesheet" crossorigin href="./assets/style-DQ03UEvS.css">
   </head>
   <body>
@@ -60,10 +60,31 @@ const y = height * Math.sin(angle);
     <div id="error"></div>
     <svg
       id="filledSample"
+      data-sample
       viewBox="0 0 100 10"
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid slice"
-      style="padding: 1.5em; overflow: visible; max-height: 45vh"
+      style="
+        padding: 1.5em;
+        overflow: visible;
+        max-height: 45vh;
+        border: thin lightblue solid;
+      "
+    >
+      <path></path>
+    </svg>
+    <svg
+      id="outlineSample"
+      data-sample
+      viewBox="0 0 100 10"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid slice"
+      style="
+        padding: 1.5em;
+        overflow: visible;
+        max-height: 45vh;
+        border: thin lightgreen solid;
+      "
     >
       <path></path>
     </svg>

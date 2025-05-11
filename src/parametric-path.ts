@@ -2,14 +2,20 @@ import { getById } from "phil-lib/client-misc";
 import "./style.css";
 import "./parametric-path.css";
 import { ParametricFunction, PathBuilder } from "./path-shape";
-import { selectorQuery, selectorQueryAll } from "./utility";
+import { selectorQueryAll } from "./utility";
+import { assertClass } from "phil-lib/misc";
 
 const goButton = getById("go", HTMLButtonElement);
 const sourceTextArea = getById("source", HTMLTextAreaElement);
 const errorDiv = getById("error", HTMLDivElement);
 const resultElement = getById("result", HTMLElement);
-const filledSampleSvg = getById("filledSample", SVGSVGElement);
-const filledSamplePath = selectorQuery("#filledSample path", SVGPathElement);
+//const filledSampleSvg = getById("filledSample", SVGSVGElement);
+//const filledSamplePath = selectorQuery("#filledSample path", SVGPathElement);
+
+const samples = selectorQueryAll("[data-sample]", SVGSVGElement).map((svg) => {
+  const path = assertClass(svg.firstElementChild, SVGPathElement);
+  return { svg, path };
+});
 
 const rangeInputs = selectorQueryAll(
   "input[data-name]",
@@ -53,39 +59,42 @@ rangeInputs.forEach((inputElement) =>
         throw reason;
       }
     }
-    const f1 : ParametricFunction = (t : number)=> {return f(t,support)}
+    const f1: ParametricFunction = (t: number) => {
+      return f(t, support);
+    };
 
-    const start = f1(0)
-    const d = PathBuilder.M(start.x, start.y).addParametricPath(
-      f1,
-      10
-    ).pathShape.rawPath;
-    filledSamplePath.setAttribute("d", d);
-    resultElement.innerText = filledSamplePath.outerHTML;
+    const start = f1(0);
+    const d = PathBuilder.M(start.x, start.y).addParametricPath(f1, 10)
+      .pathShape.rawPath;
+    samples.forEach(({ path }) => path.setAttribute("d", d));
+    resultElement.innerText = samples[0].path.outerHTML;
 
-    const bBox = filledSamplePath.getBBox();
-    {
-      const to = filledSampleSvg.viewBox.baseVal;
+    samples.forEach(({ svg, path }) => {
+      const bBox = path.getBBox();
+      const to = svg.viewBox.baseVal;
       to.x = bBox.x;
       to.y = bBox.y;
       to.width = bBox.width;
       to.height = bBox.height;
-    }
+      svg.style.setProperty(
+        "--recommended-width",
+        (Math.max(to.width, to.height) / 100).toString()
+      );
+    });
   };
   let scheduled = false;
-  const doItSoon = ()=> {
+  const doItSoon = () => {
     if (!scheduled) {
       requestAnimationFrame(() => {
         scheduled = false;
         doItNow();
-      })
+      });
     }
-  }
+  };
   goButton.addEventListener("click", doItSoon);
 }
 
 // TODO
-// * Create a path.
 // * Display the path.
 //   Try to set the svg's size to match the bBox
 //   Special cases:  Vertical line, horizontal line, single point, empty, really big or small values?
@@ -102,17 +111,6 @@ rangeInputs.forEach((inputElement) =>
 //   And the bBox size.
 // * Access to TSplitter and related tools through a parameter to the function.
 // * Help!
-// * Display the path, which might be long and ugly.
-//   Display it as part of a <path> element in a <code> block.
-// * Add sliders
-//   simple case:
-//   create 3 sliders called a b and c.
-//   They always have a range of 0 to 1
-//   and a step of something small like 0.0000001.
-//   The function has access to them, like resources.a where resources is the second input to the function.
-//   Every change in any slider will request a redraw.
-//   The redraw will be done in the next animation frame, presumable grouping multiple requests.
-//   😃
 // * Add error handler for the function.
 //   There is an error handler for syntax errors.
 //   But runtime errors are raised elsewhere.

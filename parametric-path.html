@@ -53,10 +53,31 @@ const y = height * Math.sin(angle);
     <div id="error"></div>
     <svg
       id="filledSample"
+      data-sample
       viewBox="0 0 100 10"
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid slice"
-      style="padding: 1.5em; overflow: visible; max-height: 45vh"
+      style="
+        padding: 1.5em;
+        overflow: visible;
+        max-height: 45vh;
+        border: thin lightblue solid;
+      "
+    >
+      <path></path>
+    </svg>
+    <svg
+      id="outlineSample"
+      data-sample
+      viewBox="0 0 100 10"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid slice"
+      style="
+        padding: 1.5em;
+        overflow: visible;
+        max-height: 45vh;
+        border: thin lightgreen solid;
+      "
     >
       <path></path>
     </svg>

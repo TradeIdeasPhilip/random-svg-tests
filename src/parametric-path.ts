@@ -3,7 +3,7 @@ import "./style.css";
 import "./parametric-path.css";
 import { ParametricFunction, PathShape, Point } from "./path-shape";
 import { selectorQuery, selectorQueryAll } from "./utility";
-import { assertClass } from "phil-lib/misc";
+import { assertClass, FIGURE_SPACE } from "phil-lib/misc";
 
 const goButton = getById("go", HTMLButtonElement);
 const sourceTextArea = getById("source", HTMLTextAreaElement);
@@ -94,10 +94,10 @@ function addAnotherInput() {
   goButton.disabled = false;
   const index = inputValues.length;
   const initialValue = 0.5;
-  const tag = `<div>
+  const tag = `<div class="has-slider">
       <input type="range" min="0" max="1" value="${initialValue}" step="0.00001" oninput="copyNewInput(this, ${index})" />
       <code>support.input(${index})</code> =
-      <span>${initialValue}</span>
+      <span>${initialValue.toString().padEnd(7, "0")}</span>
     </div>`;
   inputsDiv.insertAdjacentHTML("beforeend", tag);
   inputValues.push(initialValue);
@@ -198,7 +198,10 @@ addAnotherInput();
 
   const sampleCountSpan = getById("segmentCountSpan", HTMLSpanElement);
   const updateSampleCountSpan = () => {
-    sampleCountSpan.innerText = sampleCountInput.value;
+    sampleCountSpan.innerText = sampleCountInput.value.padStart(
+      3,
+      FIGURE_SPACE
+    );
   };
   updateSampleCountSpan();
   sampleCountInput.addEventListener("input", () => {
@@ -208,6 +211,11 @@ addAnotherInput();
 
   (window as any).copyNewInput = (element: HTMLInputElement, index: number) => {
     inputValues[index] = element.valueAsNumber;
+    const span = assertClass(
+      element.parentElement?.lastElementChild,
+      HTMLSpanElement
+    );
+    span.innerText = element.value.padEnd(7, "0");
     doItSoon();
   };
   doItSoon();

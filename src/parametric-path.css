@@ -35,3 +35,21 @@ body {
 button {
   font-size: 1rem;
 }
+
+.has-slider {
+  display: flex;
+  gap: 0.2em;
+  flex-wrap: wrap;
+  padding-top: 0.1em;
+  padding-bottom: 0.1em;
+}
+
+.has-slider > input[type="range"] {
+  flex-grow: 1;
+}
+
+.has-slider > span:last-child {
+  font-family: "Source Code Pro", monospace;
+  font-weight: 400;
+  font-size: 85%;
+}

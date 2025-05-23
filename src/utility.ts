@@ -7,6 +7,14 @@ import {
   sum,
 } from "phil-lib/misc";
 
+// TODO
+//
+// fix assertFinite() to use Number.isFinite() rather than Window.isFinite() !!!
+//
+// Promote: selectorQueryAll(), selectorQuery(), Random, getDataUrl(), gcd(), lcm()
+//
+// Add an optional root element to selectorQuery() and selectorQueryAll()
+
 const previousCountPrivate = new Map<string, number>();
 /**
  *
@@ -216,7 +224,7 @@ export class Random {
  * @param
  */
 export function assertValidT(t: number) {
-  if (!(isFinite(t) && t >= 0 && t <= 1)) {
+  if (!(Number.isFinite(t) && t >= 0 && t <= 1)) {
     throw new Error(`t should be between 0 and 1, inclusive. t == ${t}`);
   }
 }

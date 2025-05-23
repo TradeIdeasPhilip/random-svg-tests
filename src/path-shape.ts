@@ -1520,6 +1520,23 @@ export class PathShape {
     );
   }
   /**
+   * Create a path described by a TypeScript function.
+   * @param f An input of 0 should return the point at the beginning of the path.
+   * An input of 1 should return the point at the end of the path.
+   * Other inputs in that range will cause the output to move smoothly.
+   * @param numberOfSegments How many Q commands to create.
+   * More gives you more detail.
+   * @returns A new PathShape object.
+   */
+  static parametric(f: ParametricFunction, numberOfSegments: number) : PathShape {
+    const start = f(0);
+    const result = PathBuilder.M(start.x, start.y).addParametricPath(
+      f,
+      numberOfSegments
+    ).pathShape;
+    return result;
+  }
+  /**
    * Avoid displaying numbers like 6.661338147750939e-16.
    * Instead display 0.
    *
@@ -1583,7 +1600,7 @@ export class PathShape {
 }
 
 type Ray = { x0: number; y0: number; angle: number };
-type Point = { readonly x: number; readonly y: number };
+export type Point = { readonly x: number; readonly y: number };
 
 /**
  *

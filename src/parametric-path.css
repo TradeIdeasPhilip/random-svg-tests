@@ -18,3 +18,20 @@ body {
   stroke: black;
   stroke-width: var(--recommended-width);
 }
+
+#error {
+  background-color: red;
+  color: white;
+  padding: 0.5em;
+  border-radius: 1em;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+#error:empty {
+  display: none;
+}
+
+button {
+  font-size: 1rem;
+}

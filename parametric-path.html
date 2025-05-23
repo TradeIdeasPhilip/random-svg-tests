@@ -35,8 +35,8 @@
         spellcheck="off"
       >
 const height = 1;
-const width = height * support.a * 2;
-const angle = (t + support.b) * 2 * Math.PI;
+const width = height * support.input(0) * 2;
+const angle = (t + support.input(1)) * 2 * Math.PI;
 const x = width * Math.cos(angle);
 const y = height * Math.sin(angle);
 </textarea
@@ -46,11 +46,29 @@ const y = height * Math.sin(angle);
       </div>
       <div><code>}</code></div>
     </div>
-    <button id="go">Go</button>
-    <input type="range" data-name="a" min="0" max="1" step="0.00001" />
-    <input type="range" data-name="b" min="0" max="1" step="0.00001" />
-    <input type="range" data-name="c" min="0" max="1" step="0.00001" />
     <div id="error"></div>
+    <button id="go">Go</button>
+    <div id="inputsGroup">
+      <p>
+        You can access these sliders from inside your code. The name of each
+        slider is written next to it <code>in blue</code>. The samples will
+        update immediately as you move the slider.
+      </p>
+      <div id="inputs"></div>
+      <button>Add Another Input</button>
+    </div>
+    <div id="segmentCountHolder">
+      <span> Number of segments: </span>
+      <input
+        id="segmentCountInput"
+        type="range"
+        min="10"
+        max="200"
+        step="1"
+        value="20"
+      />
+      <span id="segmentCountSpan"></span>
+    </div>
     <svg
       id="filledSample"
       data-sample
@@ -82,7 +100,7 @@ const y = height * Math.sin(angle);
       <path></path>
     </svg>
     <div id="resultHolder">
-      <code id="result"></code>
+      <code id="result">&lt;path /&gt;</code>
     </div>
   </body>
 </html>

@@ -1,47 +1,132 @@
 import { getById } from "phil-lib/client-misc";
 import "./style.css";
 import "./parametric-path.css";
-import { ParametricFunction, PathBuilder } from "./path-shape";
-import { selectorQueryAll } from "./utility";
+import { ParametricFunction, PathShape, Point } from "./path-shape";
+import { selectorQuery, selectorQueryAll } from "./utility";
 import { assertClass } from "phil-lib/misc";
 
 const goButton = getById("go", HTMLButtonElement);
 const sourceTextArea = getById("source", HTMLTextAreaElement);
-const errorDiv = getById("error", HTMLDivElement);
 const resultElement = getById("result", HTMLElement);
 //const filledSampleSvg = getById("filledSample", SVGSVGElement);
 //const filledSamplePath = selectorQuery("#filledSample path", SVGPathElement);
+
+sourceTextArea.addEventListener("input", () => (goButton.disabled = false));
+
+/**
+ * Use this to control the red box used to display error messages to the user.
+ */
+class ErrorBox {
+  static readonly #div = getById("error", HTMLDivElement);
+  static display(toDisplay: string) {
+    this.#div.innerText = toDisplay;
+  }
+  static displayError(error: Error) {
+    if (error instanceof NotEnoughInputs) {
+      this.#div.innerHTML = `Unable to access <code>support.input(${
+        error.requestedIndex
+      })</code>.  Only ${
+        inputValues.length
+      } input sliders currently exist.  <button onclick="addMoreInputs(this,${
+        error.requestedIndex + 1
+      })">Add More</button>`;
+    } else {
+      this.display(error.message);
+    }
+  }
+  static clear() {
+    this.display("");
+  }
+}
 
 const samples = selectorQueryAll("[data-sample]", SVGSVGElement).map((svg) => {
   const path = assertClass(svg.firstElementChild, SVGPathElement);
   return { svg, path };
 });
 
-const rangeInputs = selectorQueryAll(
-  "input[data-name]",
-  HTMLInputElement,
-  3,
-  3
-);
+/**
+ * One per input slider on the GUI.
+ * This contains a cached value for each slider.
+ */
+const inputValues: number[] = [];
 
+/**
+ * This is an error that we can fix.
+ */
+class NotEnoughInputs extends Error {
+  /**
+   *
+   * @param requestedIndex This is the request that caused the error.
+   */
+  constructor(public readonly requestedIndex: number) {
+    super(
+      `Unable to access support.input(${requestedIndex}).  Only ${inputValues.length} input sliders currently exist.`
+    );
+  }
+}
+
+/**
+ * This is a simple way to interface with the user provided script.
+ */
 const support = {
-  get a() {
-    return rangeInputs[0].valueAsNumber;
-  },
-  get b() {
-    return rangeInputs[1].valueAsNumber;
-  },
-  get c() {
-    return rangeInputs[2].valueAsNumber;
+  /**
+   *
+   * @param index 0 for the first, 1 for the second, etc.
+   * @returns The current value for this input.  It will be in the range of 0-1, inclusive.
+   */
+  input(index: number) {
+    if (!Number.isSafeInteger(index) || index < 0) {
+      throw new RangeError(`invalid ${index}`);
+    }
+    if (index >= inputValues.length) {
+      throw new NotEnoughInputs(index);
+    }
+    return inputValues[index];
   },
 };
 
-rangeInputs.forEach((inputElement) =>
-  inputElement.addEventListener("input", () => goButton.click())
+/**
+ * All of the input sliders go into this div element.
+ */
+const inputsDiv = getById("inputs", HTMLDivElement);
+
+function addAnotherInput() {
+  goButton.disabled = false;
+  const index = inputValues.length;
+  const initialValue = 0.5;
+  const tag = `<div>
+      <input type="range" min="0" max="1" value="${initialValue}" step="0.00001" oninput="copyNewInput(this, ${index})" />
+      <code>support.input(${index})</code> =
+      <span>${initialValue}</span>
+    </div>`;
+  inputsDiv.insertAdjacentHTML("beforeend", tag);
+  inputValues.push(initialValue);
+}
+
+(window as any).addMoreInputs = (
+  element: HTMLButtonElement,
+  requiredCount: number
+) => {
+  element.disabled = true;
+  while (inputValues.length < requiredCount) {
+    addAnotherInput();
+  }
+};
+
+selectorQuery("#inputsGroup button", HTMLButtonElement).addEventListener(
+  "click",
+  () => {
+    addAnotherInput();
+  }
 );
 
+addAnotherInput();
+addAnotherInput();
+
 {
+  const sampleCountInput = getById("segmentCountInput", HTMLInputElement);
   const doItNow = () => {
+    ErrorBox.clear();
     const sourceText =
       '"use strict";\n' + sourceTextArea.value + "\nreturn { x, y };";
     let f: Function;
@@ -53,19 +138,35 @@ rangeInputs.forEach((inputElement) =>
       );
     } catch (reason: unknown) {
       if (reason instanceof SyntaxError) {
-        errorDiv.innerText = reason.message;
+        ErrorBox.displayError(reason);
         return;
       } else {
         throw reason;
       }
     }
     const f1: ParametricFunction = (t: number) => {
-      return f(t, support);
+      const result: Point = f(t, support);
+      if (!(Number.isFinite(result.x) && Number.isFinite(result.y))) {
+        throw new Error(
+          `Invalid result.  Expected {x,y} where x and y are both finite numbers.  Found: ${JSON.stringify(
+            result
+          )} when t=${t}.`
+        );
+      }
+      return result;
     };
 
-    const start = f1(0);
-    const d = PathBuilder.M(start.x, start.y).addParametricPath(f1, 10)
-      .pathShape.rawPath;
+    let d: string;
+    try {
+      d = PathShape.parametric(f1, sampleCountInput.valueAsNumber).rawPath;
+    } catch (reason: unknown) {
+      if (reason instanceof Error) {
+        ErrorBox.displayError(reason);
+        return;
+      } else {
+        throw reason;
+      }
+    }
     samples.forEach(({ path }) => path.setAttribute("d", d));
     resultElement.innerText = samples[0].path.outerHTML;
 
@@ -84,7 +185,9 @@ rangeInputs.forEach((inputElement) =>
   };
   let scheduled = false;
   const doItSoon = () => {
+    goButton.disabled = true;
     if (!scheduled) {
+      scheduled = true;
       requestAnimationFrame(() => {
         scheduled = false;
         doItNow();
@@ -92,6 +195,22 @@ rangeInputs.forEach((inputElement) =>
     }
   };
   goButton.addEventListener("click", doItSoon);
+
+  const sampleCountSpan = getById("segmentCountSpan", HTMLSpanElement);
+  const updateSampleCountSpan = () => {
+    sampleCountSpan.innerText = sampleCountInput.value;
+  };
+  updateSampleCountSpan();
+  sampleCountInput.addEventListener("input", () => {
+    updateSampleCountSpan();
+    doItSoon();
+  });
+
+  (window as any).copyNewInput = (element: HTMLInputElement, index: number) => {
+    inputValues[index] = element.valueAsNumber;
+    doItSoon();
+  };
+  doItSoon();
 }
 
 // TODO

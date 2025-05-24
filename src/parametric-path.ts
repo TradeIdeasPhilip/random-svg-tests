@@ -215,9 +215,23 @@ addAnotherInput();
       element.parentElement?.lastElementChild,
       HTMLSpanElement
     );
-    span.innerText = element.value.padEnd(7, "0");
+    span.innerText = element.valueAsNumber.toFixed(5);
     doItSoon();
   };
+
+  selectorQueryAll("button.show-this", HTMLButtonElement).forEach((button) => {
+    const source = assertClass(
+      button.parentElement?.nextElementSibling,
+      HTMLPreElement
+    );
+    button.addEventListener("click", () => {
+      const formula = source.innerText;
+      sourceTextArea.value = formula;
+      doItSoon();
+      sourceTextArea.scrollIntoView({ behavior: "smooth" });
+    });
+  });
+
   doItSoon();
 }
 

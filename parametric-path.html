@@ -30,6 +30,7 @@
           min-height: 5lh;
           height: 50vh;
           font-size: inherit;
+          text-wrap: nowrap;
         "
         autocorrect="off"
         spellcheck="off"
@@ -48,6 +49,7 @@ const y = height * Math.sin(angle);
     </div>
     <div id="error"></div>
     <button id="go">Go</button>
+    <h2>Inputs</h2>
     <div id="inputsGroup">
       <p>
         You can access these sliders from inside your code. The name of each
@@ -57,6 +59,14 @@ const y = height * Math.sin(angle);
       <div id="inputs"></div>
       <button>Add Another Input</button>
     </div>
+    <h2>Precision</h2>
+    <p>
+      This software will make a path approximating your function. This software
+      samples at n evenly spread values of t. At each t, this software will
+      record the position of your function and its derivative. Each segment is
+      made of a part of a parabola chosen to best match the samples at either
+      end.
+    </p>
     <div id="segmentCountHolder" class="has-slider">
       <span> Number of segments: </span>
       <input
@@ -69,6 +79,12 @@ const y = height * Math.sin(angle);
       />
       <span id="segmentCountSpan"></span>
     </div>
+    <h2>Output Samples</h2>
+    <p>
+      The output from this program is a css path, a string. That path can be
+      used a lot of different ways. I'm showing some examples here, with the
+      intent to add more.
+    </p>
     <svg
       id="filledSample"
       data-sample
@@ -101,6 +117,202 @@ const y = height * Math.sin(angle);
     </svg>
     <div id="resultHolder">
       <code id="result">&lt;path /&gt;</code>
+    </div>
+
+    <h1>Code Samples</h1>
+
+    <p>These are some ideas to get you started.</p>
+
+    <div id="codeSamplesHolder">
+      <div>
+        <div data-description>
+          <button class="show-this">Show This</button>Simple Ellipse
+        </div>
+        <pre data-code-snippet>
+// The height can be anything convenient to you.
+// This software will automatically zoom and pan to show off your work.
+const height = 1;
+// Use the first slider to change the width of the ellipse.
+const width = height * support.input(0) * 2;
+// Use the second slider to change the starting point on the ellipse.
+// This doesn't matter in a static ellipse, but it can be important in some animations and other special cases.
+const angle = (t + support.input(1)) * 2 * Math.PI;
+const x = width * Math.cos(angle);
+const y = height * Math.sin(angle);</pre
+        >
+      </div>
+      <div>
+        <div data-description>
+          <button class="show-this">Show This</button>Circle with Wavy Edge
+        </div>
+        <pre data-code-snippet>
+// Make sure you use enough segments.
+// This includes a lot of inflection points, which means you need a lot of segments.
+const height = 1;
+const width = height;
+const angle = t * 2 * Math.PI;
+const adjustmentAngle = angle * 8;
+const adjustmentFactor = Math.sin(adjustmentAngle)/10+1;
+const x = width * Math.cos(angle) * adjustmentFactor;
+const y = height * Math.sin(angle) * adjustmentFactor;</pre
+        >
+      </div>
+      <div>
+        <div data-description>
+          <button class="show-this">Show This</button>Lissajous Curves
+        </div>
+        <pre data-code-snippet>
+const a = 1; // Amplitude in x-direction
+const b = 1; // Amplitude in y-direction
+const freqX = 3; // Frequency in x-direction
+const freqY = 2; // Frequency in y-direction
+const phase = Math.PI / 2; // Phase difference
+const angle = t * 2 * Math.PI;
+const x = a * Math.sin(freqX * angle + phase);
+const y = b * Math.sin(freqY * angle);
+
+// This works well with my approximations.
+// There are only two inflection points and they are both in regions where the path is almost linear.</pre
+        >
+      </div>
+      <div>
+        <div data-description>
+          <button class="show-this">Show This</button>Hypocycloid / Astroid
+        </div>
+        <pre data-code-snippet>
+const R = 1; // Radius of the large circle
+const r = R / 4; // Radius of the small circle (astroid case)
+const angle = t * 2 * Math.PI;
+const x = (R - r) * Math.cos(angle) + r * Math.cos((R - r) / r * angle);
+const y = (R - r) * Math.sin(angle) - r * Math.sin((R - r) / r * angle);
+
+// The sharp corners in this curve push my model to its limits.
+// However, it does a decent job as long as you use enough segments.</pre
+        >
+      </div>
+      <div>
+        <div data-description>
+          <button class="show-this">Show This</button>Bell Curve
+        </div>
+        <pre data-code-snippet>
+// Number of standard deviations in each direction:
+const right = support.input(0) * 5;
+const left = - right;
+const width = right - left;
+const x = t * width + left;
+const height = support.input(1) * 4 + 1;
+// Negate this.
+// This program works with normal graphics notation where lower values of y are higher on the display.
+// Normal algebra-class graphs show lower values of y lower on the screen.
+const y = - height * Math.exp(-x*x);</pre
+        >
+      </div>
+      <div>
+        <div data-description>
+          <button class="show-this">Show This</button>Archimedean Spiral with
+          Oscillation
+        </div>
+        <pre data-code-snippet>
+const scale = 1; // Overall scale of the spiral
+const turns = 3; // Number of full rotations
+const waveFreq = 10; // Frequency of the oscillation
+const waveAmp = 0.1; // Amplitude of the oscillation
+const angle = t * 2 * Math.PI * turns;
+const radius = scale * t; // Linear growth for Archimedean spiral
+const wave = waveAmp * Math.sin(t * 2 * Math.PI * waveFreq);
+const x = radius * Math.cos(angle) * (1 + wave);
+const y = radius * Math.sin(angle) * (1 + wave);</pre
+        >
+      </div>
+      <div>
+        <div data-description>
+          <button class="show-this">Show This</button>Heart Curve
+        </div>
+        <pre data-code-snippet>
+const scale = 1;
+const angle = t * 2 * Math.PI;
+const x = scale * (16 * Math.pow(Math.sin(angle), 3));
+const algebraClassY = scale * (13 * Math.cos(angle) - 5 * Math.cos(2 * angle) - 2 * Math.cos(3 * angle) - Math.cos(4 * angle));
+const y = - algebraClassY;
+</pre
+        >
+      </div>
+      <div>
+        <div data-description>
+          <button class="show-this">Show This</button>Butterfly Curve
+        </div>
+        <pre data-code-snippet>
+const scale = 0.2;
+const angle = t * 24 * Math.PI * support.input(0); // More rotations for complexity
+const e = Math.exp(1);
+const x = scale * Math.sin(angle) * (e ** Math.cos(angle) - 2 * Math.cos(4 * angle) - Math.pow(Math.sin(angle / 12), 5));
+const y = scale * Math.cos(angle) * (e ** Math.cos(angle) - 2 * Math.cos(4 * angle) - Math.pow(Math.sin(angle / 12), 5));
+
+// This will require a lot of segments to display correctly.</pre
+        >
+      </div>
+      <div>
+        <div data-description>
+          <button class="show-this">Show This</button>Hollow Star
+        </div>
+        <pre data-code-snippet>
+const scale = 1; // Overall scale of the star
+const points = 5; // Number of star points
+const innerRadius = 0.4; // Radius of the inner points (controls star shape)
+const roundness = 0.1; // Amplitude of the oscillation for rounding
+const angle = t * 2 * Math.PI; // Full circle
+const starAngle = angle * points; // Angle scaled for 5 points
+const radius = scale * (1 - innerRadius * (Math.cos(starAngle) + 1) / 2); // Base star shape
+const rounding = roundness * Math.sin(starAngle); // Oscillation for rounding
+const x = (radius + rounding) * Math.cos(angle);
+const y = (radius + rounding) * Math.sin(angle);
+
+// According to Wikipedia, if its hollow inside, it's a star.
+// If you can see the lines crossing each other, it's a pentagram.</pre
+        >
+      </div>
+      <div>
+        <div data-description>
+          <button class="show-this">Show This</button>Rotating Ellipse
+        </div>
+        <pre data-code-snippet>
+const r1 = 0.5; // Short radius of the ellipse
+const r2 = 1.0; // Long radius of the ellipse
+const phase = support.input(0) * Math.PI; // First slider: Rotation angle in radians (0 to π)
+const angle = t * 2 * Math.PI; // Full circle
+
+// Basic ellipse centered at the origin
+const xEllipse = r1 * Math.cos(angle);
+const yEllipse = r2 * Math.sin(angle);
+
+// Rotate the ellipse by the phase angle
+const x = xEllipse * Math.cos(phase) - yEllipse * Math.sin(phase);
+const y = xEllipse * Math.sin(phase) + yEllipse * Math.cos(phase);
+
+// I used this formula as a starting place for the rounded pentagram.</pre
+        >
+      </div>
+      <div>
+        <div data-description>
+          <button class="show-this">Show This</button>Rounded Pentagram,
+          Heptagram, etc.
+        </div>
+        <pre data-code-snippet>
+const r1 = 0.5 * support.input(0); // Short radius of the ellipse. Top slider will adjust it.
+const r2 = 1.0; // Long radius of the ellipse
+const phase = Math.PI * t; // The reference ellipse will make one half complete rotation during the tracing process.
+const numberOfTrips = support.input(1) * 10;  // Effective range is 0 to 10 
+const angle = t * 2 * Math.PI * numberOfTrips; // Basic ellipse centered at the origin
+const xEllipse = r1 * Math.cos(angle);
+const yEllipse = r2 * Math.sin(angle);// Rotate the ellipse by the phase angle
+const x = xEllipse * Math.cos(phase) - yEllipse * Math.sin(phase);
+const y = xEllipse * Math.sin(phase) + yEllipse * Math.cos(phase);
+
+// The top slider controls the amount of curvature in the output.
+// The second slider controls the number of lobes.
+// Try values like 0.05, 0.15, 0.25, …, 0.95 for closed shapes.</pre
+        >
+      </div>
     </div>
   </body>
 </html>

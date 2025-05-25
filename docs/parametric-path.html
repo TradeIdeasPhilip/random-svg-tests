@@ -5,13 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="./moon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>÷</title>
-    <script type="module" crossorigin src="./assets/девятнадцать-B7Ja0jFj.js"></script>
+    <script type="module" crossorigin src="./assets/девятнадцать-unwHGboW.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-CLGTS8fC.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-1LRynplM.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-BgXUztkR.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-2TZy30Cu.js">
-    <link rel="stylesheet" crossorigin href="./assets/девятнадцать-BN7GEpG2.css">
+    <link rel="stylesheet" crossorigin href="./assets/девятнадцать-CxecAAWQ.css">
     <link rel="stylesheet" crossorigin href="./assets/style-DQ03UEvS.css">
   </head>
   <body>
@@ -54,7 +54,6 @@ const y = height * Math.sin(angle);
       </div>
       <div><code>}</code></div>
     </div>
-    <div id="error"></div>
     <button id="go">Go</button>
     <h2>Precision</h2>
     <p>
@@ -86,6 +85,7 @@ const y = height * Math.sin(angle);
       <div id="inputs"></div>
       <button>Add Another Input</button>
     </div>
+    <div id="error"></div>
     <h2>Output Samples</h2>
     <p>
       The output from this program is a css path, a string. That path can be
@@ -281,6 +281,28 @@ const height = support.input(1) * 4 + 1;
 // This program works with normal graphics notation where lower values of y are higher on the display.
 // Normal algebra-class graphs show lower values of y lower on the screen.
 const y = - height * Math.exp(-x*x);</pre
+        >
+      </div>
+      <div>
+        <div data-description>
+          <button class="show-this">Show This</button>Spirograph Curve (⟟)
+        </div>
+        <pre data-code-snippet>
+// Spirograph Curve (⟟) - A general Spirograph pattern with adjustable parameters
+// Sliders: rolling circle radius (⟟), pen distance (⟠), number of turns (⟡)
+const R = 1.0; // Fixed circle radius
+const r = support.input(0) * 2 - 1; // Rolling circle radius: -1 to 1 (⟟). Negative for inside, positive for outside
+const d = support.input(1) * 2; // Pen distance from rolling circle center: 0 to 2 (⟠)
+const numTurns = support.input(2) * 10; // Number of turns: 0 to 10 (⟡)
+const angle = t * 2 * Math.PI * numTurns;
+
+// Determine if rolling inside (hypotrochoid) or outside (epitrochoid)
+const k = r &lt; 0 ? (R - r) / r : (R + r) / r; // Frequency ratio
+const baseRadius = r &lt; 0 ? (R - r) : (R + r); // Base radius for the rolling circle's center
+
+// Parametric equations
+const x = baseRadius * Math.cos(angle) + (r &lt; 0 ? d : -d) * Math.cos(k * angle);
+const y = baseRadius * Math.sin(angle) - (r &lt; 0 ? d : -d) * Math.sin(k * angle);</pre
         >
       </div>
       <div>

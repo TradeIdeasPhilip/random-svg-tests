@@ -7,6 +7,8 @@ body {
 }
 
 #resultHolder {
+  font-size: 50%;
+  /* The first line is flush against the left margin, but other lines are indented by 1em. */
   display: block;
   margin-left: 1em;
   text-indent: -1em;
@@ -84,6 +86,9 @@ body {
 #textPathSample text {
   font-size: calc(var(--recommended-width) * 7px);
   fill: #cc5500;
+}
+#textPathSample textPath {
+  user-select: all;
 }
 
 #error {

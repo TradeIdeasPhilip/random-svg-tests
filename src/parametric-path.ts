@@ -242,6 +242,7 @@ addAnotherInput();
 
 {
   const sampleCountInput = getById("segmentCountInput", HTMLInputElement);
+  const inputsGroupDiv = getById("inputsGroup", HTMLDivElement);
   const doItNow = () => {
     ErrorBox.clear();
     const sourceText =
@@ -332,7 +333,7 @@ addAnotherInput();
       const formula = source.innerText;
       sourceTextArea.value = formula;
       doItSoon();
-      sourceTextArea.scrollIntoView({ behavior: "smooth" });
+      inputsGroupDiv.scrollIntoView({ behavior: "smooth" });
     });
   });
 

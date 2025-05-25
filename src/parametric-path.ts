@@ -3,13 +3,11 @@ import "./style.css";
 import "./parametric-path.css";
 import { ParametricFunction, PathShape, Point } from "./path-shape";
 import { selectorQuery, selectorQueryAll } from "./utility";
-import { assertClass, FIGURE_SPACE } from "phil-lib/misc";
+import { assertClass, FIGURE_SPACE, pickAny } from "phil-lib/misc";
 
 const goButton = getById("go", HTMLButtonElement);
 const sourceTextArea = getById("source", HTMLTextAreaElement);
 const resultElement = getById("result", HTMLElement);
-//const filledSampleSvg = getById("filledSample", SVGSVGElement);
-//const filledSamplePath = selectorQuery("#filledSample path", SVGPathElement);
 
 sourceTextArea.addEventListener("input", () => (goButton.disabled = false));
 
@@ -39,10 +37,113 @@ class ErrorBox {
   }
 }
 
-const samples = selectorQueryAll("[data-sample]", SVGSVGElement).map((svg) => {
-  const path = assertClass(svg.firstElementChild, SVGPathElement);
-  return { svg, path };
-});
+/**
+ * One of these for each of the individual samples.
+ */
+class SampleOutput {
+  readonly #svgElement: SVGSVGElement;
+  readonly #pathElement: SVGPathElement;
+  protected get pathElement() {
+    return this.#pathElement;
+  }
+  constructor(svgSelector: string) {
+    this.#svgElement = selectorQuery(svgSelector, SVGSVGElement);
+    this.#pathElement = assertClass(
+      this.#svgElement.firstElementChild,
+      SVGPathElement
+    );
+    SampleOutput.all.add(this);
+  }
+  static readonly all = new Set<SampleOutput>();
+  #recommendedWidth = NaN;
+  protected get recommendedWidth() {
+    return this.#recommendedWidth;
+  }
+  #panAndZoom() {
+    const bBox = this.#pathElement.getBBox();
+    const to = this.#svgElement.viewBox.baseVal;
+    to.x = bBox.x;
+    to.y = bBox.y;
+    to.width = bBox.width;
+    to.height = bBox.height;
+    this.#recommendedWidth = Math.max(to.width, to.height) / 100;
+    this.#svgElement.style.setProperty(
+      "--recommended-width",
+      this.#recommendedWidth.toString()
+    );
+  }
+  setD(d: string) {
+    this.#pathElement.setAttribute("d", d);
+    this.#panAndZoom();
+  }
+  static setD(d: string) {
+    this.all.forEach((sampleOutput) => sampleOutput.setD(d));
+  }
+  static getOuterHTML() {
+    return pickAny(SampleOutput.all)!.#pathElement.outerHTML;
+  }
+  protected deAnimate() {
+    this.#pathElement
+      .getAnimations()
+      .forEach((animation) => animation.cancel());
+  }
+}
+
+new SampleOutput("#filledSample");
+new SampleOutput("#outlineSample");
+
+class ChasingPathsSample extends SampleOutput {
+  constructor() {
+    super("#chasingPathsSample");
+  }
+  override setD(d: string): void {
+    super.setD(d);
+    const pathElement = this.pathElement;
+    const duration = 1500;
+    const iterationStart = (Date.now() / duration) % 1;
+    this.deAnimate();
+    const length = pathElement.getTotalLength();
+    pathElement.style.strokeDasharray = `0 ${length} ${length} 0`;
+    pathElement.animate(
+      [{ strokeDashoffset: 0 }, { strokeDashoffset: -2 * length }],
+      {
+        iterations: Infinity,
+        duration,
+        iterationStart,
+      }
+    );
+  }
+}
+new ChasingPathsSample();
+
+class DancingAntsSample extends SampleOutput {
+  constructor() {
+    super("#dancingAntsSample");
+  }
+  override setD(d: string): void {
+    super.setD(d);
+    const pathElement = this.pathElement;
+    const duration = 250;
+    this.deAnimate();
+    const length = pathElement.getTotalLength();
+    const iterationStart = (Date.now() / duration) % 1;
+    const idealWavelength = 4 * this.recommendedWidth;
+    const wavelength =
+      idealWavelength * 10 < length
+        ? length / Math.round(length / idealWavelength)
+        : idealWavelength;
+    pathElement.style.strokeDasharray = `0 ${wavelength}`;
+    pathElement.animate(
+      [{ strokeDashoffset: 0 }, { strokeDashoffset: -wavelength }],
+      {
+        iterations: Infinity,
+        duration,
+        iterationStart,
+      }
+    );
+  }
+}
+new DancingAntsSample();
 
 /**
  * One per input slider on the GUI.
@@ -167,21 +268,8 @@ addAnotherInput();
         throw reason;
       }
     }
-    samples.forEach(({ path }) => path.setAttribute("d", d));
-    resultElement.innerText = samples[0].path.outerHTML;
-
-    samples.forEach(({ svg, path }) => {
-      const bBox = path.getBBox();
-      const to = svg.viewBox.baseVal;
-      to.x = bBox.x;
-      to.y = bBox.y;
-      to.width = bBox.width;
-      to.height = bBox.height;
-      svg.style.setProperty(
-        "--recommended-width",
-        (Math.max(to.width, to.height) / 100).toString()
-      );
-    });
+    SampleOutput.setD(d);
+    resultElement.innerText = SampleOutput.getOuterHTML();
   };
   let scheduled = false;
   const doItSoon = () => {

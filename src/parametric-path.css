@@ -7,16 +7,29 @@ body {
 }
 
 #resultHolder {
-  display: block; /* Ensures the element behaves as a block for proper line handling */
-  margin-left: 1em; /* Indents all lines by 1em */
-  text-indent: -1em; /* Pulls the first line back to offset the margin */
-  padding-left: 0; /* Remove padding since margin-left handles the indent */
+  display: block;
+  margin-left: 1em;
+  text-indent: -1em;
+  padding-left: 0;
 }
 
 #outlineSample > path {
   fill: none;
   stroke: black;
   stroke-width: var(--recommended-width);
+}
+
+#chasingPathsSample > path {
+  fill: none;
+  stroke: black;
+  stroke-width: var(--recommended-width);
+}
+
+#dancingAntsSample > path {
+  fill: none;
+  stroke: black;
+  stroke-width: calc(2 * var(--recommended-width));
+  stroke-linecap: round;
 }
 
 #error {

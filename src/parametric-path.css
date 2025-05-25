@@ -32,6 +32,60 @@ body {
   stroke-linecap: round;
 }
 
+#tauFollowingPathSample > path {
+  fill: none;
+  stroke: black;
+  stroke-width: calc(0.25 * var(--recommended-width));
+  stroke-linecap: round;
+}
+
+#tauFollowingPathSample > text {
+  font-size: calc(var(--recommended-width) * 25px);
+  text-anchor: middle;
+  dominant-baseline: middle;
+  offset-path: var(--css-path);
+}
+
+#tauFollowingPathSample > text:nth-of-type(1) {
+  /* 𝜏 */
+  offset-rotate: 0deg;
+  fill: brown;
+  animation: move 12500ms linear infinite;
+}
+
+#tauFollowingPathSample > text:nth-of-type(2) {
+  /* π */
+  offset-rotate: 0deg;
+  fill: rgb(0, 113, 139);
+  animation: move 25000ms linear infinite;
+}
+
+#tauFollowingPathSample > text:nth-of-type(3) {
+  /* → */
+  fill: #eb90ee;
+  animation: move 20967ms linear infinite;
+}
+
+@keyframes move {
+  0% {
+    offset-distance: 0%;
+  }
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+#textPathSample > path {
+  fill: none;
+  stroke: black;
+  stroke-width: calc(0.25 * var(--recommended-width));
+}
+
+#textPathSample text {
+  font-size: calc(var(--recommended-width) * 7px);
+  fill: #cc5500;
+}
+
 #error {
   background-color: red;
   color: white;

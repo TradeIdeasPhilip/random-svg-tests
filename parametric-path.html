@@ -159,6 +159,31 @@ const y = height * Math.sin(angle);
       "
     >
       <path></path>
+      <text>𝜏</text>
+      <text>π</text>
+      <text>→</text>
+    </svg>
+    <svg
+      id="textPathSample"
+      data-sample
+      viewBox="0 0 100 10"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid slice"
+      style="
+        padding: 1.5em;
+        overflow: visible;
+        max-height: 30vh;
+        border: thin deeppink solid;
+      "
+    >
+      <path id="forTextPathSample"></path>
+      <text>
+        <textPath href="#forTextPathSample">
+          Quantitas Materiæ est mensura ejusdem orta ex illius Densitate et
+          Magnitudine conjunctim. Corpus omne, quod ex partibus ejusdem
+          conditionis constat, dicitur homogeneum; si ex diversis, heterogeneum.
+        </textPath>
+      </text>
     </svg>
     <div id="resultHolder">
       <code id="result">&lt;path /&gt;</code>

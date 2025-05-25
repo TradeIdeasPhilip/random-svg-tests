@@ -42,6 +42,9 @@ class ErrorBox {
  */
 class SampleOutput {
   readonly #svgElement: SVGSVGElement;
+  protected get svgElement() {
+    return this.#svgElement;
+  }
   readonly #pathElement: SVGPathElement;
   protected get pathElement() {
     return this.#pathElement;
@@ -144,6 +147,19 @@ class DancingAntsSample extends SampleOutput {
   }
 }
 new DancingAntsSample();
+
+class TauFollowingPathSample extends SampleOutput {
+  constructor() {
+    super("#tauFollowingPathSample");
+  }
+  override setD(d: string): void {
+    super.setD(d);
+    this.svgElement.style.setProperty("--css-path", PathShape.cssifyPath(d));
+  }
+}
+new TauFollowingPathSample();
+
+new SampleOutput("#textPathSample");
 
 /**
  * One per input slider on the GUI.

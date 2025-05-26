@@ -1,7 +1,7 @@
 import { getById } from "phil-lib/client-misc";
 import "./style.css";
 import "./parametric-path.css";
-import { ParametricFunction, PathShape, Point } from "./path-shape";
+import { ParametricFunction, PathShape, Point, transform } from "./path-shape";
 import { selectorQuery, selectorQueryAll } from "./utility";
 import { assertClass, FIGURE_SPACE, pickAny } from "phil-lib/misc";
 
@@ -10,6 +10,85 @@ const sourceTextArea = getById("source", HTMLTextAreaElement);
 const resultElement = getById("result", HTMLElement);
 
 sourceTextArea.addEventListener("input", () => (goButton.disabled = false));
+
+interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+function computeClipPathTransform(
+  srcRect: Rect, // Source bounding box (e.g., from getBBox())
+  destRect: Rect, // Destination rectangle (e.g., HTML element dimensions)
+  aspect: "fit" | "fill" // "fit" to fit entirely, "fill" to fill and possibly crop
+): DOMMatrix {
+  // Step 1: Compute the scaling factors
+  const srcAspect = srcRect.width / srcRect.height;
+  const destAspect = destRect.width / destRect.height;
+
+  let scaleX: number, scaleY: number;
+  if (aspect === "fit") {
+    // Fit: Scale to fit entirely within destRect, preserving aspect ratio
+    if (srcAspect > destAspect) {
+      // Source is wider than destination: scale by width, letterbox height
+      scaleX = destRect.width / srcRect.width;
+      scaleY = scaleX; // Preserve aspect ratio
+    } else {
+      // Source is taller than destination: scale by height, letterbox width
+      scaleY = destRect.height / srcRect.height;
+      scaleX = scaleY; // Preserve aspect ratio
+    }
+  } else {
+    // Fill: Scale to fill destRect, preserving aspect ratio, may crop
+    if (srcAspect > destAspect) {
+      // Source is wider than destination: scale by height, crop width
+      scaleY = destRect.height / srcRect.height;
+      scaleX = scaleY; // Preserve aspect ratio
+    } else {
+      // Source is taller than destination: scale by width, crop height
+      scaleX = destRect.width / srcRect.width;
+      scaleY = scaleX; // Preserve aspect ratio
+    }
+  }
+
+  // Step 2: Compute the translation to center the path (xMidYMid)
+  // First, apply scaling to the source rectangle's coordinates
+  const scaledWidth = srcRect.width * scaleX;
+  const scaledHeight = srcRect.height * scaleY;
+  const scaledMinX = srcRect.x * scaleX;
+  const scaledMinY = srcRect.y * scaleY;
+
+  // Center the scaled path in the destination rectangle
+  const translateX =
+    destRect.x + (destRect.width - scaledWidth) / 2 - scaledMinX;
+  const translateY =
+    destRect.y + (destRect.height - scaledHeight) / 2 - scaledMinY;
+
+  // Step 3: Create the DOMMatrix
+  const matrix = new DOMMatrix()
+    .scale(scaleX, scaleY) // Apply scaling
+    .translate(translateX, translateY); // Apply translation to center
+
+  return matrix;
+}
+{
+  // Unit tests for computeClipPathTransform():
+  const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
+  const testTo: Rect = { x: 0, y: 0, height: 244, width: 325 };
+  const testMatrix = computeClipPathTransform(testFrom, testTo, "fit");
+  console.log({ testFrom, testTo, testMatrix });
+  [testFrom.x, testFrom.x + testFrom.width].forEach((xFrom) => {
+    [testFrom.y, testFrom.y + testFrom.height].forEach((yFrom) => {
+      const toPoint = transform(xFrom, yFrom, testMatrix);
+      console.log({ xFrom, yFrom, toPoint });
+    });
+  });
+  // I haven't written out the pass fail criteria in detail, but since I specified
+  // "fit", and all of my inputs were corners of the testFrom rectangle, I expected
+  // all of the outputs to be inside the testTo rectangle.  In fact they were nowhere
+  // near where they should have been.
+}
 
 /**
  * Use this to control the red box used to display error messages to the user.
@@ -161,6 +240,37 @@ new TauFollowingPathSample();
 
 new SampleOutput("#textPathSample");
 
+class ClipAndMask {
+  static readonly #parent = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "svg"
+  );
+  static readonly #pathElement = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "path"
+  );
+  static readonly #img = getById("clipPathSample", HTMLImageElement);
+  static setPathShape(pathShape: PathShape) {
+    document.body.append(this.#parent);
+    this.#parent.append(this.#pathElement);
+    pathShape = PathShape.fromString("M 0 -1 L 1 0 L 0 1 L -1 0 z"); // Test code!  TODO remove this and use the requested pathShape.
+    this.#pathElement.setAttribute("d", pathShape.rawPath);
+    const bBox = this.#pathElement.getBBox();
+    const matrix = computeClipPathTransform(
+      bBox,
+      {
+        x: 0,
+        y: 0,
+        height: this.#img.clientHeight,
+        width: this.#img.clientWidth,
+      },
+      "fit"
+    );
+    const transformedShape = pathShape.transform(matrix);
+    this.#img.style.clipPath = transformedShape.cssPath;
+  }
+}
+
 /**
  * One per input slider on the GUI.
  * This contains a cached value for each slider.
@@ -274,9 +384,9 @@ addAnotherInput();
       return result;
     };
 
-    let d: string;
+    let pathShape: PathShape;
     try {
-      d = PathShape.parametric(f1, sampleCountInput.valueAsNumber).rawPath;
+      pathShape = PathShape.parametric(f1, sampleCountInput.valueAsNumber);
     } catch (reason: unknown) {
       if (reason instanceof Error) {
         ErrorBox.displayError(reason);
@@ -285,7 +395,9 @@ addAnotherInput();
         throw reason;
       }
     }
+    const d = pathShape.rawPath;
     SampleOutput.setD(d);
+    ClipAndMask.setPathShape(pathShape);
     resultElement.innerText = SampleOutput.getOuterHTML();
   };
   let scheduled = false;

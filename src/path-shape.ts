@@ -13,6 +13,7 @@ import {
 
 const formatForSvg = new Intl.NumberFormat("en-US", {
   maximumSignificantDigits: 8,
+  useGrouping: false,
 }).format;
 
 // MARK: Command
@@ -57,8 +58,12 @@ export type Command = {
   readonly asString: string;
   translate(Δx: number, Δy: number): Command;
   toCubic(): CCommand;
-  // split into pieces
+  transform(matrix: DOMMatrix): Command;
 };
+
+export function transform(x: number, y: number, matrix: DOMMatrix): DOMPoint {
+  return new DOMPoint(x, y).matrixTransform(matrix);
+}
 
 // MARK: LCommand
 export class LCommand implements Command {
@@ -110,6 +115,11 @@ export class LCommand implements Command {
       this.x,
       this.y
     );
+  }
+  transform(matrix: DOMMatrix): LCommand {
+    const p = transform(this.x, this.y, matrix);
+    const p0 = transform(this.x0, this.y0, matrix);
+    return new LCommand(p0.x, p0.y, p.x, p.y);
   }
 }
 
@@ -350,7 +360,7 @@ export class QCommand implements Command {
   }
   readonly command = "Q";
   readonly asString: string;
-  translate(Δx: number, Δy: number): Command {
+  translate(Δx: number, Δy: number): QCommand {
     return QCommand.controlPoints(
       this.x0 + Δx,
       this.y0 + Δy,
@@ -360,6 +370,13 @@ export class QCommand implements Command {
       this.y + Δy
     );
   }
+  transform(matrix: DOMMatrix): QCommand {
+    const p0 = transform(this.x0, this.y0, matrix);
+    const p1 = transform(this.x1, this.y1, matrix);
+    const p = transform(this.x, this.y, matrix);
+    return QCommand.controlPoints(p0.x, p0.y, p1.x, p1.y, p.x, p.y);
+  }
+
   toCubic(): CCommand {
     return new CCommand(
       this.x0,
@@ -497,7 +514,7 @@ class CCommand implements Command {
   }
   readonly command = "C";
   readonly asString: string;
-  translate(Δx: number, Δy: number): Command {
+  translate(Δx: number, Δy: number): CCommand {
     return new CCommand(
       this.x0 + Δx,
       this.y0 + Δy,
@@ -508,6 +525,13 @@ class CCommand implements Command {
       this.x + Δx,
       this.y + Δy
     );
+  }
+  transform(matrix: DOMMatrix): CCommand {
+    const p0 = transform(this.x0, this.y0, matrix);
+    const p1 = transform(this.x1, this.y1, matrix);
+    const p2 = transform(this.x2, this.y2, matrix);
+    const p = transform(this.x, this.y, matrix);
+    return new CCommand(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p.x, p.y);
   }
   toCubic(): CCommand {
     return this;
@@ -1519,6 +1543,12 @@ export class PathShape {
       this.commands.map((command) => command.translate(Δx, Δy))
     );
   }
+  transform(matrix: DOMMatrix): PathShape {
+    return new PathShape(
+      this.commands.map((command) => command.transform(matrix))
+    );
+  }
+
   /**
    * Create a path described by a TypeScript function.
    * @param f An input of 0 should return the point at the beginning of the path.
@@ -1528,7 +1558,10 @@ export class PathShape {
    * More gives you more detail.
    * @returns A new PathShape object.
    */
-  static parametric(f: ParametricFunction, numberOfSegments: number) : PathShape {
+  static parametric(
+    f: ParametricFunction,
+    numberOfSegments: number
+  ): PathShape {
     const start = f(0);
     const result = PathBuilder.M(start.x, start.y).addParametricPath(
       f,

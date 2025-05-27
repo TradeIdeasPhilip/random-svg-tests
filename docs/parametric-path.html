@@ -17,8 +17,9 @@
   <body>
     <h1>Function</h1>
     <p>
-      Return an object with <code>x</code> and <code>y</code> parameters, both
-      numbers.
+      What do you want to graph? Create a parametric function in JavaScript. For
+      each input value <code>t</code>, between 0 and 1, return an object with
+      <code>x</code> and <code>y</code> parameters, both numbers.
     </p>
     <div style="display: flex; flex-direction: column">
       <div>
@@ -58,10 +59,15 @@ const y = height * Math.sin(angle);
     <h2>Precision</h2>
     <p>
       This software will make a path approximating your function. This software
-      samples at n evenly spread values of t. At each t, this software will
-      record the position of your function and its derivative. Each segment is
-      made of a part of a parabola chosen to best match the samples at either
+      takes samples at n evenly spread values of t. At each t, this software
+      will record the position of your function and its derivative. Each segment
+      is made of a part of a parabola chosen to best match the samples at either
       end.
+    </p>
+    <p>
+      If you plan to smoothly morph between two paths, make sure this parameter
+      is the same when you create each path. The rest should work itself out
+      automatically.
     </p>
     <div id="segmentCountHolder" class="has-slider">
       <span> Number of segments: </span>
@@ -459,5 +465,19 @@ const y = scale * spiralFactor * Math.sin(freqRatio * angle);</pre
         >
       </div>
     </div>
+    <h1>More Information</h1>
+    <p>
+      Desmos can draw your equations very well. But what if you want to display
+      your results somewhere else? A path can be used in so many places so you
+      can integrate your results with a bigger project. This code's been around
+      for a while, but I just built this user interface to let you poke around
+      without any serious programming.
+    </p>
+    <p>
+      You can find more information about this project
+      <a href="https://github.com/TradeIdeasPhilip/random-svg-tests/tree/master"
+        >here</a
+      >.
+    </p>
   </body>
 </html>

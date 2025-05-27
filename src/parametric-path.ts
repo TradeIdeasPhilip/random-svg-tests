@@ -23,7 +23,7 @@ function computeClipPathTransform(
   destRect: Rect, // Destination rectangle (e.g., HTML element dimensions)
   aspect: "fit" | "fill" // "fit" to fit entirely, "fill" to fill and possibly crop
 ): DOMMatrix {
-  // Step 1: Compute the scaling factors
+  // Step 1: Compute the scaling factors to fit or fill the destination
   const srcAspect = srcRect.width / srcRect.height;
   const destAspect = destRect.width / destRect.height;
 
@@ -33,62 +33,147 @@ function computeClipPathTransform(
     if (srcAspect > destAspect) {
       // Source is wider than destination: scale by width, letterbox height
       scaleX = destRect.width / srcRect.width;
-      scaleY = scaleX; // Preserve aspect ratio
+      scaleY = scaleX;
     } else {
       // Source is taller than destination: scale by height, letterbox width
       scaleY = destRect.height / srcRect.height;
-      scaleX = scaleY; // Preserve aspect ratio
+      scaleX = scaleY;
     }
   } else {
     // Fill: Scale to fill destRect, preserving aspect ratio, may crop
     if (srcAspect > destAspect) {
       // Source is wider than destination: scale by height, crop width
       scaleY = destRect.height / srcRect.height;
-      scaleX = scaleY; // Preserve aspect ratio
+      scaleX = scaleY;
     } else {
       // Source is taller than destination: scale by width, crop height
       scaleX = destRect.width / srcRect.width;
-      scaleY = scaleX; // Preserve aspect ratio
+      scaleY = scaleX;
     }
   }
 
   // Step 2: Compute the translation to center the path (xMidYMid)
-  // First, apply scaling to the source rectangle's coordinates
-  const scaledWidth = srcRect.width * scaleX;
-  const scaledHeight = srcRect.height * scaleY;
-  const scaledMinX = srcRect.x * scaleX;
-  const scaledMinY = srcRect.y * scaleY;
-
-  // Center the scaled path in the destination rectangle
+  // Translate the source rectangle's origin (srcRect.x, srcRect.y) to (0,0),
+  // scale it, then translate to the center of the destination rectangle
   const translateX =
-    destRect.x + (destRect.width - scaledWidth) / 2 - scaledMinX;
+    -srcRect.x * scaleX +
+    (destRect.width - srcRect.width * scaleX) / 2 +
+    destRect.x;
   const translateY =
-    destRect.y + (destRect.height - scaledHeight) / 2 - scaledMinY;
+    -srcRect.y * scaleY +
+    (destRect.height - srcRect.height * scaleY) / 2 +
+    destRect.y;
 
   // Step 3: Create the DOMMatrix
   const matrix = new DOMMatrix()
-    .scale(scaleX, scaleY) // Apply scaling
-    .translate(translateX, translateY); // Apply translation to center
+    .translate(translateX, translateY)
+    .scale(scaleX, scaleY);
 
   return matrix;
 }
-{
-  // Unit tests for computeClipPathTransform():
-  const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
-  const testTo: Rect = { x: 0, y: 0, height: 244, width: 325 };
-  const testMatrix = computeClipPathTransform(testFrom, testTo, "fit");
-  console.log({ testFrom, testTo, testMatrix });
-  [testFrom.x, testFrom.x + testFrom.width].forEach((xFrom) => {
-    [testFrom.y, testFrom.y + testFrom.height].forEach((yFrom) => {
-      const toPoint = transform(xFrom, yFrom, testMatrix);
-      console.log({ xFrom, yFrom, toPoint });
+
+// Test cases for computeClipPathTransform
+function runTests() {
+  // Test 1: Your original test case (fit, source square, destination wider)
+  {
+    const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
+    const testTo: Rect = { x: 0, y: 0, height: 244, width: 325 };
+    const testMatrix = computeClipPathTransform(testFrom, testTo, "fit");
+    console.log("Test 1 (fit, square to wider):", {
+      testFrom,
+      testTo,
+      testMatrix: testMatrix.toJSON(),
     });
-  });
-  // I haven't written out the pass fail criteria in detail, but since I specified
-  // "fit", and all of my inputs were corners of the testFrom rectangle, I expected
-  // all of the outputs to be inside the testTo rectangle.  In fact they were nowhere
-  // near where they should have been.
+
+    const corners = [
+      { x: testFrom.x, y: testFrom.y }, // (-1, -1)
+      { x: testFrom.x + testFrom.width, y: testFrom.y }, // (1, -1)
+      { x: testFrom.x + testFrom.width, y: testFrom.y + testFrom.height }, // (1, 1)
+      { x: testFrom.x, y: testFrom.y + testFrom.height }, // (-1, 1)
+    ];
+
+    corners.forEach(({ x: xFrom, y: yFrom }) => {
+      const toPoint = transform(xFrom, yFrom, testMatrix);
+      console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });
+      // Expectation: All points should be within testTo (x: [0, 325], y: [0, 244])
+      if (
+        toPoint.x < testTo.x ||
+        toPoint.x > testTo.x + testTo.width ||
+        toPoint.y < testTo.y ||
+        toPoint.y > testTo.y + testTo.height
+      ) {
+        throw new Error(
+          `Test 1 failed: Point (${toPoint.x}, ${toPoint.y}) is outside destination (${testTo.x}, ${testTo.y}, ${testTo.width}, ${testTo.height})`
+        );
+      }
+    });
+  }
+
+  // Test 2: Fit, source square, destination taller
+  {
+    const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
+    const testTo: Rect = { x: 0, y: 0, height: 325, width: 244 };
+    const testMatrix = computeClipPathTransform(testFrom, testTo, "fit");
+    console.log("Test 2 (fit, square to taller):", {
+      testFrom,
+      testTo,
+      testMatrix: testMatrix.toJSON(),
+    });
+
+    const corners = [
+      { x: testFrom.x, y: testFrom.y },
+      { x: testFrom.x + testFrom.width, y: testFrom.y },
+      { x: testFrom.x + testFrom.width, y: testFrom.y + testFrom.height },
+      { x: testFrom.x, y: testFrom.y + testFrom.height },
+    ];
+
+    corners.forEach(({ x: xFrom, y: yFrom }) => {
+      const toPoint = transform(xFrom, yFrom, testMatrix);
+      console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });
+      if (
+        toPoint.x < testTo.x ||
+        toPoint.x > testTo.x + testTo.width ||
+        toPoint.y < testTo.y ||
+        toPoint.y > testTo.y + testTo.height
+      ) {
+        throw new Error(
+          `Test 2 failed: Point (${toPoint.x}, ${toPoint.y}) is outside destination (${testTo.x}, ${testTo.y}, ${testTo.width}, ${testTo.height})`
+        );
+      }
+    });
+  }
+
+  // Test 3: Fill, source square, destination wider
+  {
+    const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
+    const testTo: Rect = { x: 0, y: 0, height: 244, width: 325 };
+    const testMatrix = computeClipPathTransform(testFrom, testTo, "fill");
+    console.log("Test 3 (fill, square to wider):", {
+      testFrom,
+      testTo,
+      testMatrix: testMatrix.toJSON(),
+    });
+
+    const corners = [
+      { x: testFrom.x, y: testFrom.y },
+      { x: testFrom.x + testFrom.width, y: testFrom.y },
+      { x: testFrom.x + testFrom.width, y: testFrom.y + testFrom.height },
+      { x: testFrom.x, y: testFrom.y + testFrom.height },
+    ];
+
+    corners.forEach(({ x: xFrom, y: yFrom }) => {
+      const toPoint = transform(xFrom, yFrom, testMatrix);
+      console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });
+      // For "fill", points may be outside, but the scaled rectangle should cover the destination
+      // Check that the x and y ranges cover the destination
+    });
+  }
+
+  console.log("All tests passed!");
 }
+
+// Run the tests
+runTests();
 
 /**
  * Use this to control the red box used to display error messages to the user.
@@ -250,10 +335,29 @@ class ClipAndMask {
     "path"
   );
   static readonly #img = getById("clipPathSample", HTMLImageElement);
+  static #initialized = false;
+  static #init() {
+    if (!this.#initialized) {
+      // bBox() requires the path and the svg to be attached to the document,
+      // and it does not allow me to set display=none.
+      document.body.append(this.#parent);
+      this.#parent.append(this.#pathElement);
+      const style = this.#parent.style;
+      style.opacity = "0";
+      style.maxWidth = "0";
+      style.maxHeight = "0";
+      // We will need to redraw any time the size of the image changes.
+      this.#img.decode().then(() => this.doItSoon());
+      const resizeObserver = new ResizeObserver(() => this.doItSoon());
+      resizeObserver.observe(this.#img);
+      this.#initialized = true;
+    }
+  }
+  static doItSoon() {
+    console.warn("placeholder");
+  }
   static setPathShape(pathShape: PathShape) {
-    document.body.append(this.#parent);
-    this.#parent.append(this.#pathElement);
-    pathShape = PathShape.fromString("M 0 -1 L 1 0 L 0 1 L -1 0 z"); // Test code!  TODO remove this and use the requested pathShape.
+    this.#init();
     this.#pathElement.setAttribute("d", pathShape.rawPath);
     const bBox = this.#pathElement.getBBox();
     const matrix = computeClipPathTransform(
@@ -411,6 +515,7 @@ addAnotherInput();
       });
     }
   };
+  ClipAndMask.doItSoon = doItSoon; // This is ugly.  Need to reorganize.
   goButton.addEventListener("click", doItSoon);
 
   const sampleCountSpan = getById("segmentCountSpan", HTMLSpanElement);

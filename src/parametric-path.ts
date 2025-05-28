@@ -326,30 +326,61 @@ new TauFollowingPathSample();
 new SampleOutput("#textPathSample");
 
 class ClipAndMask {
-  static readonly #parent = document.createElementNS(
+  static readonly #svg = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "svg"
   );
-  static readonly #pathElement = document.createElementNS(
+  static readonly #measurablePath = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "path"
   );
-  static readonly #img = getById("clipPathSample", HTMLImageElement);
+  static readonly #mask = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "mask"
+  );
+  static readonly #group = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "group"
+  );
+  static readonly #maskPath = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "path"
+  );
+  static readonly #clipImg = getById("clipPathSample", HTMLImageElement);
+  static readonly #maskImg = getById("maskSample", HTMLImageElement);
   static #initialized = false;
   static #init() {
     if (!this.#initialized) {
       // bBox() requires the path and the svg to be attached to the document,
       // and it does not allow me to set display=none.
-      document.body.append(this.#parent);
-      this.#parent.append(this.#pathElement);
-      const style = this.#parent.style;
+      document.body.append(this.#svg);
+      const defs = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "defs"
+      );
+      this.#svg.append(defs);
+      defs.append(this.#mask);
+      this.#mask.id = "path-to-mask";
+      this.#mask.setAttribute("maskContentUnits", "userSpaceOnUse");
+      this.#mask.setAttribute("maskUnits", "userSpaceOnUse");
+      this.#mask.setAttribute("style", "mask-type: alpha");
+      this.#mask.append(this.#group);
+      this.#group.append(this.#maskPath);
+      this.#maskPath.setAttribute("fill", "white"); // Opaque inside to match clip-path
+      this.#maskPath.setAttribute("stroke", "white");
+      this.#maskPath.setAttribute("stroke-width", "0.1"); // TODO Need something like recommendedWidth().
+      this.#maskPath.setAttribute("stroke-opacity", "0.5");
+      this.#svg.append(this.#measurablePath);
+      const style = this.#svg.style;
       style.opacity = "0";
       style.maxWidth = "0";
       style.maxHeight = "0";
       // We will need to redraw any time the size of the image changes.
-      this.#img.decode().then(() => this.doItSoon());
       const resizeObserver = new ResizeObserver(() => this.doItSoon());
-      resizeObserver.observe(this.#img);
+      [this.#clipImg, this.#maskImg].forEach((imageElement) => {
+        imageElement.decode().then(() => this.doItSoon());
+        resizeObserver.observe(imageElement);
+      });
       this.#initialized = true;
     }
   }
@@ -358,20 +389,36 @@ class ClipAndMask {
   }
   static setPathShape(pathShape: PathShape) {
     this.#init();
-    this.#pathElement.setAttribute("d", pathShape.rawPath);
-    const bBox = this.#pathElement.getBBox();
+    this.#measurablePath.setAttribute("d", pathShape.rawPath);
+    const bBox = this.#measurablePath.getBBox();
     const matrix = computeClipPathTransform(
       bBox,
       {
         x: 0,
         y: 0,
-        height: this.#img.clientHeight,
-        width: this.#img.clientWidth,
+        height: this.#clipImg.clientHeight,
+        width: this.#clipImg.clientWidth,
       },
       "fit"
     );
+
+    // The CSS clipPath property doesn't give us a lot of options.
+    // We have to manually transform the path from the given size and location to the desired size and location.
     const transformedShape = pathShape.transform(matrix);
-    this.#img.style.clipPath = transformedShape.cssPath;
+    this.#clipImg.style.clipPath = transformedShape.cssPath;
+
+    // There are a lot more options related to masks.
+    // In particular I can tell the <mask> element what it's boundaries are,
+    // and I can give the <img> additional rules about matching the boundaries,
+    // e.g. what to do if the <mask> and the <img> have different aspect ratios.
+    // I'm using the built in facilities because they exist.
+    this.#maskPath.style.d = pathShape.cssPath;
+    this.#mask.setAttribute("x", bBox.x.toString());
+    this.#mask.setAttribute("y", bBox.y.toString());
+    this.#mask.setAttribute("width", bBox.width.toString());
+    this.#mask.setAttribute("height", bBox.height.toString());
+
+    //this.#group.style.transform = matrix.toString();
   }
 }
 

@@ -5,7 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="./moon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>÷</title>
-    <script type="module" crossorigin src="./assets/девятнадцать-CPymPvq8.js"></script>
+    <script type="module" crossorigin src="./assets/девятнадцать-BbiV6Y0e.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-CLGTS8fC.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-1LRynplM.js">
@@ -43,12 +43,20 @@
         autocorrect="off"
         spellcheck="off"
       >
-const height = 1;
-const width = height * support.input(0) * 2;
-const angle = (t + support.input(1)) * 2 * Math.PI;
-const x = width * Math.cos(angle);
-const y = height * Math.sin(angle);
-</textarea
+// Lissajous Curves
+// Change this formula and hit the “Go” button to see something different.
+
+const a = 1; // Amplitude in x-direction
+const b = 1; // Amplitude in y-direction
+const freqX = 3; // Frequency in x-direction
+const freqY = 2; // Frequency in y-direction
+const phase = Math.PI / 2; // Phase difference
+const angle = t * 2 * Math.PI;
+const x = a * Math.sin(freqX * angle + phase);
+const y = b * Math.sin(freqY * angle);
+
+// This works well with my approximations.
+// There are only two inflection points and they are both in regions where the path is almost linear.</textarea
       >
       <div>
         <code style="margin-left: 2ch">return { x, y };</code>
@@ -202,6 +210,16 @@ const y = height * Math.sin(angle);
       src="./Encinitas_colorful_night.jpg"
       alt="A bright and colorful photo including the colors of sunset.  It looks slightly unreal because I used “Night Sight” mode on my Android camera."
       style="max-height: 30vh"
+    />
+    <img
+      id="maskSample"
+      src="./Encinitas_colorful_night.jpg"
+      alt="A bright and colorful photo including the colors of sunset.  It looks slightly unreal because I used “Night Sight” mode on my Android camera."
+      style="
+        max-height: 30vh;
+        mask-image: url(#path-to-mask);
+        mask-size: contain;
+      "
     />
     <div id="resultHolder">
       <code id="result">&lt;path /&gt;</code>
@@ -474,7 +492,9 @@ const y = scale * spiralFactor * Math.sin(freqRatio * angle);</pre
       without any serious programming.
     </p>
     <p>
-      You can find more information about this project
+      <a href="https://youtu.be/aJKVHNAOACU">This video</a> will show you how to
+      use this page, and it will discuss the origins of this page and this
+      project. You can find general information about this project
       <a href="https://github.com/TradeIdeasPhilip/random-svg-tests/tree/master"
         >here</a
       >.

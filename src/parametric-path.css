@@ -68,6 +68,13 @@ body {
   animation: move 20967ms linear infinite;
 }
 
+#clipAndMaskSupport > path {
+  fill: black;
+  stroke: red;
+  stroke-opacity: 0.5;
+  stroke-width: var(--recommended-width);
+}
+
 @keyframes move {
   0% {
     offset-distance: 0%;

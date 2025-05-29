@@ -60,10 +60,11 @@ export function selectorQueryAll<T extends Element>(
   selector: string,
   ty: { new (): T },
   min = 1,
-  max = Infinity
+  max = Infinity,
+  start: Pick<Document, "querySelectorAll"> = document
 ): readonly T[] {
   const result: T[] = [];
-  document.querySelectorAll(selector).forEach((element) => {
+  start.querySelectorAll(selector).forEach((element) => {
     result.push(assertClass(element, ty));
   });
   if (result.length < min || result.length > max) {
@@ -76,9 +77,10 @@ export function selectorQueryAll<T extends Element>(
 
 export function selectorQuery<T extends Element>(
   selector: string,
-  ty: { new (): T }
+  ty: { new (): T },
+  start: Pick<Document, "querySelectorAll"> = document
 ): T {
-  return selectorQueryAll(selector, ty, 1, 1)[0];
+  return selectorQueryAll(selector, ty, 1, 1, start)[0];
 }
 
 type RandomFunction = {

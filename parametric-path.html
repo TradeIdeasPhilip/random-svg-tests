@@ -198,6 +198,46 @@ const y = b * Math.sin(freqY * angle);
         </textPath>
       </text>
     </svg>
+    <svg
+      id="clipAndMaskSupport"
+      data-sample
+      viewBox="0 0 100 10"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid slice"
+      style="
+        padding: 1.5em;
+        overflow: visible;
+        max-height: 30vh;
+        border: thin peachpuff solid;
+      "
+    >
+      <defs>
+        <mask
+          id="path-to-mask"
+          maskContentUnits="userSpaceOnUse"
+          maskUnits="userSpaceOnUse"
+          style="mask-type: alpha"
+        >
+          <path
+            data-skip-auto-fill
+            fill="white"
+            stroke="white"
+            stroke-width="0.1"
+            stroke-opacity="0.5"
+          ></path>
+          <rect
+            id="conspicuous"
+            style="fill: white"
+            x="-10000"
+            y="-10000"
+            width="20000"
+            height="20000"
+          ></rect>
+        </mask>
+      </defs>
+      <path stroke="blue" stroke-opacity="0.5"
+ ></path>
+    </svg>
     <img
       id="clipPathSample"
       src="./Encinitas_colorful_night.jpg"

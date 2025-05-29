@@ -215,7 +215,7 @@ const y = b * Math.sin(freqY * angle);
         <mask
           id="path-to-mask"
           maskContentUnits="userSpaceOnUse"
-          maskUnits="userSpaceOnUse"
+          maskUnits="objectBoundingBox"
           style="mask-type: alpha"
         >
           <path
@@ -223,11 +223,11 @@ const y = b * Math.sin(freqY * angle);
             fill="white"
             stroke="white"
             stroke-width="0.1"
-            stroke-opacity="0.5"
+            fill-opacity="0.5"
           ></path>
           <rect
             id="conspicuous"
-            style="fill: white"
+            style="fill: white; display: none"
             x="-10000"
             y="-10000"
             width="20000"
@@ -235,8 +235,7 @@ const y = b * Math.sin(freqY * angle);
           ></rect>
         </mask>
       </defs>
-      <path stroke="blue" stroke-opacity="0.5"
- ></path>
+      <path stroke="blue" stroke-opacity="0.5"></path>
     </svg>
     <img
       id="clipPathSample"

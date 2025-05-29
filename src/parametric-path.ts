@@ -379,7 +379,59 @@ class ClipAndMaskSupport extends SampleOutput {
     const transformedShape = pathShape.transform(matrix);
     this.#clipImg.style.clipPath = transformedShape.cssPath;
 
-    this.#maskPath.setAttribute("d", pathShape.rawPath);
+    // Regarding the mask, we have a lot of options, but they don't all make sense.
+    // * If I set the <mask>'s properties to maskContentUnits="userSpaceOnUse"
+    //   and maskUnits="objectBoundingBox", then it translates the coordinates in the
+    //   path using the exact same rules as the the clipPath example.
+    //   * So we can use the exact same transformed path, stored in the
+    //     transformedShape variable.
+    //   * 0,0 in the path corresponds to the top left of the image.
+    //   * The numbers use the same scale as image.clientWidth and image.clientHeight
+    //   * It appears that the <mask>'s x, y, width and height are ignored in
+    //     this setup, but I need to verify that.
+    // * If I change maskUnits to "userSpaceOnUse" I get a completely transparent image.
+    //   * There was nothing I could find to make the image opaque (aside from changing
+    //     maskUnits="objectBoundingBox").
+    //   * My suspicion is that the browser doesn't like that combination of
+    //     maskContentUnits, maskUnits, and applying the mask to an HTMLElement
+    //     (rather than an SVGElement).  It had no good way to report an invalid set
+    //     of inputs, so it made everything transparent as a fail-safe.
+    //   * My original plan was to use this configuration.
+    //   * As I understood the documentation, this configuration would automatically
+    //     take care of the transformation between the path's coordinate system and
+    //     the target coordinate system.
+    //   * That includes automatically recomputing things each time the <img>
+    //     changes size!
+    //   * This is still my preferred approach.  I'm still poking around, hoping to
+    //     fix this approach.
+
+    //this.#maskPath.setAttribute("d", pathShape.rawPath);
+    this.#maskPath.setAttribute("d", transformedShape.rawPath);
+
+    // This next block of code says to set the path width to
+    // four times the recommended path width.  I.e. thick.
+    // This code is more complicated than in other examples
+    // because I have to transform the value.
+    //
+    // TODO Remove a lot of debug code.  I added it because I
+    // wasn't sure what I was doing.  Now it's distracting.
+    const transformedRecommendedWidth = transform(
+      0,
+      this.recommendedWidth,
+      matrix
+    ).y;
+    const xScale = matrix.a;
+    console.log({
+      transformedRecommendedWidth,
+      recommendedWidth: this.recommendedWidth,
+      xScale,
+      matrix,
+    });
+    this.#maskPath.style.strokeWidth = (
+      this.recommendedWidth *
+      xScale *
+      4
+    ).toString();
 
     this.#mask.setAttribute("x", bBox.x.toString());
     this.#mask.setAttribute("y", bBox.y.toString());

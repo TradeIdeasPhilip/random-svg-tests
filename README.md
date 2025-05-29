@@ -1,5 +1,17 @@
 # Random SVG Tests
 
+Computer graphics are pure magic.
+
+No one is ever going to ask you to set some specific pixel to some specific color, but at the end of the day that's all you can do.
+
+Your job is to make the user see something, for example an apple.
+You have so many tools at your disposal: strokes and transforms and polygons and specular highlights and Bézier curves and so much more.
+
+But under no circumstances are you allowed to put a real, actual, physical piece of fruit in front of the user.
+That's the definition magic.
+
+## General Info
+
 I'm having fun.
 It's nice to have a place to doodle.
 See these running at https://tradeideasphilip.github.io/random-svg-tests/.

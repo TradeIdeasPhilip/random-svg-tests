@@ -253,6 +253,37 @@ const y = b * Math.sin(freqY * angle);
         mask-size: contain;
       "
     />
+
+    <svg
+      id="clipPathSampleSupport"
+      xmlns="http://www.w3.org/2000/svg"
+      style="
+        padding: 1.5em;
+        overflow: visible;
+        max-height: 30vh;
+        border: thin rgb(0, 170, 255) solid;
+      "
+    >
+      <clipPath id="the-clip" clipPathUnits="objectBoundingBox">
+        <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
+          <path />
+          <rect x="-10000" y="-10000" height="20000" width="20000"></rect>
+        </svg>
+      </clipPath>
+      <image
+        clip-path="url(#the-clip)"
+        width="100%"
+        height="100%"
+        href="./Encinitas_colorful_night.jpg"
+      />
+    </svg>
+    <img
+      id="clipPathSample2"
+      src="./Encinitas_colorful_night.jpg"
+      alt="A bright and colorful photo including the colors of sunset.  It looks slightly unreal because I used “Night Sight” mode on my Android camera."
+      style="max-height: 30vh; clip-path: url(#the-clip)"
+    />
+
     <div id="resultHolder">
       <code id="result">&lt;path /&gt;</code>
     </div>

@@ -259,6 +259,26 @@ class ClipAndMaskSupport extends SampleOutput {
 }
 new ClipAndMaskSupport();
 
+class ClipPathSample extends SampleOutput {
+  readonly #innerSvg: SVGSVGElement;
+  constructor() {
+    super("#clipPathSampleSupport");
+    this.#innerSvg = selectorQuery(
+      "clipPath svg",
+      SVGSVGElement,
+      this.svgElement
+    );
+  }
+
+  override setPathShape(pathShape: PathShape): void {
+    super.setPathShape(pathShape);
+    const bBox = this.pathElement.getBBox();
+    const viewBox = `${bBox.x} ${bBox.y} ${bBox.width} ${bBox.height}`;
+    this.#innerSvg.setAttribute("viewBox", viewBox);
+  }
+}
+new ClipPathSample();
+
 /**
  * One per input slider on the GUI.
  * This contains a cached value for each slider.

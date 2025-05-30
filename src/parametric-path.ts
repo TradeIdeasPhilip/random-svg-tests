@@ -1,179 +1,16 @@
 import { getById } from "phil-lib/client-misc";
 import "./style.css";
 import "./parametric-path.css";
-import { ParametricFunction, PathShape, Point, transform } from "./path-shape";
+import { ParametricFunction, PathShape, Point } from "./path-shape";
 import { selectorQuery, selectorQueryAll } from "./utility";
 import { assertClass, FIGURE_SPACE, pickAny } from "phil-lib/misc";
+import { panAndZoom } from "./transforms";
 
 const goButton = getById("go", HTMLButtonElement);
 const sourceTextArea = getById("source", HTMLTextAreaElement);
 const resultElement = getById("result", HTMLElement);
 
 sourceTextArea.addEventListener("input", () => (goButton.disabled = false));
-
-interface Rect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-function computeClipPathTransform(
-  srcRect: Rect, // Source bounding box (e.g., from getBBox())
-  destRect: Rect, // Destination rectangle (e.g., HTML element dimensions)
-  aspect: "fit" | "fill" // "fit" to fit entirely, "fill" to fill and possibly crop
-): DOMMatrix {
-  // Step 1: Compute the scaling factors to fit or fill the destination
-  const srcAspect = srcRect.width / srcRect.height;
-  const destAspect = destRect.width / destRect.height;
-
-  let scaleX: number, scaleY: number;
-  if (aspect === "fit") {
-    // Fit: Scale to fit entirely within destRect, preserving aspect ratio
-    if (srcAspect > destAspect) {
-      // Source is wider than destination: scale by width, letterbox height
-      scaleX = destRect.width / srcRect.width;
-      scaleY = scaleX;
-    } else {
-      // Source is taller than destination: scale by height, letterbox width
-      scaleY = destRect.height / srcRect.height;
-      scaleX = scaleY;
-    }
-  } else {
-    // Fill: Scale to fill destRect, preserving aspect ratio, may crop
-    if (srcAspect > destAspect) {
-      // Source is wider than destination: scale by height, crop width
-      scaleY = destRect.height / srcRect.height;
-      scaleX = scaleY;
-    } else {
-      // Source is taller than destination: scale by width, crop height
-      scaleX = destRect.width / srcRect.width;
-      scaleY = scaleX;
-    }
-  }
-
-  // Step 2: Compute the translation to center the path (xMidYMid)
-  // Translate the source rectangle's origin (srcRect.x, srcRect.y) to (0,0),
-  // scale it, then translate to the center of the destination rectangle
-  const translateX =
-    -srcRect.x * scaleX +
-    (destRect.width - srcRect.width * scaleX) / 2 +
-    destRect.x;
-  const translateY =
-    -srcRect.y * scaleY +
-    (destRect.height - srcRect.height * scaleY) / 2 +
-    destRect.y;
-
-  // Step 3: Create the DOMMatrix
-  const matrix = new DOMMatrix()
-    .translate(translateX, translateY)
-    .scale(scaleX, scaleY);
-
-  return matrix;
-}
-
-// Test cases for computeClipPathTransform
-function runTests() {
-  // Test 1: Your original test case (fit, source square, destination wider)
-  {
-    const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
-    const testTo: Rect = { x: 0, y: 0, height: 244, width: 325 };
-    const testMatrix = computeClipPathTransform(testFrom, testTo, "fit");
-    console.log("Test 1 (fit, square to wider):", {
-      testFrom,
-      testTo,
-      testMatrix: testMatrix.toJSON(),
-    });
-
-    const corners = [
-      { x: testFrom.x, y: testFrom.y }, // (-1, -1)
-      { x: testFrom.x + testFrom.width, y: testFrom.y }, // (1, -1)
-      { x: testFrom.x + testFrom.width, y: testFrom.y + testFrom.height }, // (1, 1)
-      { x: testFrom.x, y: testFrom.y + testFrom.height }, // (-1, 1)
-    ];
-
-    corners.forEach(({ x: xFrom, y: yFrom }) => {
-      const toPoint = transform(xFrom, yFrom, testMatrix);
-      console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });
-      // Expectation: All points should be within testTo (x: [0, 325], y: [0, 244])
-      if (
-        toPoint.x < testTo.x ||
-        toPoint.x > testTo.x + testTo.width ||
-        toPoint.y < testTo.y ||
-        toPoint.y > testTo.y + testTo.height
-      ) {
-        throw new Error(
-          `Test 1 failed: Point (${toPoint.x}, ${toPoint.y}) is outside destination (${testTo.x}, ${testTo.y}, ${testTo.width}, ${testTo.height})`
-        );
-      }
-    });
-  }
-
-  // Test 2: Fit, source square, destination taller
-  {
-    const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
-    const testTo: Rect = { x: 0, y: 0, height: 325, width: 244 };
-    const testMatrix = computeClipPathTransform(testFrom, testTo, "fit");
-    console.log("Test 2 (fit, square to taller):", {
-      testFrom,
-      testTo,
-      testMatrix: testMatrix.toJSON(),
-    });
-
-    const corners = [
-      { x: testFrom.x, y: testFrom.y },
-      { x: testFrom.x + testFrom.width, y: testFrom.y },
-      { x: testFrom.x + testFrom.width, y: testFrom.y + testFrom.height },
-      { x: testFrom.x, y: testFrom.y + testFrom.height },
-    ];
-
-    corners.forEach(({ x: xFrom, y: yFrom }) => {
-      const toPoint = transform(xFrom, yFrom, testMatrix);
-      console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });
-      if (
-        toPoint.x < testTo.x ||
-        toPoint.x > testTo.x + testTo.width ||
-        toPoint.y < testTo.y ||
-        toPoint.y > testTo.y + testTo.height
-      ) {
-        throw new Error(
-          `Test 2 failed: Point (${toPoint.x}, ${toPoint.y}) is outside destination (${testTo.x}, ${testTo.y}, ${testTo.width}, ${testTo.height})`
-        );
-      }
-    });
-  }
-
-  // Test 3: Fill, source square, destination wider
-  {
-    const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
-    const testTo: Rect = { x: 0, y: 0, height: 244, width: 325 };
-    const testMatrix = computeClipPathTransform(testFrom, testTo, "fill");
-    console.log("Test 3 (fill, square to wider):", {
-      testFrom,
-      testTo,
-      testMatrix: testMatrix.toJSON(),
-    });
-
-    const corners = [
-      { x: testFrom.x, y: testFrom.y },
-      { x: testFrom.x + testFrom.width, y: testFrom.y },
-      { x: testFrom.x + testFrom.width, y: testFrom.y + testFrom.height },
-      { x: testFrom.x, y: testFrom.y + testFrom.height },
-    ];
-
-    corners.forEach(({ x: xFrom, y: yFrom }) => {
-      const toPoint = transform(xFrom, yFrom, testMatrix);
-      console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });
-      // For "fill", points may be outside, but the scaled rectangle should cover the destination
-      // Check that the x and y ranges cover the destination
-    });
-  }
-
-  console.log("All tests passed!");
-}
-
-// Run the tests
-runTests();
 
 /**
  * Use this to control the red box used to display error messages to the user.
@@ -326,15 +163,44 @@ new TauFollowingPathSample();
 
 new SampleOutput("#textPathSample");
 
+/**
+ * This class shows a way to set a clip-path to a path string, and how to apply
+ * an SVG <mask> using mask-image.
+ *
+ * These two examples share a lot of code.  They both apply to an HTML element,
+ * typically an <img>.  And in both cases this class has to transform the path
+ * from one coordinate system to another.  And in both cases we have to listen
+ * for changes in the <img>'s size.
+ *
+ * This process requires an SVG for support.  Typically that SVG would be hidden.
+ * But for the sake of this demo we are displaying the SVG.  Notice the
+ * instructions, found in other comments, on the correct way to hide the SVG.
+ *
+ * TODO We need two additional examples.  We need an example using a <clipPath>
+ * instead of an explicit path string for the clip-path.  And we need a different
+ * way to use the mask-image property.  The idea is to create an SVG for the
+ * mask, but the whole SVG is the mask, there is no <mask> element.  Normally
+ * that SVG would be hidden, but for the sake of this demo we'll display it.
+ * We convert that SVG into a data-url and load that into
+ *
+ * Both of these new examples will have the same advantage over the two existing
+ * examples:  The old examples required programming work to deal with resizing
+ * the paths to match the <img> elements.  The new examples will leverage more
+ * css tools, like "mask-size: contain;", to take care of those details.
+ *
+ * The new clip-path example, like the existing mask-image example, will require
+ * an SVG object for the lifetime of the effect.  The next mask-image example,
+ * like the existing clip-path example, will require an SVG for some one time
+ * setup, but that will output a string which can be copied into a css property
+ * without any further support.
+ */
 class ClipAndMaskSupport extends SampleOutput {
   static doItSoon() {
     console.warn("placeholder");
   }
-  readonly #mask: SVGMaskElement;
   readonly #maskPath: SVGPathElement;
   constructor() {
     super("#clipAndMaskSupport");
-    this.#mask = selectorQuery("mask", SVGMaskElement, this.svgElement);
     this.#maskPath = selectorQuery(
       "mask > path",
       SVGPathElement,
@@ -363,7 +229,7 @@ class ClipAndMaskSupport extends SampleOutput {
     super.setPathShape(pathShape);
 
     const bBox = this.measurablePath.getBBox();
-    const matrix = computeClipPathTransform(
+    const matrix = panAndZoom(
       bBox,
       {
         x: 0,
@@ -374,69 +240,21 @@ class ClipAndMaskSupport extends SampleOutput {
       "fit"
     );
 
-    // The CSS clipPath property doesn't give us a lot of options.
     // We have to manually transform the path from the given size and location to the desired size and location.
     const transformedShape = pathShape.transform(matrix);
     this.#clipImg.style.clipPath = transformedShape.cssPath;
-
-    // Regarding the mask, we have a lot of options, but they don't all make sense.
-    // * If I set the <mask>'s properties to maskContentUnits="userSpaceOnUse"
-    //   and maskUnits="objectBoundingBox", then it translates the coordinates in the
-    //   path using the exact same rules as the the clipPath example.
-    //   * So we can use the exact same transformed path, stored in the
-    //     transformedShape variable.
-    //   * 0,0 in the path corresponds to the top left of the image.
-    //   * The numbers use the same scale as image.clientWidth and image.clientHeight
-    //   * It appears that the <mask>'s x, y, width and height are ignored in
-    //     this setup, but I need to verify that.
-    // * If I change maskUnits to "userSpaceOnUse" I get a completely transparent image.
-    //   * There was nothing I could find to make the image opaque (aside from changing
-    //     maskUnits="objectBoundingBox").
-    //   * My suspicion is that the browser doesn't like that combination of
-    //     maskContentUnits, maskUnits, and applying the mask to an HTMLElement
-    //     (rather than an SVGElement).  It had no good way to report an invalid set
-    //     of inputs, so it made everything transparent as a fail-safe.
-    //   * My original plan was to use this configuration.
-    //   * As I understood the documentation, this configuration would automatically
-    //     take care of the transformation between the path's coordinate system and
-    //     the target coordinate system.
-    //   * That includes automatically recomputing things each time the <img>
-    //     changes size!
-    //   * This is still my preferred approach.  I'm still poking around, hoping to
-    //     fix this approach.
-
-    //this.#maskPath.setAttribute("d", pathShape.rawPath);
     this.#maskPath.setAttribute("d", transformedShape.rawPath);
 
     // This next block of code says to set the path width to
     // four times the recommended path width.  I.e. thick.
     // This code is more complicated than in other examples
-    // because I have to transform the value.
-    //
-    // TODO Remove a lot of debug code.  I added it because I
-    // wasn't sure what I was doing.  Now it's distracting.
-    const transformedRecommendedWidth = transform(
-      0,
-      this.recommendedWidth,
-      matrix
-    ).y;
+    // because I have to scale the value.
     const xScale = matrix.a;
-    console.log({
-      transformedRecommendedWidth,
-      recommendedWidth: this.recommendedWidth,
-      xScale,
-      matrix,
-    });
     this.#maskPath.style.strokeWidth = (
       this.recommendedWidth *
       xScale *
       4
     ).toString();
-
-    this.#mask.setAttribute("x", bBox.x.toString());
-    this.#mask.setAttribute("y", bBox.y.toString());
-    this.#mask.setAttribute("width", bBox.width.toString());
-    this.#mask.setAttribute("height", bBox.height.toString());
   }
 }
 new ClipAndMaskSupport();
@@ -622,22 +440,14 @@ addAnotherInput();
 }
 
 // TODO
-// * Display the path.
-//   Try to set the svg's size to match the bBox
-//   Special cases:  Vertical line, horizontal line, single point, empty, really big or small values?
-//   Try making the viewBox of the svg match the bBox of the path, then adding padding with css.
 // * Save the path as an SVG file.
 // * Samples
-//   Animated dots crawling along the path.
-//   The line starts as nothing, grows from one end, when it hits the other end it starts shrinking.
 //   Blowing in the wind animation?
-//   A tau "creature" following the path, with and without rotations.
-// * Sample code.
-//   Maybe a button that says "random sample"!! 🙂
+// * Sample code:  Maybe a button that says "random sample"!! 🙂
 // * Display the path length.
 //   And the bBox size.
+//   And display the path as a cssPath, as in a css file, possibly in an @keyframes
 // * Access to TSplitter and related tools through a parameter to the function.
-// * Help!
-// * Add error handler for the function.
-//   There is an error handler for syntax errors.
-//   But runtime errors are raised elsewhere.
+// * Better error handlers.
+//   Sometimes it just says "WTF"
+//   And NaN is reported as "null" in the error messages.

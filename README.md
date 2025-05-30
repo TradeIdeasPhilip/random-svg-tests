@@ -8,7 +8,7 @@ Your job is to make the user see something, for example an apple.
 You have so many tools at your disposal: strokes and transforms and polygons and specular highlights and Bézier curves and so much more.
 
 But under no circumstances are you allowed to put a real, actual, physical piece of fruit in front of the user.
-That's the definition magic.
+That's the definition of magic.
 
 ## General Info
 

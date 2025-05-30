@@ -10,6 +10,7 @@ import {
   positiveModulo,
   radiansPerDegree,
 } from "phil-lib/misc";
+import { transform } from "./transforms";
 
 const formatForSvg = new Intl.NumberFormat("en-US", {
   maximumSignificantDigits: 8,
@@ -60,10 +61,6 @@ export type Command = {
   toCubic(): CCommand;
   transform(matrix: DOMMatrix): Command;
 };
-
-export function transform(x: number, y: number, matrix: DOMMatrix): DOMPoint {
-  return new DOMPoint(x, y).matrixTransform(matrix);
-}
 
 // MARK: LCommand
 export class LCommand implements Command {

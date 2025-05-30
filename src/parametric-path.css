@@ -72,7 +72,7 @@ body {
   fill: black;
   stroke: red;
   stroke-opacity: 0.5;
-  stroke-width: var(--recommended-width);
+  stroke-width: calc(4 * var(--recommended-width));
 }
 
 @keyframes move {

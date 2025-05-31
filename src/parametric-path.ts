@@ -87,10 +87,8 @@ class SampleOutput {
   static getOuterHTML() {
     return pickAny(SampleOutput.all)!.#pathElement.outerHTML;
   }
-  protected deAnimate() {
-    this.#pathElement
-      .getAnimations()
-      .forEach((animation) => animation.cancel());
+  protected deAnimate(element: Animatable = this.#pathElement) {
+    element.getAnimations().forEach((animation) => animation.cancel());
   }
 }
 
@@ -164,35 +162,12 @@ new TauFollowingPathSample();
 new SampleOutput("#textPathSample");
 
 /**
- * This class shows a way to set a clip-path to a path string, and how to apply
- * an SVG <mask> using mask-image.
- *
- * These two examples share a lot of code.  They both apply to an HTML element,
- * typically an <img>.  And in both cases this class has to transform the path
- * from one coordinate system to another.  And in both cases we have to listen
- * for changes in the <img>'s size.
+ * This class shows a way to set a clip-path to a path string, and two ways to
+ * to apply an SVG <mask> using mask-image.
  *
  * This process requires an SVG for support.  Typically that SVG would be hidden.
  * But for the sake of this demo we are displaying the SVG.  Notice the
  * instructions, found in other comments, on the correct way to hide the SVG.
- *
- * TODO We need two additional examples.  We need an example using a <clipPath>
- * instead of an explicit path string for the clip-path.  And we need a different
- * way to use the mask-image property.  The idea is to create an SVG for the
- * mask, but the whole SVG is the mask, there is no <mask> element.  Normally
- * that SVG would be hidden, but for the sake of this demo we'll display it.
- * We convert that SVG into a data-url and load that into
- *
- * Both of these new examples will have the same advantage over the two existing
- * examples:  The old examples required programming work to deal with resizing
- * the paths to match the <img> elements.  The new examples will leverage more
- * css tools, like "mask-size: contain;", to take care of those details.
- *
- * The new clip-path example, like the existing mask-image example, will require
- * an SVG object for the lifetime of the effect.  The next mask-image example,
- * like the existing clip-path example, will require an SVG for some one time
- * setup, but that will output a string which can be copied into a css property
- * without any further support.
  */
 class ClipAndMaskSupport extends SampleOutput {
   static doItSoon() {
@@ -225,8 +200,26 @@ class ClipAndMaskSupport extends SampleOutput {
   }
   readonly #clipImg = getById("clipPathSample", HTMLImageElement);
   readonly #maskImg = getById("maskSample", HTMLImageElement);
+  readonly #maskImg2 = getById("maskSample2", HTMLImageElement);
   override setPathShape(pathShape: PathShape): void {
     super.setPathShape(pathShape);
+
+    // Send a data-url to img#maskSample.  This is a onet time setting; there is no more work to do.
+    const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${this.svgElement.getAttribute(
+      "viewBox"
+    )}" preserveAspectRatio="xMidYMid meet"><path d="${
+      pathShape.rawPath
+    }" stroke="red" fill-opacity="0.5" fill="black" stroke-width="${
+      this.recommendedWidth * 4
+    }"/></svg>`;
+    const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
+    const maskImage = `url('${dataUrl}')`;
+    console.log({ svgString, dataUrl, maskImage });
+    this.#maskImg2.style.maskImage = maskImage;
+
+    // The clip example and the other mask example require more effort.
+    // This code has to update any time the destination image resizes.
+    // This code has to do the transform with more JavaScript and less css.
 
     const bBox = this.measurablePath.getBBox();
     const matrix = panAndZoom(
@@ -246,38 +239,37 @@ class ClipAndMaskSupport extends SampleOutput {
     this.#maskPath.setAttribute("d", transformedShape.rawPath);
 
     // This next block of code says to set the path width to
-    // four times the recommended path width.  I.e. thick.
-    // This code is more complicated than in other examples
-    // because I have to scale the value.
+    // 8 times the recommended path width.  I.e. thick.
+    // And animate squares running around the stroke.
+    // This is similar to the dancing ants demo, but with very
+    // big squares instead of big circles.
     const xScale = matrix.a;
-    this.#maskPath.style.strokeWidth = (
-      this.recommendedWidth *
-      xScale *
-      4
-    ).toString();
+    const strokeWidth = this.recommendedWidth * xScale * 8;
+    this.#maskPath.style.strokeWidth = strokeWidth.toString();
+
+    const duration = 507;
+    this.deAnimate(this.#maskPath);
+    const length = this.#maskPath.getTotalLength();
+    const iterationStart = (Date.now() / duration) % 1;
+    const idealWavelength = 16 * this.recommendedWidth * xScale;
+    const wavelength =
+      idealWavelength * 10 < length
+        ? length / Math.round(length / idealWavelength)
+        : idealWavelength;
+    this.#maskPath.style.strokeDasharray = `${strokeWidth} ${
+      wavelength - strokeWidth
+    }`;
+    this.#maskPath.animate(
+      [{ strokeDashoffset: 0 }, { strokeDashoffset: -wavelength }],
+      {
+        iterations: Infinity,
+        duration,
+        iterationStart,
+      }
+    );
   }
 }
 new ClipAndMaskSupport();
-
-class ClipPathSample extends SampleOutput {
-  readonly #innerSvg: SVGSVGElement;
-  constructor() {
-    super("#clipPathSampleSupport");
-    this.#innerSvg = selectorQuery(
-      "clipPath svg",
-      SVGSVGElement,
-      this.svgElement
-    );
-  }
-
-  override setPathShape(pathShape: PathShape): void {
-    super.setPathShape(pathShape);
-    const bBox = this.pathElement.getBBox();
-    const viewBox = `${bBox.x} ${bBox.y} ${bBox.width} ${bBox.height}`;
-    this.#innerSvg.setAttribute("viewBox", viewBox);
-  }
-}
-new ClipPathSample();
 
 /**
  * One per input slider on the GUI.

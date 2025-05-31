@@ -69,9 +69,6 @@ body {
 }
 
 #clipAndMaskSupport > path {
-  fill: black;
-  stroke: red;
-  stroke-opacity: 0.5;
   stroke-width: calc(4 * var(--recommended-width));
 }
 

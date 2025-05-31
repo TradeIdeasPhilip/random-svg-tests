@@ -5,13 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="./moon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>÷</title>
-    <script type="module" crossorigin src="./assets/девятнадцать-DG4Y_jdV.js"></script>
+    <script type="module" crossorigin src="./assets/девятнадцать-DcnFSwKJ.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-CLGTS8fC.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-1LRynplM.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-BVOEwiXx.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-Dw-q5N--.js">
-    <link rel="stylesheet" crossorigin href="./assets/девятнадцать-BNpnP2Mt.css">
+    <link rel="stylesheet" crossorigin href="./assets/девятнадцать-Anu5NYIj.css">
     <link rel="stylesheet" crossorigin href="./assets/style-DQ03UEvS.css">
   </head>
   <body>
@@ -205,6 +205,26 @@ const y = b * Math.sin(freqY * angle);
         </textPath>
       </text>
     </svg>
+    <div>
+      <p>
+        I have provided one demo using
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/clip-path"
+          >style.clipPath</a
+        >. <code>style.clipPath</code> is a very powerful tool. However, I
+        usually prefer to work with a mask instead of a clipPath. I get a
+        superset of the abilities with a lot less drama.
+      </p>
+      <p>
+        I have provided two demos using
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/mask-image"
+          >style.maskImage</a
+        >. The first is a pointer to a live <code>&lt;mask&gt;</code> in a live
+        <code>&lt;svg&gt;</code>. This gives incredible control. The second is a
+        data-url. You can create the data-url in advance and use it without any
+        JavaScript. You can use a variety of
+        <code>style.mask-*</code> properties to customize this mask.
+      </p>
+    </div>
     <svg
       id="clipAndMaskSupport"
       data-sample
@@ -232,17 +252,9 @@ const y = b * Math.sin(freqY * angle);
             stroke-width="0.1"
             fill-opacity="0.5"
           ></path>
-          <rect
-            id="conspicuous"
-            style="fill: white; display: none"
-            x="-10000"
-            y="-10000"
-            width="20000"
-            height="20000"
-          ></rect>
         </mask>
       </defs>
-      <path stroke="blue" stroke-opacity="0.5"></path>
+      <path stroke="red" fill-opacity="0.5" fill="black"></path>
     </svg>
     <img
       id="clipPathSample"
@@ -261,34 +273,11 @@ const y = b * Math.sin(freqY * angle);
       "
     />
 
-    <svg
-      id="clipPathSampleSupport"
-      xmlns="http://www.w3.org/2000/svg"
-      style="
-        padding: 1.5em;
-        overflow: visible;
-        max-height: 30vh;
-        border: thin rgb(0, 170, 255) solid;
-      "
-    >
-      <clipPath id="the-clip" clipPathUnits="objectBoundingBox">
-        <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
-          <path />
-          <rect x="-10000" y="-10000" height="20000" width="20000"></rect>
-        </svg>
-      </clipPath>
-      <image
-        clip-path="url(#the-clip)"
-        width="100%"
-        height="100%"
-        href="./Encinitas_colorful_night.jpg"
-      />
-    </svg>
     <img
-      id="clipPathSample2"
+      id="maskSample2"
       src="./Encinitas_colorful_night.jpg"
       alt="A bright and colorful photo including the colors of sunset.  It looks slightly unreal because I used “Night Sight” mode on my Android camera."
-      style="max-height: 30vh; clip-path: url(#the-clip)"
+      style="max-height: 30vh"
     />
 
     <div id="resultHolder">

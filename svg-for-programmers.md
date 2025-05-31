@@ -246,3 +246,49 @@ function resetSpacing() {
 (from https://developer.mozilla.org/en-US/docs/Web/API/SVGLengthList)
 I was hoping it would be easier for a list of numbers than it was for a list of lengths.
 But, as shown in the error message above, an [SVGNumberList](https://developer.mozilla.org/en-US/docs/Web/API/SVGNumberList) is **not** a list of of numbers. It is a list of [SVGNumber](https://developer.mozilla.org/en-US/docs/Web/API/SVGNumber) objects. So I'd have to do something similar to the example above even in this simple case. This is when I decided it would be easier to just use `setAttribute()`.
+
+### Common SVG Issues in Safari and Best Practices
+
+Safari’s SVG rendering has improved over the years, but it still lags behind Chrome and Firefox in consistency, especially for dynamic or animated SVGs. While there isn’t a single definitive list of all SVG issues in Safari (issues evolve with browser updates), the web development community has documented recurring problems through blog posts, Stack Overflow threads, and browser bug trackers like WebKit’s Bugzilla. Below is a distilled list of well-known issues and best practices relevant to your project (e.g., inline SVGs, animations, and aspect ratio preservation).
+
+#### 1. Aspect Ratio and Sizing Issues
+
+- **Issue**: Safari often ignores the `viewBox` aspect ratio for inline SVGs, stretching them to the parent container’s width unless intrinsic dimensions are explicitly set. This is what you experienced with your SVGs taking the full parent width, while Chrome preserved the aspect ratio.
+- **Best Practice**:
+  - Always set `width` and `height` attributes on the `<svg>` element to match the `viewBox` aspect ratio. For example, if your `viewBox` is `"0 0 100 200"` (aspect ratio 1:2), set `width="100"` and `height="200"`. Then use CSS (`width: auto; height: auto; max-height: 30vh;`) to scale the SVG proportionally. This ensures Safari respects the aspect ratio like Chrome does.
+  - Use `preserveAspectRatio="xMidYMid meet"` (which you already do) to ensure the SVG content fits within the viewport without cropping, but note that this alone isn’t enough in Safari without intrinsic dimensions.
+
+#### 2. Animation Issues with CSS Motion Path (`offset-path`)
+
+- **Issue**: Safari has inconsistent support for animating `offset-path` and `offset-distance`, especially when the path is set dynamically via CSS custom properties (like your `--css-path`). You saw this with `#tauFollowingPathSample`, where the `<text>` elements didn’t move in Safari despite the animation running.
+- **Best Practice**:
+  - Avoid setting `offset-path` via CSS custom properties for animations. Instead, hardcode the path in the CSS (`offset-path: path("M ...")`) or set it directly on the element’s style in JavaScript (`element.style.offsetPath = "path('M ...')"`).
+  - If animations fail, consider using JavaScript to animate `offset-distance` (as a fallback), since Safari supports static `offset-path` positioning but may struggle with dynamic updates during animations.
+
+#### 3. Dynamic SVG Updates
+
+- **Issue**: Safari sometimes fails to re-render SVGs after dynamic updates, such as changing attributes or styles (e.g., updating a `<path>`’s `d` attribute or a CSS property). This can cause animations to stall or elements to appear static until a user interaction forces a redraw.
+- **Best Practice**:
+  - Force a repaint in Safari by toggling a CSS property (e.g., `element.style.display = 'inline';`) after updating the SVG.
+  - When updating SVG content dynamically, ensure the SVG is fully re-rendered by removing and re-adding it to the DOM if necessary (`parent.removeChild(svg); parent.appendChild(svg);`).
+
+#### 4. `fill-rule` Behavior
+
+- **Issue**: Safari may interpret `fill-rule` differently for complex paths with inflection points (like your Lissajous curves), sometimes defaulting to `evenodd`-like behavior even when set to `nonzero`. You noticed this difference between Lissajous curves and pentagram/heptagram curves.
+- **Best Practice**:
+  - Explicitly set `fill-rule="nonzero"` or `fill-rule="evenodd"` on your `<path>` elements to ensure consistent behavior across browsers.
+  - For complex paths, test in multiple browsers to confirm the rendering matches your expectations, as Safari’s path-filling algorithm can differ subtly from Chrome’s.
+
+#### 5. Performance with Large SVGs
+
+- **Issue**: Safari can be slower to render large or complex SVGs, especially with animations or many elements, leading to choppy performance.
+- **Best Practice**:
+  - Simplify paths where possible (e.g., reduce the number of points in parametric curves like Lissajous).
+  - Use `will-change: transform` on animated elements to hint at optimization, but apply it sparingly to avoid memory issues.
+
+#### 6. Text Rendering in SVGs
+
+- **Issue**: Safari sometimes renders SVG `<text>` elements inconsistently, especially with custom fonts or animations (like your `#tauFollowingPathSample`).
+- **Best Practice**:
+  - Use widely supported fonts or embed font data directly in the SVG if needed.
+  - For animations involving `<text>`, ensure the parent SVG has a defined size (via `width` and `height` attributes) to avoid layout shifts that Safari might mishandle.

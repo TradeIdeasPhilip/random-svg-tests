@@ -71,6 +71,14 @@ class SampleOutput {
     to.y = bBox.y;
     to.width = bBox.width;
     to.height = bBox.height;
+    const aspectRatio = bBox.width / bBox.height;
+    /**
+     * Arbitrary base height in pixels.
+     */
+    const intrinsicHeight = 300;
+    const intrinsicWidth = intrinsicHeight * aspectRatio;
+    this.#svgElement.style.height = intrinsicHeight + "px";
+    this.#svgElement.style.width = intrinsicWidth + "px";
     this.#recommendedWidth = Math.max(to.width, to.height) / 100;
     this.#svgElement.style.setProperty(
       "--recommended-width",

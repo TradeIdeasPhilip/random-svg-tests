@@ -95,6 +95,51 @@ body {
   user-select: all;
 }
 
+#maskSample2 {
+  mask-position: center; /* Start centered */
+  mask-size: contain; /* Start as large as possible without cropping */
+  animation: maskDance 8s infinite;
+}
+
+@keyframes maskDance {
+  0%, 12.5% { /* 0s to 1s: Static, centered, full size */
+    mask-position: center;
+    mask-size: contain;
+  }
+  25% { /* 2s: Start moving toward top-left, begin shrinking */
+    mask-position: 37.5% 37.5%; /* Intermediate position between center (50%, 50%) and top-left (25%, 25%) */
+    mask-size: 75%; /* Intermediate size between contain (100%) and 50% */
+  }
+  37.5% { /* 3s: Reach top-left, fully shrunk */
+    mask-position: 25% 25%;
+    mask-size: 50%;
+  }
+  50% { /* 4s: Start moving toward bottom-right, begin growing */
+    mask-position: 50% 50%; /* Back through center */
+    mask-size: 62.5%; /* Intermediate size between 50% and 75% */
+  }
+  62.5% { /* 5s: Reach bottom-right, fully grown */
+    mask-position: 75% 75%;
+    mask-size: 75%;
+  }
+  75% { /* 6s: Start moving toward top-right, begin shrinking */
+    mask-position: 75% 50%; /* Intermediate position between bottom-right (75%, 75%) and top-right (75%, 25%) */
+    mask-size: 57.5%; /* Intermediate size between 75% and 40% */
+  }
+  87.5% { /* 7s: Reach top-right, fully shrunk */
+    mask-position: 75% 25%;
+    mask-size: 40%;
+  }
+  93.75% { /* 7.5s: Start moving back to center, begin growing */
+    mask-position: 37.5% 37.5%; /* Intermediate position between top-right (75%, 25%) and center (50%, 50%) */
+    mask-size: 70%; /* Intermediate size between 40% and contain (100%) */
+  }
+  100% { /* 8s: Return to center, full size */
+    mask-position: center;
+    mask-size: contain;
+  }
+}
+
 #error {
   background-color: red;
   color: white;

@@ -23,22 +23,23 @@ interface Rect {
  * @param srcRect Often the result of `getBBox()` on an `SVGElement`.  This describes the input coordinate system.
  * @param destRect Often the the size and shape of an `HTMLElement`, with the top left corner at (0,0).  This describes the output coordinate system.
  * @param aspect What to do if the `destRect` has a different aspect ratio than `srcRect`.
- * * fit — Everything in the `srcRect` will fit into the `destRect`.  There maybe be unused space in the `destRect`.
- * * fill - Every part of the `destRect` will be filled with something from the `srcRect`.  Some parts of the `srcRect` might not be contained in the `destRect`.
+ * The terms `meet` and `slice` come from https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/preserveAspectRatio
+ * * meet — Everything in the `srcRect` will fit into the `destRect`.  There maybe be unused space in the `destRect`.
+ * * slice - Every part of the `destRect` will be filled with something from the `srcRect`.  Some parts of the `srcRect` might not be contained in the `destRect`.
  * @returns A new matrix mapping srcRect to destRect.
  */
 export function panAndZoom(
   srcRect: Rect,
   destRect: Rect,
-  aspect: "fit" | "fill"
+  aspect: "meet" | "slice"
 ): DOMMatrix {
   // Step 1: Compute the scaling factors to fit or fill the destination
   const srcAspect = srcRect.width / srcRect.height;
   const destAspect = destRect.width / destRect.height;
 
   let scaleX: number, scaleY: number;
-  if (aspect === "fit") {
-    // Fit: Scale to fit entirely within destRect, preserving aspect ratio
+  if (aspect === "meet") {
+    // meet: Scale to fit entirely within destRect, preserving aspect ratio
     if (srcAspect > destAspect) {
       // Source is wider than destination: scale by width, letterbox height
       scaleX = destRect.width / srcRect.width;
@@ -49,7 +50,7 @@ export function panAndZoom(
       scaleX = scaleY;
     }
   } else {
-    // Fill: Scale to fill destRect, preserving aspect ratio, may crop
+    // slice: Scale to fill destRect, preserving aspect ratio, may crop
     if (srcAspect > destAspect) {
       // Source is wider than destination: scale by height, crop width
       scaleY = destRect.height / srcRect.height;
@@ -85,12 +86,12 @@ export function panAndZoom(
  * Test cases for panAndZoom
  */
 function runTests() {
-  // Test 1: Your original test case (fit, source square, destination wider)
+  // Test 1: Your original test case (meet, source square, destination wider)
   {
     const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
     const testTo: Rect = { x: 0, y: 0, height: 244, width: 325 };
-    const testMatrix = panAndZoom(testFrom, testTo, "fit");
-    console.log("Test 1 (fit, square to wider):", {
+    const testMatrix = panAndZoom(testFrom, testTo, "meet");
+    console.log("Test 1 (meet, square to wider):", {
       testFrom,
       testTo,
       testMatrix: testMatrix.toJSON(),
@@ -120,12 +121,12 @@ function runTests() {
     });
   }
 
-  // Test 2: Fit, source square, destination taller
+  // Test 2: meet, source square, destination taller
   {
     const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
     const testTo: Rect = { x: 0, y: 0, height: 325, width: 244 };
-    const testMatrix = panAndZoom(testFrom, testTo, "fit");
-    console.log("Test 2 (fit, square to taller):", {
+    const testMatrix = panAndZoom(testFrom, testTo, "meet");
+    console.log("Test 2 (meet, square to taller):", {
       testFrom,
       testTo,
       testMatrix: testMatrix.toJSON(),
@@ -154,12 +155,12 @@ function runTests() {
     });
   }
 
-  // Test 3: Fill, source square, destination wider
+  // Test 3: slice, source square, destination wider
   {
     const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
     const testTo: Rect = { x: 0, y: 0, height: 244, width: 325 };
-    const testMatrix = panAndZoom(testFrom, testTo, "fill");
-    console.log("Test 3 (fill, square to wider):", {
+    const testMatrix = panAndZoom(testFrom, testTo, "slice");
+    console.log("Test 3 (slice, square to wider):", {
       testFrom,
       testTo,
       testMatrix: testMatrix.toJSON(),
@@ -175,7 +176,7 @@ function runTests() {
     corners.forEach(({ x: xFrom, y: yFrom }) => {
       const toPoint = transform(xFrom, yFrom, testMatrix);
       console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });
-      // For "fill", points may be outside, but the scaled rectangle should cover the destination
+      // For "slice", points may be outside, but the scaled rectangle should cover the destination
       // Check that the x and y ranges cover the destination
     });
   }

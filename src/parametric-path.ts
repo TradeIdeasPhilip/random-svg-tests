@@ -230,7 +230,7 @@ class ClipAndMaskSupport extends SampleOutput {
         height: this.#clipImg.clientHeight,
         width: this.#clipImg.clientWidth,
       },
-      "fit"
+      "meet"
     );
 
     // We have to manually transform the path from the given size and location to the desired size and location.

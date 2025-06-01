@@ -91,11 +91,11 @@ function runTests() {
     const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
     const testTo: Rect = { x: 0, y: 0, height: 244, width: 325 };
     const testMatrix = panAndZoom(testFrom, testTo, "meet");
-    console.log("Test 1 (meet, square to wider):", {
-      testFrom,
-      testTo,
-      testMatrix: testMatrix.toJSON(),
-    });
+    // console.log("Test 1 (meet, square to wider):", {
+    //   testFrom,
+    //   testTo,
+    //   testMatrix: testMatrix.toJSON(),
+    // });
 
     const corners = [
       { x: testFrom.x, y: testFrom.y }, // (-1, -1)
@@ -106,7 +106,7 @@ function runTests() {
 
     corners.forEach(({ x: xFrom, y: yFrom }) => {
       const toPoint = transform(xFrom, yFrom, testMatrix);
-      console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });
+      //console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });
       // Expectation: All points should be within testTo (x: [0, 325], y: [0, 244])
       if (
         toPoint.x < testTo.x ||
@@ -126,11 +126,11 @@ function runTests() {
     const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
     const testTo: Rect = { x: 0, y: 0, height: 325, width: 244 };
     const testMatrix = panAndZoom(testFrom, testTo, "meet");
-    console.log("Test 2 (meet, square to taller):", {
-      testFrom,
-      testTo,
-      testMatrix: testMatrix.toJSON(),
-    });
+    // console.log("Test 2 (meet, square to taller):", {
+    //   testFrom,
+    //   testTo,
+    //   testMatrix: testMatrix.toJSON(),
+    // });
 
     const corners = [
       { x: testFrom.x, y: testFrom.y },
@@ -141,7 +141,7 @@ function runTests() {
 
     corners.forEach(({ x: xFrom, y: yFrom }) => {
       const toPoint = transform(xFrom, yFrom, testMatrix);
-      console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });
+      //console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });
       if (
         toPoint.x < testTo.x ||
         toPoint.x > testTo.x + testTo.width ||
@@ -157,31 +157,31 @@ function runTests() {
 
   // Test 3: slice, source square, destination wider
   {
-    const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
-    const testTo: Rect = { x: 0, y: 0, height: 244, width: 325 };
-    const testMatrix = panAndZoom(testFrom, testTo, "slice");
-    console.log("Test 3 (slice, square to wider):", {
-      testFrom,
-      testTo,
-      testMatrix: testMatrix.toJSON(),
-    });
+    // const testFrom: Rect = { x: -1, y: -1, width: 2, height: 2 };
+    // const testTo: Rect = { x: 0, y: 0, height: 244, width: 325 };
+    // const testMatrix = panAndZoom(testFrom, testTo, "slice");
+    // console.log("Test 3 (slice, square to wider):", {
+    //   testFrom,
+    //   testTo,
+    //   testMatrix: testMatrix.toJSON(),
+    // });
 
-    const corners = [
-      { x: testFrom.x, y: testFrom.y },
-      { x: testFrom.x + testFrom.width, y: testFrom.y },
-      { x: testFrom.x + testFrom.width, y: testFrom.y + testFrom.height },
-      { x: testFrom.x, y: testFrom.y + testFrom.height },
-    ];
+    // const corners = [
+    //   { x: testFrom.x, y: testFrom.y },
+    //   { x: testFrom.x + testFrom.width, y: testFrom.y },
+    //   { x: testFrom.x + testFrom.width, y: testFrom.y + testFrom.height },
+    //   { x: testFrom.x, y: testFrom.y + testFrom.height },
+    // ];
 
-    corners.forEach(({ x: xFrom, y: yFrom }) => {
-      const toPoint = transform(xFrom, yFrom, testMatrix);
-      console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });
-      // For "slice", points may be outside, but the scaled rectangle should cover the destination
-      // Check that the x and y ranges cover the destination
-    });
+    // corners.forEach(({ x: xFrom, y: yFrom }) => {
+    //   const toPoint = transform(xFrom, yFrom, testMatrix);
+    //   console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });
+    //   // For "slice", points may be outside, but the scaled rectangle should cover the destination
+    //   // Check that the x and y ranges cover the destination
+    // });
   }
 
-  console.log("All tests passed!");
+  //console.log("All tests passed!");
 }
 // Run the tests
 runTests();

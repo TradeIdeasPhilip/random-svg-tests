@@ -174,7 +174,7 @@ class TauFollowingPathSample extends SampleOutput {
        * While the change to offset-distance (in parametric-path.css) has a real effect and should not have been ignored.
        * All together we get the correct result of updating the moving text every frame.
        */
-      const nonce = even?"0 0":"center";
+      const nonce = even ? "0 0" : "center";
       this.svgElement.style.offsetAnchor = nonce;
       even = !even;
     });
@@ -241,7 +241,6 @@ class ClipAndMaskSupport extends SampleOutput {
     }"/></svg>`;
     const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
     const maskImage = `url('${dataUrl}')`;
-    console.log({ svgString, dataUrl, maskImage });
     this.#maskImg2.style.maskImage = maskImage;
 
     // The clip example and the other mask example require more effort.
@@ -476,6 +475,20 @@ addAnotherInput();
   });
 
   doItSoon();
+}
+
+{
+  // By default the page includes a lot of instructions and information.
+  // This checkbox makes it easier to see the inputs and the outputs
+  // on the screen all at once.
+  const checkBox = getById("hide-text", HTMLInputElement);
+  checkBox.addEventListener("click", () => {
+    if (checkBox.checked) {
+      document.documentElement.dataset.hide = "requested";
+    } else {
+      delete document.documentElement.dataset.hide;
+    }
+  });
 }
 
 // TODO

@@ -57,15 +57,15 @@ const y = b * Math.sin(freqY * angle);
       <div><code>}</code></div>
     </div>
     <button id="go">Go</button>
-    <h2>Precision</h2>
-    <p>
+    <h2 data-hide>Precision</h2>
+    <p data-hide>
       This software will make a path approximating your function. This software
       takes samples at n evenly spread values of t. At each t, this software
       will record the position of your function and its derivative. Each segment
       is made of a part of a parabola chosen to best match the samples at either
       end.
     </p>
-    <p>
+    <p data-hide>
       If you plan to smoothly morph between two paths, make sure this parameter
       is the same when you create each path. The rest should work itself out
       automatically.
@@ -82,19 +82,22 @@ const y = b * Math.sin(freqY * angle);
       />
       <span id="segmentCountSpan"></span>
     </div>
-    <h2>Inputs</h2>
+    <h2 data-hide>Inputs</h2>
     <div id="inputsGroup">
-      <p>
+      <p data-hide>
         You can access these sliders from inside your code. The name of each
         slider is written next to it <code>in blue</code>. The samples will
         update immediately as you move the slider.
       </p>
       <div id="inputs"></div>
-      <button>Add Another Input</button>
+      <button data-hide>Add Another Input</button>
     </div>
     <div id="error"></div>
-    <h2>Output Samples</h2>
-    <p>
+    <h2 data-hide>Output Samples</h2>
+    <label style="display: flex"
+      ><input type="checkbox" id="hide-text" />&nbsp;Hide Text</label
+    >
+    <p data-hide>
       The output from this program is a css path, a string. That path can be
       used a lot of different ways. Here are a few examples.
     </p>
@@ -198,7 +201,7 @@ const y = b * Math.sin(freqY * angle);
         </textPath>
       </text>
     </svg>
-    <div>
+    <div data-hide>
       <p>
         I have provided one demo using
         <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/clip-path"

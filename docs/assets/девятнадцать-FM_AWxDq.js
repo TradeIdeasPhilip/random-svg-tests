@@ -1,0 +1,142 @@
+import"./modulepreload-polyfill-B5Qt9EMX.js";import{g as i,A as T}from"./client-misc-1LRynplM.js";/* empty css              */import{p as L,P as k}from"./path-shape-ctYMumRk.js";import{b as y}from"./utility-Dw-q5N--.js";import{m as b}from"./misc-CLGTS8fC.js";const w=i("go",HTMLButtonElement),f=i("source",HTMLTextAreaElement),F=i("result",HTMLElement),p=i("sampleCode",HTMLSelectElement),x=[{name:"Custom",code:""},{name:"Simple Ellipse",code:`// The height can be anything convenient to you.
+// This software will automatically zoom and pan to show off your work.
+const height = 1;
+// Use the first slider to change the width of the ellipse.
+const width = height * support.input(0) * 2;
+// Use the second slider to change the starting point on the ellipse.
+// This doesn't matter in a static ellipse, but it can be important in some animations and other special cases.
+const angle = (t + support.input(1)) * 2 * Math.PI;
+const x = width * Math.cos(angle);
+const y = height * Math.sin(angle);`},{name:"Circle with Wavy Edge",code:`// Make sure you use enough segments.
+// This includes a lot of inflection points, which means you need a lot of segments.
+const height = 1;
+const width = height;
+const angle = t * 2 * Math.PI;
+const adjustmentAngle = angle * 8;
+const adjustmentFactor = Math.sin(adjustmentAngle)/10+1;
+const x = width * Math.cos(angle) * adjustmentFactor;
+const y = height * Math.sin(angle) * adjustmentFactor;`},{name:"Lissajous Curves",default:!0,code:`const a = 1; // Amplitude in x-direction
+const b = 1; // Amplitude in y-direction
+const freqX = 3; // Frequency in x-direction
+const freqY = 2; // Frequency in y-direction
+const phase = Math.PI / 2; // Phase difference
+const angle = t * 2 * Math.PI;
+const x = a * Math.sin(freqX * angle + phase);
+const y = b * Math.sin(freqY * angle);
+
+// This works well with my approximations.
+// There are only two inflection points and they are both in regions where the path is almost linear.`},{name:"Hypocycloid / Astroid",code:`const R = 1; // Radius of the large circle
+const r = R / 4; // Radius of the small circle (astroid case)
+const angle = t * 2 * Math.PI;
+const x = (R - r) * Math.cos(angle) + r * Math.cos((R - r) / r * angle);
+const y = (R - r) * Math.sin(angle) - r * Math.sin((R - r) / r * angle);
+
+// The sharp corners in this curve push my model to its limits.
+// However, it does a decent job as long as you use enough segments.`},{name:"Bell Curve",code:`// Number of standard deviations in each direction:
+const right = support.input(0) * 5;
+const left = - right;
+const width = right - left;
+const x = t * width + left;
+const height = support.input(1) * 4 + 1;
+// Negate this.
+// This program works with normal graphics notation where lower values of y are higher on the display.
+// Normal algebra-class graphs show lower values of y lower on the screen.
+const y = - height * Math.exp(-x*x);`},{name:"Spirograph Curve (⟟)",code:`// Spirograph Curve (⟟) - A general Spirograph pattern with adjustable parameters
+// Sliders: rolling circle radius (⟟), pen distance (⟠), number of turns (⟡)
+const R = 1.0; // Fixed circle radius
+const r = support.input(0) * 2 - 1; // Rolling circle radius: -1 to 1 (⟟). Negative for inside, positive for outside
+const d = support.input(1) * 2; // Pen distance from rolling circle center: 0 to 2 (⟠)
+const numTurns = support.input(2) * 10; // Number of turns: 0 to 10 (⟡)
+const angle = t * 2 * Math.PI * numTurns;
+
+// Determine if rolling inside (hypotrochoid) or outside (epitrochoid)
+const k = r < 0 ? (R - r) / r : (R + r) / r; // Frequency ratio
+const baseRadius = r < 0 ? (R - r) : (R + r); // Base radius for the rolling circle's center
+
+// Parametric equations
+const x = baseRadius * Math.cos(angle) + (r < 0 ? d : -d) * Math.cos(k * angle);
+const y = baseRadius * Math.sin(angle) - (r < 0 ? d : -d) * Math.sin(k * angle);`},{name:"Archimedean Spiral with Oscillation",code:`const scale = 1; // Overall scale of the spiral
+const turns = 3; // Number of full rotations
+const waveFreq = 10; // Frequency of the oscillation
+const waveAmp = 0.1; // Amplitude of the oscillation
+const angle = t * 2 * Math.PI * turns;
+const radius = scale * t; // Linear growth for Archimedean spiral
+const wave = waveAmp * Math.sin(t * 2 * Math.PI * waveFreq);
+const x = radius * Math.cos(angle) * (1 + wave);
+const y = radius * Math.sin(angle) * (1 + wave);`},{name:"Heart Curve ♡",code:`const scale = 1;
+const angle = t * 2 * Math.PI;
+const x = scale * (16 * Math.pow(Math.sin(angle), 3));
+const algebraClassY = scale * (13 * Math.cos(angle) - 5 * Math.cos(2 * angle) - 2 * Math.cos(3 * angle) - Math.cos(4 * angle));
+const y = - algebraClassY;`},{name:"Butterfly Curve",code:`const scale = 0.2;
+const angle = t * 24 * Math.PI * support.input(0); // More rotations for complexity
+const e = Math.exp(1);
+const x = scale * Math.sin(angle) * (e ** Math.cos(angle) - 2 * Math.cos(4 * angle) - Math.pow(Math.sin(angle / 12), 5));
+const y = scale * Math.cos(angle) * (e ** Math.cos(angle) - 2 * Math.cos(4 * angle) - Math.pow(Math.sin(angle / 12), 5));
+
+// This will require a lot of segments to display correctly.`},{name:"Hollow Star ☆",code:`const scale = 1; // Overall scale of the star
+const points = 5; // Number of star points
+const innerRadius = 0.4; // Radius of the inner points (controls star shape)
+const roundness = 0.1; // Amplitude of the oscillation for rounding
+const angle = t * 2 * Math.PI; // Full circle
+const starAngle = angle * points; // Angle scaled for 5 points
+const radius = scale * (1 - innerRadius * (Math.cos(starAngle) + 1) / 2); // Base star shape
+const rounding = roundness * Math.sin(starAngle); // Oscillation for rounding
+const x = (radius + rounding) * Math.cos(angle);
+const y = (radius + rounding) * Math.sin(angle);
+
+// According to Wikipedia, if it's hollow inside, it's a star.
+// If you can see the lines crossing each other, it's a pentagram.`},{name:"Rotating Ellipse",code:`const r1 = 0.5; // Short radius of the ellipse
+const r2 = 1.0; // Long radius of the ellipse
+const phase = support.input(0) * Math.PI; // First slider: Rotation angle in radians (0 to π)
+const angle = t * 2 * Math.PI; // Full circle
+
+// Basic ellipse centered at the origin
+const xEllipse = r1 * Math.cos(angle);
+const yEllipse = r2 * Math.sin(angle);
+
+// Rotate the ellipse by the phase angle
+const x = xEllipse * Math.cos(phase) - yEllipse * Math.sin(phase);
+const y = xEllipse * Math.sin(phase) + yEllipse * Math.cos(phase);
+
+// I used this formula as a starting place for the rounded pentagram.`},{name:"Rounded Pentagram ⛤, Heptagram, etc.",code:`const r1 = 0.5 * support.input(0); // Short radius of the ellipse. Top slider will adjust it.
+const r2 = 1.0; // Long radius of the ellipse
+const phase = Math.PI * t; // The reference ellipse will make one half complete rotation during the tracing process.
+const numberOfTrips = support.input(1) * 10;  // Effective range is 0 to 10 
+const angle = t * 2 * Math.PI * numberOfTrips; // Basic ellipse centered at the origin
+const xEllipse = r1 * Math.cos(angle);
+const yEllipse = r2 * Math.sin(angle);// Rotate the ellipse by the phase angle
+const x = xEllipse * Math.cos(phase) - yEllipse * Math.sin(phase);
+const y = xEllipse * Math.sin(phase) + yEllipse * Math.cos(phase);
+
+// The top slider controls the amount of curvature in the output.
+// The second slider controls the number of lobes.
+// Try values like 0.05, 0.15, 0.25, …, 0.95 for closed shapes.`},{name:"Cardioid with Nodal Loops (क⋏)",code:`// Cardioid with Nodal Loops (क⋏) - A heart-shaped curve with adjustable loops
+// Slider adjusts the number of nodal loops (⋰)
+const r = 0.5; // Radius of the base circles for the cardioid
+const nodalFreq = Math.round(support.input(0) * 10); // Frequency of nodal loops (⋰). First slider: 0 to 10
+const nodalAmp = 0.1; // Amplitude of the nodal loops
+const angle = t * 2 * Math.PI; // Full circle
+
+// Base cardioid: point on a circle rolling around another circle
+const xCardioid = r * (2 * Math.cos(angle) - Math.cos(2 * angle));
+const yCardioid = r * (2 * Math.sin(angle) - Math.sin(2 * angle));
+
+// Add nodal loops along the curve
+const nodalOffset = nodalAmp * Math.sin(nodalFreq * angle);
+const x = xCardioid + nodalOffset * Math.cos(angle);
+const y = yCardioid + nodalOffset * Math.sin(angle);`},{name:"Lissajous Śpiral (श)",code:`// Lissajous Śpiral (श) - A spiraling Lissajous curve with adjustable frequency
+// Slider adjusts the frequency ratio (⟐)
+const scale = 1.0; // Base scale of the curve
+const freqRatio = 1 + support.input(0) * 4; // Frequency ratio x:y (⟐). First slider: 1 to 5
+const spiralFactor = t; // Linearly increasing amplitude for spiral effect
+const angle = t * 2 * Math.PI; // Full circle
+
+// Lissajous curve with spiraling amplitude
+const x = scale * spiralFactor * Math.cos(angle);
+const y = scale * spiralFactor * Math.sin(freqRatio * angle);`}];f.addEventListener("input",()=>{w.disabled=!1,x[0].code=f.value,p.selectedIndex=0});p.innerText="";x.forEach((s,t)=>{const e=document.createElement("option");e.innerText=s.name,p.appendChild(e),s.default&&(p.selectedIndex=t,f.value=s.code)});class S{static#t=i("error",HTMLDivElement);static display(t){this.#t.innerText=t}static displayError(t){t instanceof P?this.#t.innerHTML=`Unable to access <code>support.input(${t.requestedIndex})</code>.  Only ${u.length} input sliders currently exist.  <button onclick="addMoreInputs(this,${t.requestedIndex+1})">Add More</button>`:this.display(t.message)}static clear(){this.display("")}}class h{#t;get svgElement(){return this.#t}#e;get pathElement(){return this.#e}constructor(t){this.#t=y(t,SVGSVGElement),this.#e=y("path:not([data-skip-auto-fill])",SVGPathElement,this.#t),h.all.add(this)}static all=new Set;#s=NaN;get recommendedWidth(){return this.#s}#n(){const t=this.#e.getBBox(),e=this.#t.viewBox.baseVal;e.x=t.x,e.y=t.y,e.width=t.width,e.height=t.height;const n=t.width/t.height,r=300,l=r*n;this.#t.style.height=r+"px",this.#t.style.width=l+"px",this.#s=Math.max(e.width,e.height)/100,this.#t.style.setProperty("--recommended-width",this.#s.toString())}setPathShape(t){this.#e.setAttribute("d",t.rawPath),this.#n()}static setPathShape(t){this.all.forEach(e=>e.setPathShape(t))}static getOuterHTML(){return b.pickAny(h.all).#e.outerHTML}deAnimate(t=this.#e){t.getAnimations().forEach(e=>e.cancel())}}new h("#filledSample");new h("#outlineSample");class R extends h{constructor(){super("#chasingPathsSample")}setPathShape(t){super.setPathShape(t);const e=this.pathElement,n=1500,r=Date.now()/n%1;this.deAnimate();const l=e.getTotalLength();e.style.strokeDasharray=`0 ${l} ${l} 0`,e.animate([{strokeDashoffset:0},{strokeDashoffset:-2*l}],{iterations:1/0,duration:n,iterationStart:r})}}new R;class C extends h{constructor(){super("#dancingAntsSample")}setPathShape(t){super.setPathShape(t);const e=this.pathElement,n=250;this.deAnimate();const r=e.getTotalLength(),l=Date.now()/n%1,a=4*this.recommendedWidth,c=a*10<r?r/Math.round(r/a):a;e.style.strokeDasharray=`0 ${c}`,e.animate([{strokeDashoffset:0},{strokeDashoffset:-c}],{iterations:1/0,duration:n,iterationStart:l})}}new C;class H extends h{constructor(){super("#tauFollowingPathSample");let t=!0;new T(()=>{const e=t?"0 0":"center";this.svgElement.style.offsetAnchor=e,t=!t})}setPathShape(t){super.setPathShape(t),this.svgElement.style.setProperty("--css-path",t.cssPath)}}new H;new h("#textPathSample");class M extends h{static doItSoon(){console.warn("placeholder")}#t;constructor(){super("#clipAndMaskSupport"),this.#t=y("mask > path",SVGPathElement,this.svgElement);const t=new ResizeObserver(()=>M.doItSoon());[this.#e,this.#s].forEach(e=>{e.decode().then(()=>M.doItSoon()),t.observe(e)})}get measurablePath(){return this.pathElement}#e=i("clipPathSample",HTMLImageElement);#s=i("maskSample",HTMLImageElement);#n=i("maskSample2",HTMLImageElement);setPathShape(t){super.setPathShape(t);const e=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${this.svgElement.getAttribute("viewBox")}" preserveAspectRatio="xMidYMid meet"><path d="${t.rawPath}" stroke="red" fill-opacity="0.5" fill="black" stroke-width="${this.recommendedWidth*4}"/></svg>`,r=`url('${`data:image/svg+xml;base64,${btoa(e)}`}')`;this.#n.style.maskImage=r;const l=this.measurablePath.getBBox(),a=L(l,{x:0,y:0,height:this.#e.clientHeight,width:this.#e.clientWidth}),c=t.transform(a);this.#e.style.clipPath=c.cssPath,this.#t.setAttribute("d",c.rawPath);const g=a.a,m=this.recommendedWidth*g*8;this.#t.style.strokeWidth=m.toString();const o=507;this.deAnimate(this.#t);const d=this.#t.getTotalLength(),A=Date.now()/o%1,E=16*this.recommendedWidth*g,I=E*10<d?d/Math.round(d/E):E;this.#t.style.strokeDasharray=`${m} ${I-m}`,this.#t.animate([{strokeDashoffset:0},{strokeDashoffset:-I}],{iterations:1/0,duration:o,iterationStart:A})}}new M;const u=[];class P extends Error{constructor(t){super(`Unable to access support.input(${t}).  Only ${u.length} input sliders currently exist.`),this.requestedIndex=t}}const q={input(s){if(!Number.isSafeInteger(s)||s<0)throw new RangeError(`invalid ${s}`);if(s>=u.length)throw new P(s);return u[s]}},B=i("inputs",HTMLDivElement);function v(){w.disabled=!1;const s=u.length,t=.5,e=`<div class="has-slider">
+      <input type="range" min="0" max="1" value="${t}" step="0.00001" oninput="copyNewInput(this, ${s})" />
+      <code>support.input(${s})</code> =
+      <span>${t.toString().padEnd(7,"0")}</span>
+    </div>`;B.insertAdjacentHTML("beforeend",e),u.push(t)}window.addMoreInputs=(s,t)=>{for(s.disabled=!0;u.length<t;)v()};y("#inputsGroup button",HTMLButtonElement).addEventListener("click",()=>{v()});v();v();{const s=i("segmentCountInput",HTMLInputElement),t=()=>{S.clear();const a=`"use strict";
+`+f.value+`
+return { x, y };`;let c;try{c=new Function("t /* A value between 0 and 1, inclusive. */","support",a)}catch(o){if(o instanceof SyntaxError){S.displayError(o);return}else throw o}const g=o=>{const d=c(o,q);if(!(Number.isFinite(d.x)&&Number.isFinite(d.y)))throw new Error(`Invalid result.  Expected {x,y} where x and y are both finite numbers.  Found: ${JSON.stringify(d)} when t=${o}.`);return d};let m;try{m=k.parametric(g,s.valueAsNumber)}catch(o){if(o instanceof Error){S.displayError(o);return}else throw o}h.setPathShape(m),F.innerText=h.getOuterHTML()};let e=!1;const n=()=>{w.disabled=!0,e||(e=!0,requestAnimationFrame(()=>{e=!1,t()}))};M.doItSoon=n,w.addEventListener("click",n);const r=i("segmentCountSpan",HTMLSpanElement),l=()=>{r.innerText=s.value.padStart(3,b.FIGURE_SPACE)};l(),s.addEventListener("change",()=>{l(),n()}),window.copyNewInput=(a,c)=>{u[c]=a.valueAsNumber;const g=b.assertClass(a.parentElement?.lastElementChild,HTMLSpanElement);g.innerText=a.valueAsNumber.toFixed(5),n()};{const a=()=>{const c=x[p.selectedIndex];f.value=c.code,n()};p.addEventListener("change",a),i("nextSample",HTMLButtonElement).addEventListener("click",()=>{p.selectedIndex=(p.selectedIndex+1)%x.length,a()})}n()}{const s=i("hide-text",HTMLInputElement);s.addEventListener("click",()=>{s.checked?document.documentElement.dataset.hide="requested":delete document.documentElement.dataset.hide})}

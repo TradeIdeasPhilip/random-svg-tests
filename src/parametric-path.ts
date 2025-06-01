@@ -1,4 +1,4 @@
-import { getById } from "phil-lib/client-misc";
+import { AnimationLoop, getById } from "phil-lib/client-misc";
 import "./style.css";
 import "./parametric-path.css";
 import { ParametricFunction, PathShape, Point } from "./path-shape";
@@ -159,6 +159,25 @@ new DancingAntsSample();
 class TauFollowingPathSample extends SampleOutput {
   constructor() {
     super("#tauFollowingPathSample");
+
+    // This is an ugly hack.  There seems to be a bug in Safari.  This hack is not required in Chrome, but doesn't hurt.
+    // In Safari the positions of the three <text> elements do not update despite very simple rules in parametric-path.css.
+    // (See the "move" animation.)
+    // I noticed that the <text> elements would jump to their correct positions any time I changed a relevant style property,
+    // but it was a one time jump.  It did not continue updating.  So I added some code to agitate the <text> elements
+    // once per animation frame.  It's shady, but it works, and I've done worse.
+    let even = true;
+    new AnimationLoop(() => {
+      /**
+       * This value has exactly one job:  Change so the browser will refresh.
+       * The irony is that the change in the `nonce` has no real effect and should be ignored.
+       * While the change to offset-distance (in parametric-path.css) has a real effect and should not have been ignored.
+       * All together we get the correct result of updating the moving text every frame.
+       */
+      const nonce = even?"0 0":"center";
+      this.svgElement.style.offsetAnchor = nonce;
+      even = !even;
+    });
   }
   override setPathShape(pathShape: PathShape): void {
     super.setPathShape(pathShape);

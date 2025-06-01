@@ -209,6 +209,31 @@ const angle = t * 2 * Math.PI; // Full circle
 const x = scale * spiralFactor * Math.cos(angle);
 const y = scale * spiralFactor * Math.sin(freqRatio * angle);`,
   },
+  {
+    name: "Squaring the Circle",
+    code: `// This will trace out the shape of a dog tag using epicycles.
+// Use the first slider to choose how many circles to use in
+// this approximation, from 1 to 20.
+
+// I was originally trying to use epicycles to create a square.
+// But I ran into the Gibbs Phenomenon,
+// so this a square where two of the sides bulge out some.
+
+const numberOfCircles = 1 + 19 * support.input(0);
+const circlesToConsider = Math.ceil(numberOfCircles);
+const attenuation = numberOfCircles - Math.floor(numberOfCircles);
+let x = 0;
+let y = 0;
+for (let k = 0; k < circlesToConsider; k++) {
+  const n = 2 * k + 1; // Odd frequencies: 1, 3, 5, ...
+  const radius = (4 * Math.sqrt(2)) / (Math.PI * Math.PI * n * n);
+  const phase = k % 2 === 0 ? -Math.PI / 4 : Math.PI / 4;
+  const factor = (k === circlesToConsider - 1 && attenuation > 0) ? attenuation : 1;
+  const baseAngle = t * 2 * Math.PI;
+  x += factor * radius * Math.cos(n * baseAngle + phase);
+  y += factor * radius * Math.sin(n * baseAngle + phase);
+}`,
+  },
 ];
 
 sourceTextArea.addEventListener("input", () => {

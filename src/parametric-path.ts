@@ -234,6 +234,41 @@ for (let k = 0; k < circlesToConsider; k++) {
   y += factor * radius * Math.sin(n * baseAngle + phase);
 }`,
   },
+  {
+    name: "A Better Square",
+    code: `// Inspired by https://www.youtube.com/watch?v=t99CmgJAXbg
+// Square Orbits Part 1: Moon Orbits
+
+const R = 0.573; // Match our first circle's radius
+const moonRadius = (7 / 45) * R;
+const planetAngle = t * 2 * Math.PI; // Frequency 1
+const moonAngle = -3 * planetAngle; // Frequency 3, opposite direction
+const planetX = R * Math.cos(planetAngle);
+const planetY = R * Math.sin(planetAngle);
+const moonX = moonRadius * Math.cos(moonAngle);
+const moonY = moonRadius * Math.sin(moonAngle);
+const x = (planetX + moonX) * 1.2;
+const y = (planetY + moonY) * 1.2;`,
+  },
+  {
+    name: "Fourier square wave",
+    code: `// Use the first slider to choose how many sine waves to use in
+// this approximation, from 1 to 20.
+
+const numberOfCircles = 1 + 19 * support.input(0);
+const circlesToConsider = Math.ceil(numberOfCircles);
+const attenuation = numberOfCircles - Math.floor(numberOfCircles);
+let ySum = 0;
+for (let k = 0; k < circlesToConsider; k++) {
+  const n = 2 * k + 1; // Odd frequencies: 1, 3, 5, ...
+  const amplitude = (4 / Math.PI) / n;
+  const factor = (k === circlesToConsider - 1 && attenuation > 0) ? attenuation : 1;
+  const baseAngle = 2 * Math.PI * 2.5 * t + Math.PI / 2; // 2.5 cycles, shift for vertical center
+  ySum += factor * amplitude * Math.sin(n * baseAngle);
+}
+const x = (t * 5) - 2.5; // Span x from -2.5 to 2.5
+const y = ySum;`,
+  },
 ];
 
 sourceTextArea.addEventListener("input", () => {

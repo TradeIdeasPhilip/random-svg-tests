@@ -216,8 +216,8 @@ const y = scale * spiralFactor * Math.sin(freqRatio * angle);`,
 // this approximation, from 1 to 20.
 
 // I was originally trying to use epicycles to create a square.
-// But I ran into the Gibbs Phenomenon,
-// so this a square where two of the sides bulge out some.
+// But I ran into some issues.
+// See "A Better Square" for my second attempt, which worked much better.
 
 const numberOfCircles = 1 + 19 * support.input(0);
 const circlesToConsider = Math.ceil(numberOfCircles);
@@ -236,19 +236,77 @@ for (let k = 0; k < circlesToConsider; k++) {
   },
   {
     name: "A Better Square",
-    code: `// Inspired by https://www.youtube.com/watch?v=t99CmgJAXbg
-// Square Orbits Part 1: Moon Orbits
+    code: `// Draw a series of approximations of a square.
+// Each is created from looking at the first n items in the complex Fourier series for a square.
+// The demo interpolates when n is not an integer.
+//
+// I computed this list using the “Square with Easing” example at
+// https://tradeideasphilip.github.io/random-svg-tests/complex-fourier-series.html
+const circles = [
+    {
+        "frequency": 1,
+        "amplitude": 0.6002108774487057,
+        "phase": -2.356194490192345
+    },
+    {
+        "frequency": -3,
+        "amplitude": 0.12004217545570839,
+        "phase": -2.356194490192345
+    },
+    {
+        "frequency": 5,
+        "amplitude": 0.017148882159337513,
+        "phase": 0.7853981633974483
+    },
+    {
+        "frequency": -7,
+        "amplitude": 0.0057162939963831035,
+        "phase": -2.356194490192344
+    },
+    {
+        "frequency": 9,
+        "amplitude": 0.0025983153910070288,
+        "phase": 0.7853981633974468
+    },
+    {
+        "frequency": -11,
+        "amplitude": 0.0013990928373741655,
+        "phase": -2.356194490192343
+    },
+    {
+        "frequency": 13,
+        "amplitude": 0.0008394556343162563,
+        "phase": 0.7853981633974426
+    },
+    {
+        "frequency": -15,
+        "amplitude": 0.000543177105018045,
+        "phase": -2.3561944901923386
+    },
+    {
+        "frequency": 17,
+        "amplitude": 0.00037164742117819677,
+        "phase": 0.7853981633974505
+    },
+    {
+        "frequency": -19,
+        "amplitude": 0.0002654623706666915,
+        "phase": -2.3561944901923475
+    }
+];
 
-const R = 0.573; // Match our first circle's radius
-const moonRadius = (7 / 45) * R;
-const planetAngle = t * 2 * Math.PI; // Frequency 1
-const moonAngle = -3 * planetAngle; // Frequency 3, opposite direction
-const planetX = R * Math.cos(planetAngle);
-const planetY = R * Math.sin(planetAngle);
-const moonX = moonRadius * Math.cos(moonAngle);
-const moonY = moonRadius * Math.sin(moonAngle);
-const x = (planetX + moonX) * 1.2;
-const y = (planetY + moonY) * 1.2;`,
+const numberOfCircles = 1 + (circles.length-1) * support.input(0);
+const circlesToConsider = Math.ceil(numberOfCircles);
+const attenuation = numberOfCircles - Math.floor(numberOfCircles);
+let x = 0;
+let y = 0;
+for (let k = 0; k < circlesToConsider; k++) {
+const { frequency, amplitude, phase } = circles[k];
+      const angle = 2 * Math.PI * frequency * t + phase;
+  const factor = (k === circlesToConsider - 1 && attenuation > 0) ? attenuation : 1;
+      x += factor * amplitude * Math.cos(angle);
+      y += factor * amplitude * Math.sin(angle);
+}`,
   },
   {
     name: "Fourier square wave",

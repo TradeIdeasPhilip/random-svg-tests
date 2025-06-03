@@ -24,41 +24,57 @@ interface Rect {
  * @param destRect Often the the size and shape of an `HTMLElement`, with the top left corner at (0,0).  This describes the output coordinate system.
  * @param aspect What to do if the `destRect` has a different aspect ratio than `srcRect`.
  * The terms `meet` and `slice` come from https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/preserveAspectRatio
- * * meet — Everything in the `srcRect` will fit into the `destRect`.  There maybe be unused space in the `destRect`.
- * * slice - Every part of the `destRect` will be filled with something from the `srcRect`.  Some parts of the `srcRect` might not be contained in the `destRect`.
+ * * `meet` — Everything in the `srcRect` will fit into the `destRect`.  There maybe be unused space in the `destRect`.
+ * * `slice` — Every part of the `destRect` will be filled with something from the `srcRect`.  Some parts of the `srcRect` might not be contained in the `destRect`.
+ * * `srcRect fits completely into destRect` — an alias for `meet`.
+ * * `srcRect completely covers destRect` — an alias for `slice`.
  * @returns A new matrix mapping srcRect to destRect.
  */
 export function panAndZoom(
   srcRect: Rect,
   destRect: Rect,
-  aspect: "meet" | "slice"
+  aspect:
+    | "meet"
+    | "slice"
+    | "srcRect fits completely into destRect"
+    | "srcRect completely covers destRect"
 ): DOMMatrix {
   // Step 1: Compute the scaling factors to fit or fill the destination
   const srcAspect = srcRect.width / srcRect.height;
   const destAspect = destRect.width / destRect.height;
 
   let scaleX: number, scaleY: number;
-  if (aspect === "meet") {
-    // meet: Scale to fit entirely within destRect, preserving aspect ratio
-    if (srcAspect > destAspect) {
-      // Source is wider than destination: scale by width, letterbox height
-      scaleX = destRect.width / srcRect.width;
-      scaleY = scaleX;
-    } else {
-      // Source is taller than destination: scale by height, letterbox width
-      scaleY = destRect.height / srcRect.height;
-      scaleX = scaleY;
+  switch (aspect) {
+    case "meet":
+    case "srcRect fits completely into destRect": {
+      // meet: Scale to fit entirely within destRect, preserving aspect ratio
+      if (srcAspect > destAspect) {
+        // Source is wider than destination: scale by width, letterbox height
+        scaleX = destRect.width / srcRect.width;
+        scaleY = scaleX;
+      } else {
+        // Source is taller than destination: scale by height, letterbox width
+        scaleY = destRect.height / srcRect.height;
+        scaleX = scaleY;
+      }
+      break;
     }
-  } else {
-    // slice: Scale to fill destRect, preserving aspect ratio, may crop
-    if (srcAspect > destAspect) {
-      // Source is wider than destination: scale by height, crop width
-      scaleY = destRect.height / srcRect.height;
-      scaleX = scaleY;
-    } else {
-      // Source is taller than destination: scale by width, crop height
-      scaleX = destRect.width / srcRect.width;
-      scaleY = scaleX;
+    case "slice":
+    case "srcRect completely covers destRect": {
+      // slice: Scale to fill destRect, preserving aspect ratio, may crop
+      if (srcAspect > destAspect) {
+        // Source is wider than destination: scale by height, crop width
+        scaleY = destRect.height / srcRect.height;
+        scaleX = scaleY;
+      } else {
+        // Source is taller than destination: scale by width, crop height
+        scaleX = destRect.width / srcRect.width;
+        scaleY = scaleX;
+      }
+      break;
+    }
+    default: {
+      throw new Error("wtf");
     }
   }
 
@@ -165,14 +181,12 @@ function runTests() {
     //   testTo,
     //   testMatrix: testMatrix.toJSON(),
     // });
-
     // const corners = [
     //   { x: testFrom.x, y: testFrom.y },
     //   { x: testFrom.x + testFrom.width, y: testFrom.y },
     //   { x: testFrom.x + testFrom.width, y: testFrom.y + testFrom.height },
     //   { x: testFrom.x, y: testFrom.y + testFrom.height },
     // ];
-
     // corners.forEach(({ x: xFrom, y: yFrom }) => {
     //   const toPoint = transform(xFrom, yFrom, testMatrix);
     //   console.log({ xFrom, yFrom, toPoint: { x: toPoint.x, y: toPoint.y } });

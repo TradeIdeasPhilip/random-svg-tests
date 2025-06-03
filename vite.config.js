@@ -43,6 +43,7 @@ export default defineConfig({
         ʻumikumāhiku: resolve(__dirname, "text-for-derivative.html"),
         अठारह: resolve(__dirname, "parabola-tangent-line.html"),
         девятнадцать: resolve(__dirname, "parametric-path.html"),
+        ҩажәа: resolve(__dirname, "complex-fourier-series.html"),
       },
     },
   },

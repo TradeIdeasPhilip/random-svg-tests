@@ -10,9 +10,10 @@
   },
   "devDependencies": {
     "typescript": "^5.2.2",
-    "vite": "^5.2.0"
+    "vite": "^6.3.5"
   },
   "dependencies": {
+    "fft-js": "^0.0.12",
     "phil-lib": "^1.4.0",
     "roughjs": "^4.6.6"
   }

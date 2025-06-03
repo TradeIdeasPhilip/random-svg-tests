@@ -1,0 +1,67 @@
+body {
+  margin: 0.5em !important;
+}
+
+[type="range"] {
+  min-width: 5em;
+}
+
+[data-sample] {
+  max-height: 30vh;
+}
+
+svg[data-sample] {
+  padding: 1.5em;
+  overflow: visible;
+}
+
+img[data-sample] {
+  margin: 1.5em;
+}
+
+.outlineSample > path {
+  fill: none;
+  stroke: black;
+  stroke-width: var(--recommended-width);
+}
+
+.error {
+  background-color: red;
+  color: white;
+  padding: 0.5em;
+  border-radius: 1em;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  font-weight: normal;
+}
+
+#error:empty {
+  display: none;
+}
+
+button,
+select {
+  font-size: 1rem;
+}
+
+.has-slider {
+  display: flex;
+  gap: 0.2em;
+  flex-wrap: wrap;
+  padding-top: 0.1em;
+  padding-bottom: 0.1em;
+}
+
+.has-slider > input[type="range"] {
+  flex-grow: 1;
+}
+
+.has-slider > span:last-child {
+  font-family: "Source Code Pro", monospace;
+  font-weight: 400;
+  font-size: 85%;
+}
+
+html[data-hide] [data-hide] {
+  display: none;
+}

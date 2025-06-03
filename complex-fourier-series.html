@@ -2,19 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./moon.svg" />
+    <!-- <link rel="icon" type="image/svg+xml" href="/moon.svg" /> -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>÷</title>
-    <script type="module" crossorigin src="./assets/девятнадцать-B-6lxU7Y.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
-    <link rel="modulepreload" crossorigin href="./assets/misc-wGF4FraP.js">
-    <link rel="modulepreload" crossorigin href="./assets/client-misc-ZHNZ3-cL.js">
-    <link rel="modulepreload" crossorigin href="./assets/path-shape-fljILaqi.js">
-    <link rel="modulepreload" crossorigin href="./assets/utility-B93Kn6t6.js">
-    <link rel="stylesheet" crossorigin href="./assets/девятнадцать-rkjKWC7F.css">
-    <link rel="stylesheet" crossorigin href="./assets/style-DQ03UEvS.css">
+    <title>Complex Fourier Series</title>
+    <script type="module" src="/src/complex-fourier-series.ts"></script>
   </head>
   <body>
+    <div class="error">
+      Warning!&nbsp; This is a <b>very</b> rough prototype. The proof of concept
+      is buried in here somewhere, but most of the GUI is just leftover from the
+      page I cloned to make this page.
+    </div>
     <h1>Function</h1>
     <p>
       What do you want to graph? Create a parametric function in JavaScript. For
@@ -104,7 +102,7 @@ const y = b * Math.sin(freqY * angle);
       <div id="inputs"></div>
       <button data-hide>Add Another Input</button>
     </div>
-    <div id="error"></div>
+    <div id="error" class="error"></div>
     <h2 data-hide>Output Samples</h2>
     <label style="display: flex; align-items: center"
       ><input type="checkbox" id="hide-text" />&nbsp;Hide Text</label
@@ -114,17 +112,18 @@ const y = b * Math.sin(freqY * angle);
       used a lot of different ways. Here are a few examples.
     </p>
     <svg
-      id="filledSample"
+      class="outlineSample"
       data-sample
       viewBox="0 0 100 10"
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid meet"
-      style="border: thin lightblue solid"
+      style="border: thin lightgreen solid"
     >
       <path></path>
     </svg>
+
     <svg
-      id="outlineSample"
+      class="outlineSample"
       data-sample
       viewBox="0 0 100 10"
       xmlns="http://www.w3.org/2000/svg"
@@ -134,126 +133,45 @@ const y = b * Math.sin(freqY * angle);
       <path></path>
     </svg>
     <svg
-      id="chasingPathsSample"
+      class="outlineSample"
       data-sample
       viewBox="0 0 100 10"
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid meet"
-      style="border: thin lightgray solid"
+      style="border: thin lightgreen solid"
     >
       <path></path>
     </svg>
     <svg
-      id="dancingAntsSample"
+      class="outlineSample"
       data-sample
       viewBox="0 0 100 10"
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid meet"
-      style="border: thin yellow solid"
+      style="border: thin lightgreen solid"
     >
       <path></path>
     </svg>
     <svg
-      id="tauFollowingPathSample"
+      class="outlineSample"
       data-sample
       viewBox="0 0 100 10"
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid meet"
-      style="border: thin lightsalmon solid"
+      style="border: thin lightgreen solid"
     >
       <path></path>
-      <text>𝜏</text>
-      <text>π</text>
-      <text>→</text>
     </svg>
     <svg
-      id="textPathSample"
+      class="outlineSample"
       data-sample
       viewBox="0 0 100 10"
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid meet"
-      style="border: thin deeppink solid"
+      style="border: thin lightgreen solid"
     >
-      <path id="forTextPathSample"></path>
-      <text>
-        <textPath href="#forTextPathSample">
-          Quantitas Materiæ est mensura ejusdem orta ex illius Densitate et
-          Magnitudine conjunctim. Corpus omne, quod ex partibus ejusdem
-          conditionis constat, dicitur homogeneum; si ex diversis, heterogeneum.
-        </textPath>
-      </text>
+      <path></path>
     </svg>
-    <div data-hide>
-      <p>
-        I have provided one demo using
-        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/clip-path"
-          >style.clipPath</a
-        >. <code>style.clipPath</code> is a very powerful tool. However, I
-        usually prefer to work with a mask instead of a clipPath. I get a
-        superset of the abilities with a lot less drama.
-      </p>
-      <p>
-        I have provided two demos using
-        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/mask-image"
-          >style.maskImage</a
-        >. The first is a pointer to a live <code>&lt;mask&gt;</code> in a live
-        <code>&lt;svg&gt;</code>. This gives incredible control. The second is a
-        data-url. You can create the data-url in advance and use it without any
-        JavaScript. You can use a variety of
-        <code>style.mask-*</code> properties to customize this mask.
-      </p>
-    </div>
-    <svg
-      id="clipAndMaskSupport"
-      data-sample
-      viewBox="0 0 100 10"
-      xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMidYMid meet"
-      style="border: thin peachpuff solid"
-    >
-      <defs>
-        <mask
-          id="path-to-mask"
-          maskContentUnits="userSpaceOnUse"
-          maskUnits="objectBoundingBox"
-          style="mask-type: alpha"
-        >
-          <path
-            data-skip-auto-fill
-            fill="white"
-            stroke="white"
-            stroke-width="0.1"
-            fill-opacity="0.5"
-          ></path>
-        </mask>
-      </defs>
-      <path stroke="red" fill-opacity="0.5" fill="black"></path>
-    </svg>
-    <img
-      id="clipPathSample"
-      data-sample
-      src="./Encinitas_colorful_night.jpg"
-      alt="A bright and colorful photo including the colors of sunset.  It looks slightly unreal because I used “Night Sight” mode on my Android camera."
-      style="border: thin red solid"
-    />
-    <img
-      id="maskSample"
-      data-sample
-      src="./Encinitas_colorful_night.jpg"
-      alt="A bright and colorful photo including the colors of sunset.  It looks slightly unreal because I used “Night Sight” mode on my Android camera."
-      style="mask-image: url(#path-to-mask); mask-size: contain"
-      style="border: thin green solid"
-    />
-    <img
-      id="maskSample2"
-      data-sample
-      src="./Encinitas_colorful_night.jpg"
-      alt="A bright and colorful photo including the colors of sunset.  It looks slightly unreal because I used “Night Sight” mode on my Android camera."
-      style="border: thin blue solid"
-    />
-    <div id="resultHolder">
-      <code id="result">&lt;path /&gt;</code>
-    </div>
 
     <h1>More Information</h1>
     <p>

@@ -16,30 +16,28 @@ type Complex = [number, number];
 
 function parametricToFourier(
   func: ParametricFunction,
-  numSamples: number = 1024,
-  maxCircles: number = 50
+  numSamples: number = 1024
 ): FourierTerm[] {
   if (Math.log2(numSamples) % 1 !== 0) {
     throw new Error("numSamples must be a power of 2");
   }
-
   const samples: Complex[] = [];
   for (let i = 0; i < numSamples; i++) {
     const t = i / numSamples;
     const point = func(t);
     samples.push([point.x, point.y]);
   }
-
   const phasors = fft(samples);
   const terms: FourierTerm[] = [];
-  const maxFreq = Math.min(maxCircles, Math.floor(numSamples / 2) + 1);
-  for (let k = 0; k < maxFreq; k++) {
+  for (let k = 0; k < numSamples; k++) {
     const [real, imag] = phasors[k];
     const amplitude = Math.sqrt(real * real + imag * imag) / numSamples;
     const phase = Math.atan2(imag, real);
-    terms.push({ frequency: k, amplitude, phase });
+    const frequency = k <= numSamples / 2 ? k : k - numSamples; // Map k > N/2 to negative
+    terms.push({ frequency, amplitude, phase });
   }
-  console.log({ phasors, terms, maxFreq });
+  // Sort by amplitude, descending
+  terms.sort((a, b) => b.amplitude - a.amplitude);
   return terms;
 }
 
@@ -595,10 +593,10 @@ addAnotherInput();
     };
 
     const toPlot = [f1];
-    const originalTerms = parametricToFourier(f1, 1024, 500);
+    const originalTerms = parametricToFourier(f1);
     const nonZeroTerms = keepNonZeroTerms(originalTerms);
     for (let i = 1; i < SampleOutput.all.size; i++) {
-      toPlot.push(termsToParametricFunction(nonZeroTerms, i * 3));
+      toPlot.push(termsToParametricFunction(nonZeroTerms, i));
     }
     console.log({ toPlot, originalTerms, nonZeroTerms });
     (window as any).toPlot = toPlot;

@@ -264,5 +264,44 @@ const y = b * Math.sin(freqY * angle);
         >here</a
       >.
     </p>
+    <h2>Syntax and Other Picky Details</h2>
+    <p>
+      You are creating a parametric function for use with
+      <code
+        ><a
+          href="https://github.com/TradeIdeasPhilip/random-svg-tests/blob/d70bdf6989da0ae4e51aefb1121b6599366991ab/src/path-shape.ts#L1549"
+          >PathShape.parametric()</a
+        ></code
+      >. You can call that code directly from a JavaScript project. Or you can
+      enter a simple parametric function directly into the big text area at the
+      top of this page then hit the “Go” button.
+    </p>
+    <p>
+      Notice <code>blue, code style</code> text above and below the text area.
+      This program automatically writes some of the code for you. You have no
+      control over the input arguments. The body of your function always starts
+      with <code>"use strict";</code> and ends with
+      <code>return { x, y };</code>. You just type the unique part of your code
+      in the middle.
+    </p>
+    <p>
+      Your function will take in a value from 0 to 1 in a parameter named
+      <code>t</code>. Your function needs to return an object of the form
+      <code>{x: 4, y: 5.01}</code>. Most of the examples create
+      <code>x</code> and <code>y</code> as constants or variables, and use the
+      <i>implicit</i> <code>return { x, y };</code> at the bottom of the
+      function to return the result.
+    </p>
+    <p>
+      The range of the output doesn't matter. This web page will automatically
+      scale and pan your path to fit. It will preserve the aspect ratio.
+    </p>
+    <p>
+      Your function will take in a second parameter named support. You can call
+      <code>support.input(n)</code> to read a value from one of the sliders on
+      this page. 0 for the first slider, 1 for the second, etc. The value will
+      always come back in the range 0-1.
+    </p>
+    <h2>Examples</h2>
   </body>
 </html>

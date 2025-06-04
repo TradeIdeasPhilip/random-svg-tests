@@ -9,6 +9,7 @@ import { panAndZoom } from "./transforms";
 const goButton = getById("go", HTMLButtonElement);
 const sourceTextArea = getById("source", HTMLTextAreaElement);
 const resultElement = getById("result", HTMLElement);
+const pathInfoElement = getById("pathInfo", HTMLDivElement);
 const sampleCodeSelect = getById("sampleCode", HTMLSelectElement);
 
 const codeSamples: ReadonlyArray<{
@@ -426,8 +427,8 @@ class SampleOutput {
   static setPathShape(pathShape: PathShape) {
     this.all.forEach((sampleOutput) => sampleOutput.setPathShape(pathShape));
   }
-  static getOuterHTML() {
-    return pickAny(SampleOutput.all)!.#pathElement.outerHTML;
+  static pathElement() {
+    return pickAny(SampleOutput.all)!.#pathElement;
   }
   protected deAnimate(element: Animatable = this.#pathElement) {
     element.getAnimations().forEach((animation) => animation.cancel());
@@ -755,7 +756,15 @@ addAnotherInput();
       }
     }
     SampleOutput.setPathShape(pathShape);
-    resultElement.innerText = SampleOutput.getOuterHTML();
+    const pathElement = SampleOutput.pathElement();
+    const boundingBox = pathElement.getBBox();
+    console.log(boundingBox);
+    pathInfoElement.innerText = `Path length = ${pathElement.getTotalLength()}.  Bounding box = {top: ${
+      boundingBox.y
+    }, left: ${boundingBox.x}, height: ${boundingBox.height}, width: ${
+      boundingBox.width
+    }}`;
+    resultElement.innerText = pathElement.outerHTML;
   };
   let scheduled = false;
   const doItSoon = () => {
@@ -853,15 +862,26 @@ addAnotherInput();
   });
 }
 
+{
+  const checkBox = getById("smaller-samples", HTMLInputElement);
+  checkBox.addEventListener("click", () => {
+    if (checkBox.checked) {
+      document.documentElement.dataset.smallerSamples = "requested";
+    } else {
+      delete document.documentElement.dataset.smallerSamples;
+    }
+  });
+}
+
 // TODO
 // * Save the path as an SVG file.
 // * Samples
 //   Blowing in the wind animation?
 // * Sample code:  Maybe a button that says "random sample"!! 🙂
-// * Display the path length.
-//   And the bBox size.
-//   And display the path as a cssPath, as in a css file, possibly in an @keyframes
+// * Display the path as a cssPath, as in a css file, possibly in an @keyframes
 // * Access to TSplitter and related tools through a parameter to the function.
+//   * No.  Look at complex-fourier-series which will do this a better way.
+//   * It will include the one time code that makes TSplitter make sense.
 // * Better error handlers.
 //   Sometimes it just says "WTF"
 //   And NaN is reported as "null" in the error messages.

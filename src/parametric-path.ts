@@ -1,4 +1,4 @@
-import { AnimationLoop, getById } from "phil-lib/client-misc";
+import { AnimationLoop, download, getById } from "phil-lib/client-misc";
 import "./style.css";
 import "./parametric-path.css";
 import { ParametricFunction, PathShape, Point } from "./path-shape";
@@ -544,13 +544,22 @@ class ClipAndMaskSupport extends SampleOutput {
       this.svgElement
     );
     // We will need to redraw any time the size of the image changes.
-    // TODO Do we have to do this for the maskImg?  Probably not.
+    // TODO Do we have to do this for the maskImg?  Probably not.  TODO consider deleting that part of the code.
     const resizeObserver = new ResizeObserver(() =>
       ClipAndMaskSupport.doItSoon()
     );
     [this.#clipImg, this.#maskImg].forEach((imageElement) => {
       imageElement.decode().then(() => ClipAndMaskSupport.doItSoon());
       resizeObserver.observe(imageElement);
+    });
+    this.#downloadButton.addEventListener("click",():void=> {
+      if (this.#fileContents === undefined) {
+        // This should never happen.
+        // #1 We should always load a value from the normal flow of the program before the user is able to do anything.
+        // #2 The button should be disabled until we have a valid value, in case #1 fails.
+        throw new Error("wtf");
+      }
+      download("ParametricPath.svg", this.#fileContents);
     });
   }
   get measurablePath() {
@@ -563,6 +572,8 @@ class ClipAndMaskSupport extends SampleOutput {
   readonly #clipImg = getById("clipPathSample", HTMLImageElement);
   readonly #maskImg = getById("maskSample", HTMLImageElement);
   readonly #maskImg2 = getById("maskSample2", HTMLImageElement);
+  #fileContents: string | undefined;
+  #downloadButton = getById("download",HTMLButtonElement);
   override setPathShape(pathShape: PathShape): void {
     super.setPathShape(pathShape);
 
@@ -577,6 +588,9 @@ class ClipAndMaskSupport extends SampleOutput {
     const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
     const maskImage = `url('${dataUrl}')`;
     this.#maskImg2.style.maskImage = maskImage;
+
+    this.#fileContents = svgString;
+    this.#downloadButton.disabled = false;
 
     // The clip example and the other mask example require more effort.
     // This code has to update any time the destination image resizes.

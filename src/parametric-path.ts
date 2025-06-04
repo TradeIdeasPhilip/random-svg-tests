@@ -808,6 +808,34 @@ addAnotherInput();
     });
   }
 
+  {
+    // This functionality is also available in the <select> element.
+    // But making it all visible helps the AI.
+    const codeSamplesHolder = getById("codeSamplesHolder", HTMLDivElement);
+    const segmentCountHolder = getById("segmentCountHolder", HTMLDivElement);
+    const template = `<div>
+        <div data-description>
+          <button class="show-this">Show This</button><span></span>
+        </div>
+        <pre data-code-snippet></pre></div>`;
+    codeSamples.forEach((sample, index) => {
+      if (index > 0) {
+        codeSamplesHolder.insertAdjacentHTML("beforeend", template);
+        const entireDiv = codeSamplesHolder.lastElementChild!;
+        const nameSpan = selectorQuery("span", HTMLSpanElement, entireDiv);
+        nameSpan.innerText = sample.name;
+        const codePre = selectorQuery("pre", HTMLPreElement, entireDiv);
+        codePre.innerText = sample.code;
+        const button = selectorQuery("button", HTMLButtonElement, entireDiv);
+        button.addEventListener("click", () => {
+          sourceTextArea.value = sample.code;
+          doItSoon();
+          segmentCountHolder.scrollIntoView({ behavior: "smooth" });
+        });
+      }
+    });
+  }
+
   doItSoon();
 }
 

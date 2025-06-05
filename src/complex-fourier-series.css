@@ -22,7 +22,19 @@ img[data-sample] {
 .outlineSample > path {
   fill: none;
   stroke: black;
-  stroke-width: var(--recommended-width);
+  stroke-width: var(--recommended-stroke-width);
+}
+
+circle[data-distance] {
+  r: calc(3 * var(--recommended-stroke-width));
+  fill: red;
+  stroke: none;
+}
+
+circle[data-t] {
+  r: calc(1.5 * var(--recommended-stroke-width));
+  fill: rgb(0, 195, 255);
+  stroke: none;
 }
 
 .error {

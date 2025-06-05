@@ -257,6 +257,7 @@ Safari’s SVG rendering has improved over the years, but it still lags behind C
 - **Best Practice**:
   - Always set `width` and `height` attributes on the `<svg>` element to match the `viewBox` aspect ratio. For example, if your `viewBox` is `"0 0 100 200"` (aspect ratio 1:2), set `width="100"` and `height="200"`. Then use CSS (`width: auto; height: auto; max-height: 30vh;`) to scale the SVG proportionally. This ensures Safari respects the aspect ratio like Chrome does.
   - Use `preserveAspectRatio="xMidYMid meet"` (which you already do) to ensure the SVG content fits within the viewport without cropping, but note that this alone isn’t enough in Safari without intrinsic dimensions.
+  - Example: [parametric-path.ts](https://github.com/TradeIdeasPhilip/random-svg-tests/blob/eec977cc927035200b47216d1517b7bbdd979808/src/parametric-path.ts#L75)
 
 #### 2. Animation Issues with CSS Motion Path (`offset-path`)
 

@@ -191,6 +191,52 @@ export class Random {
     const seed = JSON.stringify(ints);
     return seed;
   }
+  /**
+   * Create a new random number generator based on a string.
+   * The result will be repeatable.
+   * I.e. the same input will always lead the the same random number generator.
+   * @param s Any string is acceptable.
+   * This can include random things like "try again 27".
+   * And it can include special things like "[1,2,3,4]" which might be used in special cases.
+   * (It isn't yet, but it will be.  I want to have the option to dump the state of the random number generator any time I want.)
+   * @returns A new random number generator.
+   */
+  static fromString(s: string): RandomFunction {
+    try {
+      return this.create(s);
+    } catch {
+      return this.create(this.anyStringToSeed(s));
+    }
+  }
+  /**
+   *
+   * @param input Any string is valid.
+   * Reasonable inputs include "My game", "My game 32", "My game 33", "在你用中文测试过之前你还没有测试过它。".
+   * I.e. you might just add or change one character, and you want to maximize the resulting change.
+   */
+  static anyStringToSeed(input: string): string {
+    function rotateLeft32(value: number, shift: number): number {
+      return ((value << shift) | (value >>> (32 - shift))) >>> 0;
+    }
+    const ints = [0x9e3779b9, 0x243f6a88, 0x85a308d3, 0x13198a2e];
+    const data = new TextEncoder().encode(input);
+    data.forEach((byte) => {
+      ints[0] ^= byte;
+      ints[0] = rotateLeft32(ints[0], 3);
+      ints[1] ^= byte;
+      ints[1] = rotateLeft32(ints[1], 5);
+      ints[2] ^= byte;
+      ints[2] = rotateLeft32(ints[2], 7);
+      ints[3] ^= byte;
+      ints[3] = rotateLeft32(ints[3], 11);
+    });
+    // Final mixing step
+    ints[0] ^= rotateLeft32(ints[1], 7);
+    ints[1] ^= rotateLeft32(ints[2], 11);
+    ints[2] ^= rotateLeft32(ints[3], 13);
+    ints[3] ^= rotateLeft32(ints[0], 17);
+    return JSON.stringify(ints);
+  }
   static test() {
     const maxGenerators = 10;
     const iterationsPerCycle = 20;

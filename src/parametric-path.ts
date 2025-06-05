@@ -552,7 +552,7 @@ class ClipAndMaskSupport extends SampleOutput {
       imageElement.decode().then(() => ClipAndMaskSupport.doItSoon());
       resizeObserver.observe(imageElement);
     });
-    this.#downloadButton.addEventListener("click",():void=> {
+    this.#downloadButton.addEventListener("click", (): void => {
       if (this.#fileContents === undefined) {
         // This should never happen.
         // #1 We should always load a value from the normal flow of the program before the user is able to do anything.
@@ -573,7 +573,7 @@ class ClipAndMaskSupport extends SampleOutput {
   readonly #maskImg = getById("maskSample", HTMLImageElement);
   readonly #maskImg2 = getById("maskSample2", HTMLImageElement);
   #fileContents: string | undefined;
-  #downloadButton = getById("download",HTMLButtonElement);
+  #downloadButton = getById("download", HTMLButtonElement);
   override setPathShape(pathShape: PathShape): void {
     super.setPathShape(pathShape);
 
@@ -888,7 +888,6 @@ addAnotherInput();
 }
 
 // TODO
-// * Save the path as an SVG file.
 // * Samples
 //   Blowing in the wind animation?
 // * Sample code:  Maybe a button that says "random sample"!! 🙂

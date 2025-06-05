@@ -1,4 +1,4 @@
-import { getById } from "phil-lib/client-misc";
+import { AnimationLoop, getById } from "phil-lib/client-misc";
 import "./style.css";
 import "./complex-fourier-series.css";
 import { ParametricFunction, PathShape, Point } from "./path-shape";
@@ -377,6 +377,72 @@ const y = ySum;`,
   },
 ];
 
+function panAndZoom(showThis: SVGGraphicsElement, inHere: SVGSVGElement) {
+  const bBox = showThis.getBBox();
+  const to = inHere.viewBox.baseVal;
+  to.x = bBox.x;
+  to.y = bBox.y;
+  to.width = bBox.width;
+  to.height = bBox.height;
+  const aspectRatio = bBox.width / bBox.height;
+  /**
+   * Arbitrary base height in pixels.
+   *
+   * See https://github.com/TradeIdeasPhilip/random-svg-tests/blob/master/svg-for-programmers.md#1-aspect-ratio-and-sizing-issues
+   * to understand why this is required.
+   */
+  const intrinsicHeight = 300;
+  const intrinsicWidth = intrinsicHeight * aspectRatio;
+  inHere.style.height = intrinsicHeight + "px";
+  inHere.style.width = intrinsicWidth + "px";
+  /**
+   * We have picked an arbitrary scale based on the current formula.
+   * And that formula can change drastically at any time.
+   *
+   * So, how do we add objects (text, arrows, outlines) that will be visible when displayed at the formula's scale?
+   * This is a good value for a stroke-width for a "normal" stroke.
+   * If you want to make a thin or thick stroke, try a stroke-width of ½ this or 2× this, respectively.
+   */
+  const recommendedStrokeWidth = Math.max(to.width, to.height) / 100;
+  inHere.style.setProperty(
+    "--recommended-stroke-width",
+    recommendedStrokeWidth.toString()
+  );
+  return { recommendedStrokeWidth };
+}
+
+class AnimateParameterization {
+  static readonly #instance = new this();
+  readonly #distanceCircle = selectorQuery(
+    "circle[data-distance]",
+    SVGCircleElement
+  );
+  readonly #tCircle = selectorQuery("circle[data-t]", SVGCircleElement);
+  private constructor() {
+    new AnimationLoop((time) => {
+      this.#distanceCircle.style.display = "none";
+      this.#tCircle.style.display = "none";
+      if (this.f) {
+        const period = 5000;
+        time %= period;
+        const t = time / period;
+        const percent = t * 100;
+        this.#distanceCircle.style.offsetDistance = percent + "%";
+        this.#distanceCircle.style.display = "";
+        const { x, y } = this.f(t);
+        this.#tCircle.cx.baseVal.value = x;
+        this.#tCircle.cy.baseVal.value = y;
+        this.#tCircle.style.display = "";
+      }
+    });
+  }
+  private f: ParametricFunction | undefined;
+  static update(f: ParametricFunction, path: string) {
+    this.#instance.f = f;
+    this.#instance.#distanceCircle.style.offsetPath = path;
+  }
+}
+
 sourceTextArea.addEventListener("input", () => {
   goButton.disabled = false;
   codeSamples[0].code = sourceTextArea.value;
@@ -442,37 +508,9 @@ class SampleOutput {
     SampleOutput.all.add(this);
   }
   static readonly all = new Set<SampleOutput>();
-  #recommendedWidth = NaN;
-  protected get recommendedWidth() {
-    return this.#recommendedWidth;
-  }
-  #panAndZoom() {
-    const bBox = this.#pathElement.getBBox();
-    const to = this.#svgElement.viewBox.baseVal;
-    to.x = bBox.x;
-    to.y = bBox.y;
-    to.width = bBox.width;
-    to.height = bBox.height;
-    const aspectRatio = bBox.width / bBox.height;
-    /**
-     * Arbitrary base height in pixels.
-     */
-    const intrinsicHeight = 300;
-    const intrinsicWidth = intrinsicHeight * aspectRatio;
-    this.#svgElement.style.height = intrinsicHeight + "px";
-    this.#svgElement.style.width = intrinsicWidth + "px";
-    this.#recommendedWidth = Math.max(to.width, to.height) / 100;
-    this.#svgElement.style.setProperty(
-      "--recommended-width",
-      this.#recommendedWidth.toString()
-    );
-  }
   setPathShape(pathShape: PathShape) {
     this.#pathElement.setAttribute("d", pathShape.rawPath);
-    this.#panAndZoom();
-  }
-  protected deAnimate(element: Animatable = this.#pathElement) {
-    element.getAnimations().forEach((animation) => animation.cancel());
+    panAndZoom(this.pathElement, this.svgElement);
   }
 }
 
@@ -622,6 +660,9 @@ addAnotherInput();
         }
       }
       sampleOutput.setPathShape(pathShape);
+      if (parametricFunction == f1) {
+        AnimateParameterization.update(f1, pathShape.cssPath);
+      }
     }
   };
   let scheduled = false;
@@ -692,13 +733,6 @@ addAnotherInput();
 }
 
 // TODO
-// * Save the path as an SVG file.
-// * Samples
-//   Blowing in the wind animation?
-// * Sample code:  Maybe a button that says "random sample"!! 🙂
-// * Display the path length.
-//   And the bBox size.
-//   And display the path as a cssPath, as in a css file, possibly in an @keyframes
 // * Access to TSplitter and related tools through a parameter to the function.
 // * Better error handlers.
 //   Sometimes it just says "WTF"

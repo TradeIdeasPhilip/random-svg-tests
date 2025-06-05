@@ -3,7 +3,7 @@ import "./style.css";
 import "./complex-fourier-series.css";
 import { ParametricFunction, PathShape, Point } from "./path-shape";
 import { selectorQuery, selectorQueryAll } from "./utility";
-import { assertClass, FIGURE_SPACE, zip } from "phil-lib/misc";
+import { assertClass, FIGURE_SPACE } from "phil-lib/misc";
 import { fft } from "fft-js";
 
 interface FourierTerm {
@@ -77,6 +77,7 @@ function keepNonZeroTerms(terms: readonly FourierTerm[]): FourierTerm[] {
 const goButton = getById("go", HTMLButtonElement);
 const sourceTextArea = getById("source", HTMLTextAreaElement);
 const sampleCodeSelect = getById("sampleCode", HTMLSelectElement);
+const sampleCountInput = getById("segmentCountInput", HTMLInputElement);
 
 const codeSamples: ReadonlyArray<{
   readonly name: string;
@@ -411,11 +412,18 @@ function panAndZoom(showThis: SVGGraphicsElement, inHere: SVGSVGElement) {
   return { recommendedStrokeWidth };
 }
 
-class AnimateParameterization {
+class AnimateDistanceVsT {
   static readonly #instance = new this();
+  readonly #svgElement = getById("distanceVsT", SVGSVGElement);
   readonly #distanceCircle = selectorQuery(
     "circle[data-distance]",
-    SVGCircleElement
+    SVGCircleElement,
+    this.#svgElement
+  );
+  readonly #pathElement = selectorQuery(
+    "path",
+    SVGPathElement,
+    this.#svgElement
   );
   readonly #tCircle = selectorQuery("circle[data-t]", SVGCircleElement);
   private constructor() {
@@ -437,9 +445,40 @@ class AnimateParameterization {
     });
   }
   private f: ParametricFunction | undefined;
-  static update(f: ParametricFunction, path: string) {
-    this.#instance.f = f;
-    this.#instance.#distanceCircle.style.offsetPath = path;
+  private update(f: ParametricFunction, pathShape: PathShape) {
+    this.#pathElement.setAttribute("d", pathShape.rawPath);
+    panAndZoom(this.#pathElement, this.#svgElement);
+    this.f = f;
+    this.#distanceCircle.style.offsetPath = pathShape.cssPath;
+  }
+  static update(f: ParametricFunction, pathShape: PathShape) {
+    this.#instance.update(f, pathShape);
+  }
+}
+
+class AnimateRequestedVsReconstructed {
+  static readonly #instance = new this();
+  readonly #svgElement = getById("requestedVsReconstructed", SVGSVGElement);
+  readonly #requestedPath: SVGPathElement;
+  readonly #reconstructedPath: SVGPathElement;
+  private constructor() {
+    [this.#requestedPath, this.#reconstructedPath] = selectorQueryAll(
+      "path",
+      SVGPathElement,
+      2,
+      2,
+      this.#svgElement
+    );
+  }
+  private f: ParametricFunction | undefined;
+  // update ( ideal path string, list of fourier thingies so we can display some subset of them, and give some status on the screen.  Using 3 of 7 circles.  Using 99% of the amplitude?  maybe better to say how much is still available for the sake of rounding. )
+  private update(f: ParametricFunction, pathShape: PathShape) {
+    this.#requestedPath.setAttribute("d", pathShape.rawPath);
+    panAndZoom(this.#requestedPath, this.#svgElement);
+    this.f = f;
+  }
+  static update(f: ParametricFunction, pathShape: PathShape) {
+    this.#instance.update(f, pathShape);
   }
 }
 
@@ -486,37 +525,18 @@ class ErrorBox {
   }
 }
 
-/**
- * One of these for each of the individual samples.
- */
-class SampleOutput {
-  readonly #svgElement: SVGSVGElement;
-  protected get svgElement() {
-    return this.#svgElement;
-  }
-  readonly #pathElement: SVGPathElement;
-  protected get pathElement() {
-    return this.#pathElement;
-  }
-  constructor(svgElement: SVGSVGElement) {
-    this.#svgElement = svgElement;
-    this.#pathElement = selectorQuery(
-      "path:not([data-skip-auto-fill])",
-      SVGPathElement,
-      this.#svgElement
-    );
-    SampleOutput.all.add(this);
-  }
-  static readonly all = new Set<SampleOutput>();
-  setPathShape(pathShape: PathShape) {
-    this.#pathElement.setAttribute("d", pathShape.rawPath);
-    panAndZoom(this.pathElement, this.svgElement);
+function tryMakePath(f: ParametricFunction): PathShape | undefined {
+  try {
+    return PathShape.parametric(f, sampleCountInput.valueAsNumber);
+  } catch (reason: unknown) {
+    if (reason instanceof Error) {
+      ErrorBox.displayError(reason);
+      return undefined;
+    } else {
+      throw reason;
+    }
   }
 }
-
-selectorQueryAll("svg.outlineSample", SVGSVGElement).map(
-  (element) => new SampleOutput(element)
-);
 
 /**
  * One per input slider on the GUI.
@@ -598,7 +618,6 @@ addAnotherInput();
 addAnotherInput();
 
 {
-  const sampleCountInput = getById("segmentCountInput", HTMLInputElement);
   const doItNow = () => {
     ErrorBox.clear();
     const sourceText =
@@ -630,40 +649,19 @@ addAnotherInput();
       return result;
     };
 
-    const toPlot = [f1];
     const originalTerms = parametricToFourier(f1);
     const nonZeroTerms = keepNonZeroTerms(originalTerms);
-    for (let i = 1; i < SampleOutput.all.size; i++) {
-      toPlot.push(termsToParametricFunction(nonZeroTerms, i));
-    }
-    console.log({ toPlot, originalTerms, nonZeroTerms });
-    (window as any).toPlot = toPlot;
+    console.log({ originalTerms, nonZeroTerms });
     (window as any).nonZeroTerms = nonZeroTerms;
     (window as any).originalTerms = originalTerms;
 
-    for (const [sampleOutput, parametricFunction] of zip(
-      SampleOutput.all,
-      toPlot
-    )) {
-      let pathShape: PathShape;
-      try {
-        pathShape = PathShape.parametric(
-          parametricFunction,
-          sampleCountInput.valueAsNumber
-        );
-      } catch (reason: unknown) {
-        if (reason instanceof Error) {
-          ErrorBox.displayError(reason);
-          return;
-        } else {
-          throw reason;
-        }
-      }
-      sampleOutput.setPathShape(pathShape);
-      if (parametricFunction == f1) {
-        AnimateParameterization.update(f1, pathShape.cssPath);
-      }
+    const idealShape = tryMakePath(f1);
+    if (!idealShape) {
+      return;
     }
+
+    AnimateDistanceVsT.update(f1, idealShape);
+    AnimateRequestedVsReconstructed.update(f1, idealShape);
   };
   let scheduled = false;
   const doItSoon = () => {

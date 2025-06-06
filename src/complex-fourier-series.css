@@ -3,7 +3,7 @@
 .numbers {
   font-family: "Archivo", sans-serif;
   font-optical-sizing: auto;
-  font-weight: normal;
+  font-weight: 175;
 }
 
 #progress td {
@@ -11,6 +11,19 @@
 }
 #progress th {
   padding: 0 0.5em;
+  font-weight: bolder;
+}
+
+#progress tr th:first-child {
+  text-align: right;
+}
+
+#progress td::after {
+  /* This seems silly, but it prevents a bug on Chrome.
+   * Without this any animation that tries to set the content
+   * property of an element will silently fail.
+   * This is not required on Safari, so I'm calling it a Chrome bug.  */
+  content: '';
 }
 
 body {

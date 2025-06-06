@@ -3,7 +3,7 @@ import "./style.css";
 import "./complex-fourier-series.css";
 import { ParametricFunction, PathShape, Point } from "./path-shape";
 import { selectorQuery, selectorQueryAll } from "./utility";
-import { assertClass, FIGURE_SPACE, initializedArray } from "phil-lib/misc";
+import { assertClass, FIGURE_SPACE } from "phil-lib/misc";
 import { fft } from "fft-js";
 
 interface FourierTerm {
@@ -461,6 +461,30 @@ class AnimateRequestedVsReconstructed {
   readonly #svgElement = getById("requestedVsReconstructed", SVGSVGElement);
   readonly #requestedPath: SVGPathElement;
   readonly #reconstructedPath: SVGPathElement;
+  readonly #usingCircles = selectorQuery(
+    "[data-using] [data-circles]",
+    HTMLTableCellElement
+  );
+  readonly #usingAmplitude = selectorQuery(
+    "[data-using] [data-amplitude]",
+    HTMLTableCellElement
+  );
+  readonly #addingCircles = selectorQuery(
+    "[data-adding] [data-circles]",
+    HTMLTableCellElement
+  );
+  readonly #addingAmplitude = selectorQuery(
+    "[data-adding] [data-amplitude]",
+    HTMLTableCellElement
+  );
+  readonly #availableCircles = selectorQuery(
+    "[data-available] [data-circles]",
+    HTMLTableCellElement
+  );
+  readonly #availableAmplitude = selectorQuery(
+    "[data-available] [data-amplitude]",
+    HTMLTableCellElement
+  );
   private constructor() {
     [this.#requestedPath, this.#reconstructedPath] = selectorQueryAll(
       "path",
@@ -470,8 +494,13 @@ class AnimateRequestedVsReconstructed {
       this.#svgElement
     );
   }
-  // update ( ideal path string, list of fourier thingies so we can display some subset of them, and give some status on the screen.  Using 3 of 7 circles.  Using 99% of the amplitude?  maybe better to say how much is still available for the sake of rounding. )
+  #cancelAnimations: (() => void) | undefined;
   private update(f: ParametricFunction, pathShape: PathShape) {
+    this.#cancelAnimations?.();
+    const animations: Animation[] = [];
+    this.#cancelAnimations = () => {
+      animations.forEach((animation) => animation.cancel());
+    };
     this.#requestedPath.setAttribute("d", pathShape.rawPath);
     panAndZoom(this.#requestedPath, this.#svgElement);
     const originalTerms = parametricToFourier(f);
@@ -479,24 +508,206 @@ class AnimateRequestedVsReconstructed {
     console.log({ originalTerms, nonZeroTerms });
     (window as any).nonZeroTerms = nonZeroTerms;
     (window as any).originalTerms = originalTerms;
-    const maxTerms = 10;
-    const keyframes = initializedArray(maxTerms, (i) => {
-      const reconstructedF = termsToParametricFunction(nonZeroTerms, i + 1);
-      const reconstructedPath = PathShape.parametric(
-        reconstructedF,
-        sampleCountInput.valueAsNumber
-      );
-      const d = reconstructedPath.cssPath;
-      const easing = "ease-in-out";
-      return { d, easing };
-    });
-    keyframes.push(keyframes.at(-1)!);
-    const animation = this.#reconstructedPath.animate(keyframes, {
-      duration: 10000,
+
+    let totalAmplitude = 0;
+    nonZeroTerms.forEach((term) => (totalAmplitude += term.amplitude));
+    const maxKeyframes = 10;
+    let usingAmplitude = 0;
+    const pauseTime = 500;
+    const addTime = 250;
+    const script = nonZeroTerms
+      .slice(0, maxKeyframes - 1)
+      .flatMap((term, index) => {
+        const amplitude = (term.amplitude / totalAmplitude) * 100;
+        const adding = {
+          offset: NaN,
+          startTime: NaN,
+          endTime: NaN,
+          usingCircles: index,
+          usingAmplitude,
+          addingCircles: 1,
+          addingAmplitude: amplitude,
+        };
+        usingAmplitude += amplitude;
+        const pausing = {
+          offset: NaN,
+          startTime: NaN,
+          endTime: NaN,
+          usingCircles: index + 1,
+          usingAmplitude,
+          addingCircles: 0,
+          addingAmplitude: 0,
+        };
+        if (index == 0) {
+          return [pausing];
+        } else {
+          return [adding, pausing];
+        }
+      });
+    {
+      const lastRow = script.at(-1)!;
+      const missingCircles = nonZeroTerms.length - lastRow.usingCircles;
+      if (missingCircles > 0) {
+        script.push(
+          {
+            offset: NaN,
+            startTime: NaN,
+            endTime: NaN,
+            usingCircles: lastRow.usingCircles,
+            usingAmplitude: lastRow.usingAmplitude,
+            addingCircles: missingCircles,
+            addingAmplitude: 100 - lastRow.usingAmplitude,
+          },
+          {
+            offset: NaN,
+            startTime: NaN,
+            endTime: NaN,
+            usingCircles: nonZeroTerms.length,
+            usingAmplitude: 100,
+            addingCircles: 0,
+            addingAmplitude: 0,
+          }
+        );
+      }
+    }
+    {
+      let startTime = 0;
+      script.forEach((keyframe) => {
+        const duration = keyframe.addingCircles ? addTime : pauseTime;
+        const endTime = startTime + duration;
+        keyframe.startTime = startTime;
+        keyframe.endTime = endTime;
+        startTime = endTime;
+      });
+      script.forEach((keyframe) => {
+        keyframe.offset = keyframe.startTime / startTime;
+      });
+    }
+    console.log(script);
+
+    const animationOptions: KeyframeAnimationOptions = {
+      duration: script.at(-1)!.endTime * 5,
       iterations: Infinity,
-    });
-    // TODO delete this animation before adding the next!!!
-    console.log(animation);
+    };
+
+    {
+      /**
+       * Simple caching.  I won't compute the same d twice in a row.
+       * I know the requests always come in order, so there's no reason to save anything but the last thing we used.
+       */
+      let lastNumberOfTerms = -Infinity;
+      let d = "";
+      const keyframes = script.map(({ offset, usingCircles }): Keyframe => {
+        if (usingCircles != lastNumberOfTerms) {
+          const reconstructedF = termsToParametricFunction(
+            nonZeroTerms,
+            usingCircles
+          );
+          const reconstructedPath = PathShape.parametric(
+            reconstructedF,
+            sampleCountInput.valueAsNumber
+          );
+          d = reconstructedPath.cssPath;
+          lastNumberOfTerms = usingCircles;
+        }
+        return { offset, d, easing: "ease-in-out" };
+      });
+      animations.push(
+        this.#reconstructedPath.animate(keyframes, animationOptions)
+      );
+    }
+
+    {
+      const keyframes = script.map(({ offset, usingCircles }): Keyframe => {
+        const content = `'${usingCircles}'`;
+        return { offset, content };
+      });
+      console.log(keyframes);
+      animations.push(
+        this.#usingCircles.animate(keyframes, {
+          pseudoElement: "::after",
+          ...animationOptions,
+        })
+      );
+    }
+
+    {
+      const keyframes = script.map(({ offset, addingCircles }): Keyframe => {
+        const content = `'${addingCircles}'`;
+        return { offset, content };
+      });
+      console.log(keyframes);
+      animations.push(
+        this.#addingCircles.animate(keyframes, {
+          pseudoElement: "::after",
+          ...animationOptions,
+        })
+      );
+    }
+
+    {
+      const keyframes = script.map(
+        ({ offset, usingCircles, addingCircles }): Keyframe => {
+          const content = `'${
+            nonZeroTerms.length - usingCircles - addingCircles
+          }'`;
+          return { offset, content };
+        }
+      );
+      console.log(keyframes);
+      animations.push(
+        this.#availableCircles.animate(keyframes, {
+          pseudoElement: "::after",
+          ...animationOptions,
+        })
+      );
+    }
+
+    {
+      const format = new Intl.NumberFormat("en-US", {
+        minimumSignificantDigits: 5,
+        maximumSignificantDigits: 5,
+        useGrouping: false,
+      }).format;
+      const keyframesUsing = script.map(
+        ({ offset, usingAmplitude }): Keyframe => {
+          const content = `'${format(usingAmplitude)}'`;
+          return { offset, content };
+        }
+      );
+      animations.push(
+        this.#usingAmplitude.animate(keyframesUsing, {
+          pseudoElement: "::after",
+          ...animationOptions,
+        })
+      );
+      const keyframesAdding = script.map(
+        ({ offset, addingAmplitude }): Keyframe => {
+          const content = `'${format(addingAmplitude)}'`;
+          return { offset, content };
+        }
+      );
+      animations.push(
+        this.#addingAmplitude.animate(keyframesAdding, {
+          pseudoElement: "::after",
+          ...animationOptions,
+        })
+      );
+      const keyframesAvailable = script.map(
+        ({ offset, usingAmplitude, addingAmplitude }): Keyframe => {
+          const content = `'${format(100 - usingAmplitude - addingAmplitude)}'`;
+          return { offset, content };
+        }
+      );
+      animations.push(
+        this.#availableAmplitude.animate(keyframesAvailable, {
+          pseudoElement: "::after",
+          ...animationOptions,
+        })
+      );
+    }
+
+    console.log(animations);
   }
   static update(f: ParametricFunction, pathShape: PathShape) {
     this.#instance.update(f, pathShape);

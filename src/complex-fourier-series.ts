@@ -571,6 +571,7 @@ class AnimateRequestedVsReconstructed {
       }
     }
     {
+      // Fill in startTime and endTime for each row of the script.
       let startTime = 0;
       script.forEach((keyframe) => {
         const duration = keyframe.addingCircles ? addTime : pauseTime;
@@ -586,7 +587,7 @@ class AnimateRequestedVsReconstructed {
     console.log(script);
 
     const animationOptions: KeyframeAnimationOptions = {
-      duration: script.at(-1)!.endTime * 5,
+      duration: script.at(-1)!.endTime * 3,
       iterations: Infinity,
     };
 
@@ -618,86 +619,129 @@ class AnimateRequestedVsReconstructed {
     }
 
     {
-      const keyframes = script.map(({ offset, usingCircles }): Keyframe => {
-        const content = `'${usingCircles}'`;
-        return { offset, content };
-      });
-      console.log(keyframes);
-      animations.push(
-        this.#usingCircles.animate(keyframes, {
-          pseudoElement: "::after",
-          ...animationOptions,
-        })
-      );
-    }
-
-    {
-      const keyframes = script.map(({ offset, addingCircles }): Keyframe => {
-        const content = `'${addingCircles}'`;
-        return { offset, content };
-      });
-      console.log(keyframes);
-      animations.push(
-        this.#addingCircles.animate(keyframes, {
-          pseudoElement: "::after",
-          ...animationOptions,
-        })
-      );
-    }
-
-    {
-      const keyframes = script.map(
-        ({ offset, usingCircles, addingCircles }): Keyframe => {
-          const content = `'${
-            nonZeroTerms.length - usingCircles - addingCircles
-          }'`;
+      /**
+       * Format the numbers in the number of circles column.
+       * We know the largest value is capped at 2048, so give every number enough space for 4 digits.
+       * @param value The number of circles
+       * @returns A string with padding and quotes.
+       */
+      const format = (value: number) =>
+        `'${value.toString().padStart(4, FIGURE_SPACE)}'`;
+      {
+        const keyframes = script.map(({ offset, usingCircles }): Keyframe => {
+          const content = format(usingCircles);
           return { offset, content };
-        }
-      );
-      console.log(keyframes);
-      animations.push(
-        this.#availableCircles.animate(keyframes, {
-          pseudoElement: "::after",
-          ...animationOptions,
-        })
-      );
+        });
+        console.log(keyframes);
+        animations.push(
+          this.#usingCircles.animate(keyframes, {
+            pseudoElement: "::after",
+            ...animationOptions,
+          })
+        );
+      }
+
+      {
+        const keyframes = script.map(({ offset, addingCircles }): Keyframe => {
+          const content = format(addingCircles);
+          return { offset, content };
+        });
+        console.log(keyframes);
+        animations.push(
+          this.#addingCircles.animate(keyframes, {
+            pseudoElement: "::after",
+            ...animationOptions,
+          })
+        );
+      }
+
+      {
+        const keyframes = script.map(
+          ({ offset, usingCircles, addingCircles }): Keyframe => {
+            const content = format(
+              nonZeroTerms.length - usingCircles - addingCircles
+            );
+            return { offset, content };
+          }
+        );
+        console.log(keyframes);
+        animations.push(
+          this.#availableCircles.animate(keyframes, {
+            pseudoElement: "::after",
+            ...animationOptions,
+          })
+        );
+      }
     }
 
     {
+      /**
+       * All of the amplitude numbers are displayed the same way.
+       */
       const format = new Intl.NumberFormat("en-US", {
         minimumSignificantDigits: 5,
         maximumSignificantDigits: 5,
         useGrouping: false,
       }).format;
-      const keyframesUsing = script.map(
-        ({ offset, usingAmplitude }): Keyframe => {
-          const content = `'${format(usingAmplitude)}'`;
+      const keyframesUsing = script.map(({ offset, usingAmplitude }) => {
+        const content = format(usingAmplitude);
+        return { offset, content };
+      });
+      const keyframesAdding = script.map(({ offset, addingAmplitude }) => {
+        const content = format(addingAmplitude);
+        return { offset, content };
+      });
+      const keyframesAvailable = script.map(
+        ({ offset, usingAmplitude, addingAmplitude }) => {
+          const content = format(100 - usingAmplitude - addingAmplitude);
           return { offset, content };
         }
       );
+      const allKeyframes = [
+        ...keyframesUsing,
+        ...keyframesAdding,
+        ...keyframesAvailable,
+      ];
+      let maxLength = 0;
+      allKeyframes.forEach((keyframe) => {
+        const [, beforeDecimalPoint, afterDecimalPoint] =
+          /^([0-9]+)\.([0-9]+)$/.exec(keyframe.content)!;
+        switch (beforeDecimalPoint.length) {
+          case 3: {
+            // Already perfect.  E.g. 100.00
+            break;
+          }
+          case 2: {
+            // E.g. 10.000
+            keyframe.content = FIGURE_SPACE + keyframe.content;
+            break;
+          }
+          case 1: {
+            // E.g. 1.0000
+            keyframe.content = FIGURE_SPACE + FIGURE_SPACE + keyframe.content;
+            break;
+          }
+          default: {
+            console.warn({ beforeDecimalPoint, afterDecimalPoint, keyframe });
+            throw new Error("wtf");
+          }
+        }
+        maxLength = Math.max(maxLength, keyframe.content.length);
+      });
+      allKeyframes.forEach((keyframe) => {
+        keyframe.content = `'${keyframe.content.padEnd(maxLength)}'`;
+      });
       animations.push(
         this.#usingAmplitude.animate(keyframesUsing, {
           pseudoElement: "::after",
           ...animationOptions,
         })
       );
-      const keyframesAdding = script.map(
-        ({ offset, addingAmplitude }): Keyframe => {
-          const content = `'${format(addingAmplitude)}'`;
-          return { offset, content };
-        }
-      );
       animations.push(
         this.#addingAmplitude.animate(keyframesAdding, {
           pseudoElement: "::after",
           ...animationOptions,
         })
-      );
-      const keyframesAvailable = script.map(
-        ({ offset, usingAmplitude, addingAmplitude }): Keyframe => {
-          const content = `'${format(100 - usingAmplitude - addingAmplitude)}'`;
-          return { offset, content };
-        }
       );
       animations.push(
         this.#availableAmplitude.animate(keyframesAvailable, {

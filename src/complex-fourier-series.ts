@@ -3,7 +3,7 @@ import "./style.css";
 import "./complex-fourier-series.css";
 import { ParametricFunction, PathShape, Point } from "./path-shape";
 import { selectorQuery, selectorQueryAll } from "./utility";
-import { assertClass, FIGURE_SPACE } from "phil-lib/misc";
+import { assertClass, FIGURE_SPACE, initializedArray } from "phil-lib/misc";
 import { fft } from "fft-js";
 
 interface FourierTerm {
@@ -470,12 +470,33 @@ class AnimateRequestedVsReconstructed {
       this.#svgElement
     );
   }
-  private f: ParametricFunction | undefined;
   // update ( ideal path string, list of fourier thingies so we can display some subset of them, and give some status on the screen.  Using 3 of 7 circles.  Using 99% of the amplitude?  maybe better to say how much is still available for the sake of rounding. )
   private update(f: ParametricFunction, pathShape: PathShape) {
     this.#requestedPath.setAttribute("d", pathShape.rawPath);
     panAndZoom(this.#requestedPath, this.#svgElement);
-    this.f = f;
+    const originalTerms = parametricToFourier(f);
+    const nonZeroTerms = keepNonZeroTerms(originalTerms);
+    console.log({ originalTerms, nonZeroTerms });
+    (window as any).nonZeroTerms = nonZeroTerms;
+    (window as any).originalTerms = originalTerms;
+    const maxTerms = 10;
+    const keyframes = initializedArray(maxTerms, (i) => {
+      const reconstructedF = termsToParametricFunction(nonZeroTerms, i + 1);
+      const reconstructedPath = PathShape.parametric(
+        reconstructedF,
+        sampleCountInput.valueAsNumber
+      );
+      const d = reconstructedPath.cssPath;
+      const easing = "ease-in-out";
+      return { d, easing };
+    });
+    keyframes.push(keyframes.at(-1)!);
+    const animation = this.#reconstructedPath.animate(keyframes, {
+      duration: 10000,
+      iterations: Infinity,
+    });
+    // TODO delete this animation before adding the next!!!
+    console.log(animation);
   }
   static update(f: ParametricFunction, pathShape: PathShape) {
     this.#instance.update(f, pathShape);
@@ -648,12 +669,6 @@ addAnotherInput();
       }
       return result;
     };
-
-    const originalTerms = parametricToFourier(f1);
-    const nonZeroTerms = keepNonZeroTerms(originalTerms);
-    console.log({ originalTerms, nonZeroTerms });
-    (window as any).nonZeroTerms = nonZeroTerms;
-    (window as any).originalTerms = originalTerms;
 
     const idealShape = tryMakePath(f1);
     if (!idealShape) {

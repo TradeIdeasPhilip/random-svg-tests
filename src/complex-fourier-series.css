@@ -1,3 +1,18 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap");
+
+.numbers {
+  font-family: "Archivo", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: normal;
+}
+
+#progress td {
+  padding: 0 0.5em;
+}
+#progress th {
+  padding: 0 0.5em;
+}
+
 body {
   margin: 0.5em !important;
 }
@@ -23,6 +38,7 @@ img[data-sample] {
   fill: none;
   stroke: black;
   stroke-width: var(--recommended-stroke-width);
+  stroke-linecap: round;
 }
 
 circle[data-distance] {

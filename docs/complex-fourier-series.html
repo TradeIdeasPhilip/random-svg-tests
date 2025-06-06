@@ -5,13 +5,13 @@
     <!-- <link rel="icon" type="image/svg+xml" href="/moon.svg" /> -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Complex Fourier Series</title>
-    <script type="module" crossorigin src="./assets/ҩажәа-DqyJ6BOZ.js"></script>
+    <script type="module" crossorigin src="./assets/ҩажәа-BKfqM5rn.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-wGF4FraP.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-ZHNZ3-cL.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-fljILaqi.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-D9E8BDCl.js">
-    <link rel="stylesheet" crossorigin href="./assets/ҩажәа-Bi3H3zLN.css">
+    <link rel="stylesheet" crossorigin href="./assets/ҩажәа-D21PCN6b.css">
     <link rel="stylesheet" crossorigin href="./assets/style-DQ03UEvS.css">
   </head>
   <body>
@@ -120,6 +120,7 @@ const y = b * Math.sin(freqY * angle);
     </p>
     <svg
       class="outlineSample"
+      id="distanceVsT"
       data-sample
       viewBox="0 0 100 10"
       xmlns="http://www.w3.org/2000/svg"
@@ -133,6 +134,7 @@ const y = b * Math.sin(freqY * angle);
 
     <svg
       class="outlineSample"
+      id="requestedVsReconstructed"
       data-sample
       viewBox="0 0 100 10"
       xmlns="http://www.w3.org/2000/svg"
@@ -140,47 +142,31 @@ const y = b * Math.sin(freqY * angle);
       style="border: thin lightgreen solid"
     >
       <path></path>
-    </svg>
-    <svg
-      class="outlineSample"
-      data-sample
-      viewBox="0 0 100 10"
-      xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMidYMid meet"
-      style="border: thin lightgreen solid"
-    >
       <path></path>
     </svg>
-    <svg
-      class="outlineSample"
-      data-sample
-      viewBox="0 0 100 10"
-      xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMidYMid meet"
-      style="border: thin lightgreen solid"
-    >
-      <path></path>
-    </svg>
-    <svg
-      class="outlineSample"
-      data-sample
-      viewBox="0 0 100 10"
-      xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMidYMid meet"
-      style="border: thin lightgreen solid"
-    >
-      <path></path>
-    </svg>
-    <svg
-      class="outlineSample"
-      data-sample
-      viewBox="0 0 100 10"
-      xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMidYMid meet"
-      style="border: thin lightgreen solid"
-    >
-      <path></path>
-    </svg>
+
+    <table id="progress">
+      <tr>
+        <td></td>
+        <th>Circles</th>
+        <th>Amplitude</th>
+      </tr>
+      <tr>
+        <th>Using</th>
+        <td class="numbers">&numsp;5</td>
+        <td class="numbers">78.0%</td>
+      </tr>
+      <tr>
+        <th>Adding</th>
+        <td class="numbers">&numsp;1</td>
+        <td class="numbers">&numsp;2.07%</td>
+      </tr>
+      <tr>
+        <th>Using</th>
+        <td class="numbers">27</td>
+        <td class="numbers">&numsp;0.00123%</td>
+      </tr>
+    </table>
 
     <h1>More Information</h1>
     <p>

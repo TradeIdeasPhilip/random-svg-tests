@@ -1,7 +1,7 @@
 import { AnimationLoop, getById } from "phil-lib/client-misc";
 import "./style.css";
 import "./complex-fourier-series.css";
-import { ParametricFunction, PathShape, Point } from "./path-shape";
+import { ParametricFunction, PathShape, Point, QCommand } from "./path-shape";
 import { selectorQuery, selectorQueryAll } from "./utility";
 import { assertClass, FIGURE_SPACE } from "phil-lib/misc";
 import { fft } from "fft-js";
@@ -583,6 +583,9 @@ class AnimateRequestedVsReconstructed {
       script.forEach((keyframe) => {
         keyframe.offset = keyframe.startTime / startTime;
       });
+      const last = script.at(-1)!;
+      const final = { ...last, startTime, offset: 1 };
+      script.push(final);
     }
     console.log(script);
 
@@ -608,7 +611,45 @@ class AnimateRequestedVsReconstructed {
             reconstructedF,
             sampleCountInput.valueAsNumber
           );
-          d = reconstructedPath.cssPath;
+          /**
+           * Assume that a pathShape is almost closed, but it might not be perfectly closed because of the way it was created.
+           * This function is aimed at fixing round-off errors.
+           * @param pathShape The shape to adjust.
+           * @returns A similar shape that is closed.
+           */
+          function forceClosed(pathShape: PathShape): PathShape {
+            if (pathShape.commands.length < 2) {
+              throw new Error("wtf");
+            }
+            const [first, ...commands] = pathShape.commands;
+            const last = commands.pop();
+            if (!(first instanceof QCommand && last instanceof QCommand)) {
+              throw new Error("wtf");
+            }
+            if (first.x0 == last.x && first.y0 == last.y) {
+              return pathShape;
+            }
+            const x = (first.x0 + last.x) / 2;
+            const y = (first.y0 + last.y) / 2;
+            const newFirst = QCommand.controlPoints(
+              x,
+              y,
+              first.x1,
+              first.y1,
+              first.x,
+              first.y
+            );
+            const newLast = QCommand.controlPoints(
+              last.x0,
+              last.y0,
+              last.x1,
+              last.y1,
+              x,
+              y
+            );
+            return new PathShape([newFirst, ...commands, newLast]);
+          }
+          d = forceClosed(reconstructedPath).cssPath;
           lastNumberOfTerms = usingCircles;
         }
         return { offset, d, easing: "ease-in-out" };
@@ -729,7 +770,10 @@ class AnimateRequestedVsReconstructed {
         maxLength = Math.max(maxLength, keyframe.content.length);
       });
       allKeyframes.forEach((keyframe) => {
-        keyframe.content = `'${keyframe.content.padEnd(maxLength)}'`;
+        keyframe.content = `'${(keyframe.content + "%").padEnd(
+          maxLength + 1,
+          FIGURE_SPACE
+        )}'`;
       });
       animations.push(
         this.#usingAmplitude.animate(keyframesUsing, {
@@ -751,7 +795,7 @@ class AnimateRequestedVsReconstructed {
       );
     }
 
-    console.log(animations);
+    //console.log(animations);
   }
   static update(f: ParametricFunction, pathShape: PathShape) {
     this.#instance.update(f, pathShape);

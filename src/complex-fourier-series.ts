@@ -74,10 +74,11 @@ function keepNonZeroTerms(terms: readonly FourierTerm[]): FourierTerm[] {
   return result;
 }
 
+const sampleCount = 120;
+
 const goButton = getById("go", HTMLButtonElement);
 const sourceTextArea = getById("source", HTMLTextAreaElement);
 const sampleCodeSelect = getById("sampleCode", HTMLSelectElement);
-const sampleCountInput = getById("segmentCountInput", HTMLInputElement);
 
 const codeSamples: ReadonlyArray<{
   readonly name: string;
@@ -189,24 +190,6 @@ const height = support.input(1) * 4 + 1;
 const y = - height * Math.exp(-x*x);`,
   },
   {
-    name: "Spirograph Curve (⟟)",
-    code: `// Spirograph Curve (⟟) - A general Spirograph pattern with adjustable parameters
-// Sliders: rolling circle radius (⟟), pen distance (⟠), number of turns (⟡)
-const R = 1.0; // Fixed circle radius
-const r = support.input(0) * 2 - 1; // Rolling circle radius: -1 to 1 (⟟). Negative for inside, positive for outside
-const d = support.input(1) * 2; // Pen distance from rolling circle center: 0 to 2 (⟠)
-const numTurns = support.input(2) * 10; // Number of turns: 0 to 10 (⟡)
-const angle = t * 2 * Math.PI * numTurns;
-
-// Determine if rolling inside (hypotrochoid) or outside (epitrochoid)
-const k = r < 0 ? (R - r) / r : (R + r) / r; // Frequency ratio
-const baseRadius = r < 0 ? (R - r) : (R + r); // Base radius for the rolling circle's center
-
-// Parametric equations
-const x = baseRadius * Math.cos(angle) + (r < 0 ? d : -d) * Math.cos(k * angle);
-const y = baseRadius * Math.sin(angle) - (r < 0 ? d : -d) * Math.sin(k * angle);`,
-  },
-  {
     name: "Archimedean Spiral with Oscillation",
     code: `const scale = 1; // Overall scale of the spiral
 const turns = 3; // Number of full rotations
@@ -284,37 +267,6 @@ const y = xEllipse * Math.sin(phase) + yEllipse * Math.cos(phase);
 // The top slider controls the amount of curvature in the output.
 // The second slider controls the number of lobes.
 // Try values like 0.05, 0.15, 0.25, …, 0.95 for closed shapes.`,
-  },
-  {
-    name: "Cardioid with Nodal Loops (क⋏)",
-    code: `// Cardioid with Nodal Loops (क⋏) - A heart-shaped curve with adjustable loops
-// Slider adjusts the number of nodal loops (⋰)
-const r = 0.5; // Radius of the base circles for the cardioid
-const nodalFreq = Math.round(support.input(0) * 10); // Frequency of nodal loops (⋰). First slider: 0 to 10
-const nodalAmp = 0.1; // Amplitude of the nodal loops
-const angle = t * 2 * Math.PI; // Full circle
-
-// Base cardioid: point on a circle rolling around another circle
-const xCardioid = r * (2 * Math.cos(angle) - Math.cos(2 * angle));
-const yCardioid = r * (2 * Math.sin(angle) - Math.sin(2 * angle));
-
-// Add nodal loops along the curve
-const nodalOffset = nodalAmp * Math.sin(nodalFreq * angle);
-const x = xCardioid + nodalOffset * Math.cos(angle);
-const y = yCardioid + nodalOffset * Math.sin(angle);`,
-  },
-  {
-    name: "Lissajous Śpiral (श)",
-    code: `// Lissajous Śpiral (श) - A spiraling Lissajous curve with adjustable frequency
-// Slider adjusts the frequency ratio (⟐)
-const scale = 1.0; // Base scale of the curve
-const freqRatio = 1 + support.input(0) * 4; // Frequency ratio x:y (⟐). First slider: 1 to 5
-const spiralFactor = t; // Linearly increasing amplitude for spiral effect
-const angle = t * 2 * Math.PI; // Full circle
-
-// Lissajous curve with spiraling amplitude
-const x = scale * spiralFactor * Math.cos(angle);
-const y = scale * spiralFactor * Math.sin(freqRatio * angle);`,
   },
   {
     name: "Squaring the Circle",
@@ -570,6 +522,7 @@ class AnimateRequestedVsReconstructed {
         );
       }
     }
+    let smallEffectOffset = NaN;
     {
       // Fill in startTime and endTime for each row of the script.
       let startTime = 0;
@@ -583,6 +536,7 @@ class AnimateRequestedVsReconstructed {
       script.forEach((keyframe) => {
         keyframe.offset = keyframe.startTime / startTime;
       });
+      smallEffectOffset = 50 / startTime;
       const last = script.at(-1)!;
       const final = { ...last, startTime, offset: 1 };
       script.push(final);
@@ -609,7 +563,7 @@ class AnimateRequestedVsReconstructed {
           );
           const reconstructedPath = PathShape.parametric(
             reconstructedF,
-            sampleCountInput.valueAsNumber
+            sampleCount
           );
           /**
            * Assume that a pathShape is almost closed, but it might not be perfectly closed because of the way it was created.
@@ -660,59 +614,58 @@ class AnimateRequestedVsReconstructed {
     }
 
     {
-      /**
-       * Format the numbers in the number of circles column.
-       * We know the largest value is capped at 2048, so give every number enough space for 4 digits.
-       * @param value The number of circles
-       * @returns A string with padding and quotes.
-       */
-      const format = (value: number) =>
-        `'${value.toString().padStart(4, FIGURE_SPACE)}'`;
-      {
-        const keyframes = script.map(({ offset, usingCircles }): Keyframe => {
-          const content = format(usingCircles);
+      type Values = { offset: number; circles: number }[];
+      const animateRow = (
+        circlesCell: HTMLTableCellElement,
+        amplitudeCell: HTMLTableCellElement,
+        values: Values
+      ) => {
+        /**
+         * Format the numbers in the number of circles column.
+         * We know the largest value is capped at 2048, so give every number enough space for 4 digits.
+         * @param value The number of circles
+         * @returns A string with padding and quotes.
+         */
+        const format = (value: number) =>
+          `'${value.toString().padStart(4, FIGURE_SPACE)}'`;
+        const keyframes = values.map(({ offset, circles }): Keyframe => {
+          const content = format(circles);
           return { offset, content };
         });
         console.log(keyframes);
         animations.push(
-          this.#usingCircles.animate(keyframes, {
+          circlesCell.animate(keyframes, {
             pseudoElement: "::after",
             ...animationOptions,
           })
         );
-      }
-
-      {
-        const keyframes = script.map(({ offset, addingCircles }): Keyframe => {
-          const content = format(addingCircles);
-          return { offset, content };
-        });
-        console.log(keyframes);
-        animations.push(
-          this.#addingCircles.animate(keyframes, {
-            pseudoElement: "::after",
-            ...animationOptions,
-          })
-        );
-      }
-
-      {
-        const keyframes = script.map(
-          ({ offset, usingCircles, addingCircles }): Keyframe => {
-            const content = format(
-              nonZeroTerms.length - usingCircles - addingCircles
-            );
-            return { offset, content };
-          }
-        );
-        console.log(keyframes);
-        animations.push(
-          this.#availableCircles.animate(keyframes, {
-            pseudoElement: "::after",
-            ...animationOptions,
-          })
-        );
-      }
+        amplitudeCell; // TODO add an animation to this.
+        smallEffectOffset; // TODO use this to set the timing of some of the new animations.
+      };
+      animateRow(
+        this.#usingCircles,
+        this.#usingAmplitude,
+        script.map(({ offset, usingCircles }) => ({
+          offset,
+          circles: usingCircles,
+        }))
+      );
+      animateRow(
+        this.#addingCircles,
+        this.#addingAmplitude,
+        script.map(({ offset, addingCircles }) => ({
+          offset,
+          circles: addingCircles,
+        }))
+      );
+      animateRow(
+        this.#availableCircles,
+        this.#availableAmplitude,
+        script.map(({ offset, usingCircles, addingCircles }) => ({
+          offset,
+          circles: nonZeroTerms.length - usingCircles - addingCircles,
+        }))
+      );
     }
 
     {
@@ -853,7 +806,7 @@ class ErrorBox {
 
 function tryMakePath(f: ParametricFunction): PathShape | undefined {
   try {
-    return PathShape.parametric(f, sampleCountInput.valueAsNumber);
+    return PathShape.parametric(f, sampleCount);
   } catch (reason: unknown) {
     if (reason instanceof Error) {
       ErrorBox.displayError(reason);
@@ -995,19 +948,6 @@ addAnotherInput();
     }
   };
   goButton.addEventListener("click", doItSoon);
-
-  const sampleCountSpan = getById("segmentCountSpan", HTMLSpanElement);
-  const updateSampleCountSpan = () => {
-    sampleCountSpan.innerText = sampleCountInput.value.padStart(
-      3,
-      FIGURE_SPACE
-    );
-  };
-  updateSampleCountSpan();
-  sampleCountInput.addEventListener("change", () => {
-    updateSampleCountSpan();
-    doItSoon();
-  });
 
   (window as any).copyNewInput = (element: HTMLInputElement, index: number) => {
     inputValues[index] = element.valueAsNumber;

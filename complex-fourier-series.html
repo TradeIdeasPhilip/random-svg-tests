@@ -8,11 +8,6 @@
     <script type="module" src="/src/complex-fourier-series.ts"></script>
   </head>
   <body>
-    <div class="error">
-      Warning!&nbsp; This is a <b>very</b> rough prototype. The proof of concept
-      is buried in here somewhere, but most of the GUI is just leftover from the
-      page I cloned to make this page.
-    </div>
     <h1>Function</h1>
     <p>
       What do you want to graph? Create a parametric function in JavaScript. For
@@ -67,31 +62,6 @@ const y = b * Math.sin(freqY * angle);
       <option>Check console for details.</option>
     </select>
     <button id="nextSample">Next Sample</button>
-    <h2 data-hide>Precision</h2>
-    <p data-hide>
-      This software will make a path approximating your function. This software
-      takes samples at n evenly spread values of t. At each t, this software
-      will record the position of your function and its derivative. Each segment
-      is made of a part of a parabola chosen to best match the samples at either
-      end.
-    </p>
-    <p data-hide>
-      If you plan to smoothly morph between two paths, make sure this parameter
-      is the same when you create each path. The rest should work itself out
-      automatically.
-    </p>
-    <div id="segmentCountHolder" class="has-slider">
-      <span> Number of segments: </span>
-      <input
-        id="segmentCountInput"
-        type="range"
-        min="10"
-        max="500"
-        step="1"
-        value="20"
-      />
-      <span id="segmentCountSpan"></span>
-    </div>
     <h2 data-hide>Inputs</h2>
     <div id="inputsGroup">
       <p data-hide>
@@ -103,13 +73,14 @@ const y = b * Math.sin(freqY * angle);
       <button data-hide>Add Another Input</button>
     </div>
     <div id="error" class="error"></div>
-    <h2 data-hide>Output Samples</h2>
+    <h2 data-hide>Output</h2>
     <label style="display: flex; align-items: center"
       ><input type="checkbox" id="hide-text" />&nbsp;Hide Text</label
     >
     <p data-hide>
-      The output from this program is a css path, a string. That path can be
-      used a lot of different ways. Here are a few examples.
+      The first image shows your function tracing out the path. The second image
+      shows how well each approximation matches the original. The table details
+      the progress in the second image.
     </p>
     <svg
       class="outlineSample"
@@ -162,20 +133,74 @@ const y = b * Math.sin(freqY * angle);
     </table>
 
     <h1>More Information</h1>
+    <h2>Complex Fourier Series</h2>
     <p>
-      Desmos can draw your equations very well. But what if you want to display
-      your results somewhere else? A path can be used in so many places so you
-      can integrate your results with a bigger project. This code's been around
-      for a while, but I just built this user interface to let you poke around
-      without any serious programming.
+      In this context “complex” means 2 dimensional. This page will convert any
+      function into a series of circles, called a Fourier series. Add the
+      circles back together to get the original function. Circles (or sines and
+      cosines) are often essential because they easier to use than the original
+      function.
     </p>
     <p>
-      <a href="https://youtu.be/aJKVHNAOACU">This video</a> will show you how to
-      use this page, and it will discuss the origins of this page and this
-      project. You can find general information about this project
-      <a href="https://github.com/TradeIdeasPhilip/random-svg-tests/tree/master"
-        >here</a
-      >.
+      This page lets you <i>explore</i> the Fourier series for a function. You
+      can see how well the series approximates the original function, and how
+      quickly it converges. And you can tweak the function and its
+      parameterization to see the result.
+    </p>
+    <p>
+      The input to this page is a parametric function written in JavaScript.
+      Your function takes one input, <code>t</code>, and returns a point. As
+      <code>t</code> goes from 0 to 1 your function will trace out a path.
+    </p>
+    <p>
+      Different functions can trace out the same path. These are called
+      different “parameterizations.” The small,
+      <span style="color: rgb(0, 195, 255)">light blue</span> dot traces out the
+      results of your function as <code>t</code> increases at a constant rate.
+      The <span style="color: red">red</span> dot always moves at a constant
+      speed, as a point of comparison.
+    </p>
+    <p>
+      The “Square” and “Square with Easing” examples show two parameterizations
+      of the same shape. The former uses the simplest parameterization where the
+      small <span style="color: rgb(0, 195, 255)">blue</span> dot is always
+      moving at a constant speed. In the latter example the
+      <span style="color: rgb(0, 195, 255)">blue</span> dot slows down around
+      each of the corners, like a physical object would have to, speeding up
+      through the straightaways. The latter examples converges faster than the
+      former, perhaps because sharp corners are difficult for a Fourier series,
+      and this function spent more time around those trouble spots.
+    </p>
+    <h2>References</h2>
+    <ul>
+      <li>
+        <a href="https://youtu.be/dV7GpeuyMNQ?si=V8E-OOBeQVQXLJAB"
+          >This video</a
+        >
+        will give you an overview of this page.
+      </li>
+      <li>
+        You can find general information about this project
+        <a
+          href="https://github.com/TradeIdeasPhilip/random-svg-tests/tree/master"
+          >here</a
+        >.
+      </li>
+      <li>
+        All Things Physics’s
+        <a
+          href="https://www.youtube.com/playlist?list=PLQ05HUwVKT_RMKI07zbYw3_V87qCiSQ86"
+          >Square Orbits and Fourier Series</a
+        >
+        playlist is a great place to get started. Those videos were my primary
+        motivation and resource for creating this page.
+      </li>
+    </ul>
+    <h2>Syntax and Other Picky Details</h2>
+    <p>
+      For the moment you can look at the help found
+      <a href="./parametric-path.html#syntax">here</a>. These details are in the
+      process of changing.
     </p>
   </body>
 </html>

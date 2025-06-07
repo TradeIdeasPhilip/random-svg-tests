@@ -719,11 +719,17 @@ class AnimateRequestedVsReconstructed {
       /**
        * All of the amplitude numbers are displayed the same way.
        */
-      const format = new Intl.NumberFormat("en-US", {
+      const formatter = new Intl.NumberFormat("en-US", {
         minimumSignificantDigits: 5,
         maximumSignificantDigits: 5,
         useGrouping: false,
       }).format;
+      const format = (value: number) => {
+        if (value < 0) {
+          value = 0;
+        }
+        return formatter(value);
+      };
       const keyframesUsing = script.map(({ offset, usingAmplitude }) => {
         const content = format(usingAmplitude);
         return { offset, content };

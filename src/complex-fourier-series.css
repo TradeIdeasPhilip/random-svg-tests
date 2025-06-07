@@ -1,9 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&display=swap");
 
 .numbers {
-  font-family: "Archivo", sans-serif;
+  font-family: "IBM Plex Sans", sans-serif;
   font-optical-sizing: auto;
-  font-weight: 175;
+  font-weight: 200;
 }
 
 #progress td {
@@ -23,7 +23,7 @@
    * Without this any animation that tries to set the content
    * property of an element will silently fail.
    * This is not required on Safari, so I'm calling it a Chrome bug.  */
-  content: '';
+  content: "";
 }
 
 body {

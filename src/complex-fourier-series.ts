@@ -68,7 +68,7 @@ function keepNonZeroTerms(terms: readonly FourierTerm[]): FourierTerm[] {
   return result;
 }
 
-const sampleCount = 120;
+const sampleCount = 200;
 
 const goButton = getById("go", HTMLButtonElement);
 const sourceTextArea = getById("source", HTMLTextAreaElement);
@@ -83,7 +83,7 @@ const codeSamples: ReadonlyArray<{
   {
     name: "Square",
     default: true,
-    code: `if (t < 0.25) {
+    code: `function f(t) {if (t < 0.25) {
   return {x: t*4 -0.5, y:-0.5};
 } else if(t<0.5) {
   return {x:0.5, y: t*4-1.5};
@@ -91,7 +91,7 @@ const codeSamples: ReadonlyArray<{
   return {x: 2.5-t*4, y:0.5};
 } else {
   return {x:-0.5, y: 3.5-t*4};
-}`,
+  }}`,
   },
   {
     name: "Square with Easing",
@@ -100,7 +100,7 @@ const codeSamples: ReadonlyArray<{
 function ease(t) {
   return Math.cos((t-0.5)*Math.PI)/2; 
 }
-
+function f(t) {
 let x =0;
 let y=0;
  
@@ -118,7 +118,8 @@ if (t < 0.25) {
   y= 3.5-t*4;
 }
 x = ease(x);
-y = ease(y);`,
+y = ease(y);
+return {x, y};}`,
   },
   {
     name: "Simple Ellipse",
@@ -127,23 +128,25 @@ y = ease(y);`,
 const height = 1;
 // Use the first slider to change the width of the ellipse.
 const width = height * support.input(0) * 2;
+function f(t) {
 // Use the second slider to change the starting point on the ellipse.
 // This doesn't matter in a static ellipse, but it can be important in some animations and other special cases.
 const angle = (t + support.input(1)) * 2 * Math.PI;
 const x = width * Math.cos(angle);
-const y = height * Math.sin(angle);`,
+const y = height * Math.sin(angle);
+return {x, y};}`,
   },
   {
     name: "Circle with Wavy Edge",
-    code: `// Make sure you use enough segments.
-// This includes a lot of inflection points, which means you need a lot of segments.
-const height = 1;
+    code: `const height = 1;
 const width = height;
+function f(t) {
 const angle = t * 2 * Math.PI;
 const adjustmentAngle = angle * 8;
 const adjustmentFactor = Math.sin(adjustmentAngle)/10+1;
 const x = width * Math.cos(angle) * adjustmentFactor;
-const y = height * Math.sin(angle) * adjustmentFactor;`,
+const y = height * Math.sin(angle) * adjustmentFactor;
+return {x, y};}`,
   },
   {
     name: "Lissajous Curves",
@@ -152,23 +155,21 @@ const b = 1; // Amplitude in y-direction
 const freqX = 3; // Frequency in x-direction
 const freqY = 2; // Frequency in y-direction
 const phase = Math.PI / 2; // Phase difference
+function f(t) {
 const angle = t * 2 * Math.PI;
 const x = a * Math.sin(freqX * angle + phase);
 const y = b * Math.sin(freqY * angle);
-
-// This works well with my approximations.
-// There are only two inflection points and they are both in regions where the path is almost linear.`,
+return {x, y};}`,
   },
   {
     name: "Hypocycloid / Astroid",
     code: `const R = 1; // Radius of the large circle
 const r = R / 4; // Radius of the small circle (astroid case)
+function f(t) {
 const angle = t * 2 * Math.PI;
 const x = (R - r) * Math.cos(angle) + r * Math.cos((R - r) / r * angle);
 const y = (R - r) * Math.sin(angle) - r * Math.sin((R - r) / r * angle);
-
-// The sharp corners in this curve push my model to its limits.
-// However, it does a decent job as long as you use enough segments.`,
+return {x, y};}`,
   },
   {
     name: "Bell Curve",
@@ -176,12 +177,14 @@ const y = (R - r) * Math.sin(angle) - r * Math.sin((R - r) / r * angle);
 const right = support.input(0) * 5;
 const left = - right;
 const width = right - left;
-const x = t * width + left;
 const height = support.input(1) * 4 + 1;
+function f(t) {
+const x = t * width + left;
 // Negate this.
 // This program works with normal graphics notation where lower values of y are higher on the display.
 // Normal algebra-class graphs show lower values of y lower on the screen.
-const y = - height * Math.exp(-x*x);`,
+const y = - height * Math.exp(-x*x);
+return {x, y};}`,
   },
   {
     name: "Archimedean Spiral with Oscillation",
@@ -189,29 +192,32 @@ const y = - height * Math.exp(-x*x);`,
 const turns = 3; // Number of full rotations
 const waveFreq = 10; // Frequency of the oscillation
 const waveAmp = 0.1; // Amplitude of the oscillation
+function f(t) {
 const angle = t * 2 * Math.PI * turns;
 const radius = scale * t; // Linear growth for Archimedean spiral
 const wave = waveAmp * Math.sin(t * 2 * Math.PI * waveFreq);
 const x = radius * Math.cos(angle) * (1 + wave);
-const y = radius * Math.sin(angle) * (1 + wave);`,
+const y = radius * Math.sin(angle) * (1 + wave);
+return {x, y};}`,
   },
   {
     name: "Heart Curve ♡",
-    code: `const scale = 1;
+    code: `function f(t) {
 const angle = t * 2 * Math.PI;
-const x = scale * (16 * Math.pow(Math.sin(angle), 3));
-const algebraClassY = scale * (13 * Math.cos(angle) - 5 * Math.cos(2 * angle) - 2 * Math.cos(3 * angle) - Math.cos(4 * angle));
-const y = - algebraClassY;`,
+const x = 16 * Math.pow(Math.sin(angle), 3);
+const algebraClassY = (13 * Math.cos(angle) - 5 * Math.cos(2 * angle) - 2 * Math.cos(3 * angle) - Math.cos(4 * angle));
+const y = - algebraClassY;
+return {x, y};}`,
   },
   {
     name: "Butterfly Curve",
     code: `const scale = 0.2;
+function f(t) {
 const angle = t * 24 * Math.PI * support.input(0); // More rotations for complexity
 const e = Math.exp(1);
 const x = scale * Math.sin(angle) * (e ** Math.cos(angle) - 2 * Math.cos(4 * angle) - Math.pow(Math.sin(angle / 12), 5));
-const y = scale * Math.cos(angle) * (e ** Math.cos(angle) - 2 * Math.cos(4 * angle) - Math.pow(Math.sin(angle / 12), 5));
-
-// This will require a lot of segments to display correctly.`,
+const y = - scale * Math.cos(angle) * (e ** Math.cos(angle) - 2 * Math.cos(4 * angle) - Math.pow(Math.sin(angle / 12), 5));
+return {x, y};}`,
   },
   {
     name: "Hollow Star ☆",
@@ -219,13 +225,14 @@ const y = scale * Math.cos(angle) * (e ** Math.cos(angle) - 2 * Math.cos(4 * ang
 const points = 5; // Number of star points
 const innerRadius = 0.4; // Radius of the inner points (controls star shape)
 const roundness = 0.1; // Amplitude of the oscillation for rounding
+function f(t) {
 const angle = t * 2 * Math.PI; // Full circle
 const starAngle = angle * points; // Angle scaled for 5 points
 const radius = scale * (1 - innerRadius * (Math.cos(starAngle) + 1) / 2); // Base star shape
 const rounding = roundness * Math.sin(starAngle); // Oscillation for rounding
 const x = (radius + rounding) * Math.cos(angle);
 const y = (radius + rounding) * Math.sin(angle);
-
+return {x, y};}
 // According to Wikipedia, if it's hollow inside, it's a star.
 // If you can see the lines crossing each other, it's a pentagram.`,
   },
@@ -234,6 +241,7 @@ const y = (radius + rounding) * Math.sin(angle);
     code: `const r1 = 0.5; // Short radius of the ellipse
 const r2 = 1.0; // Long radius of the ellipse
 const phase = support.input(0) * Math.PI; // First slider: Rotation angle in radians (0 to π)
+function f(t) {
 const angle = t * 2 * Math.PI; // Full circle
 
 // Basic ellipse centered at the origin
@@ -243,13 +251,14 @@ const yEllipse = r2 * Math.sin(angle);
 // Rotate the ellipse by the phase angle
 const x = xEllipse * Math.cos(phase) - yEllipse * Math.sin(phase);
 const y = xEllipse * Math.sin(phase) + yEllipse * Math.cos(phase);
-
+return {x, y};}
 // I used this formula as a starting place for the rounded pentagram.`,
   },
   {
     name: "Rounded Pentagram ⛤, Heptagram, etc.",
     code: `const r1 = 0.5 * support.input(0); // Short radius of the ellipse. Top slider will adjust it.
 const r2 = 1.0; // Long radius of the ellipse
+function f(t) {
 const phase = Math.PI * t; // The reference ellipse will make one half complete rotation during the tracing process.
 const numberOfTrips = support.input(1) * 10;  // Effective range is 0 to 10 
 const angle = t * 2 * Math.PI * numberOfTrips; // Basic ellipse centered at the origin
@@ -257,7 +266,7 @@ const xEllipse = r1 * Math.cos(angle);
 const yEllipse = r2 * Math.sin(angle);// Rotate the ellipse by the phase angle
 const x = xEllipse * Math.cos(phase) - yEllipse * Math.sin(phase);
 const y = xEllipse * Math.sin(phase) + yEllipse * Math.cos(phase);
-
+return {x, y};}
 // The top slider controls the amount of curvature in the output.
 // The second slider controls the number of lobes.
 // Try values like 0.05, 0.15, 0.25, …, 0.95 for closed shapes.`,
@@ -269,12 +278,13 @@ const y = xEllipse * Math.sin(phase) + yEllipse * Math.cos(phase);
 // this approximation, from 1 to 20.
 
 // I was originally trying to use epicycles to create a square.
-// But I ran into the Gibbs Phenomenon,
+// But I ran into some problems,
 // so this a square where two of the sides bulge out some.
 
 const numberOfCircles = 1 + 19 * support.input(0);
 const circlesToConsider = Math.ceil(numberOfCircles);
 const attenuation = numberOfCircles - Math.floor(numberOfCircles);
+function f(t) {
 let x = 0;
 let y = 0;
 for (let k = 0; k < circlesToConsider; k++) {
@@ -285,7 +295,8 @@ for (let k = 0; k < circlesToConsider; k++) {
   const baseAngle = t * 2 * Math.PI;
   x += factor * radius * Math.cos(n * baseAngle + phase);
   y += factor * radius * Math.sin(n * baseAngle + phase);
-}`,
+}
+return {x, y};}`,
   },
   {
     name: "A Better Square",
@@ -294,6 +305,7 @@ for (let k = 0; k < circlesToConsider; k++) {
 
 const R = 0.573; // Match our first circle's radius
 const moonRadius = (7 / 45) * R;
+function f(t) {
 const planetAngle = t * 2 * Math.PI; // Frequency 1
 const moonAngle = -3 * planetAngle; // Frequency 3, opposite direction
 const planetX = R * Math.cos(planetAngle);
@@ -301,7 +313,8 @@ const planetY = R * Math.sin(planetAngle);
 const moonX = moonRadius * Math.cos(moonAngle);
 const moonY = moonRadius * Math.sin(moonAngle);
 const x = (planetX + moonX) * 1.2;
-const y = (planetY + moonY) * 1.2;`,
+const y = (planetY + moonY) * 1.2;
+return {x, y};}`,
   },
   {
     name: "Fourier square wave",
@@ -311,6 +324,7 @@ const y = (planetY + moonY) * 1.2;`,
 const numberOfCircles = 1 + 19 * support.input(0);
 const circlesToConsider = Math.ceil(numberOfCircles);
 const attenuation = numberOfCircles - Math.floor(numberOfCircles);
+function f(t) {
 let ySum = 0;
 for (let k = 0; k < circlesToConsider; k++) {
   const n = 2 * k + 1; // Odd frequencies: 1, 3, 5, ...
@@ -320,7 +334,8 @@ for (let k = 0; k < circlesToConsider; k++) {
   ySum += factor * amplitude * Math.sin(n * baseAngle);
 }
 const x = (t * 5) - 2.5; // Span x from -2.5 to 2.5
-const y = ySum;`,
+const y = ySum;
+return {x, y};}`,
   },
 ];
 
@@ -949,17 +964,23 @@ addAnotherInput();
 {
   const doItNow = () => {
     ErrorBox.clear();
-    const sourceText =
-      '"use strict";\n' + sourceTextArea.value + "\nreturn { x, y };";
-    let f: Function;
+    const sourceText = '"use strict";\n' + sourceTextArea.value + "\nreturn f;";
+    let oneTimeSetup: Function;
     try {
-      f = new Function(
-        "t /* A value between 0 and 1, inclusive. */",
-        "support",
-        sourceText
-      );
+      oneTimeSetup = new Function("support", sourceText);
     } catch (reason: unknown) {
       if (reason instanceof SyntaxError) {
+        ErrorBox.displayError(reason);
+        return;
+      } else {
+        throw reason;
+      }
+    }
+    let f: Function;
+    try {
+      f = oneTimeSetup(support);
+    } catch (reason: unknown) {
+      if (reason instanceof Error) {
         ErrorBox.displayError(reason);
         return;
       } else {

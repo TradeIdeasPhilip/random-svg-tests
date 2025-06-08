@@ -10,24 +10,17 @@
   <body>
     <h1>Function</h1>
     <p>
-      What do you want to graph? Create a parametric function in JavaScript. For
-      each input value <code>t</code>, between 0 and 1, return an object with
-      <code>x</code> and <code>y</code> parameters, both numbers.
+      What do you want to graph? Create a parametric function in JavaScript.
+      Name it <code>f()</code>. For each input value <code>t</code>, between 0
+      and 1, <code>f()</code> returns a point like
+      <code>{ x: 1, y: -0.08333333 }</code>. You can do one time setup before
+      defining <code>f()</code>. See the samples and additional instructions,
+      below.
     </p>
     <div style="display: flex; flex-direction: column">
-      <div>
-        <code>function (t /* A value between 0 and 1, inclusive. */,</code>
-      </div>
-      <div>
-        <code style="margin-left: 10ch">support) {</code>
-      </div>
-      <div>
-        <code style="margin-left: 2ch">"use strict";</code>
-      </div>
       <textarea
         id="source"
         style="
-          margin-left: 1.66667rem;
           min-height: 5lh;
           height: 50vh;
           font-size: inherit;
@@ -35,26 +28,7 @@
         "
         autocorrect="off"
         spellcheck="off"
-      >
-// Lissajous Curves
-// Change this formula and hit the “Go” button to see something different.
-
-const a = 1; // Amplitude in x-direction
-const b = 1; // Amplitude in y-direction
-const freqX = 3; // Frequency in x-direction
-const freqY = 2; // Frequency in y-direction
-const phase = Math.PI / 2; // Phase difference
-const angle = t * 2 * Math.PI;
-const x = a * Math.sin(freqX * angle + phase);
-const y = b * Math.sin(freqY * angle);
-
-// This works well with my approximations.
-// There are only two inflection points and they are both in regions where the path is almost linear.</textarea
-      >
-      <div>
-        <code style="margin-left: 2ch">return { x, y };</code>
-      </div>
-      <div><code>}</code></div>
+      ></textarea>
     </div>
     <button id="go">Go</button>
     <select id="sampleCode">

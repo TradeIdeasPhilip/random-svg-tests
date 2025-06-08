@@ -2,9 +2,15 @@ import { AnimationLoop, getById } from "phil-lib/client-misc";
 import "./style.css";
 import "./complex-fourier-series.css";
 import { ParametricFunction, PathShape, Point, QCommand } from "./path-shape";
-import { selectorQuery, selectorQueryAll } from "./utility";
-import { assertClass, FIGURE_SPACE } from "phil-lib/misc";
+import {
+  makeTSplitter,
+  makeTSplitterA,
+  selectorQuery,
+  selectorQueryAll,
+} from "./utility";
+import { assertClass, FIGURE_SPACE, lerp, makeLinear } from "phil-lib/misc";
 import { fft } from "fft-js";
+import { lerpPoints } from "./math-to-path";
 
 interface FourierTerm {
   frequency: number;
@@ -83,43 +89,21 @@ const codeSamples: ReadonlyArray<{
   {
     name: "Square",
     default: true,
-    code: `function f(t) {if (t < 0.25) {
-  return {x: t*4 -0.5, y:-0.5};
-} else if(t<0.5) {
-  return {x:0.5, y: t*4-1.5};
-} else if(t<0.75) {
-  return {x: 2.5-t*4, y:0.5};
-} else {
-  return {x:-0.5, y: 3.5-t*4};
-  }}`,
+    code: `const corners = [{x: -0.5, y: -0.5}, {x: 0.5, y: -0.5}, {x: 0.5, y: 0.5}, {x: -0.5, y: 0.5} ];
+const tSplitter = support.makeTSplitterA(0, corners.length, 0);
+function f(t) {
+  const segment = tSplitter(t);
+  return support.lerpPoints(corners[segment.index], corners[(segment.index+1)%corners.length], segment.t);
+}`,
   },
   {
     name: "Square with Easing",
-    code: `// This takes -1/2 to -1/2, 0 to 0, and 1/2 to 1/2.
-// However it starts moving slowly, speeds up in the middle, and slows down again at the end.
-function ease(t) {
-  return Math.cos((t-0.5)*Math.PI)/2; 
-}
+    code: `const corners = [{x: -0.5, y: -0.5}, {x: 0.5, y: -0.5}, {x: 0.5, y: 0.5}, {x: -0.5, y: 0.5} ];
+const tSplitter = support.makeTSplitterA(0, corners.length, 0);
 function f(t) {
-let x =0;
-let y=0;
- 
-if (t < 0.25) {
-  x = t*4-0.5;
-  y = -0.5;
-} else if(t<0.5) {
-  x = 0.5;
-  y = t*4-1.5;
-} else if(t<0.75) {
-  x = 2.5-t*4;
-  y = 0.5;
-} else {
-  x= -0.5; 
-  y= 3.5-t*4;
-}
-x = ease(x);
-y = ease(y);
-return {x, y};}`,
+  const segment = tSplitter(t);
+  return support.lerpPoints(corners[segment.index], corners[(segment.index+1)%corners.length], support.ease(segment.t));
+}`,
   },
   {
     name: "Simple Ellipse",
@@ -906,7 +890,7 @@ class NotEnoughInputs extends Error {
 /**
  * This is a simple way to interface with the user provided script.
  */
-const support = {
+export const support = {
   /**
    *
    * @param index 0 for the first, 1 for the second, etc.
@@ -921,6 +905,89 @@ const support = {
     }
     return inputValues[index];
   },
+  /**
+   * Turns a linear timing function into a timing function that eases in and out.
+   * The derivative of this function is 0 around t=0 and t=1.
+   * This function is shaped like half of a sine wave.
+   * @param t A value between 0 and 1, inclusive.
+   * @returns A value between 0 and 1, inclusive.
+   */
+  ease(t: number) {
+    return (1 - Math.cos(Math.PI * t)) / 2;
+  },
+  /**
+   * This is way to split a parametric function into smaller parts.
+   * Typically you'd call this once in the setup part of the script, before defining f().
+   * This will return a function that you will call inside of f().
+   * @param weights A list of numbers saying how long to stay in each bin.
+   * These are automatically scaled so the entire animation will take a time of 1.
+   * If bin 1 has a weight of 1 and bin 2 as a weights of time, the animation will spend twice as much time in bin 2 as in bin 1.
+   * @returns A splitter function.
+   * This function will take in a number between 0 and 1 (inclusive) for the time relative to the entire animation.
+   * It will return an object with two properties.
+   * `index` says which bin you are in.
+   * `t` says the time (0 to 1 inclusive) within the current bin.
+   * @see assertValidT() For information about times.
+   * @see makeTSplitterA() For a variant of this function.
+   */
+  makeTSplitter: makeTSplitter,
+  /**
+   * This is way to split a parametric function into smaller parts.
+   * Typically you'd call this once in the setup part of the script, before defining f().
+   * This will return a function that you will call inside of f().
+   * @param preWeight The amount of time to wait before starting normal operations.
+   * Each bin has a weight of one.
+   * * 0 means to start on the first bin immediately.
+   * * 2.5 means to wait 2½✖️ as long before the first bin as we spend on any one bin.
+   *   During that time the display will be frozen at the start of the first bin.
+   * * -1.25 means to completely skip the first bin and start ¼ of the way into the second bin.
+   * @param binCount How many bins to split the time into.
+   * Each is given an equal amount of time.
+   * @param postWeight The amount of time between the end of the last bin and end of the entire animation.
+   * Each bin has a weight of one.
+   * * 0 means to end the last bin at exactly the end of the entire animation.
+   * * 2.5 means to wait 2½✖️ as long after the last bin as we spend on any one bin.
+   *   During that time the display will be frozen at the end of the last bin.
+   * * -1.25 means to completely skip the last bin and end ¾ of the way into the second to last bin.
+   * @returns A splitter function.
+   * This function will take in a number between 0 and 1 (inclusive) for the time relative to the entire animation.
+   * It will return an object with two properties.
+   * `index` says which bin you are in.
+   * `t` says the time (0 to 1 inclusive) within the current bin.
+   * @see assertValidT() For information about times.
+   * @see makeTSplitter() For a more flexible version of this function.
+   */
+  makeTSplitterA: makeTSplitterA,
+  /**
+   *
+   * @param at0 `lerpPoints(at0, at1, 0)` → at0
+   * @param at1 `lerpPoints(at0, at1, 1)` → at1
+   * @param where t
+   */
+  lerpPoints: lerpPoints,
+  /**
+   * ```
+   * const randomValue = lerp(lowestLegalValue, HighestLegalValue, Math.random())
+   * ```
+   * @param at0 `lerp(at0, at1, 0)` → at0
+   * @param at1 `lerp(at0, at1, 1)` → at1
+   * @param t
+   * @returns
+   */
+  lerp: lerp,
+  /**
+   * Linear interpolation and extrapolation.
+   *
+   * Given two points, this function will find the line that lines on those two points.
+   * And it will return a function that will find all points on that line.
+   * @param x1 One valid input.
+   * @param y1 The expected output at x1.
+   * @param x2 Another valid input.  Must differ from x2.
+   * @param y2 The expected output at x2.
+   * @returns A function of a line.  Give an x as input and it will return the expected y.
+   * ![Inputs and outputs of makeLinear()](https://raw.githubusercontent.com/TradeIdeasPhilip/lib/master/makeLinear.png)
+   */
+  makeLinear: makeLinear,
 };
 
 /**

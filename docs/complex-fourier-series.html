@@ -5,36 +5,30 @@
     <!-- <link rel="icon" type="image/svg+xml" href="/moon.svg" /> -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Complex Fourier Series</title>
-    <script type="module" crossorigin src="./assets/ҩажәа-C_QXR5fg.js"></script>
+    <script type="module" crossorigin src="./assets/ҩажәа-DGNBcxLS.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-wGF4FraP.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-ZHNZ3-cL.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-fljILaqi.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-D9E8BDCl.js">
-    <link rel="stylesheet" crossorigin href="./assets/ҩажәа-D-bsItzW.css">
+    <link rel="modulepreload" crossorigin href="./assets/math-to-path-BjxPr1Cw.js">
+    <link rel="stylesheet" crossorigin href="./assets/ҩажәа-pT1vo5ST.css">
     <link rel="stylesheet" crossorigin href="./assets/style-DQ03UEvS.css">
   </head>
   <body>
     <h1>Function</h1>
     <p>
-      What do you want to graph? Create a parametric function in JavaScript. For
-      each input value <code>t</code>, between 0 and 1, return an object with
-      <code>x</code> and <code>y</code> parameters, both numbers.
+      What do you want to graph? Create a parametric function in JavaScript.
+      Name it <code>f()</code>. For each input value <code>t</code>, between 0
+      and 1, <code>f()</code> returns a point like
+      <code>{ x: 1, y: -0.08333333 }</code>. You can do one time setup before
+      defining <code>f()</code>. See the samples and additional instructions,
+      below.
     </p>
     <div style="display: flex; flex-direction: column">
-      <div>
-        <code>function (t /* A value between 0 and 1, inclusive. */,</code>
-      </div>
-      <div>
-        <code style="margin-left: 10ch">support) {</code>
-      </div>
-      <div>
-        <code style="margin-left: 2ch">"use strict";</code>
-      </div>
       <textarea
         id="source"
         style="
-          margin-left: 1.66667rem;
           min-height: 5lh;
           height: 50vh;
           font-size: inherit;
@@ -42,26 +36,7 @@
         "
         autocorrect="off"
         spellcheck="off"
-      >
-// Lissajous Curves
-// Change this formula and hit the “Go” button to see something different.
-
-const a = 1; // Amplitude in x-direction
-const b = 1; // Amplitude in y-direction
-const freqX = 3; // Frequency in x-direction
-const freqY = 2; // Frequency in y-direction
-const phase = Math.PI / 2; // Phase difference
-const angle = t * 2 * Math.PI;
-const x = a * Math.sin(freqX * angle + phase);
-const y = b * Math.sin(freqY * angle);
-
-// This works well with my approximations.
-// There are only two inflection points and they are both in regions where the path is almost linear.</textarea
-      >
-      <div>
-        <code style="margin-left: 2ch">return { x, y };</code>
-      </div>
-      <div><code>}</code></div>
+      ></textarea>
     </div>
     <button id="go">Go</button>
     <select id="sampleCode">
@@ -140,6 +115,7 @@ const y = b * Math.sin(freqY * angle);
     </table>
 
     <h1>More Information</h1>
+    <p>My take on the classic problem.</p>
     <h2>Complex Fourier Series</h2>
     <p>
       In this context “complex” means 2 dimensional. This page will convert any
@@ -203,11 +179,77 @@ const y = b * Math.sin(freqY * angle);
         motivation and resource for creating this page.
       </li>
     </ul>
-    <h2>Syntax and Other Picky Details</h2>
+    <h2>JavaScript Support</h2>
     <p>
-      For the moment you can look at the help found
-      <a href="./parametric-path.html#syntax">here</a>. These details are in the
-      process of changing.
+      You have access to all of JavaScript. You also have access to a variable
+      called <code>support</code> which provides access to the following:
     </p>
+    <ul>
+      <li>
+        <code>support.input()</code> &mdash; You can call
+        <code>support.input(n)</code> to read a value from one of the sliders on
+        this page. 0 for the first slider, 1 for the second, etc. The value will
+        always come back in the range 0-1. (I’m looking at an improved UI, but
+        this works for now.)
+      </li>
+      <li>
+        <code>support.ease()</code> &mdash; You can say
+        <code>t = support.ease(t)</code> to convert the default linear timing
+        function into a timing function that eases in and out. The derivative of
+        this function is 0 around t=0 and t=1. This function is shaped like half
+        of a sine wave.
+      </li>
+      <li>
+        <code>support.makeTSplitter()</code> &mdash; This is way to split a
+        parametric function into smaller parts. Typically you'd call this once
+        in the setup part of the script, before defining <code>f()</code>. This
+        takes <i>a list of bin sizes as an input</i>. This returns a function
+        that you will call inside of <code>f()</code>.
+        <a
+          href="https://github.com/TradeIdeasPhilip/random-svg-tests/blob/4b3583e48a336d21571e8974ca66e4b926baeb0e/src/utility.ts#L280"
+          >Full documentation</a
+        >.
+      </li>
+      <li>
+        <code>support.makeTSplitterA()</code> &mdash; This is way to split a
+        parametric function into smaller parts. Typically you'd call this once
+        in the setup part of the script, before defining <code>f()</code>. This
+        takes <i>a number of bins as an input</i> and it assumes
+        <i>they are all the same size.</i>
+        This will return a function that you will call inside of
+        <code>f()</code>.
+        <a
+          href="https://github.com/TradeIdeasPhilip/random-svg-tests/blob/4b3583e48a336d21571e8974ca66e4b926baeb0e/src/utility.ts#L321"
+          >Full documentation</a
+        >.
+      </li>
+      <li>
+        <code>support.lerpPoints()</code> &mdash;
+        <code>support.lerpPoints({x: x1, y: y1}, {x: x2, y: y2}, t)</code> will
+        return a point on the line connecting the two input points. If
+        <code>t</code> is 0, <code>lerpPoints()</code> will return its first
+        input. If <code>t</code> is 1, <code>lerpPoints()</code> will return its
+        second input. For all other values of <code>t</code>,
+        <code>lerpPoints()</code> will linearly interpolate to create a new
+        point.
+      </li>
+      <li>
+        <code>support.lerp()</code> &mdash; Linear interpolation.
+        <code>lerp(at0, at1, 0)</code> → <code>at0</code>.
+        <code>lerp(at0, at1, 1)</code> → <code>at1</code>. E.g.
+        <code
+          >const randomValue = lerp(lowestLegalValue, HighestLegalValue,
+          Math.random());</code
+        >.
+      </li>
+      <li>
+        <code>support.makeLinear()</code> &mdash; A more powerful approach to
+        linear interpolation. This function returns another function.
+        <a
+          href="https://tradeideasphilip.github.io/phil-lib/functions/misc.makeLinear.html"
+          >Full documentation</a
+        >.
+      </li>
+    </ul>
   </body>
 </html>

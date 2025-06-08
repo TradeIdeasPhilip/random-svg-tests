@@ -30,6 +30,10 @@ body {
   margin: 0.5em !important;
 }
 
+i {
+   font-weight: 900;
+}
+
 [type="range"] {
   min-width: 5em;
 }

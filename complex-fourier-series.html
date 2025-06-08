@@ -107,6 +107,7 @@
     </table>
 
     <h1>More Information</h1>
+    <p>My take on the classic problem.</p>
     <h2>Complex Fourier Series</h2>
     <p>
       In this context “complex” means 2 dimensional. This page will convert any
@@ -170,11 +171,77 @@
         motivation and resource for creating this page.
       </li>
     </ul>
-    <h2>Syntax and Other Picky Details</h2>
+    <h2>JavaScript Support</h2>
     <p>
-      For the moment you can look at the help found
-      <a href="./parametric-path.html#syntax">here</a>. These details are in the
-      process of changing.
+      You have access to all of JavaScript. You also have access to a variable
+      called <code>support</code> which provides access to the following:
     </p>
+    <ul>
+      <li>
+        <code>support.input()</code> &mdash; You can call
+        <code>support.input(n)</code> to read a value from one of the sliders on
+        this page. 0 for the first slider, 1 for the second, etc. The value will
+        always come back in the range 0-1. (I’m looking at an improved UI, but
+        this works for now.)
+      </li>
+      <li>
+        <code>support.ease()</code> &mdash; You can say
+        <code>t = support.ease(t)</code> to convert the default linear timing
+        function into a timing function that eases in and out. The derivative of
+        this function is 0 around t=0 and t=1. This function is shaped like half
+        of a sine wave.
+      </li>
+      <li>
+        <code>support.makeTSplitter()</code> &mdash; This is way to split a
+        parametric function into smaller parts. Typically you'd call this once
+        in the setup part of the script, before defining <code>f()</code>. This
+        takes <i>a list of bin sizes as an input</i>. This returns a function
+        that you will call inside of <code>f()</code>.
+        <a
+          href="https://github.com/TradeIdeasPhilip/random-svg-tests/blob/4b3583e48a336d21571e8974ca66e4b926baeb0e/src/utility.ts#L280"
+          >Full documentation</a
+        >.
+      </li>
+      <li>
+        <code>support.makeTSplitterA()</code> &mdash; This is way to split a
+        parametric function into smaller parts. Typically you'd call this once
+        in the setup part of the script, before defining <code>f()</code>. This
+        takes <i>a number of bins as an input</i> and it assumes
+        <i>they are all the same size.</i>
+        This will return a function that you will call inside of
+        <code>f()</code>.
+        <a
+          href="https://github.com/TradeIdeasPhilip/random-svg-tests/blob/4b3583e48a336d21571e8974ca66e4b926baeb0e/src/utility.ts#L321"
+          >Full documentation</a
+        >.
+      </li>
+      <li>
+        <code>support.lerpPoints()</code> &mdash;
+        <code>support.lerpPoints({x: x1, y: y1}, {x: x2, y: y2}, t)</code> will
+        return a point on the line connecting the two input points. If
+        <code>t</code> is 0, <code>lerpPoints()</code> will return its first
+        input. If <code>t</code> is 1, <code>lerpPoints()</code> will return its
+        second input. For all other values of <code>t</code>,
+        <code>lerpPoints()</code> will linearly interpolate to create a new
+        point.
+      </li>
+      <li>
+        <code>support.lerp()</code> &mdash; Linear interpolation.
+        <code>lerp(at0, at1, 0)</code> → <code>at0</code>.
+        <code>lerp(at0, at1, 1)</code> → <code>at1</code>. E.g.
+        <code
+          >const randomValue = lerp(lowestLegalValue, HighestLegalValue,
+          Math.random());</code
+        >.
+      </li>
+      <li>
+        <code>support.makeLinear()</code> &mdash; A more powerful approach to
+        linear interpolation. This function returns another function.
+        <a
+          href="https://tradeideasphilip.github.io/phil-lib/functions/misc.makeLinear.html"
+          >Full documentation</a
+        >.
+      </li>
+    </ul>
   </body>
 </html>

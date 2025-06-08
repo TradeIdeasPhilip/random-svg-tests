@@ -65,12 +65,6 @@ function keepNonZeroTerms(terms: readonly FourierTerm[]): FourierTerm[] {
   const result = terms.filter((term) => term.amplitude > cutoff);
   let newSum = 0;
   result.forEach((term) => (newSum += term.amplitude));
-  console.log(
-    `Removed ${terms.length - result.length} of ${terms.length} leaving ${
-      result.length
-    } terms.`
-  );
-  console.log(`Removed ${sum - newSum} of ${sum} leaving ${newSum} amplitude.`);
   return result;
 }
 
@@ -457,16 +451,15 @@ class AnimateRequestedVsReconstructed {
     panAndZoom(this.#requestedPath, this.#svgElement);
     const originalTerms = parametricToFourier(f);
     const nonZeroTerms = keepNonZeroTerms(originalTerms);
-    console.log({ originalTerms, nonZeroTerms });
+    //console.log({ originalTerms, nonZeroTerms });
     (window as any).nonZeroTerms = nonZeroTerms;
     (window as any).originalTerms = originalTerms;
-
     let totalAmplitude = 0;
     nonZeroTerms.forEach((term) => (totalAmplitude += term.amplitude));
     const maxKeyframes = 10;
     let usingAmplitude = 0;
-    const pauseTime = 500;
-    const addTime = 250;
+    const pauseTime = 750;
+    const addTime = 500;
     const script = nonZeroTerms
       .slice(0, maxKeyframes - 1)
       .flatMap((term, index) => {
@@ -496,6 +489,7 @@ class AnimateRequestedVsReconstructed {
           return [adding, pausing];
         }
       });
+    type ScriptEntry = (typeof script)[number];
     {
       const lastRow = script.at(-1)!;
       const missingCircles = nonZeroTerms.length - lastRow.usingCircles;
@@ -541,7 +535,7 @@ class AnimateRequestedVsReconstructed {
       const final = { ...last, startTime, offset: 1 };
       script.push(final);
     }
-    console.log(script);
+    console.log("script", script);
 
     const animationOptions: KeyframeAnimationOptions = {
       duration: script.at(-1)!.endTime * 3,
@@ -611,6 +605,7 @@ class AnimateRequestedVsReconstructed {
       animations.push(
         this.#reconstructedPath.animate(keyframes, animationOptions)
       );
+      console.log("d", keyframes);
     }
 
     {
@@ -628,19 +623,58 @@ class AnimateRequestedVsReconstructed {
          */
         const format = (value: number) =>
           `'${value.toString().padStart(4, FIGURE_SPACE)}'`;
-        const keyframes = values.map(({ offset, circles }): Keyframe => {
-          const content = format(circles);
-          return { offset, content };
+        let previousContent: string | undefined;
+        const keyframes = new Array<Keyframe>();
+        values.forEach(({ offset, circles }): void => {
+          if (previousContent !== undefined) {
+            keyframes.push({ offset, content: previousContent });
+          }
+          const content = (previousContent = format(circles));
+          keyframes.push({ offset, content });
         });
-        console.log(keyframes);
+        console.log("circles text", keyframes);
         animations.push(
           circlesCell.animate(keyframes, {
             pseudoElement: "::after",
             ...animationOptions,
           })
         );
-        amplitudeCell; // TODO add an animation to this.
-        smallEffectOffset; // TODO use this to set the timing of some of the new animations.
+        const opacityKeyframes = values.flatMap(
+          ({ offset, circles }, index, array): Keyframe[] => {
+            function getOpacity(circleCount = circles) {
+              if (circleCount == 0) {
+                return 0.25;
+              } else {
+                return 1;
+              }
+            }
+            if (offset == 0 || offset == 1) {
+              return [{ offset, opacity: getOpacity() }];
+            }
+            const previousCircles = array[index - 1].circles;
+            if (previousCircles == circles) {
+              return [];
+            }
+            return [
+              {
+                offset: offset - smallEffectOffset,
+                opacity: getOpacity(previousCircles),
+              },
+              {
+                offset,
+                opacity: 0,
+              },
+              {
+                offset: offset + smallEffectOffset,
+                opacity: getOpacity(),
+              },
+            ];
+          }
+        );
+        [circlesCell, amplitudeCell].forEach((cell) =>
+          animations.push(cell.animate(opacityKeyframes, animationOptions))
+        );
+        console.log("opacity", opacityKeyframes);
       };
       animateRow(
         this.#usingCircles,
@@ -683,19 +717,32 @@ class AnimateRequestedVsReconstructed {
         }
         return formatter(value);
       };
-      const keyframesUsing = script.map(({ offset, usingAmplitude }) => {
-        const content = format(usingAmplitude);
-        return { offset, content };
-      });
-      const keyframesAdding = script.map(({ offset, addingAmplitude }) => {
-        const content = format(addingAmplitude);
-        return { offset, content };
-      });
-      const keyframesAvailable = script.map(
-        ({ offset, usingAmplitude, addingAmplitude }) => {
-          const content = format(100 - usingAmplitude - addingAmplitude);
-          return { offset, content };
-        }
+      type Result = { offset: number; content: string };
+      function buildKeyframes(
+        extractor: (scriptEntry: ScriptEntry) => number
+      ): Result[] {
+        let previousContent: string | undefined;
+        const result = new Array<Result>();
+        script.forEach((scriptEntry) => {
+          const { offset } = scriptEntry;
+          const amplitude = extractor(scriptEntry);
+          if (previousContent !== undefined) {
+            result.push({ offset, content: previousContent });
+          }
+          const content = (previousContent = format(amplitude));
+          result.push({ offset, content });
+        });
+        return result;
+      }
+      const keyframesUsing = buildKeyframes(
+        (scriptEntry) => scriptEntry.usingAmplitude
+      );
+      const keyframesAdding = buildKeyframes(
+        (scriptEntry) => scriptEntry.addingAmplitude
+      );
+      const keyframesAvailable = buildKeyframes(
+        (scriptEntry) =>
+          100 - scriptEntry.usingAmplitude - scriptEntry.addingAmplitude
       );
       const allKeyframes = [
         ...keyframesUsing,
@@ -752,9 +799,12 @@ class AnimateRequestedVsReconstructed {
           ...animationOptions,
         })
       );
+      console.log("amplitude text", {
+        keyframesUsing,
+        keyframesAdding,
+        keyframesAvailable,
+      });
     }
-
-    //console.log(animations);
   }
   static update(f: ParametricFunction, pathShape: PathShape) {
     this.#instance.update(f, pathShape);

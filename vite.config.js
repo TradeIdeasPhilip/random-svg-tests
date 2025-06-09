@@ -44,6 +44,7 @@ export default defineConfig({
         अठारह: resolve(__dirname, "parabola-tangent-line.html"),
         девятнадцать: resolve(__dirname, "parametric-path.html"),
         ҩажәа: resolve(__dirname, "complex-fourier-series.html"),
+        اکی: resolve(__dirname, "some4.html"),
       },
     },
   },

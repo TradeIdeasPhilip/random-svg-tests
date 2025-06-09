@@ -1,0 +1,40 @@
+body {
+  background-color: blue;
+  padding:0;
+  margin:0;
+  overflow: hidden;
+}
+
+svg {
+  background-color: hotpink;
+  width:100vw;
+  height:100vh;
+}
+
+.original-function {
+  fill: none;
+  stroke: gray;
+  stroke-width: 0.1;
+  stroke-linecap: round;
+}
+
+[data-reconstruction] {
+  fill: none;
+  stroke-linecap: round;
+}
+
+[data-reconstruction="1"] {
+  stroke:red;
+  stroke-width: 0.25;
+}
+
+[data-reconstruction="2"] {
+  stroke:white;
+  stroke-width: 0.2;
+}
+
+[data-reconstruction="3"] {
+  stroke:hwb(204.42deg 0% 0%);
+  stroke-width: 0.15;
+}
+

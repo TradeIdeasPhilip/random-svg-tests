@@ -15,6 +15,18 @@ svg {
   transform: translate(8px, 4.5px) scaleY(-1);
 }
 
+.grid line {
+  fill: none;
+  stroke: #000060;
+  stroke-width: 0.02;
+  stroke-dasharray: 0.03;
+}
+
+.grid line[data-major] {
+  stroke-width: 0.05;
+  stroke-dasharray: none;
+}
+
 #original-function {
   fill: none;
   stroke: gray;

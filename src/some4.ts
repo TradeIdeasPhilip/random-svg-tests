@@ -4,6 +4,8 @@ import { selectorQuery, selectorQueryAll } from "./utility";
 import { ParametricFunction, PathShape } from "./path-shape";
 import { lerp } from "phil-lib/misc";
 
+const FUDGE_FACTOR = 0.0001;
+
 abstract class TaylorBase {
   abstract readonly numberOfTerms: number;
   abstract constant(x0: number, termNumber: number): number;
@@ -16,6 +18,34 @@ abstract class TaylorBase {
     return result;
   }
   abstract f(x: number): number;
+  abstract badPoints: readonly {
+    readonly real: number;
+    readonly imaginary: number;
+  }[];
+  validRanges() {
+    const badXs = this.badPoints
+      .flatMap(({ real, imaginary }) => {
+        if (imaginary == 0) {
+          return [real];
+        } else {
+          return [];
+        }
+      })
+      .sort((a, b) => a - b);
+    badXs.push(Infinity);
+    const result = badXs.map((endX, index, array) => {
+      const startX = array[index - 1] ?? -Infinity;
+      return { from: startX + FUDGE_FACTOR, to: endX - FUDGE_FACTOR };
+    });
+    return result;
+  }
+  radiusOfConvergence(x0: number) {
+    return Math.min(
+      ...this.badPoints.map((badPoint) =>
+        Math.hypot(x0 - badPoint.real, badPoint.imaginary)
+      )
+    );
+  }
 }
 
 class Reciprocal extends TaylorBase {
@@ -33,6 +63,7 @@ class Reciprocal extends TaylorBase {
     return 1 / x;
   }
   static readonly instance = new this();
+  readonly badPoints = [{ real: 0, imaginary: 0 }];
 }
 
 class Sine extends TaylorBase {
@@ -50,6 +81,7 @@ class Sine extends TaylorBase {
     return Math.sin(x);
   }
   static readonly instance = new this();
+  readonly badPoints = [];
 }
 
 /**
@@ -82,6 +114,10 @@ class HiddenPoles extends TaylorBase {
     return 1 / (1 + x * x);
   }
   static readonly instance = new this();
+  readonly badPoints = [
+    { real: 0, imaginary: 1 },
+    { real: 0, imaginary: -1 },
+  ];
 }
 
 /**
@@ -112,6 +148,10 @@ class TaylorElements {
     this.#path.style.d = "";
   }
   draw(f: (x: number) => number, center: number, radius: number) {
+    radius -= FUDGE_FACTOR;
+    if (radius <= 0) {
+      throw new Error("wtf");
+    }
     const fromLimit = -9;
     const toLimit = 9;
     const fromRequested = center - radius;
@@ -148,15 +188,25 @@ class OriginalFunctionElement {
   hide() {
     this.#path.style.d = "";
   }
-  draw(f: (x: number) => number) {
-    const from = -9;
-    const to = 9;
-    const p: ParametricFunction = (t: number) => {
-      const x = lerp(from, to, t);
-      const y = f(x);
-      return { x, y };
-    };
-    const shape = PathShape.parametric(p, 50);
+  draw(functionInfo: TaylorBase) {
+    const fromLimit = -9;
+    const toLimit = 9;
+    const commands = functionInfo.validRanges().flatMap((range) => {
+      const from = Math.max(fromLimit, range.from);
+      const to = Math.min(toLimit, range.to);
+      if (from >= to) {
+        return [];
+      } else {
+        const p: ParametricFunction = (t: number) => {
+          const x = lerp(from, to, t);
+          const y = functionInfo.f(x);
+          return { x, y };
+        };
+        const shape = PathShape.parametric(p, Math.ceil((to - from) * 5));
+        return shape.commands;
+      }
+    });
+    const shape = new PathShape(commands);
     this.#path.style.d = shape.cssPath;
   }
   static readonly instance = new this();
@@ -164,7 +214,14 @@ class OriginalFunctionElement {
 
 console.log({ HiddenPoles, Sine, Reciprocal, TaylorElements });
 
-OriginalFunctionElement.instance.draw(Sine.instance.f);
-TaylorElements.instances.forEach((taylorElements, index) =>
-  taylorElements.draw(Sine.instance.f, index - 1, -3)
-);
+{
+  const f = Reciprocal.instance;
+  OriginalFunctionElement.instance.draw(f);
+  function drawIt(draw: TaylorElements, x0: number) {
+    const radius = f.radiusOfConvergence(x0);
+    draw.draw(f.f, x0, radius);
+  }
+  drawIt(TaylorElements.instances[0], -2);
+  drawIt(TaylorElements.instances[1], 1);
+  drawIt(TaylorElements.instances[2], 2.5);
+}

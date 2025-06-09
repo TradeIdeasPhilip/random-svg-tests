@@ -1,17 +1,21 @@
 body {
   background-color: blue;
-  padding:0;
-  margin:0;
+  padding: 0;
+  margin: 0;
   overflow: hidden;
 }
 
 svg {
   background-color: hotpink;
-  width:100vw;
-  height:100vh;
+  width: 100vw;
+  height: 100vh;
 }
 
-.original-function {
+.chart {
+  transform: translate(8px, 4.5px) scaleY(-1);
+}
+
+#original-function {
   fill: none;
   stroke: gray;
   stroke-width: 0.1;
@@ -24,17 +28,54 @@ svg {
 }
 
 [data-reconstruction="1"] {
-  stroke:red;
+  stroke: red;
   stroke-width: 0.25;
 }
 
 [data-reconstruction="2"] {
-  stroke:white;
-  stroke-width: 0.2;
+  stroke: white;
+  stroke-width: 0.175;
 }
 
 [data-reconstruction="3"] {
-  stroke:hwb(204.42deg 0% 0%);
-  stroke-width: 0.15;
+  stroke: hwb(204.42deg 0% 0%);
+  stroke-width: 0.1;
 }
 
+[data-open-end] {
+  r: 0.2;
+  stroke-width: 0.03;
+  fill: black;
+}
+
+[data-open-end="1"] {
+  stroke: red;
+}
+
+[data-open-end="2"] {
+  stroke: white;
+}
+
+[data-open-end="3"] {
+  stroke: hwb(204.42deg 0% 0%);
+}
+
+[data-center] {
+  r: 0.2;
+  stroke-width: 0.03;
+}
+
+[data-center="1"] {
+  fill: red;
+  stroke: red;
+}
+
+[data-center="2"] {
+  fill: white;
+  stroke: white;
+}
+
+[data-center="3"] {
+  fill: hwb(204.42deg 0% 0%);
+  stroke: hwb(204.42deg 0% 0%);
+}

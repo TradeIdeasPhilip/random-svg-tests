@@ -1,4 +1,8 @@
+import { getById } from "phil-lib/client-misc";
 import "./some4.css";
+import { selectorQuery, selectorQueryAll } from "./utility";
+import { ParametricFunction, PathShape } from "./path-shape";
+import { lerp } from "phil-lib/misc";
 
 abstract class TaylorBase {
   abstract readonly numberOfTerms: number;
@@ -11,6 +15,7 @@ abstract class TaylorBase {
     }
     return result;
   }
+  abstract f(x: number): number;
 }
 
 class Reciprocal extends TaylorBase {
@@ -19,8 +24,15 @@ class Reciprocal extends TaylorBase {
     if (x0 === 0) {
       throw new Error("Reciprocal is undefined at x0 = 0");
     }
-    return ((-1) ** termNumber) / (x0 ** (termNumber + 1));
+    return (-1) ** termNumber / x0 ** (termNumber + 1);
   }
+  override f(x: number) {
+    if (x === 0) {
+      throw new Error("Reciprocal is undefined at x = 0");
+    }
+    return 1 / x;
+  }
+  static readonly instance = new this();
 }
 
 class Sine extends TaylorBase {
@@ -34,6 +46,10 @@ class Sine extends TaylorBase {
     }
     return Math.sin(angle) / factorial;
   }
+  override f(x: number) {
+    return Math.sin(x);
+  }
+  static readonly instance = new this();
 }
 
 /**
@@ -47,19 +63,108 @@ class HiddenPoles extends TaylorBase {
       case 0:
         return 1 / denom;
       case 1:
-        return (-2 * x0) / (denom ** 2);
+        return (-2 * x0) / denom ** 2;
       case 2:
-        return (3 * x0 * x0 - 1) / (denom ** 3);
+        return (3 * x0 * x0 - 1) / denom ** 3;
       case 3:
-        return (2 * x0 * (3 - 5 * x0 * x0)) / (denom ** 4);
+        return (2 * x0 * (3 - 5 * x0 * x0)) / denom ** 4;
       case 4:
         return (25 * x0 ** 4 - 38 * x0 * x0 + 3) / (2 * denom ** 5);
       case 5:
-        return (x0 * (2842 * x0 * x0 - 1450 * x0 ** 4 - 636)) / (5 * denom ** 6);
+        return (
+          (x0 * (2842 * x0 * x0 - 1450 * x0 ** 4 - 636)) / (5 * denom ** 6)
+        );
       default:
         throw new Error(`Term ${termNumber} not implemented.`);
     }
   }
+  override f(x: number) {
+    return 1 / (1 + x * x);
+  }
+  static readonly instance = new this();
 }
 
-console.log({HiddenPoles,Sine, Reciprocal})
+/**
+ * The graphic components for displaying one single Taylor expansion.
+ */
+class TaylorElements {
+  readonly #openStart: SVGCircleElement;
+  readonly #openEnd: SVGCircleElement;
+  readonly #center: SVGCircleElement;
+  readonly #path: SVGPathElement;
+  constructor(which: string) {
+    [this.#openStart, this.#openEnd] = selectorQueryAll(
+      `[data-open-end="${which}"]`,
+      SVGCircleElement,
+      2,
+      2
+    );
+    this.#center = selectorQuery(`[data-center="${which}"]`, SVGCircleElement);
+    this.#path = selectorQuery(
+      `[data-reconstruction="${which}"]`,
+      SVGPathElement
+    );
+  }
+  hide() {
+    this.#openStart.style.display = "none";
+    this.#openEnd.style.display = "none";
+    this.#center.style.display = "none";
+    this.#path.style.d = "";
+  }
+  draw(f: (x: number) => number, center: number, radius: number) {
+    const fromLimit = -9;
+    const toLimit = 9;
+    const fromRequested = center - radius;
+    const toRequested = center + radius;
+    const from = Math.max(fromLimit, fromRequested);
+    const to = Math.min(toLimit, toRequested);
+    const p: ParametricFunction = (t: number) => {
+      const x = lerp(from, to, t);
+      const y = f(x);
+      return { x, y };
+    };
+    const shape = PathShape.parametric(p, 50);
+    this.#path.style.d = shape.cssPath;
+    this.#center.style.display = "";
+    this.#center.cx.baseVal.value = center;
+    this.#center.cy.baseVal.value = f(center);
+    if (isFinite(radius)) {
+      this.#openStart.style.display = "";
+      this.#openEnd.style.display = "";
+      this.#openStart.cx.baseVal.value = fromRequested;
+      this.#openStart.cy.baseVal.value = f(fromRequested);
+      this.#openEnd.cx.baseVal.value = toRequested;
+      this.#openEnd.cy.baseVal.value = f(toRequested);
+    } else {
+      this.#openStart.style.display = "none";
+      this.#openEnd.style.display = "none";
+    }
+  }
+  static readonly instances = [new this("1"), new this("2"), new this("3")];
+}
+
+class OriginalFunctionElement {
+  readonly #path = getById("original-function", SVGPathElement);
+  hide() {
+    this.#path.style.d = "";
+  }
+  draw(f: (x: number) => number) {
+    const from = -9;
+    const to = 9;
+    const p: ParametricFunction = (t: number) => {
+      const x = lerp(from, to, t);
+      const y = f(x);
+      return { x, y };
+    };
+    const shape = PathShape.parametric(p, 50);
+    this.#path.style.d = shape.cssPath;
+  }
+  static readonly instance = new this();
+}
+
+console.log({ HiddenPoles, Sine, Reciprocal, TaylorElements });
+
+OriginalFunctionElement.instance.draw(Sine.instance.f);
+TaylorElements.instances.forEach((taylorElements, index) =>
+  taylorElements.draw(Sine.instance.f, index - 1, -3)
+);

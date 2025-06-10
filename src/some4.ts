@@ -1,6 +1,6 @@
 import { getById } from "phil-lib/client-misc";
 import "./some4.css";
-import { selectorQuery, selectorQueryAll } from "./utility";
+import { selectorQuery } from "./utility";
 import { ParametricFunction, PathShape } from "./path-shape";
 import { initializedArray, lerp } from "phil-lib/misc";
 
@@ -195,31 +195,15 @@ class HiddenPoles extends TaylorBase {
   ];
 }
 
+const variableBase = document.documentElement.style;
+
 /**
  * The graphic components for displaying one single Taylor expansion.
  */
 class TaylorElements {
-  readonly #openStart: SVGCircleElement[] = [];
-  readonly #openEnd: SVGCircleElement[] = [];
   readonly #center: SVGCircleElement;
   readonly #path: SVGPathElement;
-  constructor(which: string) {
-    const [mainOpenStart, mainOpenEnd] = selectorQueryAll(
-      `[data-open-end="${which}"]`,
-      SVGCircleElement,
-      2,
-      2
-    );
-    this.#openStart.push(mainOpenStart);
-    this.#openEnd.push(mainOpenEnd);
-    const [maskOpenStart, maskOpenEnd] = selectorQueryAll(
-      `#mask${which} circle`,
-      SVGCircleElement,
-      2,
-      2
-    );
-    this.#openStart.push(maskOpenStart);
-    this.#openEnd.push(maskOpenEnd);
+  constructor(readonly which: string) {
     this.#center = selectorQuery(`[data-center="${which}"]`, SVGCircleElement);
     this.#path = selectorQuery(
       `[data-reconstruction="${which}"]`,
@@ -227,8 +211,7 @@ class TaylorElements {
     );
   }
   hide() {
-    this.#openStart.forEach((element) => (element.style.display = "none"));
-    this.#openEnd.forEach((element) => (element.style.display = "none"));
+    variableBase.setProperty(`--example${this.which}-open-end-display`, "none");
     this.#center.style.display = "none";
     this.#path.style.d = "";
   }
@@ -269,21 +252,28 @@ class TaylorElements {
     this.#center.cx.baseVal.value = center;
     this.#center.cy.baseVal.value = f(center);
     if (isFinite(radius)) {
-      const startY = f(fromRequested);
-      this.#openStart.forEach((element) => {
-        element.style.display = "";
-        element.cx.baseVal.value = fromRequested;
-        element.cy.baseVal.value = startY;
-      });
-      const endY = f(toRequested);
-      this.#openEnd.forEach((element) => {
-        element.style.display = "";
-        element.cx.baseVal.value = toRequested;
-        element.cy.baseVal.value = endY;
-      });
+      variableBase.setProperty(
+        `--example${this.which}-from-x`,
+        fromRequested.toString()
+      );
+      variableBase.setProperty(
+        `--example${this.which}-from-y`,
+        f(fromRequested).toString()
+      );
+      variableBase.setProperty(
+        `--example${this.which}-to-x`,
+        toRequested.toString()
+      );
+      variableBase.setProperty(
+        `--example${this.which}-to-y`,
+        f(toRequested).toString()
+      );
+      variableBase.setProperty(`--example${this.which}-open-end-display`, "");
     } else {
-      this.#openStart.forEach((element) => (element.style.display = "none"));
-      this.#openEnd.forEach((element) => (element.style.display = "none"));
+      variableBase.setProperty(
+        `--example${this.which}-open-end-display`,
+        "none"
+      );
     }
   }
   /**
@@ -371,7 +361,7 @@ console.log({ HiddenPoles, Sine, Reciprocal, TaylorElements });
   /**
    * Debug stuff.  Change the value of f here to plot a different functions.
    */
-  const f = Reciprocal.instance;
+  const f = HiddenPoles.instance;
   OriginalFunctionElement.instance.draw(f);
   function drawIt(draw: TaylorElements, x0: number) {
     const radius = f.radiusOfConvergence(x0);

@@ -22,8 +22,22 @@
           height="9"
         >
           <rect x="-8" y="-4.5" width="16" height="9" fill="white" />
-          <circle class="end-point-mask"></circle>
-          <circle class="end-point-mask"></circle>
+          <circle
+            class="end-point-mask"
+            style="
+              cx: var(--example1-from-x);
+              cy: var(--example1-from-y);
+              display: var(--example1-open-end-display);
+            "
+          ></circle>
+          <circle
+            class="end-point-mask"
+            style="
+              cx: var(--example1-to-x);
+              cy: var(--example1-to-y);
+              display: var(--example1-open-end-display);
+            "
+          ></circle>
         </mask>
         <mask
           id="mask2"
@@ -34,8 +48,22 @@
           height="9"
         >
           <rect x="-8" y="-4.5" width="16" height="9" fill="white" />
-          <circle class="end-point-mask"></circle>
-          <circle class="end-point-mask"></circle>
+          <circle
+            class="end-point-mask"
+            style="
+              cx: var(--example2-from-x);
+              cy: var(--example2-from-y);
+              display: var(--example2-open-end-display);
+            "
+          ></circle>
+          <circle
+            class="end-point-mask"
+            style="
+              cx: var(--example2-to-x);
+              cy: var(--example2-to-y);
+              display: var(--example2-open-end-display);
+            "
+          ></circle>
         </mask>
         <mask
           id="mask3"
@@ -46,8 +74,22 @@
           height="9"
         >
           <rect x="-8" y="-4.5" width="16" height="9" fill="white" />
-          <circle class="end-point-mask"></circle>
-          <circle class="end-point-mask"></circle>
+          <circle
+            class="end-point-mask"
+            style="
+              cx: var(--example3-from-x);
+              cy: var(--example3-from-y);
+              display: var(--example3-open-end-display);
+            "
+          ></circle>
+          <circle
+            class="end-point-mask"
+            style="
+              cx: var(--example3-to-x);
+              cy: var(--example3-to-y);
+              display: var(--example3-open-end-display);
+            "
+          ></circle>
         </mask>
       </defs>
       <rect id="background" width="16" height="9"></rect>
@@ -83,16 +125,64 @@
           data-reconstruction="1"
           style="d: path('M2,5 L14,4'); mask-image: url(#mask1)"
         ></path>
-        <circle data-open-end="1" cx="2" cy="5"></circle>
-        <circle data-open-end="1" cx="2" cy="5"></circle>
+        <circle
+          data-open-end="1"
+          style="
+            cx: var(--example1-from-x);
+            cy: var(--example1-from-y);
+            display: var(--example1-open-end-display);
+          "
+        ></circle>
+        <circle
+          data-open-end="1"
+          style="
+            cx: var(--example1-to-x);
+            cy: var(--example1-to-y);
+            display: var(--example1-open-end-display);
+          "
+        ></circle>
         <circle data-center="1" cx="14" cy="4"></circle>
-        <path data-reconstruction="2" style="d: path('M3,5 L13,4'); mask-image: url(#mask2)"></path>
-        <circle data-open-end="2" cx="3" cy="5"></circle>
-        <circle data-open-end="2" cx="3" cy="5"></circle>
+        <path
+          data-reconstruction="2"
+          style="d: path('M3,5 L13,4'); mask-image: url(#mask2)"
+        ></path>
+        <circle
+          data-open-end="2"
+          style="
+            cx: var(--example2-from-x);
+            cy: var(--example2-from-y);
+            display: var(--example2-open-end-display);
+          "
+        ></circle>
+        <circle
+          data-open-end="2"
+          style="
+            cx: var(--example2-to-x);
+            cy: var(--example2-to-y);
+            display: var(--example2-open-end-display);
+          "
+        ></circle>
         <circle data-center="2" cx="13" cy="4"></circle>
-        <path data-reconstruction="3" style="d: path('M4,5 L12,4'); mask-image: url(#mask3)"></path>
-        <circle data-open-end="3" cx="4" cy="5"></circle>
-        <circle data-open-end="3" cx="4" cy="5"></circle>
+        <path
+          data-reconstruction="3"
+          style="d: path('M4,5 L12,4'); mask-image: url(#mask3)"
+        ></path>
+        <circle
+          data-open-end="3"
+          style="
+            cx: var(--example3-from-x);
+            cy: var(--example3-from-y);
+            display: var(--example3-open-end-display);
+          "
+        ></circle>
+        <circle
+          data-open-end="3"
+          style="
+            cx: var(--example3-to-x);
+            cy: var(--example3-to-y);
+            display: var(--example3-open-end-display);
+          "
+        ></circle>
         <circle data-center="3" cx="12" cy="4"></circle>
       </g>
     </svg>

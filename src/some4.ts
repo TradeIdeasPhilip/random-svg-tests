@@ -6,6 +6,18 @@ import { initializedArray, lerp } from "phil-lib/misc";
 
 const FUDGE_FACTOR = 0.0001;
 
+/**
+ * 
+ * @param t A value between 0 and 1.
+ * @returns A value between 0 and 1.
+ */
+function ease (t:number) : number {
+  const angle = t * Math.PI;
+  const cosine = Math.cos(angle);
+  const result = (1 - cosine)/2;
+  return result;
+}
+
 abstract class TaylorBase {
   abstract readonly numberOfTerms: number;
   abstract constant(x0: number, termNumber: number): number;
@@ -116,7 +128,7 @@ class Sine extends TaylorBase {
  * 1 / (1 + x*x)
  */
 class HiddenPoles extends TaylorBase {
-  readonly numberOfTerms = 6;
+  readonly numberOfTerms = 12;
   override constant(x0: number, termNumber: number): number {
     const denom = 1 + x0 * x0;
     switch (termNumber) {
@@ -133,6 +145,53 @@ class HiddenPoles extends TaylorBase {
       case 5:
         return (
           (x0 * (2842 * x0 * x0 - 1450 * x0 ** 4 - 636)) / (5 * denom ** 6)
+        );
+      case 6:
+        return (
+          (-7700 * x0 ** 6 + 20316 * x0 ** 4 - 9120 * x0 * x0 + 216) /
+          (12 * denom ** 7)
+        );
+      case 7:
+        return (
+          (x0 * (29718 * x0 ** 4 - 46410 * x0 * x0 + 10869)) / (3 * denom ** 8)
+        );
+      case 8:
+        return (
+          (159600 * x0 ** 8 -
+            498960 * x0 ** 6 +
+            424116 * x0 ** 4 -
+            90456 * x0 * x0 +
+            2268) /
+          (48 * denom ** 9)
+        );
+      case 9:
+        return (
+          (x0 *
+            (-672452 * x0 ** 6 +
+              1660530 * x0 ** 4 -
+              987318 * x0 * x0 +
+              117693)) /
+          (30 * denom ** 10)
+        );
+      case 10:
+        return (
+          (8044400 * x0 ** 10 -
+            30524376 * x0 ** 8 +
+            35128260 * x0 ** 6 -
+            13524948 * x0 ** 4 +
+            1475730 * x0 * x0 -
+            18360) /
+          (720 * denom ** 11)
+        );
+      case 11:
+        return (
+          (x0 *
+            (29887350 * x0 ** 8 -
+              96204090 * x0 ** 6 +
+              87415950 * x0 ** 4 -
+              22994430 * x0 * x0 +
+              1596795)) /
+          (180 * denom ** 12)
         );
       default:
         throw new Error(`Term ${termNumber} not implemented.`);
@@ -202,6 +261,9 @@ class TaylorElements {
     const from = Math.max(fromLimit, fromRequested);
     const to = Math.min(toLimit, toRequested);
     const p: ParametricFunction = (t: number) => {
+      if (isFinite(radius)) {
+        t = ease(t);
+      }
       const x = lerp(from, to, t);
       const y = f(x);
       return { x, y };
@@ -244,6 +306,9 @@ class TaylorElements {
       functionInfo.partialSum(x0, numberOfTerms)
     );
     const result = (termsToShow: number) => {
+      if (termsToShow > functions.length - 1) {
+        throw new Error(`Requested: ${termsToShow}, Available [0 - ${functions.length - 1}]`);
+      }
       if (Number.isInteger(termsToShow)) {
         this.draw(functions[termsToShow], x0, radius);
       } else {
@@ -326,5 +391,7 @@ console.log({ HiddenPoles, Sine, Reciprocal, TaylorElements });
   );
   console.log(fff);
   (window as any).fff = fff;
-  fff(HiddenPoles.instance.numberOfTerms - 1);
+  // In the Reciprocal example, every x.5 looks really good.
+  // But that trick doesn't work with HiddenPoles.  😞
+  fff(HiddenPoles.instance.numberOfTerms - 1.5);
 }

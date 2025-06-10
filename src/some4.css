@@ -72,6 +72,11 @@ svg {
   stroke: hwb(204.42deg 0% 0%);
 }
 
+.ideal {
+  stroke-dasharray: 0 0.069;
+  stroke-linecap: round;
+}
+
 .end-point-mask {
   r: 0.2;
 }

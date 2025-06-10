@@ -225,7 +225,8 @@ class TaylorElements {
     f2: (x: number) => number,
     t: number,
     center: number,
-    radius: number
+    radius: number,
+    idealF: (x: number) => number
   ) {
     function f(x: number): number {
       const y1 = f1(x);
@@ -233,9 +234,14 @@ class TaylorElements {
       const y = y1 * (1 - t) + y2 * t;
       return y;
     }
-    this.draw(f, center, radius);
+    this.draw(f, center, radius, idealF);
   }
-  draw(f: (x: number) => number, center: number, radius: number) {
+  draw(
+    f: (x: number) => number,
+    center: number,
+    radius: number,
+    idealF: (x: number) => number
+  ) {
     radius -= FUDGE_FACTOR;
     if (radius <= 0) {
       throw new Error("wtf");
@@ -266,12 +272,20 @@ class TaylorElements {
         f(fromRequested).toString()
       );
       variableBase.setProperty(
+        `--example${this.which}-from-y-ideal`,
+        idealF(fromRequested).toString()
+      );
+      variableBase.setProperty(
         `--example${this.which}-to-x`,
         toRequested.toString()
       );
       variableBase.setProperty(
         `--example${this.which}-to-y`,
         f(toRequested).toString()
+      );
+      variableBase.setProperty(
+        `--example${this.which}-to-y-ideal`,
+        idealF(toRequested).toString()
       );
       variableBase.setProperty(`--example${this.which}-open-end-display`, "");
     } else {
@@ -308,7 +322,7 @@ class TaylorElements {
         );
       }
       if (Number.isInteger(termsToShow)) {
-        this.draw(functions[termsToShow], x0, radius);
+        this.draw(functions[termsToShow], x0, radius, functionInfo.f);
       } else {
         const f1 = functions[Math.floor(termsToShow)];
         const f2 = functions[Math.ceil(termsToShow)];
@@ -319,7 +333,7 @@ class TaylorElements {
           const y = y1 * (1 - t) + y2 * t;
           return y;
         }
-        this.draw(f, x0, radius);
+        this.draw(f, x0, radius, functionInfo.f);
       }
     };
     return result;
@@ -327,12 +341,12 @@ class TaylorElements {
   drawAll(functionInfo: TaylorBase, x0: number, termsToShow: number): void {
     const radius = functionInfo.radiusOfConvergence(x0);
     if (Number.isInteger(termsToShow)) {
-      this.draw(functionInfo.partialSum(x0, termsToShow), x0, radius);
+      this.draw(functionInfo.partialSum(x0, termsToShow), x0, radius, functionInfo.f);
     } else {
       const f1 = functionInfo.partialSum(x0, Math.floor(termsToShow));
       const f2 = functionInfo.partialSum(x0, Math.ceil(termsToShow));
       const t = termsToShow % 1;
-      this.draw2(f1, f2, t, x0, radius);
+      this.draw2(f1, f2, t, x0, radius, functionInfo.f);
     }
   }
   static readonly instances = [new this("1"), new this("2"), new this("3")];
@@ -369,36 +383,6 @@ class OriginalFunctionElement {
 
 console.log({ HiddenPoles, Sine, Reciprocal, TaylorElements });
 
-{
-  /**
-   * Debug stuff.  Change the value of f here to plot a different functions.
-   */
-  const f = HiddenPoles.instance;
-  OriginalFunctionElement.instance.draw(f);
-  function drawIt(draw: TaylorElements, x0: number) {
-    const radius = f.radiusOfConvergence(x0);
-    draw.draw(f.f, x0, radius);
-  }
-  drawIt(TaylorElements.instances[0], -2);
-  drawIt(TaylorElements.instances[1], 1);
-  drawIt(TaylorElements.instances[2], 2.5);
-
-  /**
-   * This is available as a global variable.
-   *
-   * `fff(2);` will redraw all three curves using 2 terms of the taylor expansion.
-   * If the input is not an integer, then `fff` will linearly interpolate between the closest two integer values.
-   */
-  const fff = TaylorElements.instances[0].precompute(
-    f,
-    -2,
-    Math.min(30, f.numberOfTerms)
-  );
-  console.log(fff);
-  (window as any).fff = fff;
-  fff(4);
-}
-
 /**
  * This function shows off all of the functionality on this page!
  * @param sampleIndex Which function to display.  An integer.
@@ -425,3 +409,4 @@ function debugDraw(
   });
 }
 (window as any).debugDraw = debugDraw;
+debugDraw(0, 5, -2, 0, 1.5);

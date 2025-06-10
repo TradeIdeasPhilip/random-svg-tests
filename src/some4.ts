@@ -1,8 +1,8 @@
 import { getById } from "phil-lib/client-misc";
 import "./some4.css";
-import { selectorQuery } from "./utility";
+import { selectorQuery, selectorQueryAll } from "./utility";
 import { ParametricFunction, PathShape } from "./path-shape";
-import { initializedArray, lerp } from "phil-lib/misc";
+import { initializedArray, lerp, parseIntX } from "phil-lib/misc";
 
 const FUDGE_FACTOR = 0.0001;
 
@@ -341,7 +341,12 @@ class TaylorElements {
   drawAll(functionInfo: TaylorBase, x0: number, termsToShow: number): void {
     const radius = functionInfo.radiusOfConvergence(x0);
     if (Number.isInteger(termsToShow)) {
-      this.draw(functionInfo.partialSum(x0, termsToShow), x0, radius, functionInfo.f);
+      this.draw(
+        functionInfo.partialSum(x0, termsToShow),
+        x0,
+        radius,
+        functionInfo.f
+      );
     } else {
       const f1 = functionInfo.partialSum(x0, Math.floor(termsToShow));
       const f2 = functionInfo.partialSum(x0, Math.ceil(termsToShow));
@@ -383,6 +388,96 @@ class OriginalFunctionElement {
 
 console.log({ HiddenPoles, Sine, Reciprocal, TaylorElements });
 
+{
+  const functionSelectElement = selectorQuery(
+    "#manual-controls select",
+    HTMLSelectElement
+  );
+  const numberOfTermsInputElement = selectorQuery(
+    "#manual-controls > input",
+    HTMLInputElement
+  );
+  const [fewerTermsButton, moreTermsButton] = selectorQueryAll(
+    "[data-term-stepper] button",
+    HTMLButtonElement,
+    2,
+    2
+  );
+  const numberOfTermsSpan = selectorQuery(
+    "[data-term-stepper] span",
+    HTMLSpanElement
+  );
+  const x0Elements = selectorQueryAll(
+    "#manual-controls > div[data-x0]",
+    HTMLDivElement,
+    3,
+    3
+  ).map((parent) => {
+    const [use, value] = selectorQueryAll(
+      "input",
+      HTMLInputElement,
+      2,
+      2,
+      parent
+    );
+    use.addEventListener("input", drawItSoon);
+    value.addEventListener("input", () => {
+      use.checked = true;
+      drawItSoon();
+    });
+    return { use, value };
+  });
+  function drawItSoon() {
+    drawItNow();
+  }
+  function drawItNow() {
+    const x0s = x0Elements.map(({ use, value }) => {
+      if (use.checked) {
+        return value.valueAsNumber;
+      } else {
+        return undefined;
+      }
+    });
+    debugDraw(
+      parseIntX(functionSelectElement.value)!,
+      numberOfTermsInputElement.valueAsNumber,
+      ...x0s
+    );
+  }
+  functionSelectElement.addEventListener("input", drawItNow);
+  let fewerTerms = NaN;
+  let moreTerms = NaN;
+  function numberOfTermsChanged() {
+    const currentValue = numberOfTermsInputElement.valueAsNumber;
+    if (Number.isInteger(currentValue)) {
+      fewerTerms = Math.max(0, currentValue - 1);
+      moreTerms = Math.min(12, currentValue + 1);
+    } else {
+      fewerTerms = Math.floor(currentValue);
+      moreTerms = Math.ceil(currentValue);
+    }
+    numberOfTermsSpan.innerText = currentValue.toFixed(3);
+    fewerTermsButton.innerText = fewerTerms.toString();
+    moreTermsButton.innerText = moreTerms.toString();
+  }
+  numberOfTermsInputElement.addEventListener("input", () => {
+    numberOfTermsChanged();
+    drawItSoon();
+  });
+  fewerTermsButton.addEventListener("click", () => {
+    numberOfTermsInputElement.value = fewerTerms.toString();
+    numberOfTermsChanged();
+    drawItSoon();
+  });
+  moreTermsButton.addEventListener("click", () => {
+    numberOfTermsInputElement.value = moreTerms.toString();
+    numberOfTermsChanged();
+    drawItSoon();
+  });
+  numberOfTermsChanged();
+  drawItSoon();
+}
+
 /**
  * This function shows off all of the functionality on this page!
  * @param sampleIndex Which function to display.  An integer.
@@ -409,4 +504,3 @@ function debugDraw(
   });
 }
 (window as any).debugDraw = debugDraw;
-debugDraw(0, 5, -2, 0, 1.5);

@@ -30,6 +30,11 @@ abstract class TaylorBase {
     readonly real: number;
     readonly imaginary: number;
   }[];
+  invalid(x: number) {
+    return this.badPoints.some(
+      ({ real, imaginary }) => x == real && imaginary == 0
+    );
+  }
   validRanges() {
     const badXs = this.badPoints
       .flatMap(({ real, imaginary }) => {
@@ -320,8 +325,15 @@ class TaylorElements {
     return result;
   }
   drawAll(functionInfo: TaylorBase, x0: number, termsToShow: number): void {
-    // TODO
-    [functionInfo, x0, termsToShow];
+    const radius = functionInfo.radiusOfConvergence(x0);
+    if (Number.isInteger(termsToShow)) {
+      this.draw(functionInfo.partialSum(x0, termsToShow), x0, radius);
+    } else {
+      const f1 = functionInfo.partialSum(x0, Math.floor(termsToShow));
+      const f2 = functionInfo.partialSum(x0, Math.ceil(termsToShow));
+      const t = termsToShow % 1;
+      this.draw2(f1, f2, t, x0, radius);
+    }
   }
   static readonly instances = [new this("1"), new this("2"), new this("3")];
 }
@@ -384,7 +396,32 @@ console.log({ HiddenPoles, Sine, Reciprocal, TaylorElements });
   );
   console.log(fff);
   (window as any).fff = fff;
-  // In the Reciprocal example, every x.5 looks really good.
-  // But that trick doesn't work with HiddenPoles.  😞
   fff(4);
 }
+
+/**
+ * This function shows off all of the functionality on this page!
+ * @param sampleIndex Which function to display.  An integer.
+ * @param termsToShow How many terms to show.  Not limited to an integer.
+ * @param x0s The center for each of the Taylor series.  `undefined` or an invalid value (e.g. leads to division by 0) means to hide the series.
+ */
+function debugDraw(
+  sampleIndex: number,
+  termsToShow: number,
+  ...x0s: (number | undefined)[]
+) {
+  const samples = [Sine.instance, Reciprocal.instance, HiddenPoles.instance];
+  const functionInfo = samples[sampleIndex % samples.length];
+  OriginalFunctionElement.instance.draw(functionInfo);
+  TaylorElements.instances.forEach((display, index) => {
+    const x0 = x0s[index];
+    if (x0 === undefined) {
+      display.hide();
+    } else if (functionInfo.invalid(x0)) {
+      display.hide();
+    } else {
+      display.drawAll(functionInfo, x0, termsToShow);
+    }
+  });
+}
+(window as any).debugDraw = debugDraw;

@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>#SoME4</title>
-    <script type="module" crossorigin src="./assets/اکی-F2Rxw3ch.js"></script>
+    <script type="module" crossorigin src="./assets/اکی-wDvTKqli.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-wGF4FraP.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-ZHNZ3-cL.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-D9E8BDCl.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-fljILaqi.js">
-    <link rel="stylesheet" crossorigin href="./assets/اکی-C2CsCOU9.css">
+    <link rel="stylesheet" crossorigin href="./assets/اکی-D4lcwIZ9.css">
   </head>
   <body>
     <svg
@@ -18,6 +18,44 @@
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMidYMid meet"
     >
+      <defs>
+        <mask
+          id="mask1"
+          maskUnits="userSpaceOnUse"
+          x="-8"
+          y="-4.5"
+          width="16"
+          height="9"
+        >
+          <rect x="-8" y="-4.5" width="16" height="9" fill="white" />
+          <circle class="end-point-mask"></circle>
+          <circle class="end-point-mask"></circle>
+        </mask>
+        <mask
+          id="mask2"
+          maskUnits="userSpaceOnUse"
+          x="-8"
+          y="-4.5"
+          width="16"
+          height="9"
+        >
+          <rect x="-8" y="-4.5" width="16" height="9" fill="white" />
+          <circle class="end-point-mask"></circle>
+          <circle class="end-point-mask"></circle>
+        </mask>
+        <mask
+          id="mask3"
+          maskUnits="userSpaceOnUse"
+          x="-8"
+          y="-4.5"
+          width="16"
+          height="9"
+        >
+          <rect x="-8" y="-4.5" width="16" height="9" fill="white" />
+          <circle class="end-point-mask"></circle>
+          <circle class="end-point-mask"></circle>
+        </mask>
+      </defs>
       <rect id="background" width="16" height="9"></rect>
       <g class="chart">
         <g class="grid">
@@ -44,17 +82,21 @@
           <line x1="4" y1="-5" x2="4" y2="5"></line>
           <line x1="5" y1="-5" x2="5" y2="5"></line>
           <line x1="6" y1="-5" x2="6" y2="5"></line>
+          <line x1="7" y1="-5" x2="7" y2="5"></line>
         </g>
         <path id="original-function" style="d: path('M1,5 L15,4')"></path>
-        <path data-reconstruction="1" style="d: path('M2,5 L14,4')"></path>
+        <path
+          data-reconstruction="1"
+          style="d: path('M2,5 L14,4'); mask-image: url(#mask1)"
+        ></path>
         <circle data-open-end="1" cx="2" cy="5"></circle>
         <circle data-open-end="1" cx="2" cy="5"></circle>
         <circle data-center="1" cx="14" cy="4"></circle>
-        <path data-reconstruction="2" style="d: path('M3,5 L13,4')"></path>
+        <path data-reconstruction="2" style="d: path('M3,5 L13,4'); mask-image: url(#mask2)"></path>
         <circle data-open-end="2" cx="3" cy="5"></circle>
         <circle data-open-end="2" cx="3" cy="5"></circle>
         <circle data-center="2" cx="13" cy="4"></circle>
-        <path data-reconstruction="3" style="d: path('M4,5 L12,4')"></path>
+        <path data-reconstruction="3" style="d: path('M4,5 L12,4'); mask-image: url(#mask3)"></path>
         <circle data-open-end="3" cx="4" cy="5"></circle>
         <circle data-open-end="3" cx="4" cy="5"></circle>
         <circle data-center="3" cx="12" cy="4"></circle>

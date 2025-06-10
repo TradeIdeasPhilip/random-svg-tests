@@ -6,18 +6,6 @@ import { initializedArray, lerp } from "phil-lib/misc";
 
 const FUDGE_FACTOR = 0.0001;
 
-/**
- * 
- * @param t A value between 0 and 1.
- * @returns A value between 0 and 1.
- */
-function ease (t:number) : number {
-  const angle = t * Math.PI;
-  const cosine = Math.cos(angle);
-  const result = (1 - cosine)/2;
-  return result;
-}
-
 abstract class TaylorBase {
   abstract readonly numberOfTerms: number;
   abstract constant(x0: number, termNumber: number): number;
@@ -211,17 +199,27 @@ class HiddenPoles extends TaylorBase {
  * The graphic components for displaying one single Taylor expansion.
  */
 class TaylorElements {
-  readonly #openStart: SVGCircleElement;
-  readonly #openEnd: SVGCircleElement;
+  readonly #openStart: SVGCircleElement[] = [];
+  readonly #openEnd: SVGCircleElement[] = [];
   readonly #center: SVGCircleElement;
   readonly #path: SVGPathElement;
   constructor(which: string) {
-    [this.#openStart, this.#openEnd] = selectorQueryAll(
+    const [mainOpenStart, mainOpenEnd] = selectorQueryAll(
       `[data-open-end="${which}"]`,
       SVGCircleElement,
       2,
       2
     );
+    this.#openStart.push(mainOpenStart);
+    this.#openEnd.push(mainOpenEnd);
+    const [maskOpenStart, maskOpenEnd] = selectorQueryAll(
+      `#mask${which} circle`,
+      SVGCircleElement,
+      2,
+      2
+    );
+    this.#openStart.push(maskOpenStart);
+    this.#openEnd.push(maskOpenEnd);
     this.#center = selectorQuery(`[data-center="${which}"]`, SVGCircleElement);
     this.#path = selectorQuery(
       `[data-reconstruction="${which}"]`,
@@ -229,8 +227,8 @@ class TaylorElements {
     );
   }
   hide() {
-    this.#openStart.style.display = "none";
-    this.#openEnd.style.display = "none";
+    this.#openStart.forEach((element) => (element.style.display = "none"));
+    this.#openEnd.forEach((element) => (element.style.display = "none"));
     this.#center.style.display = "none";
     this.#path.style.d = "";
   }
@@ -261,9 +259,6 @@ class TaylorElements {
     const from = Math.max(fromLimit, fromRequested);
     const to = Math.min(toLimit, toRequested);
     const p: ParametricFunction = (t: number) => {
-      if (isFinite(radius)) {
-        t = ease(t);
-      }
       const x = lerp(from, to, t);
       const y = f(x);
       return { x, y };
@@ -274,15 +269,21 @@ class TaylorElements {
     this.#center.cx.baseVal.value = center;
     this.#center.cy.baseVal.value = f(center);
     if (isFinite(radius)) {
-      this.#openStart.style.display = "";
-      this.#openEnd.style.display = "";
-      this.#openStart.cx.baseVal.value = fromRequested;
-      this.#openStart.cy.baseVal.value = f(fromRequested);
-      this.#openEnd.cx.baseVal.value = toRequested;
-      this.#openEnd.cy.baseVal.value = f(toRequested);
+      const startY = f(fromRequested);
+      this.#openStart.forEach((element) => {
+        element.style.display = "";
+        element.cx.baseVal.value = fromRequested;
+        element.cy.baseVal.value = startY;
+      });
+      const endY = f(toRequested);
+      this.#openEnd.forEach((element) => {
+        element.style.display = "";
+        element.cx.baseVal.value = toRequested;
+        element.cy.baseVal.value = endY;
+      });
     } else {
-      this.#openStart.style.display = "none";
-      this.#openEnd.style.display = "none";
+      this.#openStart.forEach((element) => (element.style.display = "none"));
+      this.#openEnd.forEach((element) => (element.style.display = "none"));
     }
   }
   /**
@@ -307,7 +308,9 @@ class TaylorElements {
     );
     const result = (termsToShow: number) => {
       if (termsToShow > functions.length - 1) {
-        throw new Error(`Requested: ${termsToShow}, Available [0 - ${functions.length - 1}]`);
+        throw new Error(
+          `Requested: ${termsToShow}, Available [0 - ${functions.length - 1}]`
+        );
       }
       if (Number.isInteger(termsToShow)) {
         this.draw(functions[termsToShow], x0, radius);
@@ -368,7 +371,7 @@ console.log({ HiddenPoles, Sine, Reciprocal, TaylorElements });
   /**
    * Debug stuff.  Change the value of f here to plot a different functions.
    */
-  const f = HiddenPoles.instance;
+  const f = Reciprocal.instance;
   OriginalFunctionElement.instance.draw(f);
   function drawIt(draw: TaylorElements, x0: number) {
     const radius = f.radiusOfConvergence(x0);
@@ -393,5 +396,5 @@ console.log({ HiddenPoles, Sine, Reciprocal, TaylorElements });
   (window as any).fff = fff;
   // In the Reciprocal example, every x.5 looks really good.
   // But that trick doesn't work with HiddenPoles.  😞
-  fff(HiddenPoles.instance.numberOfTerms - 1.5);
+  fff(4);
 }

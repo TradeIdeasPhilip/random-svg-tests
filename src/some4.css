@@ -57,7 +57,7 @@ svg {
 [data-open-end] {
   r: 0.2;
   stroke-width: 0.03;
-  fill: black;
+  fill: none;
 }
 
 [data-open-end="1"] {
@@ -70,6 +70,10 @@ svg {
 
 [data-open-end="3"] {
   stroke: hwb(204.42deg 0% 0%);
+}
+
+.end-point-mask {
+  r: 0.2;
 }
 
 [data-center] {

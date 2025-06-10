@@ -2,13 +2,21 @@ import { getById } from "phil-lib/client-misc";
 import "./some4.css";
 import { selectorQuery, selectorQueryAll } from "./utility";
 import { ParametricFunction, PathShape } from "./path-shape";
-import { lerp } from "phil-lib/misc";
+import { initializedArray, lerp } from "phil-lib/misc";
 
 const FUDGE_FACTOR = 0.0001;
 
 abstract class TaylorBase {
   abstract readonly numberOfTerms: number;
   abstract constant(x0: number, termNumber: number): number;
+  /**
+   * This exists only as a clear and simple example of how you could use this.constant().
+   * See this.partialSum() for a real but more complicated example.
+   * @param x Estimate the function at this value, f(x).
+   * @param x0 Compute the Taylor series around this point.
+   * @param numberOfTerms Use exactly this many terms of the Taylor series when estimating the value of f(x)
+   * @returns f(x), as estimated with the given parameters.
+   */
   compute(x: number, x0: number, numberOfTerms: number) {
     let result = 0;
     for (let termNumber = 0; termNumber < numberOfTerms; termNumber++) {
@@ -45,6 +53,26 @@ abstract class TaylorBase {
         Math.hypot(x0 - badPoint.real, badPoint.imaginary)
       )
     );
+  }
+  /**
+   *
+   * @param x0 Create the Taylor series centered around this point.
+   * @param numberOfTerms Use exactly this many terms of the Taylor series when estimating the value of f(x).
+   * @returns A function that approximates f(x).
+   */
+  partialSum(x0: number, numberOfTerms: number) {
+    const constants = initializedArray(numberOfTerms, (index) =>
+      this.constant(x0, index)
+    );
+    function partialSum(x: number) {
+      const factor = x - x0;
+      let result = 0;
+      constants.forEach(
+        (constant, index) => (result += constant * factor ** index)
+      );
+      return result;
+    }
+    return partialSum;
   }
 }
 
@@ -147,6 +175,21 @@ class TaylorElements {
     this.#center.style.display = "none";
     this.#path.style.d = "";
   }
+  draw2(
+    f1: (x: number) => number,
+    f2: (x: number) => number,
+    t: number,
+    center: number,
+    radius: number
+  ) {
+    function f(x: number): number {
+      const y1 = f1(x);
+      const y2 = f2(x);
+      const y = y1 * (1 - t) + y2 * t;
+      return y;
+    }
+    this.draw(f, center, radius);
+  }
   draw(f: (x: number) => number, center: number, radius: number) {
     radius -= FUDGE_FACTOR;
     if (radius <= 0) {
@@ -179,6 +222,48 @@ class TaylorElements {
       this.#openStart.style.display = "none";
       this.#openEnd.style.display = "none";
     }
+  }
+  /**
+   * If you plan to fix x0 and adjust the number of terms, this is a nice starting place.
+   * @param functionInfo What to plot.
+   * @param x0 The center of the Taylor expansion.
+   * @param maxTerms The maximum number of terms that you plan to request.
+   * You can request fewer, but not more.
+   * @returns A function that will configure this set of elements.
+   * It takes a single input, the number of terms to use.
+   * If that is not an integer, we linearly interpolate between the two nearest integer values.
+   * This will draw the given function using the given x0 and the given number of terms.
+   */
+  precompute(
+    functionInfo: TaylorBase,
+    x0: number,
+    maxTerms: number
+  ): (termsToShow: number) => void {
+    const radius = functionInfo.radiusOfConvergence(x0);
+    const functions = initializedArray(maxTerms, (numberOfTerms) =>
+      functionInfo.partialSum(x0, numberOfTerms)
+    );
+    const result = (termsToShow: number) => {
+      if (Number.isInteger(termsToShow)) {
+        this.draw(functions[termsToShow], x0, radius);
+      } else {
+        const f1 = functions[Math.floor(termsToShow)];
+        const f2 = functions[Math.ceil(termsToShow)];
+        const t = termsToShow % 1;
+        function f(x: number): number {
+          const y1 = f1(x);
+          const y2 = f2(x);
+          const y = y1 * (1 - t) + y2 * t;
+          return y;
+        }
+        this.draw(f, x0, radius);
+      }
+    };
+    return result;
+  }
+  drawAll(functionInfo: TaylorBase, x0: number, termsToShow: number): void {
+    // TODO
+    [functionInfo, x0, termsToShow];
   }
   static readonly instances = [new this("1"), new this("2"), new this("3")];
 }
@@ -215,7 +300,10 @@ class OriginalFunctionElement {
 console.log({ HiddenPoles, Sine, Reciprocal, TaylorElements });
 
 {
-  const f = Reciprocal.instance;
+  /**
+   * Debug stuff.  Change the value of f here to plot a different functions.
+   */
+  const f = HiddenPoles.instance;
   OriginalFunctionElement.instance.draw(f);
   function drawIt(draw: TaylorElements, x0: number) {
     const radius = f.radiusOfConvergence(x0);
@@ -224,4 +312,19 @@ console.log({ HiddenPoles, Sine, Reciprocal, TaylorElements });
   drawIt(TaylorElements.instances[0], -2);
   drawIt(TaylorElements.instances[1], 1);
   drawIt(TaylorElements.instances[2], 2.5);
+
+  /**
+   * This is available as a global variable.
+   *
+   * `fff(2);` will redraw all three curves using 2 terms of the taylor expansion.
+   * If the input is not an integer, then `fff` will linearly interpolate between the closest two integer values.
+   */
+  const fff = TaylorElements.instances[0].precompute(
+    f,
+    -2,
+    Math.min(30, f.numberOfTerms)
+  );
+  console.log(fff);
+  (window as any).fff = fff;
+  fff(HiddenPoles.instance.numberOfTerms - 1);
 }

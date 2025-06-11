@@ -1,8 +1,8 @@
-import { getById } from "phil-lib/client-misc";
+import { AnimationLoop, getById } from "phil-lib/client-misc";
 import "./some4.css";
 import { selectorQuery, selectorQueryAll } from "./utility";
 import { ParametricFunction, PathShape } from "./path-shape";
-import { initializedArray, lerp, parseIntX } from "phil-lib/misc";
+import { initializedArray, lerp, makeLinear, parseIntX } from "phil-lib/misc";
 
 const FUDGE_FACTOR = 0.0001;
 
@@ -339,19 +339,23 @@ class TaylorElements {
     return result;
   }
   drawAll(functionInfo: TaylorBase, x0: number, termsToShow: number): void {
-    const radius = functionInfo.radiusOfConvergence(x0);
-    if (Number.isInteger(termsToShow)) {
-      this.draw(
-        functionInfo.partialSum(x0, termsToShow),
-        x0,
-        radius,
-        functionInfo.f
-      );
+    if (functionInfo.invalid(x0)) {
+      this.hide();
     } else {
-      const f1 = functionInfo.partialSum(x0, Math.floor(termsToShow));
-      const f2 = functionInfo.partialSum(x0, Math.ceil(termsToShow));
-      const t = termsToShow % 1;
-      this.draw2(f1, f2, t, x0, radius, functionInfo.f);
+      const radius = functionInfo.radiusOfConvergence(x0);
+      if (Number.isInteger(termsToShow)) {
+        this.draw(
+          functionInfo.partialSum(x0, termsToShow),
+          x0,
+          radius,
+          functionInfo.f
+        );
+      } else {
+        const f1 = functionInfo.partialSum(x0, Math.floor(termsToShow));
+        const f2 = functionInfo.partialSum(x0, Math.ceil(termsToShow));
+        const t = termsToShow % 1;
+        this.draw2(f1, f2, t, x0, radius, functionInfo.f);
+      }
     }
   }
   static readonly instances = [new this("1"), new this("2"), new this("3")];
@@ -386,7 +390,217 @@ class OriginalFunctionElement {
   static readonly instance = new this();
 }
 
-console.log({ HiddenPoles, Sine, Reciprocal, TaylorElements });
+class Script {
+  #state:
+    | { paused: true; timePassed: number }
+    | { paused: false; timeOffset: number } = { paused: true, timePassed: 0 };
+  get timePassed() {
+    if (this.#state.paused) {
+      return this.#state.timePassed;
+    } else {
+      return performance.now() - this.#state.timeOffset;
+    }
+  }
+  get paused() {
+    return this.#state.paused;
+  }
+  pause() {
+    if (!this.#state.paused) {
+      this.#state = { paused: true, timePassed: this.timePassed };
+    }
+  }
+  play() {
+    if (this.#state.paused) {
+      this.#state = {
+        paused: false,
+        timeOffset: performance.now() - this.timePassed,
+      };
+    }
+  }
+  set paused(newValue: boolean) {
+    if (newValue) {
+      this.pause();
+    } else {
+      this.play();
+    }
+  }
+  restart() {
+    const wasPaused = this.paused;
+    this.#state = { timePassed: 0, paused: true };
+    this.paused = wasPaused;
+  }
+  #onAnimationFrame(time: DOMHighResTimeStamp) {
+    if (!this.#state.paused) {
+      this.show(time - this.#state.timeOffset);
+    }
+  }
+  readonly #PART1_MAX_NUMBER_OF_TERMS = 38;
+  readonly #PART1_HOLD_TIME = 1000;
+  readonly #PART1_TRANSITION_TIME = 800;
+  readonly #PART1_END_TIME =
+    this.#PART1_MAX_NUMBER_OF_TERMS *
+      (this.#PART1_TRANSITION_TIME + this.#PART1_HOLD_TIME) +
+    this.#PART1_HOLD_TIME;
+
+  /**
+   * Part 1 shows the 3 taylor expansions for the sine wave, starting at 0 terms, ending with 3 perfect approximations.
+   * @param time Measured in frames.
+   */
+  showPart1(time: DOMHighResTimeStamp): void {
+    if (time < 0) {
+      // TODO hide everything??
+      return;
+    }
+    if (time >= this.#PART1_END_TIME) {
+      // TODO hide everything??
+      return;
+    }
+    const integerNumberOfTerms = Math.floor(
+      time / (this.#PART1_HOLD_TIME + this.#PART1_TRANSITION_TIME)
+    );
+    const timeWithinTerm =
+      time -
+      integerNumberOfTerms *
+        (this.#PART1_HOLD_TIME + this.#PART1_TRANSITION_TIME);
+    const timeWithinTransition = Math.max(
+      0,
+      timeWithinTerm - this.#PART1_HOLD_TIME
+    );
+    const fraction = timeWithinTransition / this.#PART1_TRANSITION_TIME;
+    const termsToShow = integerNumberOfTerms + fraction;
+    const functionInfo = Sine.instance;
+    OriginalFunctionElement.instance.draw(functionInfo);
+    TaylorElements.instances[0].drawAll(
+      functionInfo,
+      (-Math.PI * 7) / 4,
+      termsToShow
+    );
+    TaylorElements.instances[1].drawAll(functionInfo, 0, termsToShow);
+    TaylorElements.instances[2].drawAll(
+      functionInfo,
+      (Math.PI * 3) / 2,
+      termsToShow
+    );
+  }
+  readonly #PART2_MAX_NUMBER_OF_TERMS = 20;
+  readonly #PART2_HOLD_TIME = 1100;
+  readonly #PART2_TRANSITION_TIME = 900;
+  readonly #PART2_END_TIME =
+    this.#PART2_MAX_NUMBER_OF_TERMS *
+      (this.#PART2_TRANSITION_TIME + this.#PART2_HOLD_TIME) +
+    this.#PART2_HOLD_TIME;
+  readonly #PART2_SLIDER_START_TIME = 13000;
+  readonly #PART2_SLIDER_END_TIME = 22000;
+  readonly #PART2_SLIDER_X0 = makeLinear(
+    this.#PART2_SLIDER_START_TIME,
+    -9,
+    this.#PART2_SLIDER_END_TIME,
+    9
+  );
+  showPart2(time: DOMHighResTimeStamp): void {
+    if (time < 0) {
+      // TODO hide everything??
+      return;
+    }
+    if (time >= this.#PART2_END_TIME) {
+      // TODO hide everything??
+      return;
+    }
+    const integerNumberOfTerms = Math.floor(
+      time / (this.#PART2_HOLD_TIME + this.#PART2_TRANSITION_TIME)
+    );
+    const timeWithinTerm =
+      time -
+      integerNumberOfTerms *
+        (this.#PART2_HOLD_TIME + this.#PART2_TRANSITION_TIME);
+    const timeWithinTransition = Math.max(
+      0,
+      timeWithinTerm - this.#PART2_HOLD_TIME
+    );
+    const fraction = timeWithinTransition / this.#PART2_TRANSITION_TIME;
+    const termsToShow = integerNumberOfTerms + fraction;
+    const functionInfo = Reciprocal.instance;
+    OriginalFunctionElement.instance.draw(functionInfo);
+    TaylorElements.instances[0].drawAll(functionInfo, -2, termsToShow);
+    TaylorElements.instances[1].drawAll(functionInfo, 1, termsToShow);
+    if (
+      time < this.#PART2_SLIDER_START_TIME ||
+      time > this.#PART2_SLIDER_END_TIME
+    ) {
+      TaylorElements.instances[2].hide();
+    } else {
+      TaylorElements.instances[2].drawAll(
+        functionInfo,
+        this.#PART2_SLIDER_X0(time),
+        termsToShow
+      );
+    }
+  }
+
+  /**
+   * This points to whichever script is currently active.
+   */
+  show = this.showPart1;
+  constructor() {
+    console.log(
+      `Part 1 length: ${this.#PART1_END_TIME / 1000} seconds.`,
+      `Part 2 length: ${this.#PART2_END_TIME / 1000} seconds.`
+    );
+    new AnimationLoop(this.#onAnimationFrame.bind(this));
+    (window as any).initScreenCapture = this.initScreenCapture.bind(this);
+    (window as any).showFrame = (frame: number) => {
+      // Convert from frame number to milliseconds.
+      this.show((frame / 60) * 1000);
+    };
+  }
+  static readonly instance = new this();
+  initScreenCapture(script: unknown) {
+    document
+      .querySelectorAll("[data-hideBeforeScreenshot]")
+      .forEach((element) => {
+        if (
+          !(element instanceof SVGElement || element instanceof HTMLElement)
+        ) {
+          throw new Error("wtf");
+        }
+        element.style.display = "none";
+      });
+    switch (script) {
+      case "part 1": {
+        this.show = this.showPart1;
+        return {
+          source: "some4.ts",
+          devicePixelRatio: devicePixelRatio,
+          script,
+          firstFrame: 0,
+          lastFrame: Math.floor((this.#PART1_END_TIME / 1000) * 60), // Convert from milliseconds to the number of frames.
+        };
+      }
+      case "part 2": {
+        this.show = this.showPart2;
+        return {
+          source: "some4.ts",
+          devicePixelRatio: devicePixelRatio,
+          script,
+          firstFrame: 0,
+          lastFrame: Math.floor((this.#PART2_END_TIME / 1000) * 60), // Convert from milliseconds to the number of frames.
+        };
+      }
+      default: {
+        throw new Error(`Unknown script: ${JSON.stringify(script)}`);
+      }
+    }
+  }
+}
+
+(window as any).debugStuff = {
+  HiddenPoles,
+  Sine,
+  Reciprocal,
+  TaylorElements,
+  Script,
+};
+console.log("debugStuff", (window as any).debugStuff);
 
 {
   const functionSelectElement = selectorQuery(
@@ -495,8 +709,6 @@ function debugDraw(
   TaylorElements.instances.forEach((display, index) => {
     const x0 = x0s[index];
     if (x0 === undefined) {
-      display.hide();
-    } else if (functionInfo.invalid(x0)) {
       display.hide();
     } else {
       display.drawAll(functionInfo, x0, termsToShow);

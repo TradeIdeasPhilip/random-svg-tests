@@ -246,13 +246,40 @@
         <circle data-center="3" cx="12" cy="4"></circle>
       </g>
     </svg>
-    <div id="manual-controls">
-      <select><option value="0">sin(x)</option><option value="1">1 ÷ x</option><option value="2">1 ÷ (1 + x²)</option></select>
-      <input id="number-of-terms" type="range" min="0" max="12" step="any" >
-      <div data-term-stepper><button>less</button><span ></span><button>more</button></div>
-      <div data-x0><input type="checkbox"><input type="range" min="-9" max="9" step="any"></div>
-      <div data-x0><input type="checkbox"><input type="range" min="-9" max="9" step="any"></div>
-      <div data-x0><input type="checkbox"><input type="range" min="-9" max="9" step="any"></div>
+    <div id="manual-controls" data-hideBeforeScreenshot>
+      <select>
+        <option value="0">sin(x)</option>
+        <option value="1">1 ÷ x</option>
+        <option value="2">1 ÷ (1 + x²)</option>
+      </select>
+      <input id="number-of-terms" type="range" min="0" max="12" step="any" />
+      <div data-term-stepper>
+        <button>less</button><span></span><button>more</button>
+      </div>
+      <div data-x0>
+        <input type="checkbox" /><input
+          type="range"
+          min="-9"
+          max="9"
+          step="any"
+        />
+      </div>
+      <div data-x0>
+        <input type="checkbox" /><input
+          type="range"
+          min="-9"
+          max="9"
+          step="any"
+        />
+      </div>
+      <div data-x0>
+        <input type="checkbox" /><input
+          type="range"
+          min="-9"
+          max="9"
+          step="any"
+        />
+      </div>
     </div>
   </body>
 </html>

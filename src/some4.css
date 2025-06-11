@@ -125,3 +125,7 @@ svg {
   justify-content: space-between;
   align-items: center;
 }
+
+[data-term-stepper] span {
+  background-color: rgb(255 255 255 / 50%);
+}

@@ -366,14 +366,14 @@ class TaylorElements {
 
 class OriginalFunctionElement {
   readonly #path = getById("original-function", SVGPathElement);
-  readonly #badPointsG = getById("bad-points", SVGGElement);
+  readonly #badPointsG = getById("bad-points", SVGGElement);readonly #circlesAllG=getById("circles-all", SVGGElement);
   hide() {
     this.#path.style.d = "";
-    this.#badPointsG.style.display = "none";
+    this.#circlesAllG.style.display = "none";
   }
-  draw(functionInfo: functionInfo) {
-    // bad points
-    this.#badPointsG.style.display = "";
+  draw(functionInfo: functionInfo, showBadPoints:boolean) {
+    if (showBadPoints) {
+    this.#circlesAllG.style.display = "";
     this.#badPointsG.innerHTML = "";
     functionInfo.badPoints.forEach((point) => {
       const element = document.createElementNS(
@@ -385,6 +385,9 @@ class OriginalFunctionElement {
       element.setAttribute("y", point.imaginary.toString());
       this.#badPointsG.appendChild(element);
     });
+    } else {
+      this.#circlesAllG.style.display = "none";
+    }
     // main
     const fromLimit = -9;
     const toLimit = 9;
@@ -498,7 +501,7 @@ class Script {
     const fraction = timeWithinTransition / this.#PART1_TRANSITION_TIME;
     const termsToShow = integerNumberOfTerms + fraction;
     const functionInfo = Sine.instance;
-    OriginalFunctionElement.instance.draw(functionInfo);
+    OriginalFunctionElement.instance.draw(functionInfo, false);
     TaylorElements.instances[0].drawAll(
       functionInfo,
       (-Math.PI * 7) / 4,
@@ -550,7 +553,7 @@ class Script {
     const fraction = timeWithinTransition / this.#PART2_TRANSITION_TIME;
     const termsToShow = integerNumberOfTerms + fraction;
     const functionInfo = Reciprocal.instance;
-    OriginalFunctionElement.instance.draw(functionInfo);
+    OriginalFunctionElement.instance.draw(functionInfo, false);
     TaylorElements.instances[0].drawAll(functionInfo, -2, termsToShow);
     TaylorElements.instances[1].drawAll(functionInfo, 1, termsToShow);
     if (
@@ -671,6 +674,7 @@ console.log("debugStuff", (window as any).debugStuff);
     });
     return { use, value };
   });
+  const showBadPointsInput = getById("show-bad-points",HTMLInputElement);
   function drawItSoon() {
     drawItNow();
   }
@@ -684,11 +688,12 @@ console.log("debugStuff", (window as any).debugStuff);
     });
     debugDraw(
       parseIntX(functionSelectElement.value)!,
+      showBadPointsInput.checked,
       numberOfTermsInputElement.valueAsNumber,
       ...x0s
     );
   }
-  functionSelectElement.addEventListener("input", drawItNow);
+  functionSelectElement.addEventListener("input", drawItSoon);
   let fewerTerms = NaN;
   let moreTerms = NaN;
   function numberOfTermsChanged() {
@@ -718,6 +723,7 @@ console.log("debugStuff", (window as any).debugStuff);
     numberOfTermsChanged();
     drawItSoon();
   });
+  showBadPointsInput.addEventListener("input", drawItSoon);
   numberOfTermsChanged();
   drawItSoon();
 }
@@ -730,12 +736,13 @@ console.log("debugStuff", (window as any).debugStuff);
  */
 function debugDraw(
   sampleIndex: number,
+  showBadPoints :boolean,
   termsToShow: number,
   ...x0s: (number | undefined)[]
 ) {
   const samples = [Sine.instance, Reciprocal.instance, HiddenPoles.instance];
   const functionInfo = samples[sampleIndex % samples.length];
-  OriginalFunctionElement.instance.draw(functionInfo);
+  OriginalFunctionElement.instance.draw(functionInfo,showBadPoints);
   TaylorElements.instances.forEach((display, index) => {
     const x0 = x0s[index];
     if (x0 === undefined) {

@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>#SoME4</title>
-    <script type="module" crossorigin src="./assets/اکی-7acCg6TI.js"></script>
+    <script type="module" crossorigin src="./assets/اکی-CZJAFp8T.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-wGF4FraP.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-ZHNZ3-cL.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-D9E8BDCl.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-fljILaqi.js">
-    <link rel="stylesheet" crossorigin href="./assets/اکی-ZvhvlM2O.css">
+    <link rel="stylesheet" crossorigin href="./assets/اکی-D-v9mi6r.css">
   </head>
   <body>
     <svg
@@ -250,6 +250,32 @@
           "
         ></circle>
         <circle data-center="3" cx="12" cy="4"></circle>
+        <g id="circles-all">
+          <g id="circles-chart">
+            <line id="real-axis" x1="-8" x2="8" y1="0" y2="0"></line>
+            <g data-circle-info="1">
+              <circle data-bottom-center></circle>
+              <circle data-full-interval></circle>
+              <line data-full-interval y1="7" y2="-3"></line>
+              <line data-full-interval y1="-3" y2="7"></line>
+            </g>
+            <g data-circle-info="2">
+              <circle data-bottom-center></circle>
+              <circle data-full-interval></circle>
+              <line data-full-interval y1="7" y2="-3"></line>
+              <line data-full-interval y1="-3" y2="7"></line>
+            </g>
+            <g data-circle-info="3">
+              <circle data-bottom-center></circle>
+              <circle data-full-interval></circle>
+              <line data-full-interval y1="7" y2="-3"></line>
+              <line data-full-interval y1="-3" y2="7"></line>
+            </g>
+            <g id="bad-points">
+              <text>⚠️</text>
+            </g>
+          </g>
+        </g>
       </g>
     </svg>
     <div id="manual-controls" data-hideBeforeScreenshot>
@@ -285,6 +311,11 @@
           max="9"
           step="any"
         />
+      </div>
+      <div>
+        <label>
+          <input type="checkbox" id="show-bad-points"> <span>Show Bad Points</span>
+        </label>
       </div>
     </div>
   </body>

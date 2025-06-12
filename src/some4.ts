@@ -260,32 +260,35 @@ class TaylorElements {
     const shape = PathShape.parametric(p, 50);
     this.#path.style.d = shape.cssPath;
     this.#center.style.display = "";
-    this.#center.cx.baseVal.value = center;
-    this.#center.cy.baseVal.value = f(center);
+    variableBase.setProperty(`--example${this.which}-center-x`, center + "px");
+    variableBase.setProperty(
+      `--example${this.which}-center-y`,
+      f(center) + "px"
+    );
     if (isFinite(radius)) {
       variableBase.setProperty(
         `--example${this.which}-from-x`,
-        fromRequested.toString()
+        fromRequested + "px"
       );
       variableBase.setProperty(
         `--example${this.which}-from-y`,
-        f(fromRequested).toString()
+        f(fromRequested) + "px"
       );
       variableBase.setProperty(
         `--example${this.which}-from-y-ideal`,
-        idealF(fromRequested).toString()
+        idealF(fromRequested) + "px"
       );
       variableBase.setProperty(
         `--example${this.which}-to-x`,
-        toRequested.toString()
+        toRequested + "px"
       );
       variableBase.setProperty(
         `--example${this.which}-to-y`,
-        f(toRequested).toString()
+        f(toRequested) + "px"
       );
       variableBase.setProperty(
         `--example${this.which}-to-y-ideal`,
-        idealF(toRequested).toString()
+        idealF(toRequested) + "px"
       );
       variableBase.setProperty(`--example${this.which}-open-end-display`, "");
     } else {

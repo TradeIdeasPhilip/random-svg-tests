@@ -1,4 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&display=swap");
+
 body {
+  font-family: "IBM Plex Sans", sans-serif;
+  font-optical-sizing: none;
   background-color: blue;
   padding: 0;
   margin: 0;
@@ -10,6 +14,103 @@ svg {
   background-color: hotpink;
   width: 100vw;
   height: 100vh;
+}
+
+#circles-all {
+  --circle-color: darkgreen;
+}
+
+#circles-chart {
+  transform: translate(0, -2px);
+}
+
+#real-axis {
+  stroke-width: 0.05;
+  stroke: var(--circle-color);
+}
+
+#circles-all text {
+  font-size: 0.5px;
+  text-anchor: middle;
+  alignment-baseline: central;
+  transform: scale(1, -1);
+}
+
+[data-circle-info="1"] {
+  --example-color: red;
+  display: var(--example1-open-end-display);
+}
+
+[data-circle-info="1"] line[data-full-interval]:nth-of-type(1) {
+  transform: translate(var(--example1-from-x), 0);
+}
+
+[data-circle-info="1"] circle {
+  transform: translate(var(--example1-center-x), 0);
+}
+
+[data-circle-info="1"] circle[data-full-interval] {
+  r: calc((var(--example1-to-x) - var(--example1-from-x)) / 2);
+}
+
+[data-circle-info="1"] line[data-full-interval]:nth-of-type(2) {
+  transform: translate(var(--example1-to-x), 0);
+}
+
+[data-circle-info="2"] {
+  --example-color: white;
+  display: var(--example2-open-end-display);
+}
+
+[data-circle-info="2"] line[data-full-interval]:nth-of-type(1) {
+  transform: translate(var(--example2-from-x), 0);
+}
+
+[data-circle-info="2"] circle {
+  transform: translate(var(--example2-center-x), 0);
+}
+
+[data-circle-info="2"] circle[data-full-interval] {
+  r: calc((var(--example2-to-x) - var(--example2-from-x)) / 2);
+}
+
+[data-circle-info="2"] line[data-full-interval]:nth-of-type(2) {
+  transform: translate(var(--example2-to-x), 0);
+}
+
+[data-circle-info="3"] {
+  --example-color: var(--blue);
+  display: var(--example3-open-end-display);
+}
+
+[data-circle-info="3"] line[data-full-interval]:nth-of-type(1) {
+  transform: translate(var(--example3-from-x), 0);
+}
+
+[data-circle-info="3"] circle {
+  transform: translate(var(--example3-center-x), 0);
+}
+
+[data-circle-info="3"] circle[data-full-interval] {
+  r: calc((var(--example3-to-x) - var(--example3-from-x)) / 2);
+}
+
+[data-circle-info="3"] line[data-full-interval]:nth-of-type(2) {
+  transform: translate(var(--example3-to-x), 0);
+}
+
+[data-bottom-center] {
+  r: 0.15;
+  stroke-width: 0.03;
+  stroke: var(--circle-color);
+  fill: var(--example-color);
+}
+
+[data-full-interval] {
+  stroke-width: 0.03;
+  stroke-dasharray: 0.1 0.08;
+  stroke: var(--example-color);
+  fill: none;
 }
 
 .chart {
@@ -90,16 +191,22 @@ svg {
 [data-center="1"] {
   fill: red;
   stroke: red;
+  cx: var(--example1-center-x);
+  cy: var(--example1-center-y);
 }
 
 [data-center="2"] {
   fill: white;
   stroke: white;
+  cx: var(--example2-center-x);
+  cy: var(--example2-center-y);
 }
 
 [data-center="3"] {
   fill: var(--blue);
   stroke: var(--blue);
+  cx: var(--example3-center-x);
+  cy: var(--example3-center-y);
 }
 
 #manual-controls {

@@ -515,3 +515,19 @@ export function ease(t: number): number {
   const result = (1 - cosine) / 2;
   return result;
 }
+
+/**
+ * Pick any arbitrary element from the container.
+ * @param container
+ * @returns An item in the set.  Unless the set is empty, then it returns undefined.
+ */
+export function pickAny<T, Key>(
+  container: ReadonlySet<T> | ReadonlyMap<Key, T>
+): T | undefined {
+  const first = container.values().next();
+  if (first.done) {
+    return undefined;
+  } else {
+    return first.value;
+  }
+}

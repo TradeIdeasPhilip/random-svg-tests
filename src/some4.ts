@@ -366,25 +366,26 @@ class TaylorElements {
 
 class OriginalFunctionElement {
   readonly #path = getById("original-function", SVGPathElement);
-  readonly #badPointsG = getById("bad-points", SVGGElement);readonly #circlesAllG=getById("circles-all", SVGGElement);
+  readonly #badPointsG = getById("bad-points", SVGGElement);
+  readonly #circlesAllG = getById("circles-all", SVGGElement);
   hide() {
     this.#path.style.d = "";
     this.#circlesAllG.style.display = "none";
   }
-  draw(functionInfo: functionInfo, showBadPoints:boolean) {
+  draw(functionInfo: functionInfo, showBadPoints: boolean) {
     if (showBadPoints) {
-    this.#circlesAllG.style.display = "";
-    this.#badPointsG.innerHTML = "";
-    functionInfo.badPoints.forEach((point) => {
-      const element = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "text"
-      );
-      element.innerHTML = "⚠️";
-      element.setAttribute("x", point.real.toString());
-      element.setAttribute("y", point.imaginary.toString());
-      this.#badPointsG.appendChild(element);
-    });
+      this.#circlesAllG.style.display = "";
+      this.#badPointsG.innerHTML = "";
+      functionInfo.badPoints.forEach((point) => {
+        const element = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        element.innerHTML = "⚠️";
+        element.setAttribute("x", point.real.toString());
+        element.setAttribute("y", point.imaginary.toString());
+        this.#badPointsG.appendChild(element);
+      });
     } else {
       this.#circlesAllG.style.display = "none";
     }
@@ -412,7 +413,26 @@ class OriginalFunctionElement {
   static readonly instance = new this();
 }
 
-class Script {
+type Script = {
+  show(time: DOMHighResTimeStamp): void;
+  initScreenCapture(): {
+    firstFrame: number;
+    lastFrame: number;
+  };
+};
+
+class ScriptDispatcher {
+  readonly #scripts = new Map<string, Script>();
+  addScript(name: string, script: Script) {
+    if (!this.#currentScript) {
+      this.#currentScript = script;
+    }
+    if (this.#scripts.has(name)) {
+      // Duplicate name.  Probably clone disease.
+      throw new Error("wtf");
+    }
+    this.#scripts.set(name, script);
+  }
   #state:
     | { paused: true; timePassed: number }
     | { paused: false; timeOffset: number } = { paused: true, timePassed: 0 };
@@ -446,16 +466,24 @@ class Script {
       this.play();
     }
   }
-  restart(script?: 1 | 2) {
-    switch (script) {
-      case 1: {
-        this.show = this.showPart1;
-        break;
+  restart(script?: unknown) {
+    if (typeof script === "string") {
+      const newScript = this.#scripts.get(script);
+      if (newScript === undefined) {
+        throw new Error(`Unknown script: ${script}`);
       }
-      case 2: {
-        this.show = this.showPart2;
-        break;
+      this.#currentScript = newScript;
+    } else if (typeof script === "number") {
+      const scripts = [...this.#scripts.values()];
+      const newScript = scripts[script % scripts.length];
+      if (newScript === undefined) {
+        throw new Error(`Unknown script: ${script}`);
       }
+      this.#currentScript = newScript;
+    } else if (script === undefined) {
+      // explicitly allowed.  keep the existing script.
+    } else {
+      throw new Error("unknown script type");
     }
     const wasPaused = this.paused;
     this.#state = { timePassed: 0, paused: true };
@@ -466,119 +494,16 @@ class Script {
       this.show(time - this.#state.timeOffset);
     }
   }
-  readonly #PART1_MAX_NUMBER_OF_TERMS = 38;
-  readonly #PART1_HOLD_TIME = 1000;
-  readonly #PART1_TRANSITION_TIME = 800;
-  readonly #PART1_END_TIME =
-    this.#PART1_MAX_NUMBER_OF_TERMS *
-      (this.#PART1_TRANSITION_TIME + this.#PART1_HOLD_TIME) +
-    this.#PART1_HOLD_TIME;
 
-  /**
-   * Part 1 shows the 3 taylor expansions for the sine wave, starting at 0 terms, ending with 3 perfect approximations.
-   * @param time Measured in frames.
-   */
-  showPart1(time: DOMHighResTimeStamp): void {
-    if (time < 0) {
-      // TODO hide everything??
-      return;
-    }
-    if (time >= this.#PART1_END_TIME) {
-      // TODO hide everything??
-      return;
-    }
-    const integerNumberOfTerms = Math.floor(
-      time / (this.#PART1_HOLD_TIME + this.#PART1_TRANSITION_TIME)
-    );
-    const timeWithinTerm =
-      time -
-      integerNumberOfTerms *
-        (this.#PART1_HOLD_TIME + this.#PART1_TRANSITION_TIME);
-    const timeWithinTransition = Math.max(
-      0,
-      timeWithinTerm - this.#PART1_HOLD_TIME
-    );
-    const fraction = timeWithinTransition / this.#PART1_TRANSITION_TIME;
-    const termsToShow = integerNumberOfTerms + fraction;
-    const functionInfo = Sine.instance;
-    OriginalFunctionElement.instance.draw(functionInfo, false);
-    TaylorElements.instances[0].drawAll(
-      functionInfo,
-      (-Math.PI * 7) / 4,
-      termsToShow
-    );
-    TaylorElements.instances[1].drawAll(functionInfo, 0, termsToShow);
-    TaylorElements.instances[2].drawAll(
-      functionInfo,
-      (Math.PI * 3) / 2,
-      termsToShow
-    );
-  }
-  readonly #PART2_MAX_NUMBER_OF_TERMS = 20;
-  readonly #PART2_HOLD_TIME = 1100;
-  readonly #PART2_TRANSITION_TIME = 900;
-  readonly #PART2_END_TIME =
-    this.#PART2_MAX_NUMBER_OF_TERMS *
-      (this.#PART2_TRANSITION_TIME + this.#PART2_HOLD_TIME) +
-    this.#PART2_HOLD_TIME;
-  readonly #PART2_SLIDER_START_TIME = 13000;
-  readonly #PART2_SLIDER_END_TIME = 22000;
-  readonly #PART2_SLIDER_X0 = makeLinear(
-    this.#PART2_SLIDER_START_TIME,
-    -9,
-    this.#PART2_SLIDER_END_TIME,
-    9
-  );
-  showPart2(time: DOMHighResTimeStamp): void {
-    if (time < 0) {
-      // TODO hide everything??
-      return;
-    }
-    if (time >= this.#PART2_END_TIME) {
-      // TODO hide everything??
-      return;
-    }
-    variableBase.setProperty("--ms-since-start", time.toString());
-    const integerNumberOfTerms = Math.floor(
-      time / (this.#PART2_HOLD_TIME + this.#PART2_TRANSITION_TIME)
-    );
-    const timeWithinTerm =
-      time -
-      integerNumberOfTerms *
-        (this.#PART2_HOLD_TIME + this.#PART2_TRANSITION_TIME);
-    const timeWithinTransition = Math.max(
-      0,
-      timeWithinTerm - this.#PART2_HOLD_TIME
-    );
-    const fraction = timeWithinTransition / this.#PART2_TRANSITION_TIME;
-    const termsToShow = integerNumberOfTerms + fraction;
-    const functionInfo = Reciprocal.instance;
-    OriginalFunctionElement.instance.draw(functionInfo, false);
-    TaylorElements.instances[0].drawAll(functionInfo, -2, termsToShow);
-    TaylorElements.instances[1].drawAll(functionInfo, 1, termsToShow);
-    if (
-      time < this.#PART2_SLIDER_START_TIME ||
-      time > this.#PART2_SLIDER_END_TIME
-    ) {
-      TaylorElements.instances[2].hide();
-    } else {
-      TaylorElements.instances[2].drawAll(
-        functionInfo,
-        this.#PART2_SLIDER_X0(time),
-        termsToShow
-      );
-    }
-  }
-
+  #currentScript: Script | undefined;
   /**
    * This points to whichever script is currently active.
    */
-  show = this.showPart1;
+  show(time: DOMHighResTimeStamp): void {
+    variableBase.setProperty("--ms-since-start", time.toString());
+    this.#currentScript!.show(time);
+  }
   constructor() {
-    console.log(
-      `Part 1 length: ${this.#PART1_END_TIME / 1000} seconds.`,
-      `Part 2 length: ${this.#PART2_END_TIME / 1000} seconds.`
-    );
     new AnimationLoop(this.#onAnimationFrame.bind(this));
     (window as any).initScreenCapture = this.initScreenCapture.bind(this);
     (window as any).showFrame = (frame: number) => {
@@ -598,32 +523,133 @@ class Script {
         }
         element.style.display = "none";
       });
-    switch (script) {
-      case "part 1": {
-        this.show = this.showPart1;
-        return {
-          source: "some4.ts",
-          devicePixelRatio: devicePixelRatio,
-          script,
-          firstFrame: 0,
-          lastFrame: Math.floor((this.#PART1_END_TIME / 1000) * 60), // Convert from milliseconds to the number of frames.
-        };
-      }
-      case "part 2": {
-        this.show = this.showPart2;
-        return {
-          source: "some4.ts",
-          devicePixelRatio: devicePixelRatio,
-          script,
-          firstFrame: 0,
-          lastFrame: Math.floor((this.#PART2_END_TIME / 1000) * 60), // Convert from milliseconds to the number of frames.
-        };
-      }
-      default: {
-        throw new Error(`Unknown script: ${JSON.stringify(script)}`);
+    if (typeof script == "string") {
+      const newScript = this.#scripts.get(script);
+      if (newScript) {
+        this.#currentScript = newScript;
+        const result = newScript.initScreenCapture();
+        return { source: "some4.ts", script, devicePixelRatio, ...result };
       }
     }
+    throw new Error(`Unknown script: ${JSON.stringify(script)}`);
   }
+}
+
+{
+  const scriptName = "part 1";
+
+  const MAX_NUMBER_OF_TERMS = 38;
+  const HOLD_TIME = 1000;
+  const TRANSITION_TIME = 800;
+  const END_TIME =
+    MAX_NUMBER_OF_TERMS * (TRANSITION_TIME + HOLD_TIME) + HOLD_TIME;
+
+  console.log(`${scriptName} length: ${END_TIME / 1000} seconds.`);
+
+  /**
+   * Part 1 shows the 3 taylor expansions for the sine wave, starting at 0 terms, ending with 3 perfect approximations.
+   * @param time Measured in frames.
+   */
+  function show(time: DOMHighResTimeStamp): void {
+    if (time < 0) {
+      // TODO hide everything??
+      return;
+    }
+    if (time >= END_TIME) {
+      // TODO hide everything??
+      return;
+    }
+    const integerNumberOfTerms = Math.floor(
+      time / (HOLD_TIME + TRANSITION_TIME)
+    );
+    const timeWithinTerm =
+      time - integerNumberOfTerms * (HOLD_TIME + TRANSITION_TIME);
+    const timeWithinTransition = Math.max(0, timeWithinTerm - HOLD_TIME);
+    const fraction = timeWithinTransition / TRANSITION_TIME;
+    const termsToShow = integerNumberOfTerms + fraction;
+    const functionInfo = Sine.instance;
+    OriginalFunctionElement.instance.draw(functionInfo, false);
+    TaylorElements.instances[0].drawAll(
+      functionInfo,
+      (-Math.PI * 7) / 4,
+      termsToShow
+    );
+    TaylorElements.instances[1].drawAll(functionInfo, 0, termsToShow);
+    TaylorElements.instances[2].drawAll(
+      functionInfo,
+      (Math.PI * 3) / 2,
+      termsToShow
+    );
+  }
+
+  function initScreenCapture(): {
+    firstFrame: number;
+    lastFrame: number;
+  } {
+    return {
+      firstFrame: 0,
+      lastFrame: Math.floor((END_TIME / 1000) * 60), // Convert from milliseconds to the number of frames.
+    };
+  }
+  ScriptDispatcher.instance.addScript(scriptName, { show, initScreenCapture });
+}
+
+{
+  const scriptName = "part 2";
+
+  const MAX_NUMBER_OF_TERMS = 20;
+  const HOLD_TIME = 1100;
+  const TRANSITION_TIME = 900;
+  const END_TIME =
+    MAX_NUMBER_OF_TERMS * (TRANSITION_TIME + HOLD_TIME) + HOLD_TIME;
+  const SLIDER_START_TIME = 13000;
+  const SLIDER_END_TIME = 22000;
+  const SLIDER_X0 = makeLinear(SLIDER_START_TIME, -9, SLIDER_END_TIME, 9);
+
+  console.log(`${scriptName} length: ${END_TIME / 1000} seconds.`);
+
+  function show(time: DOMHighResTimeStamp): void {
+    if (time < 0) {
+      // TODO hide everything??
+      return;
+    }
+    if (time >= END_TIME) {
+      // TODO hide everything??
+      return;
+    }
+    const integerNumberOfTerms = Math.floor(
+      time / (HOLD_TIME + TRANSITION_TIME)
+    );
+    const timeWithinTerm =
+      time - integerNumberOfTerms * (HOLD_TIME + TRANSITION_TIME);
+    const timeWithinTransition = Math.max(0, timeWithinTerm - HOLD_TIME);
+    const fraction = timeWithinTransition / TRANSITION_TIME;
+    const termsToShow = integerNumberOfTerms + fraction;
+    const functionInfo = Reciprocal.instance;
+    OriginalFunctionElement.instance.draw(functionInfo, false);
+    TaylorElements.instances[0].drawAll(functionInfo, -2, termsToShow);
+    TaylorElements.instances[1].drawAll(functionInfo, 1, termsToShow);
+    if (time < SLIDER_START_TIME || time > SLIDER_END_TIME) {
+      TaylorElements.instances[2].hide();
+    } else {
+      TaylorElements.instances[2].drawAll(
+        functionInfo,
+        SLIDER_X0(time),
+        termsToShow
+      );
+    }
+  }
+
+  function initScreenCapture(): {
+    firstFrame: number;
+    lastFrame: number;
+  } {
+    return {
+      firstFrame: 0,
+      lastFrame: Math.floor((END_TIME / 1000) * 60), // Convert from milliseconds to the number of frames.
+    };
+  }
+  ScriptDispatcher.instance.addScript(scriptName, { show, initScreenCapture });
 }
 
 (window as any).debugStuff = {
@@ -631,7 +657,7 @@ class Script {
   Sine,
   Reciprocal,
   TaylorElements,
-  Script,
+  ScriptDispatcher,
 };
 console.log("debugStuff", (window as any).debugStuff);
 
@@ -674,7 +700,7 @@ console.log("debugStuff", (window as any).debugStuff);
     });
     return { use, value };
   });
-  const showBadPointsInput = getById("show-bad-points",HTMLInputElement);
+  const showBadPointsInput = getById("show-bad-points", HTMLInputElement);
   function drawItSoon() {
     drawItNow();
   }
@@ -736,13 +762,13 @@ console.log("debugStuff", (window as any).debugStuff);
  */
 function debugDraw(
   sampleIndex: number,
-  showBadPoints :boolean,
+  showBadPoints: boolean,
   termsToShow: number,
   ...x0s: (number | undefined)[]
 ) {
   const samples = [Sine.instance, Reciprocal.instance, HiddenPoles.instance];
   const functionInfo = samples[sampleIndex % samples.length];
-  OriginalFunctionElement.instance.draw(functionInfo,showBadPoints);
+  OriginalFunctionElement.instance.draw(functionInfo, showBadPoints);
   TaylorElements.instances.forEach((display, index) => {
     const x0 = x0s[index];
     if (x0 === undefined) {

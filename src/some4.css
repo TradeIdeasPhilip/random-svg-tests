@@ -42,11 +42,11 @@ svg {
 
 [data-circle-info="1"] {
   --example-color: red;
-  display: var(--example1-open-end-display);
 }
 
 [data-circle-info="1"] line[data-full-interval]:nth-of-type(1) {
   transform: translate(var(--example1-from-x), 0);
+  display: var(--example1-open-end-display);
 }
 
 [data-circle-info="1"] circle {
@@ -55,19 +55,21 @@ svg {
 
 [data-circle-info="1"] circle[data-full-interval] {
   r: calc((var(--example1-to-x) - var(--example1-from-x)) / 2);
+  display: var(--example1-open-end-display);
 }
 
 [data-circle-info="1"] line[data-full-interval]:nth-of-type(2) {
   transform: translate(var(--example1-to-x), 0);
+  display: var(--example1-open-end-display);
 }
 
 [data-circle-info="2"] {
   --example-color: white;
-  display: var(--example2-open-end-display);
 }
 
 [data-circle-info="2"] line[data-full-interval]:nth-of-type(1) {
   transform: translate(var(--example2-from-x), 0);
+  display: var(--example2-open-end-display);
 }
 
 [data-circle-info="2"] circle {
@@ -76,19 +78,21 @@ svg {
 
 [data-circle-info="2"] circle[data-full-interval] {
   r: calc((var(--example2-to-x) - var(--example2-from-x)) / 2);
+  display: var(--example2-open-end-display);
 }
 
 [data-circle-info="2"] line[data-full-interval]:nth-of-type(2) {
   transform: translate(var(--example2-to-x), 0);
+  display: var(--example2-open-end-display);
 }
 
 [data-circle-info="3"] {
   --example-color: var(--blue);
-  display: var(--example3-open-end-display);
 }
 
 [data-circle-info="3"] line[data-full-interval]:nth-of-type(1) {
   transform: translate(var(--example3-from-x), 0);
+  display: var(--example3-open-end-display);
 }
 
 [data-circle-info="3"] circle {
@@ -97,10 +101,12 @@ svg {
 
 [data-circle-info="3"] circle[data-full-interval] {
   r: calc((var(--example3-to-x) - var(--example3-from-x)) / 2);
+  display: var(--example3-open-end-display);
 }
 
 [data-circle-info="3"] line[data-full-interval]:nth-of-type(2) {
   transform: translate(var(--example3-to-x), 0);
+  display: var(--example3-open-end-display);
 }
 
 [data-bottom-center] {

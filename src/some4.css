@@ -1,5 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&display=swap");
 
+:root {
+  --ms-since-start: 0;
+}
+
 body {
   font-family: "IBM Plex Sans", sans-serif;
   font-optical-sizing: none;
@@ -110,6 +114,7 @@ svg {
   stroke-width: 0.03;
   stroke-dasharray: 0.1 0.08;
   stroke: var(--example-color);
+  stroke-dashoffset: calc(var(--ms-since-start) / 7000);
   fill: none;
 }
 

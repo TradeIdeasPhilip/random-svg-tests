@@ -6,7 +6,7 @@ import { initializedArray, lerp, makeLinear, parseIntX } from "phil-lib/misc";
 
 const FUDGE_FACTOR = 0.0001;
 
-abstract class TaylorBase {
+abstract class functionInfo {
   abstract readonly numberOfTerms: number;
   abstract constant(x0: number, termNumber: number): number;
   /**
@@ -81,7 +81,7 @@ abstract class TaylorBase {
   }
 }
 
-class Reciprocal extends TaylorBase {
+class Reciprocal extends functionInfo {
   readonly numberOfTerms = Infinity;
   override constant(x0: number, termNumber: number): number {
     if (x0 === 0) {
@@ -99,7 +99,7 @@ class Reciprocal extends TaylorBase {
   readonly badPoints = [{ real: 0, imaginary: 0 }];
 }
 
-class Sine extends TaylorBase {
+class Sine extends functionInfo {
   readonly numberOfTerms = Infinity;
   override constant(x0: number, termNumber: number): number {
     // Compute sin(x0 + n * π/2) / n!
@@ -120,7 +120,7 @@ class Sine extends TaylorBase {
 /**
  * 1 / (1 + x*x)
  */
-class HiddenPoles extends TaylorBase {
+class HiddenPoles extends functionInfo {
   readonly numberOfTerms = 12;
   override constant(x0: number, termNumber: number): number {
     const denom = 1 + x0 * x0;
@@ -310,7 +310,7 @@ class TaylorElements {
    * This will draw the given function using the given x0 and the given number of terms.
    */
   precompute(
-    functionInfo: TaylorBase,
+    functionInfo: functionInfo,
     x0: number,
     maxTerms: number
   ): (termsToShow: number) => void {
@@ -341,7 +341,7 @@ class TaylorElements {
     };
     return result;
   }
-  drawAll(functionInfo: TaylorBase, x0: number, termsToShow: number): void {
+  drawAll(functionInfo: functionInfo, x0: number, termsToShow: number): void {
     if (functionInfo.invalid(x0)) {
       this.hide();
     } else {
@@ -366,10 +366,26 @@ class TaylorElements {
 
 class OriginalFunctionElement {
   readonly #path = getById("original-function", SVGPathElement);
+  readonly #badPointsG = getById("bad-points", SVGGElement);
   hide() {
     this.#path.style.d = "";
+    this.#badPointsG.style.display = "none";
   }
-  draw(functionInfo: TaylorBase) {
+  draw(functionInfo: functionInfo) {
+    // bad points
+    this.#badPointsG.style.display = "";
+    this.#badPointsG.innerHTML = "";
+    functionInfo.badPoints.forEach((point) => {
+      const element = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "text"
+      );
+      element.innerHTML = "⚠️";
+      element.setAttribute("x", point.real.toString());
+      element.setAttribute("y", point.imaginary.toString());
+      this.#badPointsG.appendChild(element);
+    });
+    // main
     const fromLimit = -9;
     const toLimit = 9;
     const commands = functionInfo.validRanges().flatMap((range) => {
@@ -427,7 +443,17 @@ class Script {
       this.play();
     }
   }
-  restart() {
+  restart(script?: 1 | 2) {
+    switch (script) {
+      case 1: {
+        this.show = this.showPart1;
+        break;
+      }
+      case 2: {
+        this.show = this.showPart2;
+        break;
+      }
+    }
     const wasPaused = this.paused;
     this.#state = { timePassed: 0, paused: true };
     this.paused = wasPaused;
@@ -509,6 +535,7 @@ class Script {
       // TODO hide everything??
       return;
     }
+    variableBase.setProperty("--ms-since-start", time.toString());
     const integerNumberOfTerms = Math.floor(
       time / (this.#PART2_HOLD_TIME + this.#PART2_TRANSITION_TIME)
     );

@@ -4,6 +4,11 @@ import { selectorQuery, selectorQueryAll } from "./utility";
 import { ParametricFunction, PathShape } from "./path-shape";
 import { initializedArray, lerp, makeLinear, parseIntX } from "phil-lib/misc";
 
+// I used this file to create https://youtu.be/ubVFzZNEphs
+// I used https://github.com/TradeIdeasPhilip/html-to-movie to turn this web page into a video.
+// Grok did most of my calculations for me:  https://x.com/i/grok/share/dEpxXnbg4GJNp99Da9hi4xTsM
+// That video is my submission to the #SoME4 contest:  https://some.3b1b.co/
+
 const FUDGE_FACTOR = 0.0001;
 
 abstract class functionInfo {
@@ -25,11 +30,23 @@ abstract class functionInfo {
     }
     return result;
   }
+  /**
+   * The function itself.
+   * @param x 
+   */
   abstract f(x: number): number;
+  /**
+   * More precisely, poles.
+   */
   abstract badPoints: readonly {
     readonly real: number;
     readonly imaginary: number;
   }[];
+  /**
+   * 
+   * @param x A value that we might want to call the function at.
+   * @returns `true` if this function is undefined at that value of x.
+   */
   invalid(x: number) {
     return this.badPoints.some(
       ({ real, imaginary }) => x == real && imaginary == 0

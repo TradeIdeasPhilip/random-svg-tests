@@ -660,6 +660,54 @@ class ScriptDispatcher {
 }
 
 {
+  const scriptName = "part 3";
+
+  // Goal 20 seconds.
+  const MAX_NUMBER_OF_TERMS = 12;
+  const HOLD_TIME = 920;
+  const TRANSITION_TIME = 666;
+  const END_TIME =
+    MAX_NUMBER_OF_TERMS * (TRANSITION_TIME + HOLD_TIME) + HOLD_TIME;
+
+  console.log(`${scriptName} length: ${END_TIME / 1000} seconds.`);
+
+  function show(time: DOMHighResTimeStamp): void {
+    if (time < 0) {
+      // TODO hide everything??
+      return;
+    }
+    if (time >= END_TIME) {
+      // TODO hide everything??
+      return;
+    }
+    const integerNumberOfTerms = Math.floor(
+      time / (HOLD_TIME + TRANSITION_TIME)
+    );
+    const timeWithinTerm =
+      time - integerNumberOfTerms * (HOLD_TIME + TRANSITION_TIME);
+    const timeWithinTransition = Math.max(0, timeWithinTerm - HOLD_TIME);
+    const fraction = timeWithinTransition / TRANSITION_TIME;
+    const termsToShow = integerNumberOfTerms + fraction;
+    const functionInfo = HiddenPoles.instance;
+    OriginalFunctionElement.instance.draw(functionInfo, false);
+    TaylorElements.instances[0].drawAll(functionInfo, -1, termsToShow);
+    TaylorElements.instances[1].drawAll(functionInfo, 0, termsToShow);
+    TaylorElements.instances[2].drawAll(functionInfo, 2, termsToShow);
+  }
+
+  function initScreenCapture(): {
+    firstFrame: number;
+    lastFrame: number;
+  } {
+    return {
+      firstFrame: 0,
+      lastFrame: Math.floor((END_TIME / 1000) * 60), // Convert from milliseconds to the number of frames.
+    };
+  }
+  ScriptDispatcher.instance.addScript(scriptName, { show, initScreenCapture });
+}
+
+{
   const scriptName = "part 4";
 
   // Goal 23 seconds.
@@ -764,6 +812,53 @@ class ScriptDispatcher {
         termsToShow
       );
     }
+  }
+
+  function initScreenCapture(): {
+    firstFrame: number;
+    lastFrame: number;
+  } {
+    return {
+      firstFrame: 0,
+      lastFrame: Math.floor((END_TIME / 1000) * 60), // Convert from milliseconds to the number of frames.
+    };
+  }
+  ScriptDispatcher.instance.addScript(scriptName, { show, initScreenCapture });
+}
+
+{
+  const scriptName = "part 6";
+
+  // Goal 80 seconds.
+  // The first 60 are the most important.
+  // The lines will start jumping around more after that.
+  const MAX_NUMBER_OF_TERMS = 7;
+  const PERIOD = 10000;
+  const END_TIME = (1 + MAX_NUMBER_OF_TERMS) * PERIOD;
+
+  console.log(`${scriptName} length: ${END_TIME / 1000} seconds.`);
+
+  const HALF_PERIOD = PERIOD / 2;
+  const goLeft = makeLinear(0, -7, HALF_PERIOD, 7);
+  const goRight = makeLinear(HALF_PERIOD, 7, PERIOD, -7);
+
+  function show(time: DOMHighResTimeStamp): void {
+    if (time < 0) {
+      // TODO hide everything??
+      return;
+    }
+    if (time >= END_TIME) {
+      // TODO hide everything??
+      return;
+    }
+    const termsToShow = (time / PERIOD) | 0;
+    const phase = time % PERIOD;
+    const x0 = phase < HALF_PERIOD ? goLeft(phase) : goRight(phase);
+    const functionInfo = HiddenPoles.instance;
+    OriginalFunctionElement.instance.draw(functionInfo, true);
+    TaylorElements.instances[0].hide();
+    TaylorElements.instances[1].hide();
+    TaylorElements.instances[2].drawAll(functionInfo, x0, termsToShow);
   }
 
   function initScreenCapture(): {

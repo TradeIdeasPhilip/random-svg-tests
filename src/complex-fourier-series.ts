@@ -86,6 +86,20 @@ const codeSamples: ReadonlyArray<{
   default?: true;
 }> = [
   { name: "Custom", code: "" },
+  {name: "Polygons and Stars", code:`const numberOfPoints = 5;
+const skip = 1;
+const rotate = 2 * Math.PI / numberOfPoints * (1 + skip);
+
+const corners = [];
+for (let i = 0; i < numberOfPoints; i++) {
+  const θ = i * rotate;
+  corners.push({x: Math.cos(θ), y: Math.sin(θ)});
+}
+const tSplitter = support.makeTSplitterA(0, corners.length, 0);
+function f(t) {
+  const segment = tSplitter(t);
+  return support.lerpPoints(corners[segment.index], corners[(segment.index+1)%corners.length], segment.t);
+}`},
   {
     name: "Square",
     default: true,
@@ -450,7 +464,6 @@ class AnimateRequestedVsReconstructed {
     panAndZoom(this.#requestedPath, this.#svgElement);
     const originalTerms = parametricToFourier(f);
     const nonZeroTerms = keepNonZeroTerms(originalTerms);
-    //console.log({ originalTerms, nonZeroTerms });
     (window as any).nonZeroTerms = nonZeroTerms;
     (window as any).originalTerms = originalTerms;
     let totalAmplitude = 0;
@@ -534,7 +547,7 @@ class AnimateRequestedVsReconstructed {
       const final = { ...last, startTime, offset: 1 };
       script.push(final);
     }
-    console.log("script", script);
+    //console.log("script", script);
 
     const animationOptions: KeyframeAnimationOptions = {
       duration: script.at(-1)!.endTime * 3,
@@ -604,7 +617,7 @@ class AnimateRequestedVsReconstructed {
       animations.push(
         this.#reconstructedPath.animate(keyframes, animationOptions)
       );
-      console.log("d", keyframes);
+      //console.log("d", keyframes);
     }
 
     {
@@ -631,7 +644,7 @@ class AnimateRequestedVsReconstructed {
           const content = (previousContent = format(circles));
           keyframes.push({ offset, content });
         });
-        console.log("circles text", keyframes);
+        //console.log("circles text", keyframes);
         animations.push(
           circlesCell.animate(keyframes, {
             pseudoElement: "::after",
@@ -673,7 +686,7 @@ class AnimateRequestedVsReconstructed {
         [circlesCell, amplitudeCell].forEach((cell) =>
           animations.push(cell.animate(opacityKeyframes, animationOptions))
         );
-        console.log("opacity", opacityKeyframes);
+        //console.log("opacity", opacityKeyframes);
       };
       animateRow(
         this.#usingCircles,
@@ -798,11 +811,11 @@ class AnimateRequestedVsReconstructed {
           ...animationOptions,
         })
       );
-      console.log("amplitude text", {
+      /* console.log("amplitude text", {
         keyframesUsing,
         keyframesAdding,
         keyframesAvailable,
-      });
+      }); */
     }
   }
   static update(f: ParametricFunction, pathShape: PathShape) {

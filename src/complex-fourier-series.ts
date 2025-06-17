@@ -5,6 +5,7 @@ import { ParametricFunction, PathShape, Point, QCommand } from "./path-shape";
 import {
   makeTSplitter,
   makeTSplitterA,
+  Random,
   selectorQuery,
   selectorQueryAll,
 } from "./utility";
@@ -86,20 +87,46 @@ const codeSamples: ReadonlyArray<{
   default?: true;
 }> = [
   { name: "Custom", code: "" },
-  {name: "Polygons and Stars", code:`const numberOfPoints = 5;
+  {
+    name: "Polygons and Stars",
+    code: `const numberOfPoints = 5;
+/**
+ * 0 to make a polygon.
+ * 1 to make a star, if numberOfPoints is odd and at least 5.
+ * 2 to make a different star, if numberOfPoints is odd and at least 7.
+ */ 
 const skip = 1;
 const rotate = 2 * Math.PI / numberOfPoints * (1 + skip);
+
+/**
+ * Create a random number generator.
+ * Change the seed to get different values.
+ * random() will return a number between 0 and 1.
+ */
+const random = support.random("My seed 2025");
+
+/**
+ * How much effect does the random number generator have.
+ * Far left → no randomness at all.
+ */
+const amplitude = support.input(0);
+
+function jiggle() {
+  return (random()-0.5) * amplitude;
+}
 
 const corners = [];
 for (let i = 0; i < numberOfPoints; i++) {
   const θ = i * rotate;
-  corners.push({x: Math.cos(θ), y: Math.sin(θ)});
+  corners.push({x: Math.cos(θ) + jiggle(), y: Math.sin(θ) + jiggle()});
 }
+//console.log(corners);
 const tSplitter = support.makeTSplitterA(0, corners.length, 0);
 function f(t) {
   const segment = tSplitter(t);
   return support.lerpPoints(corners[segment.index], corners[(segment.index+1)%corners.length], segment.t);
-}`},
+}`,
+  },
   {
     name: "Square",
     default: true,
@@ -1001,6 +1028,13 @@ export const support = {
    * ![Inputs and outputs of makeLinear()](https://raw.githubusercontent.com/TradeIdeasPhilip/lib/master/makeLinear.png)
    */
   makeLinear: makeLinear,
+  random: (seed: string) => {
+    if (typeof seed !== "string") {
+      throw new RangeError("Invalid seed.  Expecting a string.");
+    } else {
+      return Random.fromString(seed);
+    }
+  },
 };
 
 /**

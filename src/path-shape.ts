@@ -921,18 +921,34 @@ export class PathBuilder {
       const direction = getDirection(f, t, ε);
       return { t, point, direction };
     });
-    const segments = initializedArray(numberOfSegments, (index) => ({
-      from: samples[index],
-      to: samples[index + 1],
-    }));
-    segments.forEach((segment) => {
-      this.Q_angles(
-        segment.to.point.x,
-        segment.to.point.y,
-        segment.to.direction,
-        segment.from.direction
-      );
-    });
+    if (samples.some((sample) => !isFinite(sample.direction))) {
+      const { x, y } = samples[0].point;
+      assertFinite(x, y);
+      if (
+        samples.some((sample) => sample.point.x != x || sample.point.y != y)
+      ) {
+        throw new Error(
+          "Unable to create a path from this function.  Unable to compute the derivative."
+        );
+      }
+      // All of the points are identical so none of the derivatives exist.
+      for (let i = 0; i < numberOfSegments; i++) {
+        this.Q(x, y, x, y);
+      }
+    } else {
+      const segments = initializedArray(numberOfSegments, (index) => ({
+        from: samples[index],
+        to: samples[index + 1],
+      }));
+      segments.forEach((segment) => {
+        this.Q_angles(
+          segment.to.point.x,
+          segment.to.point.y,
+          segment.to.direction,
+          segment.from.direction
+        );
+      });
+    }
     return this;
   }
 }

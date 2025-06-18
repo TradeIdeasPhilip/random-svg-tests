@@ -559,6 +559,9 @@ class ClipAndMaskSupport extends SampleOutput {
         // #2 The button should be disabled until we have a valid value, in case #1 fails.
         throw new Error("wtf");
       }
+      // TODO This would work better if we saved the properties as styles not attributes.
+      // Inkscape left my properties in place and used styles to overwrite them.
+      // The mac preview didn't work.  It used the attribute values, not the style values.
       download("ParametricPath.svg", this.#fileContents);
     });
   }

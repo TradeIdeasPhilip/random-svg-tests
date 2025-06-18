@@ -5,11 +5,11 @@
     <!-- <link rel="icon" type="image/svg+xml" href="/moon.svg" /> -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Complex Fourier Series</title>
-    <script type="module" crossorigin src="./assets/ҩажәа-B72fLCvw.js"></script>
+    <script type="module" crossorigin src="./assets/ҩажәа-B1npaK0v.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-wGF4FraP.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-ZHNZ3-cL.js">
-    <link rel="modulepreload" crossorigin href="./assets/path-shape-fljILaqi.js">
+    <link rel="modulepreload" crossorigin href="./assets/path-shape-csZDU6DB.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-D9E8BDCl.js">
     <link rel="modulepreload" crossorigin href="./assets/math-to-path-BjxPr1Cw.js">
     <link rel="stylesheet" crossorigin href="./assets/ҩажәа-SNLtk3rX.css">
@@ -259,6 +259,28 @@
           href="https://github.com/TradeIdeasPhilip/random-svg-tests/blob/0461f7d4bb724a7fd01b77e962a5b74ab95fd6d2/src/utility.ts#L194"
           >Full documentation</a
         >.
+      </li>
+      <li>
+        <code>support.referencePath</code> &mdash; This describes the background
+        image that I am drawing in light blue. Initially it is empty. You can
+        set this in your one time initialization. If you don't, the software
+        will run your function at multiple places and create this path for you.
+        In either case, you can access the <code>referencePath</code> in the
+        function. <code>support.referencePath.d</code> accesses the
+        <a
+          href="https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/d"
+          >path string</a
+        >. <code>support.referencePath.length</code> gives you the length of the
+        path. <code>support.referencePath.getPoint()</code> gives you the x,y of
+        the path at a given distance along the path.
+      </li>
+      <li>
+        <code>support.samples</code> &mdash;
+        <code>support.samples.hilbert[0]</code> ...
+        <code>support.samples.hilbert[3]</code> and
+        <code>support.samples.peanocurve[0]</code> ...
+        <code>support.samples.peanocurve[2]</code> contain interesting path
+        strings.
       </li>
     </ul>
     <h2><a id="examples"></a>Examples</h2>

@@ -252,6 +252,28 @@
           >Full documentation</a
         >.
       </li>
+      <li>
+        <code>support.referencePath</code> &mdash; This describes the background
+        image that I am drawing in light blue. Initially it is empty. You can
+        set this in your one time initialization. If you don't, the software
+        will run your function at multiple places and create this path for you.
+        In either case, you can access the <code>referencePath</code> in the
+        function. <code>support.referencePath.d</code> accesses the
+        <a
+          href="https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/d"
+          >path string</a
+        >. <code>support.referencePath.length</code> gives you the length of the
+        path. <code>support.referencePath.getPoint()</code> gives you the x,y of
+        the path at a given distance along the path.
+      </li>
+      <li>
+        <code>support.samples</code> &mdash;
+        <code>support.samples.hilbert[0]</code> ...
+        <code>support.samples.hilbert[3]</code> and
+        <code>support.samples.peanocurve[0]</code> ...
+        <code>support.samples.peanocurve[2]</code> contain interesting path
+        strings.
+      </li>
     </ul>
     <h2><a id="examples"></a>Examples</h2>
     <div id="codeSamplesHolder"></div>

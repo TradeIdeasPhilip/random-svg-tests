@@ -1016,6 +1016,8 @@ const lCommandRelative = new RegExp(
 );
 const hCommandRelative = new RegExp(`^h${afterCommand}${number}(.*)$`);
 const vCommandRelative = new RegExp(`^v${afterCommand}${number}(.*)$`);
+const vCommandContinuation = new RegExp(`^${between}${number}(.*)$`);
+const hCommandContinuation = vCommandContinuation;
 const qCommand = new RegExp(
   `^Q${afterCommand}${number}${between}${number}${between}${number}${between}${number}(.*)$`
 );
@@ -1159,17 +1161,23 @@ export class PathShape {
         continue;
       }
       if ((found = hCommandRelative.exec(remaining))) {
-        const dx = parseOrThrow(found[1]);
-        const current = new LCommand(x0, y0, x0 + dx, y0);
-        push(current);
-        remaining = found[2];
+        while (found) {
+          const dx = parseOrThrow(found[1]);
+          const current = new LCommand(x0, y0, x0 + dx, y0);
+          push(current);
+          remaining = found[2];
+          found = hCommandContinuation.exec(remaining);
+        }
         continue;
       }
       if ((found = vCommandRelative.exec(remaining))) {
-        const dy = parseOrThrow(found[1]);
-        const current = new LCommand(x0, y0, x0, y0 + dy);
-        push(current);
-        remaining = found[2];
+        while (found) {
+          const dy = parseOrThrow(found[1]);
+          const current = new LCommand(x0, y0, x0, y0 + dy);
+          push(current);
+          remaining = found[2];
+          found = vCommandContinuation.exec(remaining);
+        }
         continue;
       }
       if ((found = qCommand.exec(remaining))) {

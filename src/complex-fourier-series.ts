@@ -591,65 +591,99 @@ class AnimateRequestedVsReconstructed {
     (window as any).originalTerms = originalTerms;
     let totalAmplitude = 0;
     nonZeroTerms.forEach((term) => (totalAmplitude += term.amplitude));
+    /**
+     * This describes `nonZeroTerms` and is focused on what we
+     * display in the table.
+     *
+     * `here` is the amount of amplitude expressed as a percent.
+     *
+     * `before` and `after` are the sum of all of the amplitudes
+     * before and after this row.  I precompute these mostly so I
+     * can control the round off error.
+     */
+    const amplitudes = nonZeroTerms.map((term) => {
+      const here = (term.amplitude / totalAmplitude) * 100;
+      return { here, before: NaN, after: NaN };
+    });
+    {
+      let beforeSoFar = 0;
+      let afterSoFar = 0;
+      amplitudes.forEach((beforeRow, beforeIndex, array) => {
+        beforeRow.before = beforeSoFar;
+        beforeSoFar += beforeRow.here;
+        const afterIndex = array.length - beforeIndex - 1;
+        const afterRow = array[afterIndex];
+        afterRow.after = afterSoFar;
+        afterSoFar += afterRow.here;
+      });
+      //console.log(beforeSoFar, afterSoFar, amplitudes);
+    }
     const maxKeyframes = 10;
-    let usingAmplitude = 0;
+    let usingCircles = 0;
     const pauseTime = 750;
     const addTime = 500;
-    const script = nonZeroTerms
-      .slice(0, maxKeyframes - 1)
-      .flatMap((term, index) => {
-        const amplitude = (term.amplitude / totalAmplitude) * 100;
-        const adding = {
-          offset: NaN,
-          startTime: NaN,
-          endTime: NaN,
-          usingCircles: index,
-          usingAmplitude,
-          addingCircles: 1,
-          addingAmplitude: amplitude,
-        };
-        usingAmplitude += amplitude;
-        const pausing = {
-          offset: NaN,
-          startTime: NaN,
-          endTime: NaN,
-          usingCircles: index + 1,
-          usingAmplitude,
-          addingCircles: 0,
-          addingAmplitude: 0,
-        };
-        if (index == 0) {
-          return [pausing];
-        } else {
-          return [adding, pausing];
+    type ScriptEntry = {
+      offset: number;
+      startTime: number;
+      endTime: number;
+      usingCircles: number;
+      usingAmplitude: number;
+      addingCircles: number;
+      addingAmplitude: number;
+      availableAmplitude: number;
+      availableCircles: number;
+    };
+    const script = new Array<ScriptEntry>();
+    for (
+      let remainingKeyframes = maxKeyframes - 1;
+      remainingKeyframes >= 0 && usingCircles < amplitudes.length;
+      remainingKeyframes--
+    ) {
+      let addingAmplitude = 0;
+      let addingCircles = 0;
+      let termIndex = usingCircles;
+      const usingAmplitude = amplitudes[termIndex].before;
+      while (true) {
+        addingAmplitude += amplitudes[termIndex].here;
+        addingCircles++;
+        termIndex++;
+        if (termIndex >= amplitudes.length) {
+          break;
         }
-      });
-    type ScriptEntry = (typeof script)[number];
-    {
-      const lastRow = script.at(-1)!;
-      const missingCircles = nonZeroTerms.length - lastRow.usingCircles;
-      if (missingCircles > 0) {
-        script.push(
-          {
-            offset: NaN,
-            startTime: NaN,
-            endTime: NaN,
-            usingCircles: lastRow.usingCircles,
-            usingAmplitude: lastRow.usingAmplitude,
-            addingCircles: missingCircles,
-            addingAmplitude: 100 - lastRow.usingAmplitude,
-          },
-          {
-            offset: NaN,
-            startTime: NaN,
-            endTime: NaN,
-            usingCircles: nonZeroTerms.length,
-            usingAmplitude: 100,
-            addingCircles: 0,
-            addingAmplitude: 0,
+        if (remainingKeyframes > 0) {
+          const remainingAmplitude = amplitudes[termIndex].after;
+          const averageRemainingBinSize =
+            remainingAmplitude / remainingKeyframes;
+          if (addingAmplitude > averageRemainingBinSize) {
+            break;
           }
-        );
+        }
       }
+      const availableAmplitude = amplitudes[termIndex - 1].after;
+      const availableCircles = amplitudes.length - termIndex;
+      script.push({
+        offset: NaN,
+        startTime: NaN,
+        endTime: NaN,
+        usingCircles,
+        usingAmplitude,
+        addingCircles, // 👈 Adding
+        addingAmplitude,
+        availableAmplitude,
+        availableCircles,
+      });
+      usingCircles += addingCircles;
+      script.push({
+        offset: NaN,
+        startTime: NaN,
+        endTime: NaN,
+        usingCircles,
+        usingAmplitude: usingAmplitude + addingAmplitude,
+        addingCircles: 0, // 👈 Pausing
+        addingAmplitude: 0,
+        availableAmplitude,
+        availableCircles,
+      });
     }
     let smallEffectOffset = NaN;
     {
@@ -678,6 +712,7 @@ class AnimateRequestedVsReconstructed {
     };
 
     {
+      // this.#reconstructedPath.animate()
       /**
        * Simple caching.  I won't compute the same d twice in a row.
        * I know the requests always come in order, so there's no reason to save anything but the last thing we used.
@@ -744,6 +779,7 @@ class AnimateRequestedVsReconstructed {
     }
 
     {
+      // Update the text in the table.
       type Values = { offset: number; circles: number }[];
       const animateRow = (
         circlesCell: HTMLTableCellElement,
@@ -830,9 +866,9 @@ class AnimateRequestedVsReconstructed {
       animateRow(
         this.#availableCircles,
         this.#availableAmplitude,
-        script.map(({ offset, usingCircles, addingCircles }) => ({
+        script.map(({ offset, availableCircles }) => ({
           offset,
-          circles: nonZeroTerms.length - usingCircles - addingCircles,
+          circles: availableCircles,
         }))
       );
     }
@@ -876,8 +912,7 @@ class AnimateRequestedVsReconstructed {
         (scriptEntry) => scriptEntry.addingAmplitude
       );
       const keyframesAvailable = buildKeyframes(
-        (scriptEntry) =>
-          100 - scriptEntry.usingAmplitude - scriptEntry.addingAmplitude
+        (scriptEntry) => scriptEntry.availableAmplitude
       );
       const allKeyframes = [
         ...keyframesUsing,
@@ -1053,6 +1088,7 @@ const samples = {
   ],
 };
 
+/* 
 console.table([
   ...samples.hilbert.map((d, index) => {
     const name = `hilbert ${index}`;
@@ -1069,6 +1105,7 @@ console.table([
     return { name, stringLength, segmentCount };
   }),
 ]);
+ */
 
 //   {
 //       const svgElement = getById("distanceVsT", SVGSVGElement);

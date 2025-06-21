@@ -12,6 +12,7 @@ import {
 import { assertClass, FIGURE_SPACE, lerp, makeLinear } from "phil-lib/misc";
 import { fft } from "fft-js";
 import { lerpPoints } from "./math-to-path";
+import { cursiveLetters, futuraLLetters } from "./hershey-fonts/hershey-fonts";
 
 interface FourierTerm {
   frequency: number;
@@ -1227,6 +1228,8 @@ export const support = {
   },
   referencePath: new PathWrapper(),
   samples,
+  cursiveLetters,
+  futuraLLetters,
 };
 
 /**

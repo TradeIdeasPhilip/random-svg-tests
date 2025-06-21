@@ -1,0 +1,44 @@
+#samples {
+  display: grid;
+  grid-template-columns: minmax(1px,1fr) minmax(1px,1fr);
+  width: 100%;
+  /*  https://css-tricks.com/snippets/css/complete-guide-grid/#prop-align-items says align-items: stretch is the default, but adding it explicitly helped a lot! */
+  align-items: stretch;
+}
+
+#samples > div {
+  text-align: center;
+  word-break: break-word;
+}
+
+#samples svg {
+  padding: 1.5em;
+  overflow: visible;
+}
+
+#samples path {
+  fill:none;
+  stroke-linecap: round;
+  
+}
+
+path.main {
+  stroke:black;
+
+}
+
+path.axes {
+  stroke: lightblue;
+  stroke-width: 0.333;
+}
+
+path.left {
+  stroke: lime;
+  stroke-width: 0.333;
+}
+
+path.right {
+  stroke: red;
+  stroke-width: 0.333;
+}
+

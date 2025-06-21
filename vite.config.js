@@ -45,6 +45,7 @@ export default defineConfig({
         девятнадцать: resolve(__dirname, "parametric-path.html"),
         ҩажәа: resolve(__dirname, "complex-fourier-series.html"),
         اکی: resolve(__dirname, "some4.html"),
+        "двадцать два": resolve(__dirname, "hershey-fonts-viewer.html"),
       },
     },
   },

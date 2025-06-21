@@ -1,6 +1,9 @@
 #samples {
   display: grid;
-  grid-template-columns: minmax(1px,1fr) minmax(1px,1fr);
+  grid-template-columns: minmax(1px, 1fr) minmax(1px, 1fr) minmax(1px, 1fr) minmax(
+      1px,
+      1fr
+    );
   width: 100%;
   /*  https://css-tricks.com/snippets/css/complete-guide-grid/#prop-align-items says align-items: stretch is the default, but adding it explicitly helped a lot! */
   align-items: stretch;
@@ -12,19 +15,17 @@
 }
 
 #samples svg {
-  padding: 1.5em;
+  padding: 1em;
   overflow: visible;
 }
 
 #samples path {
-  fill:none;
+  fill: none;
   stroke-linecap: round;
-  
 }
 
 path.main {
-  stroke:black;
-
+  stroke: black;
 }
 
 path.axes {
@@ -41,4 +42,3 @@ path.right {
   stroke: red;
   stroke-width: 0.333;
 }
-

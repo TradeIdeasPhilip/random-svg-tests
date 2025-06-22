@@ -98,6 +98,9 @@ export class LCommand implements Command {
   readonly outgoingAngle;
   readonly command = "L";
   readonly asString: string;
+  get length() {
+    return Math.hypot(this.x0 - this.x, this.y0 - this.y);
+  }
   translate(Δx: number, Δy: number): Command {
     return new LCommand(this.x0 + Δx, this.y0 + Δy, this.x + Δx, this.y + Δy);
   }

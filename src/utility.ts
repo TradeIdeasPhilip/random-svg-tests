@@ -1,4 +1,5 @@
 import {
+  angleBetween,
   assertClass,
   assertFinite,
   makeBoundedLinear,
@@ -12,6 +13,11 @@ import {
 // fix assertFinite() to use Number.isFinite() rather than Window.isFinite() !!!
 //
 // Promote: selectorQueryAll(), selectorQuery(), Random, getDataUrl(), gcd(), lcm()
+
+export function averageAngle(angle1: number, angle2: number) {
+  const between = angleBetween(angle1, angle2);
+  return angle1 + between / 2;
+}
 
 const previousCountPrivate = new Map<string, number>();
 /**

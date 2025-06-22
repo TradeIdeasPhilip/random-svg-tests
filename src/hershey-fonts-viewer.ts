@@ -2,8 +2,9 @@ import "./style.css";
 import "./hershey-fonts-viewer.css";
 import { cursiveLetters, futuraLLetters } from "./hershey-fonts/hershey-fonts";
 import { getById } from "phil-lib/client-misc";
-import { Command, LCommand, PathShape, QCommand } from "./path-shape";
+import { LCommand, PathShape, QCommand } from "./path-shape";
 import { angleBetween, FULL_CIRCLE } from "phil-lib/misc";
+import { averageAngle } from "./utility";
 
 const samplesDiv = getById("samples", HTMLDivElement);
 
@@ -36,61 +37,95 @@ samplesDiv.insertAdjacentHTML(
   )}</div><div></div><div>${JSON.stringify(futuraLSummary)}</div><div></div>`
 );
 
-// TODO The start of the cursive small w.  
-// The start and the end of the s part of the $ in both fonts.
-// And more.  There's a corner between the first and second segments and I don't know why.
-// The curve seems small and consistent with other segments that work correctly.
-// The curvy end of the 5, both ends of the 6.  Both ends of the 9.
-// Not every curve.  But when there is a problem it's always the first and/or last in the connected segment.
+// TODO the top of the 2 looks funny.  Where it changes from straight to curved.
+// I took a closer look in the debugger.
+// There were no problems with the angles.
+// However, I could make things much better by merging the two curved segments adjacent to the two straight segments.
+// I can't think of a general rule to go with that.
+// Can I / should I do more?
+// TODO similar with the capital Z in cursive.
+// In the debugger I clicked on segment 14 in the debugger, then I said merge with next.
+// Again, it looks better, but I don't know a rule.
+// TODO the ? is wrong.  The bottom segment of the top is short, but it should still be straight.
+// This breaks all of my heuristics.  I can't easily fix this without breaking other letters.
+// I think I'll need a more specific rule, maybe looking for this one letter!
+// This one is bad and can't be ignored.
 
-// TODO if the curve makes a loop i.e. if the start and end are at the same point, then our curving algorithm
-// should try to match the ends.  This was an oversight initially.
-// Examples:  % , . :
-
-// TODO check out 0 and 8 and %.  They have flat spots.  They might be one or the other of the previous
-// TODO items, or maybe a combination of both.
-
-// TODO take a closer look at the futura capital U.
-// Look at where the curvy part joins with the straight part.
-// It doesn't look perfect where they meet.
-// It looks like a small corner.
-// I'd love to see the actual commands and compare the incoming and outgoing angles.
-// Isn't that part of the path debugger?  Can I drop something in with the GUI without changing any code?
-
-function makeSmooth(original: PathShape, cutoff = (FULL_CIRCLE / 4) * 1.01) {
-  function makeSmoothConnected(original: PathShape): Command[] {
-    const originalCommands = original.commands;
+/**
+ *
+ * @param original
+ * @param angleCutoff If two adjacent L commands came together with an angle difference that is smaller than this, try to turn that corner into a smooth curve.
+ * If it is larger than this, assume the corner was put there on purpose.
+ * This defaults to just over 90°.
+ * This is good because the font often uses squares which should become circles.
+ * @returns
+ */
+function makeSmooth(
+  original: PathShape,
+  angleCutoff = (FULL_CIRCLE / 4) * 1.01
+) {
+  function makeSmoothConnected(originalCommands: readonly LCommand[]) {
+    /**
+     * Any L command longer than this is assumed to be straight.
+     */
+    const heuristicCutoff = 5;
     const alteredCommands = originalCommands.map(
       (thisCommand, index, array) => {
-        if (
-          !(thisCommand instanceof LCommand || thisCommand instanceof QCommand)
-        ) {
-          console.info("hmmm");
-          // If I have a more complicated command, then trying to change it to a Q might make things worse.
-          // Keeping the old command should work, just like it does below.
-          // But I can't really test this case because I'm only expecting L commands in my input.
-          // So if you see this message, there's probably nothing wrong, but please double check the result.
+        const previousCommand = array[index - 1];
+        const nextCommand = array[index + 1];
+        if (!previousCommand && !nextCommand) {
+          // A single L command.  There's nothing we can do with it.
           return undefined;
-        } else {
-          const previousCommand = array[index - 1];
-          const nextCommand = array[index + 1];
-          function averageAngle(angleKeep: number, angleTry: number) {
-            const between = angleBetween(angleKeep, angleTry);
-            if (Math.abs(between) > cutoff) {
-              return angleKeep;
-            } else {
-              return angleKeep + angleBetween(angleKeep, angleTry) / 2;
-            }
+        } else if (!previousCommand) {
+          // First command
+          if (thisCommand.length >= heuristicCutoff) {
+            return undefined;
+          } else {
+            const newOutgoingAngle = averageAngle(
+              thisCommand.outgoingAngle,
+              nextCommand.incomingAngle
+            );
+            const difference = newOutgoingAngle - thisCommand.outgoingAngle;
+            const newIncomingAngle = thisCommand.incomingAngle - difference;
+            return QCommand.angles(
+              thisCommand.x0,
+              thisCommand.y0,
+              newIncomingAngle,
+              thisCommand.x,
+              thisCommand.y,
+              newOutgoingAngle
+            );
           }
-          const incomingAngle = previousCommand
-            ? averageAngle(
-                thisCommand.incomingAngle,
-                previousCommand.outgoingAngle
-              )
-            : thisCommand.incomingAngle;
-          const outgoingAngle = nextCommand
-            ? averageAngle(thisCommand.outgoingAngle, nextCommand.incomingAngle)
-            : thisCommand.outgoingAngle;
+        } else if (!nextCommand) {
+          // Last command
+          if (thisCommand.length >= heuristicCutoff) {
+            return undefined;
+          } else {
+            const newIncomingAngle = averageAngle(
+              previousCommand.outgoingAngle,
+              thisCommand.incomingAngle
+            );
+            const difference = newIncomingAngle - thisCommand.incomingAngle;
+            const newOutgoingAngle = thisCommand.incomingAngle - difference;
+            return QCommand.angles(
+              thisCommand.x0,
+              thisCommand.y0,
+              newIncomingAngle,
+              thisCommand.x,
+              thisCommand.y,
+              newOutgoingAngle
+            );
+          }
+        } else {
+          // Command in the middle.
+          const incomingAngle = averageAngle(
+            thisCommand.incomingAngle,
+            previousCommand.outgoingAngle
+          );
+          const outgoingAngle = averageAngle(
+            thisCommand.outgoingAngle,
+            nextCommand.incomingAngle
+          );
           const proposed = QCommand.angles(
             thisCommand.x0,
             thisCommand.y0,
@@ -152,9 +187,42 @@ function makeSmooth(original: PathShape, cutoff = (FULL_CIRCLE / 4) * 1.01) {
     );
     return result;
   }
-  const result = new PathShape(
-    original.splitOnMove().flatMap((shape) => makeSmoothConnected(shape))
+  /**
+   * Break the original path into pieces.
+   * Any place that the path jumps (with an M command), break the path there.
+   * If the angle between two adjacent commands is greater than the threshold, break it there.
+   * Each segment in this array contains one or more L commands that we will consider turning into curved Q commands.
+   */
+  const segments: LCommand[][] = [];
+  let currentSegment: LCommand[] = [];
+  original.commands.forEach((thisCommand) => {
+    if (!(thisCommand instanceof LCommand)) {
+      // This function would be more complicated if we had to accept other commands.
+      // And in this case I know I have only L commands.
+      throw new Error("wtf");
+    }
+    const previousCommand = currentSegment.at(-1);
+    if (previousCommand) {
+      if (
+        previousCommand.x != thisCommand.x0 ||
+        previousCommand.y != thisCommand.y0 ||
+        Math.abs(
+          angleBetween(previousCommand.outgoingAngle, thisCommand.incomingAngle)
+        ) > angleCutoff
+      ) {
+        segments.push(currentSegment);
+        currentSegment = [];
+      }
+    }
+    currentSegment.push(thisCommand);
+  });
+  if (currentSegment.length > 0) {
+    segments.push(currentSegment);
+  }
+  const segmentsWithCurves = segments.map((segment) =>
+    makeSmoothConnected(segment)
   );
+  const result = new PathShape(segmentsWithCurves.flat());
   return result;
 }
 

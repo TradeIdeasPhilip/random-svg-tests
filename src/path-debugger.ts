@@ -12,7 +12,7 @@ import {
 } from "phil-lib/misc";
 
 import { createPathDebugger } from "./path-debugger-widget";
-import { Random } from "./utility";
+import { averageAngle, Random } from "./utility";
 import { makeRoughShape } from "./rough-lib";
 
 /**
@@ -183,7 +183,7 @@ secondDebugger.insertBefore("insertProcessingPathDebuggerHere");
             const yMid = (before.y + after.y0) / 2;
             const angleA = before.requestedOutgoingAngle;
             const angleB = after.requestedIncomingAngle;
-            const angleMid = angleA + angleBetween(angleA, angleB) / 2;
+            const angleMid = averageAngle(angleA, angleB);
             const newFirst = QCommand.angles(
               before.x0,
               before.y0,

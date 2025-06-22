@@ -1,106 +1,37 @@
 import { PathShape } from "./path-shape";
 
-export class FontMetrics {
+export type FontMetrics = {
   /**
    * The height of a capital M.  1em in css.
-   */
-  get mHeight() {
-    return this.fontSize;
-  }
-  /**
-   * The height of a lower case x.
-   */
-  get xHeight() {
-    return this.fontSize * 0.5;
-  }
-  /**
-   * The width of a capital A.
-   */
-  get aWidth() {
-    return this.fontSize * 0.75;
-  }
-  /**
-   * The width of a 0, 1, ..., or 9.
    *
-   * A lot of other characters use this same width because they are designed the same way as the digits.
+   * `mHeight` is often but not necessarily the requested font size.
    */
-  get digitWidth() {
-    return this.fontSize * 0.5;
-  }
+  readonly mHeight: number;
   /**
    * Put this much space between adjacent characters.
    */
-  get defaultKerning() {
-    return this.strokeWidth * 2.5;
-  }
+  readonly defaultKerning: number;
   /**
-   * The recommended width for a normal space.
+   * The font reserves the space between `top` and `bottom` for itself.
    */
-  get spaceWidth() {
-    return this.strokeWidth + this.digitWidth / 2;
-  }
-  get top() {
-    return this.capitalTop - this.mHeight / 4;
-  }
+  readonly top: number;
+  /**
+   * The font reserves the space between `top` and `bottom` for itself.
+   */
+  readonly bottom: number;
   /**
    * The y coordinate for the top of most capital letters.
    */
-  get capitalTop() {
-    return this.baseline - this.mHeight;
-  }
+  readonly capitalTop: number;
   /**
-   * Exactly half way between capitalTop and capitalMiddle.
+   * The expected stroke width.
    */
-  get capitalTopMiddle() {
-    return (this.capitalTop + this.capitalMiddle) / 2;
-  }
+  readonly strokeWidth: number;
   /**
-   * The y coordinate for the mid line for E, F, G, H, etc.
+   * The recommended width for a normal space.
    */
-  get capitalMiddle() {
-    return this.baseline - this.xHeight;
-  }
-  /**
-   * Exactly half way between capitalMiddle  and baseline.
-   */
-  get capitalBottomMiddle() {
-    return (this.baseline + this.capitalMiddle) / 2;
-  }
-  /**
-   * The bottom of most letters, but not the descenders.
-   *
-   * The baseline is often used to line up different elements.
-   */
-  get baseline() {
-    return 0;
-  }
-  /**
-   * The y coordinate for the bottom of letters like g, y, p, q, and j.
-   */
-  get descender() {
-    return this.mHeight / 4;
-  }
-  get bottom() {
-    return this.descender + this.mHeight / 4;
-  }
-
-  /**
-   *
-   * @param fontSize How tall to make the font.
-   * This is measured in svg units.
-   * This is typically (but not always) the same as the mHeight.
-   * @param strokeWidth The expected stroke width.
-   * This is mostly ignored, by choice, but that's not always possible.
-   */
-  constructor(
-    public readonly fontSize: number,
-    public readonly strokeWidth = fontSize / 10
-  ) {
-    if (fontSize <= 0 || !isFinite(fontSize)) {
-      throw new Error("wtf");
-    }
-  }
-}
+  readonly spaceWidth: number;
+};
 
 export class DescriptionOfLetter {
   /**

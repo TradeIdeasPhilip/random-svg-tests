@@ -9,7 +9,7 @@ import {
 } from "./utility";
 import { LetterLayoutInfo, TextLayout } from "./letters-more";
 import { makeLineFont } from "./line-font";
-import { Font, FontMetrics } from "./letters-base";
+import { Font } from "./letters-base";
 import { makeRoughShape } from "./rough-lib";
 import { HandwritingEffect } from "./handwriting-effect";
 import { PathShape } from "./path-shape";
@@ -100,7 +100,7 @@ function setUpText() {
       return [...this.#letters];
     }
     readonly #textLayout = new TextLayout();
-    constructor(font: number | FontMetrics | Font) {
+    constructor(font: number | Font) {
       if (!(font instanceof Map)) {
         font = makeLineFont(font);
       }

@@ -1,4 +1,4 @@
-import { DescriptionOfLetter, Font, FontMetrics } from "./letters-base";
+import { DescriptionOfLetter, Font } from "./letters-base";
 import { makeLineFont } from "./line-font";
 import { PathShape } from "./path-shape";
 
@@ -31,12 +31,13 @@ export class TextLayout {
     this.lineFeed(4 / 3);
   }
   font: Font;
-  constructor(font: number | FontMetrics | Font = 5) {
+  constructor(font: number | Font = 5) {
     if (!(font instanceof Map)) {
       font = makeLineFont(font);
     }
     this.font = font;
-    this.lineHeight = font.get("0")!.fontMetrics.mHeight * 1.5;
+    const metrics = font.get("0")!.fontMetrics;
+    this.lineHeight = metrics.bottom - metrics.top;
   }
   getDescription(key: string) {
     return this.font.get(key);

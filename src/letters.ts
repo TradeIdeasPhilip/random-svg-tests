@@ -13,12 +13,8 @@ import { PathShape, Command } from "./path-shape";
 import { makeLineFont } from "./line-font";
 import rough from "roughjs";
 import { Options } from "roughjs/bin/core";
-import {
-  describeFont,
-  DescriptionOfLetter,
-  Font,
-  FontMetrics,
-} from "./letters-base";
+import { describeFont, DescriptionOfLetter, Font } from "./letters-base";
+import { LineFontMetrics } from "./line-font";
 import { TextLayout, Writer } from "./letters-more";
 
 const svg = getById("main", SVGSVGElement);
@@ -170,7 +166,7 @@ function makeRoughFont(baseFont: Font, options: Options): Font {
   writer.show("Small  Caps");
 
   writer.lineHeight *= 1.125;
-  const baseFont = makeLineFont(new FontMetrics(6, 0.5));
+  const baseFont = makeLineFont(new LineFontMetrics(6, 0.5));
   const cubicFont = convertToCubics(baseFont);
   // You can adjust the font metrics to tell it your desired stroke width.  Or you can
   // read the recommended value from the fontMetrics (shown below) then update the elements

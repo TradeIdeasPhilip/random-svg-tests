@@ -281,3 +281,12 @@ cursiveLetters.forEach((cursiveLetter, index) => {
     );
   });
 });
+
+// TODO 
+// * Add an index number in a new column on the left of the letter samples.
+// * Create a function mapping these numbers to JavaScript characters.
+// * Each letter needs one more field, this string.
+// * An unknown index will return a string like `unknown #${i}`
+// * Convert these into fonts.
+// * Draw the same sample text in three different fonts.
+// * "Like\nshare\nand\subscribe"

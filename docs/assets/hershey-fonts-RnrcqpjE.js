@@ -1,4 +1,4 @@
-import{L as I,P as G}from"./path-shape-DxTxvizJ.js";import{f as J}from"./utility-By36BYLf.js";const H=`12345  1JZ
+import{m as K}from"./misc-wGF4FraP.js";import{L as H,P as c,Q as t}from"./path-shape-DxTxvizJ.js";import{f as u,a as G}from"./utility-By36BYLf.js";import{D as b}from"./letters-base-DnFyBuRH.js";const s=`12345  1JZ
 12345  9MWRFRT RRYQZR[SZRY
 12345  6JZNFNM RVFVM
 12345 12H]SBLb RYBRb RLOZO RKUYU
@@ -111,7 +111,7 @@ QWRYSZT\\T^S\`RaPb
 12345 24F^IUISJPLONOPPTSVTXTZS[Q RISJQLPNPPQTTVUXUZT[Q[O
 12345 35JZJFJ[K[KFLFL[M[MFNFN[O[OFPFP[Q[QFRFR[S[SFTFT[U[UFVFV[W[WFXFX[Y[
 YFZFZ[
-`,t=`12345  1JZ
+`,g=`12345  1JZ
 12345  9MWRFRT RRYQZR[SZRY
 12345  6JZNFNM RVFVM
 12345 12H]SBLb RYBRb RLOZO RKUYU
@@ -212,5 +212,5 @@ QWRYSZT\\T^S\`RaPb
 12345 24F^IUISJPLONOPPTSVTXTZS[Q RISJQLPNPPQTTVUXUZT[Q[O
 12345 35JZJFJ[K[KFLFL[M[MFNFN[O[OFPFP[Q[QFRFR[S[SFTFT[U[UFVFV[W[WFXFX[Y[
 YFZFZ[
-`;function Y(R){const Z=new Array;return R.split(`
-`).forEach(X=>{/^[0-9 ]{8}/.test(X)?Z.push(X):Z.push(J(Z.pop())+X)}),Z}const a=Y(H),o=Y(t);function W(R){if(R.length<10||R.length%2==1)throw new Error("wtf");let F=1/0,N=-1/0,T=1/0,L=-1/0,S,n=[];for(let M=10;M<R.length;M+=2){const Q=R.substring(M,M+2);if(Q==" R")S=void 0;else{const V=Q.charCodeAt(0)-82,P=Q.charCodeAt(1)-82;if(S){const K=new I(S.x,S.y,V,P);n.push(K)}S={x:V,y:P},F=Math.min(F,V),N=Math.max(N,V),T=Math.min(T,P),L=Math.max(L,P)}}const U=R.charCodeAt(8)-82,O=R.charCodeAt(9)-82;return{pathShape:new G(n),left:F,right:N,top:T,bottom:L,leftSideBearing:U,rightSideBearing:O}}const B=a.map(R=>W(R)),E=o.map(R=>W(R));export{B as c,E as f};
+`;function o(n){const Z=new Array;return n.split(`
+`).forEach(T=>{/^[0-9 ]{8}/.test(T)?Z.push(T):Z.push(u(Z.pop())+T)}),Z}const A=o(s),B=o(g);function J(n){if(n.length<10||n.length%2==1)throw new Error("wtf");let O=1/0,U=-1/0,S=1/0,P=-1/0,V,I=[];for(let Y=10;Y<n.length;Y+=2){const N=n.substring(Y,Y+2);if(N==" R")V=void 0;else{const F=N.charCodeAt(0)-82,M=N.charCodeAt(1)-82;if(V){const L=new H(V.x,V.y,F,M);I.push(L)}V={x:F,y:M},O=Math.min(O,F),U=Math.max(U,F),S=Math.min(S,M),P=Math.max(P,M)}}const R=n.charCodeAt(8)-82,X=n.charCodeAt(9)-82;return{pathShape:new c(I),left:O,right:U,top:S,bottom:P,leftSideBearing:R,rightSideBearing:X}}const D=A.map(n=>J(n)),w=B.map(n=>J(n));function E(n,Z=K.FULL_CIRCLE/4*1.01){function T(S){const V=S.map((R,X,Y)=>{const N=Y[X-1],F=Y[X+1];if(!(!N&&!F))if(N)if(F){const M=G(R.incomingAngle,N.outgoingAngle),L=G(R.outgoingAngle,F.incomingAngle),W=t.angles(R.x0,R.y0,M,R.x,R.y,L);return W.creationInfo.success?W:void 0}else{if(R.length>=5)return;{const M=G(N.outgoingAngle,R.incomingAngle),L=M-R.incomingAngle,W=R.incomingAngle-L;return t.angles(R.x0,R.y0,M,R.x,R.y,W)}}else{if(R.length>=5)return;{const M=G(R.outgoingAngle,F.incomingAngle),L=M-R.outgoingAngle,W=R.incomingAngle-L;return t.angles(R.x0,R.y0,W,R.x,R.y,M)}}});return V.forEach((R,X)=>{if(!R)return;const Y=V[X-1],N=S[X-1],F=N&&!Y,M=V[X+1],L=S[X+1],W=L&&!M;if(!(F||W))return;const f=F?N.outgoingAngle:R.incomingAngle,l=W?L.incomingAngle:R.outgoingAngle,r=t.angles(R.x0,R.y0,f,R.x,R.y,l);r.creationInfo.success&&(V[X]=r)}),V.map((R,X)=>R||S[X])}const e=[];let Q=[];n.commands.forEach(S=>{if(!(S instanceof H))throw new Error("wtf");const P=Q.at(-1);P&&(P.x!=S.x0||P.y!=S.y0||Math.abs(K.angleBetween(P.outgoingAngle,S.incomingAngle))>Z)&&(e.push(Q),Q=[]),Q.push(S)}),Q.length>0&&e.push(Q);const O=e.map(S=>T(S));return new c(O.flat())}const i=[" ","!",'"',"#","$","%","&","’","(",")","*","+",",","-",".","/",...K.initializedArray(10,n=>String.fromCharCode(n+48)),":",";","<","=",">","?","@",...K.initializedArray(26,n=>String.fromCharCode(n+65)),"[","\\","]","^","_","‘",...K.initializedArray(26,n=>String.fromCharCode(n+97)),"{","|","}","~","▮"];function a(n,Z){const T=o(n).map(U=>J(U));if(T.length!=i.length)throw new Error("wtf");const e=T[0],Q={bottom:Z.bottom-Z.baseline,capitalTop:0-Z.mHeight,defaultKerning:0,mHeight:Z.mHeight,top:Z.top,strokeWidth:1,spaceWidth:e.rightSideBearing-e.leftSideBearing},O=new Map;for(const[U,S]of K.zip(i,T)){const P=new DOMMatrix;P.translateSelf(-S.leftSideBearing,Z.baseline);const V=S.pathShape.transform(P),I=E(V),R=S.rightSideBearing-S.leftSideBearing,X=new b(I,R,Q);O.set(U,X)}return O}const y=a(s,{baseline:9,bottom:22,top:-17,mHeight:21});a(g,{baseline:9,bottom:17,top:-17,mHeight:21});export{D as c,i as d,w as f,E as m,y as r};

@@ -1,9 +1,8 @@
 #samples {
   display: grid;
-  grid-template-columns: max-content minmax(1px, 1fr) minmax(1px, 1fr) minmax(
-      1px,
-      1fr
-    ) minmax(1px, 1fr);
+  grid-template-columns:
+    max-content minmax(1px, 1fr) minmax(1px, 1fr) minmax(1px, 1fr)
+    minmax(1px, 1fr);
   width: 100%;
   /*  https://css-tricks.com/snippets/css/complete-guide-grid/#prop-align-items says align-items: stretch is the default, but adding it explicitly helped a lot! */
   align-items: stretch;
@@ -45,4 +44,9 @@ path.left {
 path.right {
   stroke: red;
   stroke-width: 0.333;
+}
+
+#converted path {
+  fill: none;
+  stroke: black;
 }

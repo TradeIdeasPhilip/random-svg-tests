@@ -3,7 +3,7 @@ import "./hershey-fonts-viewer.css";
 import { cursiveLetters, futuraLLetters } from "./hershey-fonts/hershey-fonts";
 import { getById } from "phil-lib/client-misc";
 import { LCommand, PathShape, QCommand } from "./path-shape";
-import { angleBetween, FULL_CIRCLE } from "phil-lib/misc";
+import { angleBetween, FULL_CIRCLE, initializedArray } from "phil-lib/misc";
 import { averageAngle } from "./utility";
 
 const samplesDiv = getById("samples", HTMLDivElement);
@@ -32,7 +32,7 @@ const futuraLSummary = { baseline: 9, ...summarize(futuraLLetters) };
 
 samplesDiv.insertAdjacentHTML(
   "beforeend",
-  `<div>Cursive</div><div>Smooth Cursive</div><div>Futura L</div><div>Smooth Futura L</div><div>${JSON.stringify(
+  `<div></div><div>Cursive</div><div>Smooth Cursive</div><div>Futura L</div><div>Smooth Futura L</div><div></div><div>${JSON.stringify(
     cursiveSummary
   )}</div><div></div><div>${JSON.stringify(futuraLSummary)}</div><div></div>`
 );
@@ -226,7 +226,53 @@ function makeSmooth(
   return result;
 }
 
+const decoder = [
+  " ",
+  "!",
+  '"',
+  "#",
+  "$",
+  "%",
+  "&",
+  "’",
+  "(",
+  ")",
+  "*",
+  "+",
+  ",",
+  "-",
+  ".",
+  "/",
+  ...initializedArray(10, (n) => String.fromCharCode(n + "0".charCodeAt(0))),
+  ":",
+  ";",
+  "<",
+  "=",
+  ">",
+  "?",
+  "@",
+  ...initializedArray(26, (n) => String.fromCharCode(n + "A".charCodeAt(0))),
+  "[",
+  "\\",
+  "]",
+  "^",
+  "_",
+  "‘",
+  ...initializedArray(26, (n) => String.fromCharCode(n + "a".charCodeAt(0))),
+  "{",
+  "|",
+  "}",
+  "~",
+  "▮",
+];
+
+// MARK: Draw SVGs
+
 cursiveLetters.forEach((cursiveLetter, index) => {
+  samplesDiv.insertAdjacentHTML(
+    "beforeend",
+    `<div class="character">${decoder[index] ?? "⁉️"}</div>`
+  );
   const futuraLLetter = futuraLLetters[index];
   [
     { letter: cursiveLetter, summary: cursiveSummary },
@@ -282,11 +328,7 @@ cursiveLetters.forEach((cursiveLetter, index) => {
   });
 });
 
-// TODO 
-// * Add an index number in a new column on the left of the letter samples.
-// * Create a function mapping these numbers to JavaScript characters.
-// * Each letter needs one more field, this string.
-// * An unknown index will return a string like `unknown #${i}`
+// TODO
 // * Convert these into fonts.
 // * Draw the same sample text in three different fonts.
 // * "Like\nshare\nand\subscribe"

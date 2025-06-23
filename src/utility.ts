@@ -12,7 +12,7 @@ import {
 //
 // fix assertFinite() to use Number.isFinite() rather than Window.isFinite() !!!
 //
-// Promote: selectorQueryAll(), selectorQuery(), Random, getDataUrl(), gcd(), lcm()
+// Promote: selectorQueryAll(), selectorQuery(), Random, getDataUrl(), gcd(), lcm(), pickAny()
 
 export function averageAngle(angle1: number, angle2: number) {
   const between = angleBetween(angle1, angle2);
@@ -525,11 +525,12 @@ export function ease(t: number): number {
 
 /**
  * Pick any arbitrary element from the container.
- * @param container
- * @returns An item in the set.  Unless the set is empty, then it returns undefined.
+ * @param container Presumably a Map or a Set.
+ * Something with a `.values()` iterator.
+ * @returns An item in the set or a value from the map.  Unless the input is empty, then this returns undefined.
  */
-export function pickAny<T, Key>(
-  container: ReadonlySet<T> | ReadonlyMap<Key, T>
+export function pickAny<T>(
+  container: Pick<ReadonlySet<T>, "values">
 ): T | undefined {
   const first = container.values().next();
   if (first.done) {

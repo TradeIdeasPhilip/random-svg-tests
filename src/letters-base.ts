@@ -1,4 +1,5 @@
 import { PathShape } from "./path-shape";
+import { pickAny } from "./utility";
 
 export type FontMetrics = {
   /**
@@ -31,6 +32,7 @@ export type FontMetrics = {
    * The recommended width for a normal space.
    */
   readonly spaceWidth: number;
+  // baseLine is now frozen at 0!!!!!
 };
 
 export class DescriptionOfLetter {
@@ -102,6 +104,34 @@ export class DescriptionOfLetter {
  * The order is based on the most convenient implementation and is likely to change.
  */
 export type Font = Map<string, DescriptionOfLetter>;
+
+export function resizeFont(originalFont: Font, newSize: number): Font {
+  const newFont: Font = new Map();
+  const originalFontMetrics = pickAny(originalFont)?.fontMetrics;
+  if (originalFontMetrics) {
+    const ratio = newSize / originalFontMetrics.mHeight;
+    const newFontMetrics: FontMetrics = {
+      bottom: ratio * originalFontMetrics.bottom,
+      capitalTop: ratio * originalFontMetrics.capitalTop,
+      defaultKerning: ratio * originalFontMetrics.defaultKerning,
+      mHeight: ratio * originalFontMetrics.mHeight,
+      spaceWidth: ratio * originalFontMetrics.spaceWidth,
+      strokeWidth: ratio * originalFontMetrics.strokeWidth,
+      top: ratio * originalFontMetrics.top,
+    };
+    const matrix = new DOMMatrix();
+    matrix.scaleSelf(ratio);
+    originalFont.forEach((originalLetter, key) => {
+      if (originalLetter.fontMetrics != originalFontMetrics) {
+        // Expecting all letters to come from the same font.
+        throw new Error("wtf");
+      }
+      const newLetter = new DescriptionOfLetter(originalLetter.shape.transform(matrix),originalLetter.advance*ratio,newFontMetrics);
+      newFont.set(key, newLetter);
+    });
+  }
+  return newFont;
+}
 
 export function describeFont(font: Font) {
   /**

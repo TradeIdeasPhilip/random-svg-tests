@@ -118,26 +118,83 @@ cursiveLetters.forEach((cursiveLetter, index) => {
 
 const convertedSvg = getById("converted", SVGSVGElement);
 
+/**
+ * Remove the dot from the top of the i's.
+ */
+const newFont = new Map(roundCursiveFont);
+{
+  const originalI = roundCursiveFont.get("i")!;
+  const newPathShape = originalI.shape.splitOnMove()[1];
+  const newI = originalI.reshape(newPathShape);
+  newFont.set("i", newI);
+}
+
+let fullMessage = "";
+
 //const layoutInfo = textLayout.addText("Like share and subscribe.","center");
 ["Like", "share", "and", "subscribe"].forEach((word, index) => {
-  const textLayout = new TextLayout(roundCursiveFont);
+  const textLayout = new TextLayout(newFont);
   textLayout.rightMargin = 120;
   const layoutInfo = textLayout.addText(word, "center");
   console.log("layoutInfo", layoutInfo);
   const down = index * textLayout.lineHeight;
-  const fullPathShape = PathShape.join(
+  let fullPathShape = PathShape.join(
     layoutInfo.map((letter) => ({
       shape: letter.description.shape,
       Δx: letter.x,
       Δy: letter.baseline + down,
     }))
   );
+  if (index % 2) {
+    fullPathShape = fullPathShape.reverse();
+  }
   const element = fullPathShape.makeElement();
   convertedSvg.appendChild(element);
+  fullMessage += fullPathShape.rawPath;
 });
+console.log("Like, share and subscribe:", fullMessage);
 /*
 layoutInfo.forEach(letterInfo => {
   const element = letterInfo.description.makeElement();
   convertedSvg.appendChild(element);
 });
 */
+
+/**
+ * TODO
+ * The TextLayout class still has issues.
+ * IT's an improvement over the previous version and a step in the right direction.
+ * Centering is incomplete at best.
+ *
+ * Proposal:
+ * ParagraphLayout class.
+ * It does not expect it be reset.
+ * It does not expect you to mess with x and y in the middle of the work.
+ * When you are done with the paragraph you tell it how to align the content.
+ * left, center, right or justify.
+ *
+ * It will return objects as you add text, like TextLayout does.
+ * But it will remember all of the objects that is has been returning.
+ * It will need that to do the text alignment.
+ * We can also use that in two other functions.
+ * One to create a single PathShape out of all of the letters.
+ * And maybe one to create all of the elements and add them to an SVG.
+ * Both taking care of the location of each letter.
+ *
+ * Speaking of the location of each letter.
+ * We have a function for joining multiple paths and adjusting their positions at the same time.
+ * But the format is slightly different between the output of our function and the input of the join function.
+ * That should be fixed.
+ *
+ * Top and bottom can be done better.
+ * Maybe we have a top margin property.
+ * The top of the top line of text will touch the top margin.
+ * If multiple fonts are all used on the same line, we use the baseline of each font to line the characters up.
+ * If we are multi line, we use the top and bottom of each character on the line to determine the line height.
+ * There can be an override to add more space between each pair of lines.
+ * At the end you can ask what's the y for the bottom of the paragraph.
+ * And you can ask for the baseline of the last line.
+ * So you can line other things up with this.
+ * Each returned object (one per letter) will also include it's baseline.
+ * It already does, but we might rename that Δy as described above.
+ */

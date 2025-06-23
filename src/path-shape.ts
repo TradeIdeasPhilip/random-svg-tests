@@ -20,6 +20,12 @@ const formatForSvg = new Intl.NumberFormat("en-US", {
 // MARK: Command
 export type Command = {
   /**
+   * Create another command that will follow the same path, but backwards.
+   * If you stroke or fill the path, it will look just like the original.
+   * But some animations can tell the difference.
+   */
+  reverse(): Command;
+  /**
    * The initial x value.
    *
    * We do not have to write this as part of the command.
@@ -64,6 +70,9 @@ export type Command = {
 
 // MARK: LCommand
 export class LCommand implements Command {
+  reverse(): LCommand {
+    return new LCommand(this.x, this.y, this.x0, this.y0);
+  }
   /**
    * This was an interesting idea, but the `PathShape.rawPath`
    * seem like a better idea.
@@ -139,6 +148,16 @@ export type QCreationInfo = Readonly<
 >;
 
 export class QCommand implements Command {
+  reverse(): QCommand {
+    return QCommand.controlPoints(
+      this.x,
+      this.y,
+      this.x1,
+      this.y1,
+      this.x0,
+      this.y0
+    );
+  }
   /**
    * Create a line segment.
    * @param x0 Initial x
@@ -1078,6 +1097,16 @@ export class PathShapeError extends Error {
  * If you wan to make more complicated changes, work on an array of `Command` objects.
  */
 export class PathShape {
+  /**
+   * Create another path that will look the same, but backwards.
+   * If you stroke or fill the path, it will look just like the original.
+   * But some animations can tell the difference.
+   */
+  reverse() {
+    return new PathShape(
+      this.commands.toReversed().map((command) => command.reverse())
+    );
+  }
   /**
    * Convert a string into a `PathShape`.
    * @param d A valid d attribute for an `SVGPathElement`.

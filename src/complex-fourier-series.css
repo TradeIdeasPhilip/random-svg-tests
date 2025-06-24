@@ -71,7 +71,7 @@ circle[data-t] {
 }
 
 #requestedVsReconstructed path:nth-of-type(1) {
-  stroke: rgb(188, 239, 255);
+  stroke: hwb(204.42deg 0% 0%);
   stroke-width: calc(3 * var(--recommended-stroke-width));
 }
 

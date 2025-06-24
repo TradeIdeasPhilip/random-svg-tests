@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>path-to-</title>
+    <script type="module" src="/src/path-to-fourier.ts"></script>
+  </head>
+  <body>
+    <svg
+      viewBox="0 0 16 9"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <defs></defs>
+      <rect id="background" width="16" height="9"></rect>
+    </svg>
+    <div id="table-container">
+      <table id="progress">
+        <tr>
+          <td></td>
+          <th>Circles</th>
+          <th>Amplitude</th>
+        </tr>
+        <tr data-using>
+          <th>Using</th>
+          <td data-circles class="numbers"></td>
+          <td data-amplitude class="numbers"></td>
+        </tr>
+        <tr data-adding>
+          <th>Adding</th>
+          <td data-circles class="numbers"></td>
+          <td data-amplitude class="numbers"></td>
+        </tr>
+        <tr data-available>
+          <th>Available</th>
+          <td data-circles class="numbers"></td>
+          <td data-amplitude class="numbers"></td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

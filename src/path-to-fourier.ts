@@ -1,5 +1,10 @@
 import { getById } from "phil-lib/client-misc";
-import { samples, samplesFromPath } from "./fourier-shared";
+import {
+  groupTerms,
+  samples,
+  samplesFromPath,
+  samplesToFourier,
+} from "./fourier-shared";
 import "./path-to-fourier.css";
 import { panAndZoom } from "./transforms";
 
@@ -52,6 +57,7 @@ type Result = {
 */
 
 function initialize(options: Options) {
+  // Reference path.
   referencePath.setAttribute("d", options.pathString);
   const transform = panAndZoom(
     referencePath.getBBox(),
@@ -62,23 +68,50 @@ function initialize(options: Options) {
   const scale = transform.a;
   scaleG.style.transform = transform.toString();
   scaleG.style.setProperty("--path-scale", scale.toString());
+  // Take the samples.
   const samples = samplesFromPath(
     options.pathString,
     options.numberOfFourierSamples
   );
+  // Show where were the samples taken.
   let samplesPathD = "";
   samples.forEach(([x, y]) => {
     samplesPathD += `M${x},${y}l0,0`;
   });
   samplesPath.setAttribute("d", samplesPathD);
+  // Create terms
+  const terms = samplesToFourier(samples);
+  const script = groupTerms({
+    addTime: 2000,
+    pauseTime: 100,
+    maxGroupsToDisplay: 10,
+    terms,
+  });
+  console.log(script);
 }
 
-initialize({
-  maxGroupsToDisplay: 20,
-  numberOfDisplaySegments: 2000,
-  numberOfFourierSamples: 1024,
-  pathString: samples.likeShareAndSubscribe,
-});
+const scripts = new Map<string, Options>([
+  [
+    "likeShareAndSubscribe",
+    {
+      maxGroupsToDisplay: 20,
+      numberOfDisplaySegments: 2000,
+      numberOfFourierSamples: 1024,
+      pathString: samples.likeShareAndSubscribe,
+    },
+  ],
+  [
+    "s",
+    {
+      maxGroupsToDisplay: 10,
+      numberOfDisplaySegments: 100,
+      numberOfFourierSamples: 1024,
+      pathString: samples.hilbert[0],
+    },
+  ],
+]);
+
+initialize(scripts.get("s")!);
 
 /**
  * TODO soon.
@@ -89,8 +122,9 @@ initialize({
  * We are *not* interpolating between the two states with integer numbers of circles.
  * Instead, the change will move across the length of the path over time.
  * The font end of the path quickly breaks from the back end, which remains in place.
- * The front end moves to it's new place.
+ * The front end moves to its new place.
  * This change moves through the path like a wave.
+ * The end of the path will eventually meet back up with the front of the path.
  * * using(t) = the position computed from all of the circles that we are completely using.
  * * adding(t) = the change to the position computed from the circles that we
  * * display(t) = using(t) + fraction * adding(t)
@@ -98,7 +132,7 @@ initialize({
  * * fraction = a value that changes gradually over time as we animate the addition of the new circles.
  * In complex-fourier-series.html fraction is a simple function of time.
  * It was the same for all values of t.
- * Now there is a center of the change, which is value of time, which changes over time.
+ * Now there is a center of the change, which is value of t, which changes over time.
  * The center starts just before t=0.
  * Over time the center will move to just past t=1.
  * fraction(t) = 0 when t ≪ the center point.
@@ -107,13 +141,14 @@ initialize({
  * There is a small region around the center point, ±r, where fraction(t) is in flux.
  * Use my standard cos easing function to make fraction(t) smoothly transition from 0 to 1.
  * At the starting time the center of change should be at 0-r.
- * And the ending time the center of change should be at 1+e.
+ * And the ending time the center of change should be at 1+r.
  * I.e. start making changes at the very start of the time period, but ease into it.
  * And end the same way.
  *
  * r is proportional to the amplitude of the circle we are adding.
  * If we are adding multiple circles, maybe the total amplitude.
  * A value of around 1% - 5% of the total distance seems reasonable for the first circle.
+ * We will need a smaller r to make the smaller changes more obvious.
  *
  * Do we have to stop in between updates?
  * It might make sense to send multiple updates through at once.

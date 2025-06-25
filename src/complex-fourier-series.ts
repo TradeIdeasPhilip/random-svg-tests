@@ -14,9 +14,11 @@ import { assertClass, FIGURE_SPACE, lerp, makeLinear } from "phil-lib/misc";
 import { lerpPoints } from "./math-to-path";
 import { cursiveLetters, futuraLLetters } from "./hershey-fonts/hershey-fonts";
 import {
+  groupTerms,
   samples,
   samplesFromParametric,
   samplesToFourier,
+  ScriptEntry,
   termsToParametricFunction,
 } from "./fourier-shared";
 
@@ -137,6 +139,11 @@ export const support = {
    * If you see pink and dark red lines, try using more samples.
    */
   sampleCount: 200,
+  /**
+   * If we have more than this many circles,
+   * combine some of them to make this many bins.
+   */
+  maxKeyframes: 10,
 };
 
 const goButton = getById("go", HTMLButtonElement);
@@ -214,6 +221,7 @@ function f(t) {
 //   and support.samples.peanocurve[0] ... support.samples.peanocurve[2] 
 support.referencePath.d = support.samples.likeShareAndSubscribe;
 support.sampleCount = 2000;
+support.maxKeyframes = 30;
 const length = support.referencePath.length;
 console.log({length});
 function f(t) {
@@ -564,123 +572,14 @@ class AnimateRequestedVsReconstructed {
     };
     this.#requestedPath.setAttribute("d", referencePath);
     panAndZoom(this.#requestedPath, this.#svgElement);
-    const nonZeroTerms = samplesToFourier(samplesFromParametric(f));
-    let totalAmplitude = 0;
-    nonZeroTerms.forEach((term) => (totalAmplitude += term.amplitude));
-    /**
-     * This describes `nonZeroTerms` and is focused on what we
-     * display in the table.
-     *
-     * `here` is the amount of amplitude expressed as a percent.
-     *
-     * `before` and `after` are the sum of all of the amplitudes
-     * before and after this row.  I precompute these mostly so I
-     * can control the round off error.
-     */
-    const amplitudes = nonZeroTerms.map((term) => {
-      const here = (term.amplitude / totalAmplitude) * 100;
-      return { here, before: NaN, after: NaN };
+    const terms = samplesToFourier(samplesFromParametric(f));
+    const script = groupTerms({
+      pauseTime: 750,
+      addTime: 500,
+      maxGroupsToDisplay: support.maxKeyframes,
+      terms: terms,
     });
-    {
-      let beforeSoFar = 0;
-      let afterSoFar = 0;
-      amplitudes.forEach((beforeRow, beforeIndex, array) => {
-        beforeRow.before = beforeSoFar;
-        beforeSoFar += beforeRow.here;
-        const afterIndex = array.length - beforeIndex - 1;
-        const afterRow = array[afterIndex];
-        afterRow.after = afterSoFar;
-        afterSoFar += afterRow.here;
-      });
-      //console.log(beforeSoFar, afterSoFar, amplitudes);
-    }
-    const maxKeyframes = 10;
-    let usingCircles = 0;
-    const pauseTime = 750;
-    const addTime = 500;
-    type ScriptEntry = {
-      offset: number;
-      startTime: number;
-      endTime: number;
-      usingCircles: number;
-      usingAmplitude: number;
-      addingCircles: number;
-      addingAmplitude: number;
-      availableAmplitude: number;
-      availableCircles: number;
-    };
-    const script = new Array<ScriptEntry>();
-    for (
-      let remainingKeyframes = maxKeyframes - 1;
-      remainingKeyframes >= 0 && usingCircles < amplitudes.length;
-      remainingKeyframes--
-    ) {
-      let addingAmplitude = 0;
-      let addingCircles = 0;
-      let termIndex = usingCircles;
-      const usingAmplitude = amplitudes[termIndex].before;
-      while (true) {
-        addingAmplitude += amplitudes[termIndex].here;
-        addingCircles++;
-        termIndex++;
-        if (termIndex >= amplitudes.length) {
-          break;
-        }
-        if (remainingKeyframes > 0) {
-          const remainingAmplitude = amplitudes[termIndex].after;
-          const averageRemainingBinSize =
-            remainingAmplitude / remainingKeyframes;
-          if (addingAmplitude > averageRemainingBinSize) {
-            break;
-          }
-        }
-      }
-      const availableAmplitude = amplitudes[termIndex - 1].after;
-      const availableCircles = amplitudes.length - termIndex;
-      script.push({
-        offset: NaN,
-        startTime: NaN,
-        endTime: NaN,
-        usingCircles,
-        usingAmplitude,
-        addingCircles, // 👈 Adding
-        addingAmplitude,
-        availableAmplitude,
-        availableCircles,
-      });
-      usingCircles += addingCircles;
-      script.push({
-        offset: NaN,
-        startTime: NaN,
-        endTime: NaN,
-        usingCircles,
-        usingAmplitude: usingAmplitude + addingAmplitude,
-        addingCircles: 0, // 👈 Pausing
-        addingAmplitude: 0,
-        availableAmplitude,
-        availableCircles,
-      });
-    }
-    let smallEffectOffset = NaN;
-    {
-      // Fill in startTime and endTime for each row of the script.
-      let startTime = 0;
-      script.forEach((keyframe) => {
-        const duration = keyframe.addingCircles ? addTime : pauseTime;
-        const endTime = startTime + duration;
-        keyframe.startTime = startTime;
-        keyframe.endTime = endTime;
-        startTime = endTime;
-      });
-      script.forEach((keyframe) => {
-        keyframe.offset = keyframe.startTime / startTime;
-      });
-      smallEffectOffset = 50 / startTime;
-      const last = script.at(-1)!;
-      const final = { ...last, startTime, offset: 1 };
-      script.push(final);
-    }
-    //console.log("script", script);
+    const smallEffectOffset = 50 / script.at(-1)!.startTime;
 
     const animationOptions: KeyframeAnimationOptions = {
       duration: script.at(-1)!.endTime * 3,
@@ -697,7 +596,7 @@ class AnimateRequestedVsReconstructed {
       const keyframes = script.map(({ offset, usingCircles }): Keyframe => {
         if (usingCircles != lastNumberOfTerms) {
           const reconstructedF = termsToParametricFunction(
-            nonZeroTerms,
+            terms,
             usingCircles
           );
           const reconstructedPath = PathShape.parametric(
@@ -1115,6 +1014,7 @@ addAnotherInput();
     let f: Function;
     support.referencePath.clear();
     support.sampleCount = 200;
+    support.maxKeyframes = 10;
     try {
       f = oneTimeSetup(support);
     } catch (reason: unknown) {

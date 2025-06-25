@@ -126,3 +126,124 @@ export function samplesFromPath(
     return [point.x, point.y];
   });
 }
+
+function getAmplitudes(terms: readonly FourierTerm[]) {
+  let totalAmplitude = 0;
+  terms.forEach((term) => (totalAmplitude += term.amplitude));
+  /**
+   * `here` is the amount of amplitude expressed as a percent.
+   *
+   * `before` and `after` are the sum of all of the amplitudes
+   * before and after this row.  I precompute these mostly so I
+   * can control the round off error.
+   */
+  const amplitudes = terms.map((term) => {
+    const here = (term.amplitude / totalAmplitude) * 100;
+    return { here, before: NaN, after: NaN };
+  });
+  {
+    let beforeSoFar = 0;
+    let afterSoFar = 0;
+    amplitudes.forEach((beforeRow, beforeIndex, array) => {
+      beforeRow.before = beforeSoFar;
+      beforeSoFar += beforeRow.here;
+      const afterIndex = array.length - beforeIndex - 1;
+      const afterRow = array[afterIndex];
+      afterRow.after = afterSoFar;
+      afterSoFar += afterRow.here;
+    });
+    //console.log(beforeSoFar, afterSoFar, amplitudes);
+  }
+  return amplitudes;
+}
+
+export type ScriptEntry = {
+  offset: number;
+  startTime: number;
+  endTime: number;
+  usingCircles: number;
+  usingAmplitude: number;
+  addingCircles: number;
+  addingAmplitude: number;
+  availableAmplitude: number;
+  availableCircles: number;
+};
+export function groupTerms(inputs: {
+  readonly pauseTime: number;
+  readonly addTime: number;
+  readonly maxGroupsToDisplay: number;
+  readonly terms: readonly FourierTerm[];
+}) {
+  const amplitudes = getAmplitudes(inputs.terms);
+  const script = new Array<ScriptEntry>();
+  let usingCircles = 0;
+  for (
+    let remainingGroupsToDisplay = inputs.maxGroupsToDisplay - 1;
+    remainingGroupsToDisplay >= 0 && usingCircles < amplitudes.length;
+    remainingGroupsToDisplay--
+  ) {
+    let addingAmplitude = 0;
+    let addingCircles = 0;
+    let termIndex = usingCircles;
+    const usingAmplitude = amplitudes[termIndex].before;
+    while (true) {
+      addingAmplitude += amplitudes[termIndex].here;
+      addingCircles++;
+      termIndex++;
+      if (termIndex >= amplitudes.length) {
+        break;
+      }
+      if (remainingGroupsToDisplay > 0) {
+        const remainingAmplitude = amplitudes[termIndex].after;
+        const averageRemainingBinSize =
+          remainingAmplitude / remainingGroupsToDisplay;
+        if (addingAmplitude > averageRemainingBinSize) {
+          break;
+        }
+      }
+    }
+    const availableAmplitude = amplitudes[termIndex - 1].after;
+    const availableCircles = amplitudes.length - termIndex;
+    script.push({
+      offset: NaN,
+      startTime: NaN,
+      endTime: NaN,
+      usingCircles,
+      usingAmplitude,
+      addingCircles, // 👈 Adding
+      addingAmplitude,
+      availableAmplitude,
+      availableCircles,
+    });
+    usingCircles += addingCircles;
+    script.push({
+      offset: NaN,
+      startTime: NaN,
+      endTime: NaN,
+      usingCircles,
+      usingAmplitude: usingAmplitude + addingAmplitude,
+      addingCircles: 0, // 👈 Pausing
+      addingAmplitude: 0,
+      availableAmplitude,
+      availableCircles,
+    });
+  }
+  // Fill in startTime and endTime for each row of the script.
+  let startTime = 0;
+  script.forEach((scriptEntry) => {
+    const duration = scriptEntry.addingCircles
+      ? inputs.addTime
+      : inputs.pauseTime;
+    const endTime = startTime + duration;
+    scriptEntry.startTime = startTime;
+    scriptEntry.endTime = endTime;
+    startTime = endTime;
+  });
+  script.forEach((keyframe) => {
+    keyframe.offset = keyframe.startTime / startTime;
+  });
+  const last = script.at(-1)!;
+  const final = { ...last, startTime, offset: 1 };
+  script.push(final);
+  return script;
+}

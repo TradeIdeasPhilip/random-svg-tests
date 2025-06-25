@@ -14,10 +14,33 @@ body {
   padding: 0;
   margin: 0;
   background-color: blueviolet;
+  --blue: hwb(204.42deg 0% 0%);
 }
 
-svg {
+svg#main {
   background-color: darkred;
+  width: 100vw;
+  height: 100vh;
+  --base-stroke-width: 0.05px;
+}
+
+line#for-scale {
+  stroke: orange;
+  stroke-width: var(--base-stroke-width);
+}
+
+path#reference {
+  fill: none;
+  stroke: var(--blue);
+  /* It seems like vector-effect: non-scaling-stroke would do this automatically, but I never got it to work. */
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
+}
+
+path#samples {
+  fill: none;
+  stroke: red;
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.5);
+  stroke-linecap: round;
 }
 
 #background {

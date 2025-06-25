@@ -8,12 +8,18 @@
   </head>
   <body>
     <svg
+      id="main"
       viewBox="0 0 16 9"
       xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMidYMid meet"
+      preserveAspectRatio="xMaxYMin meet"
     >
       <defs></defs>
       <rect id="background" width="16" height="9"></rect>
+      <line id="for-scale" x1="1" y1="1" x2="15" y2="8"></line>
+      <g id="scaled">
+        <path id="reference"></path>
+        <path id="samples"></path>
+      </g>
     </svg>
     <div id="table-container">
       <table id="progress">

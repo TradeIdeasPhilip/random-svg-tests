@@ -76,6 +76,14 @@ circle[data-t] {
 }
 
 #requestedVsReconstructed path:nth-of-type(2) {
+  stroke: pink;
+}
+
+#requestedVsReconstructed path:nth-of-type(3) {
+  stroke: darkred;
+}
+
+#requestedVsReconstructed path:nth-of-type(4) {
   stroke: red;
 }
 

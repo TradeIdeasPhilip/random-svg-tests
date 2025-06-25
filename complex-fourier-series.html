@@ -56,6 +56,13 @@
       shows how well each approximation matches the original. The table details
       the progress in the second image.
     </p>
+    <p data-hide>
+      If you see a <span style="color: darkred">dark red</span> or
+      <span style="color: pink">pink</span> line, that means that there's a
+      problem drawing the <span style="color: red">red</span> line. If you see
+      these extra lines, the normal solution is to ramp up the
+      <code>support.sampleCount</code>.
+    </p>
     <svg
       class="outlineSample"
       id="distanceVsT"
@@ -79,6 +86,8 @@
       preserveAspectRatio="xMidYMid meet"
       style="border: thin lightgreen solid"
     >
+      <path></path>
+      <path></path>
       <path></path>
       <path></path>
     </svg>
@@ -273,6 +282,12 @@
         <code>support.samples.peanocurve[0]</code> ...
         <code>support.samples.peanocurve[2]</code> contain interesting path
         strings.
+      </li>
+      <li>
+        <code>support.sampleCount</code> &mdash; How much detail to use when
+        displaying the output. If you see pink and dark red lines, try using
+        more samples. The current default of 200 is more than enough most of the
+        time. But in the "Like share and subscribe" example I set this to 2000.
       </li>
     </ul>
     <h2><a id="examples"></a>Examples</h2>

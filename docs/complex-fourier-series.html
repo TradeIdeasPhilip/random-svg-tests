@@ -5,16 +5,17 @@
     <!-- <link rel="icon" type="image/svg+xml" href="/moon.svg" /> -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Complex Fourier Series</title>
-    <script type="module" crossorigin src="./assets/ҩажәа-Bw984dIE.js"></script>
+    <script type="module" crossorigin src="./assets/ҩажәа-4ctTaan_.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-wGF4FraP.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-ZHNZ3-cL.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-7xuS1yUd.js">
-    <link rel="modulepreload" crossorigin href="./assets/utility-By36BYLf.js">
+    <link rel="modulepreload" crossorigin href="./assets/utility-DVoV3GgU.js">
     <link rel="modulepreload" crossorigin href="./assets/math-to-path-BjxPr1Cw.js">
-    <link rel="modulepreload" crossorigin href="./assets/letters-base-CVek-Niy.js">
-    <link rel="modulepreload" crossorigin href="./assets/hershey-fonts-B3DM-v4L.js">
-    <link rel="stylesheet" crossorigin href="./assets/ҩажәа-BbA_tQWi.css">
+    <link rel="modulepreload" crossorigin href="./assets/letters-base-FcpdJLUI.js">
+    <link rel="modulepreload" crossorigin href="./assets/hershey-fonts-JBvTY-Dp.js">
+    <link rel="modulepreload" crossorigin href="./assets/fourier-shared-CZ-69KWO.js">
+    <link rel="stylesheet" crossorigin href="./assets/ҩажәа-zHfnX7Jb.css">
     <link rel="stylesheet" crossorigin href="./assets/style-DQ03UEvS.css">
   </head>
   <body>
@@ -66,6 +67,13 @@
       shows how well each approximation matches the original. The table details
       the progress in the second image.
     </p>
+    <p data-hide>
+      If you see a <span style="color: darkred">dark red</span> or
+      <span style="color: pink">pink</span> line, that means that there's a
+      problem drawing the <span style="color: red">red</span> line. If you see
+      these extra lines, the normal solution is to ramp up the
+      <code>support.sampleCount</code>.
+    </p>
     <svg
       class="outlineSample"
       id="distanceVsT"
@@ -89,6 +97,8 @@
       preserveAspectRatio="xMidYMid meet"
       style="border: thin lightgreen solid"
     >
+      <path></path>
+      <path></path>
       <path></path>
       <path></path>
     </svg>
@@ -283,6 +293,12 @@
         <code>support.samples.peanocurve[0]</code> ...
         <code>support.samples.peanocurve[2]</code> contain interesting path
         strings.
+      </li>
+      <li>
+        <code>support.sampleCount</code> &mdash; How much detail to use when
+        displaying the output. If you see pink and dark red lines, try using
+        more samples. The current default of 200 is more than enough most of the
+        time. But in the "Like share and subscribe" example I set this to 2000.
       </li>
     </ul>
     <h2><a id="examples"></a>Examples</h2>

@@ -1,3 +1,5 @@
+import { ReadOnlyRect } from "phil-lib/misc";
+
 /**
  * Apply a transformation matrix to a point.
  * @param x The point to transform.
@@ -31,8 +33,8 @@ interface Rect {
  * @returns A new matrix mapping srcRect to destRect.
  */
 export function panAndZoom(
-  srcRect: Rect,
-  destRect: Rect,
+  srcRect: ReadOnlyRect,
+  destRect: ReadOnlyRect,
   aspect:
     | "meet"
     | "slice"

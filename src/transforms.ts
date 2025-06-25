@@ -30,6 +30,18 @@ interface Rect {
  * * `slice` — Every part of the `destRect` will be filled with something from the `srcRect`.  Some parts of the `srcRect` might not be contained in the `destRect`.
  * * `srcRect fits completely into destRect` — an alias for `meet`.
  * * `srcRect completely covers destRect` — an alias for `slice`.
+ * @param howFarRight If there is extra space in the horizontal direction, how should it
+ * be distributed?
+ * * 0 means the content is all the way to the left.
+ * * 0.5, the default, means the content is centered.
+ * * 1 means that the content is all the way to the right.
+ * * etc.
+ * @param howFarDown If there is extra space in the vertical direction, how should it
+ * be distributed?
+ * * 0 means the content is at the very top.
+ * * 0.5, the default, means the content is centered.
+ * * 1 means that the content is all the way to the bottom.
+ * * etc.
  * @returns A new matrix mapping srcRect to destRect.
  */
 export function panAndZoom(
@@ -39,7 +51,9 @@ export function panAndZoom(
     | "meet"
     | "slice"
     | "srcRect fits completely into destRect"
-    | "srcRect completely covers destRect"
+    | "srcRect completely covers destRect",
+  howFarRight = 0.5,
+  howFarDown = 0.5
 ): DOMMatrix {
   // Step 1: Compute the scaling factors to fit or fill the destination
   const srcAspect = srcRect.width / srcRect.height;
@@ -85,11 +99,11 @@ export function panAndZoom(
   // scale it, then translate to the center of the destination rectangle
   const translateX =
     -srcRect.x * scaleX +
-    (destRect.width - srcRect.width * scaleX) / 2 +
+    howFarRight * (destRect.width - srcRect.width * scaleX) +
     destRect.x;
   const translateY =
     -srcRect.y * scaleY +
-    (destRect.height - srcRect.height * scaleY) / 2 +
+    howFarDown * (destRect.height - srcRect.height * scaleY) +
     destRect.y;
 
   // Step 3: Create the DOMMatrix

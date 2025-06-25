@@ -33,6 +33,7 @@ export class PathWrapper {
   constructor() {
     this.#svg.style.width = "0";
     this.#svg.style.height = "0";
+    this.#svg.style.position = "absolute";
     this.#svg.appendChild(this.#path);
     document.body.appendChild(this.#svg);
   }

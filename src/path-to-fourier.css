@@ -15,6 +15,7 @@ body {
   margin: 0;
   background-color: blueviolet;
   --blue: hwb(204.42deg 0% 0%);
+  overflow: hidden;
 }
 
 svg#main {

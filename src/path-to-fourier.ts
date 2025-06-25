@@ -63,7 +63,8 @@ function initialize(options: Options) {
     referencePath.getBBox(),
     //mainSvg.viewBox.baseVal,
     { x: 1, y: 1, width: 14, height: 7 },
-    "srcRect fits completely into destRect"
+    "srcRect fits completely into destRect",
+    1
   );
   const scale = transform.a;
   scaleG.style.transform = transform.toString();
@@ -101,7 +102,7 @@ const scripts = new Map<string, Options>([
     },
   ],
   [
-    "s",
+    "hilbert0",
     {
       maxGroupsToDisplay: 10,
       numberOfDisplaySegments: 100,
@@ -111,7 +112,7 @@ const scripts = new Map<string, Options>([
   ],
 ]);
 
-initialize(scripts.get("s")!);
+initialize(scripts.get("hilbert0")!);
 
 /**
  * TODO soon.

@@ -75,3 +75,15 @@ path[data-live="front"] {
   display: flex;
   align-items: center;
 }
+
+#progress td {
+  padding: 0 0.5em;
+}
+#progress th {
+  padding: 0 0.5em;
+  font-weight: bolder;
+}
+
+#progress tr th:first-child {
+  text-align: right;
+}

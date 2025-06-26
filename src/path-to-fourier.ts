@@ -9,8 +9,8 @@ import {
 import "./path-to-fourier.css";
 import { panAndZoom } from "./transforms";
 import { PathShape } from "./path-shape";
-import { makeBoundedLinear, makeLinear } from "phil-lib/misc";
-import { ease } from "./utility";
+import { FIGURE_SPACE, makeBoundedLinear, makeLinear } from "phil-lib/misc";
+import { ease, selectorQuery } from "./utility";
 
 const scaleG = getById("scaled", SVGGElement);
 const referencePath = getById("reference", SVGPathElement);
@@ -172,6 +172,30 @@ function initialize(options: Options) {
       };
     }
   });
+  const usingCirclesElement = selectorQuery(
+    "[data-using] [data-circles]",
+    HTMLTableCellElement
+  );
+  const usingAmplitudeElement = selectorQuery(
+    "[data-using] [data-amplitude]",
+    HTMLTableCellElement
+  );
+  const addingCirclesElement = selectorQuery(
+    "[data-adding] [data-circles]",
+    HTMLTableCellElement
+  );
+  const addingAmplitudeElement = selectorQuery(
+    "[data-adding] [data-amplitude]",
+    HTMLTableCellElement
+  );
+  const availableCirclesElement = selectorQuery(
+    "[data-available] [data-circles]",
+    HTMLTableCellElement
+  );
+  const availableAmplitudeElement = selectorQuery(
+    "[data-available] [data-amplitude]",
+    HTMLTableCellElement
+  );
   function showFrame(timeInMs: number) {
     function getIndex() {
       // Should this be a binary search?
@@ -189,6 +213,52 @@ function initialize(options: Options) {
     const index = getIndex();
     const pathString = PathShape.cssifyPath(timeToPath[index](timeInMs));
     scaleG.style.setProperty("--d", pathString);
+    const formatCircleCount = (value: number) =>
+      `${value.toString().padStart(4, FIGURE_SPACE)}`;
+    const scriptEntry = script[index];
+    usingCirclesElement.innerText = formatCircleCount(scriptEntry.usingCircles);
+    addingCirclesElement.innerText = formatCircleCount(
+      scriptEntry.addingCircles
+    );
+    availableCirclesElement.innerText = formatCircleCount(
+      scriptEntry.availableCircles
+    );
+    [
+      {
+        value: scriptEntry.addingCircles,
+        element1: addingCirclesElement,
+        element2: addingAmplitudeElement,
+      },
+      {
+        value: scriptEntry.availableCircles,
+        element1: availableCirclesElement,
+        element2: availableAmplitudeElement,
+      },
+    ].forEach(({ value, element1, element2 }) => {
+      const opacity = value == 0 ? "0.25" : "";
+      element1.style.opacity = opacity;
+      element2.style.opacity = opacity;
+    });
+    const amplitudeHelper = new Intl.NumberFormat("en-US", {
+      minimumSignificantDigits: 5,
+      maximumSignificantDigits: 5,
+      useGrouping: false,
+    }).format;
+    const formatAmplitude = (value: number) => {
+      if (value < 0) {
+        value = 0;
+      }
+      return amplitudeHelper(value);
+    };
+    usingAmplitudeElement.innerText = formatAmplitude(
+      scriptEntry.usingAmplitude
+    );
+    addingAmplitudeElement.innerText = formatAmplitude(
+      scriptEntry.addingAmplitude
+    );
+    availableAmplitudeElement.innerText = formatAmplitude(
+      scriptEntry.availableAmplitude
+    );
   }
   (window as any).showFrame = showFrame;
 }
@@ -307,6 +377,16 @@ new AnimationLoop((now) => {
  */
 
 /**
+ * TODO Finish the table!
+ * The amplitude numbers are not lined up right.
+ * The periods should all line up.
+ * There is one more step that needs to be copied from complex-fourier-series.ts.
+ * Search for keyframe.content = `'${(keyframe.content + "%").padEnd(
+ * Add spaces and a %.
+ * Work will have to be done up front, not just where the current code is.
+ */
+
+/**
  * What happens when we are stuck at one point?
  * We only have one term, and its frequency is 0.
  * It seems like sometimes that appears as a dot.
@@ -338,10 +418,7 @@ new AnimationLoop((now) => {
  *
  * The width of the eased region around the center of change
  * is way too big.
- * It probably needs to be scaled to go with the amplitude.
- *
- * Fill in the table!!!!
- * No special effects, no transitions.
- *
- * Fix the 3 cursive letters.
+ * It needs to be scaled to go with the amplitude.
+ * When amplitude = 3% —> give me 10th of the easing radius that we have now.
+ * Everything else scales linearly.
  */

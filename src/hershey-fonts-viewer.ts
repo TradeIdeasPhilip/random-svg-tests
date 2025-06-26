@@ -129,10 +129,34 @@ const newFont = new Map(roundCursiveFont);
   newFont.set("i", newI);
 }
 
+/**
+ * This is useful if you want a completely connected path,
+ * or something very close it it.  Use the fixed version of the
+ * letter when the previous letter was a lower case letter.
+ * @param letter The letter to fix
+ * @param alternateLetter The letter to use when we want the fixed version.
+ */
+function fixLetter(letter: string, alternateLetter: string) {
+  const original = newFont.get(letter)!;
+  const additionalCommands = original.shape.commands
+    .slice(0, 6)
+    .reverse()
+    .map((command) => command.reverse());
+  const newShape = new PathShape([
+    ...additionalCommands,
+    ...original.shape.commands,
+  ]);
+  const newLetter = original.reshape(newShape);
+  newFont.set(alternateLetter, newLetter);
+}
+fixLetter("a", "à");
+fixLetter("c", "ç");
+fixLetter("d", "ď");
+
 let fullMessage = "";
 
 //const layoutInfo = textLayout.addText("Like share and subscribe.","center");
-["Like", "share", "and", "subscribe"].forEach((word, index) => {
+["Like", "shàre", "anď", "subsçribe"].forEach((word, index) => {
   const textLayout = new TextLayout(newFont);
   textLayout.rightMargin = 120;
   const layoutInfo = textLayout.addText(word, "center");

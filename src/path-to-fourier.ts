@@ -102,8 +102,8 @@ function initialize(options: Options) {
   samplesPath.setAttribute("d", samplesPathD);
   // Create terms
   const terms = samplesToFourier(samples);
-  const script = groupTerms({ /* TODO return these to something sane. */
-    addTime: 4900,
+  const script = groupTerms({
+    /* TODO return these to something sane. */ addTime: 4900,
     pauseTime: 1100,
     maxGroupsToDisplay: options.maxGroupsToDisplay,
     terms,
@@ -153,7 +153,7 @@ function initialize(options: Options) {
         const getFraction = makeEasing(centerOfChange - r, centerOfChange + r);
         function parametricFunction(t: number) {
           const base = usingFunction(t);
-          const fraction = 1- getFraction(t);
+          const fraction = 1 - getFraction(t);
           if (fraction == 0) {
             return base;
           } else {
@@ -252,7 +252,7 @@ const scripts = new Map<string, Options>([
   ],
 ]);
 
-initialize(scripts.get("hilbert0")!);
+initialize(scripts.get("likeShareAndSubscribe")!);
 
 let timeOffset = NaN;
 new AnimationLoop((now) => {
@@ -306,14 +306,13 @@ new AnimationLoop((now) => {
  * This can help a lot if we have lots of circles to add.
  */
 
-
 /**
  * What happens when we are stuck at one point?
  * We only have one term, and its frequency is 0.
  * It seems like sometimes that appears as a dot.
  * But other times I get a lot of errors because I can't compute a derivative.
  * Why?
- * 
+ *
  * Related problem.  Starting with hilbert0.
  * When we at trying to transition from a point at the center to the first circle.
  * Everything fails until nothing is at the center any more.
@@ -325,7 +324,7 @@ new AnimationLoop((now) => {
  * And that point near the center would move around some.
  * Ideally I'd know exactly where the path was interesting.
  * In this case, where the easing went from 0 to more than 0.
- * 
+ *
  * Seems like there should be some sort of special case when we
  * are trying to display a path created from a Fourier series
  * where some or part of the series is just a point.
@@ -336,13 +335,13 @@ new AnimationLoop((now) => {
  * Note that this can't be ported back to complex-fourier-series.
  * That requires all paths to be the same length for the sake of interpolating between paths.
  * But how did that work?  It did work!
- * 
+ *
  * The width of the eased region around the center of change
  * is way too big.
  * It probably needs to be scaled to go with the amplitude.
- * 
+ *
  * Fill in the table!!!!
  * No special effects, no transitions.
- * 
+ *
  * Fix the 3 cursive letters.
  */

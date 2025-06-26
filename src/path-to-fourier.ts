@@ -13,7 +13,6 @@ import { PathShape } from "./path-shape";
 const scaleG = getById("scaled", SVGGElement);
 const referencePath = getById("reference", SVGPathElement);
 const samplesPath = getById("samples", SVGPathElement);
-const livePath = getById("live", SVGPathElement);
 
 type Options = {
   pathString: string;
@@ -100,7 +99,9 @@ function initialize(options: Options) {
         terms,
         scriptEntry.usingCircles
       );
-      const numberOfDisplaySegments = recommendedNumberOfSegments(scriptEntry.usingCircles);
+      const numberOfDisplaySegments = recommendedNumberOfSegments(
+        scriptEntry.usingCircles
+      );
       const path = PathShape.parametric(
         parametricFunction,
         numberOfDisplaySegments
@@ -125,8 +126,8 @@ function initialize(options: Options) {
       }
     }
     const index = getIndex();
-    const pathString = timeToPath[index](timeInMs);
-    livePath.setAttribute("d", pathString);
+    const pathString = PathShape.cssifyPath(timeToPath[index](timeInMs));
+    scaleG.style.setProperty("--d", pathString);
   }
   (window as any).showFrame = showFrame;
 }
@@ -156,9 +157,41 @@ const scripts = new Map<string, Options>([
       pathString: samples.hilbert[1],
     },
   ],
+  [
+    "hilbert4",
+    {
+      maxGroupsToDisplay: 20,
+      numberOfFourierSamples: 1024,
+      pathString: samples.hilbert[4],
+    },
+  ],
+  [
+    "p0",
+    {
+      maxGroupsToDisplay: 20,
+      numberOfFourierSamples: 1024,
+      pathString: samples.peanocurve[0],
+    },
+  ],
+  [
+    "p1",
+    {
+      maxGroupsToDisplay: 20,
+      numberOfFourierSamples: 1024,
+      pathString: samples.peanocurve[1],
+    },
+  ],
+  [
+    "p2",
+    {
+      maxGroupsToDisplay: 20,
+      numberOfFourierSamples: 1024,
+      pathString: samples.peanocurve[2],
+    },
+  ],
 ]);
 
-initialize(scripts.get("hilbert1")!);
+initialize(scripts.get("p2")!);
 
 let timeOffset = NaN;
 new AnimationLoop((now) => {

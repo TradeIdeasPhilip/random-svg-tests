@@ -35,7 +35,7 @@ path#reference {
   fill: none;
   stroke: red;
   /* It seems like vector-effect: non-scaling-stroke would do this automatically, but I never got it to work. */
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 3);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 4);
 }
 
 path#samples {
@@ -48,12 +48,20 @@ path#samples {
   stroke-linecap: round;
 }
 
-path#live {
+path[data-live] {
   fill: none;
-  stroke: var(--blue);
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1);
   stroke-linecap: round;
   stroke-linejoin: round;
+  d: var(--d);
+}
+
+path[data-live="back"] {
+  stroke: white;
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
+}
+path[data-live="front"] {
+  stroke: var(--blue);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1);
 }
 
 #background {

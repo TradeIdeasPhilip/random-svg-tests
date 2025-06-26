@@ -9,6 +9,8 @@ import {
 import "./path-to-fourier.css";
 import { panAndZoom } from "./transforms";
 import { PathShape } from "./path-shape";
+import { makeBoundedLinear, makeLinear } from "phil-lib/misc";
+import { ease } from "./utility";
 
 const scaleG = getById("scaled", SVGGElement);
 const referencePath = getById("reference", SVGPathElement);
@@ -55,6 +57,25 @@ type Result = {
 };
 */
 
+// TODO add in y1 and y2, rather than just assuming they are 0 and 1.
+function makeEasing(x1: number, x2: number) {
+  if (x1 >= x2) {
+    throw new Error("wtf");
+  }
+  const inputMap = makeLinear(x1, 0, x2, 1);
+  function customEasing(t: number) {
+    if (t <= x1) {
+      return 0;
+    } else if (t >= x2) {
+      return 1;
+    }
+    const input = inputMap(t);
+    const eased = ease(input);
+    return eased;
+  }
+  return customEasing;
+}
+
 function initialize(options: Options) {
   // Reference path.
   referencePath.setAttribute("d", options.pathString);
@@ -81,9 +102,9 @@ function initialize(options: Options) {
   samplesPath.setAttribute("d", samplesPathD);
   // Create terms
   const terms = samplesToFourier(samples);
-  const script = groupTerms({
-    addTime: 100,
-    pauseTime: 900,
+  const script = groupTerms({ /* TODO return these to something sane. */
+    addTime: 4900,
+    pauseTime: 1100,
     maxGroupsToDisplay: options.maxGroupsToDisplay,
     terms,
   });
@@ -108,7 +129,47 @@ function initialize(options: Options) {
       );
       return () => path.rawPath;
     } else {
-      return () => "";
+      const r = 0.05; // TODO r needs to be smaller in most cases.
+      const timeToCenter = makeBoundedLinear(
+        scriptEntry.startTime,
+        -r,
+        scriptEntry.endTime,
+        1 + r
+      );
+      const usingFunction = termsToParametricFunction(
+        terms,
+        scriptEntry.usingCircles
+      );
+      const addingFunction = termsToParametricFunction(
+        terms,
+        scriptEntry.addingCircles,
+        scriptEntry.usingCircles
+      );
+      const numberOfDisplaySegments = recommendedNumberOfSegments(
+        scriptEntry.usingCircles + scriptEntry.addingCircles
+      );
+      return (timeInMs: number): string => {
+        const centerOfChange = timeToCenter(timeInMs);
+        const getFraction = makeEasing(centerOfChange - r, centerOfChange + r);
+        function parametricFunction(t: number) {
+          const base = usingFunction(t);
+          const fraction = 1- getFraction(t);
+          if (fraction == 0) {
+            return base;
+          } else {
+            const adding = addingFunction(t);
+            return {
+              x: base.x + fraction * adding.x,
+              y: base.y + fraction * adding.y,
+            };
+          }
+        }
+        const path = PathShape.parametric(
+          parametricFunction,
+          numberOfDisplaySegments
+        );
+        return path.rawPath;
+      };
     }
   });
   function showFrame(timeInMs: number) {
@@ -191,7 +252,7 @@ const scripts = new Map<string, Options>([
   ],
 ]);
 
-initialize(scripts.get("p2")!);
+initialize(scripts.get("hilbert0")!);
 
 let timeOffset = NaN;
 new AnimationLoop((now) => {
@@ -243,4 +304,45 @@ new AnimationLoop((now) => {
  * It might make sense to send multiple updates through at once.
  * As long as there is some space between them, so you can see what's going on.
  * This can help a lot if we have lots of circles to add.
+ */
+
+
+/**
+ * What happens when we are stuck at one point?
+ * We only have one term, and its frequency is 0.
+ * It seems like sometimes that appears as a dot.
+ * But other times I get a lot of errors because I can't compute a derivative.
+ * Why?
+ * 
+ * Related problem.  Starting with hilbert0.
+ * When we at trying to transition from a point at the center to the first circle.
+ * Everything fails until nothing is at the center any more.
+ * As soon as the easing gets to the point that nothing is exactly at the center, it starts working.
+ * I'm tempted to remove any points from the input that have a derivative of 0 because that means we aren't moving and the point isn't important.
+ * But that's a little imprecise.
+ * I wouldn't start from the center and go out.
+ * I'd start from a point near the center and go out.
+ * And that point near the center would move around some.
+ * Ideally I'd know exactly where the path was interesting.
+ * In this case, where the easing went from 0 to more than 0.
+ * 
+ * Seems like there should be some sort of special case when we
+ * are trying to display a path created from a Fourier series
+ * where some or part of the series is just a point.
+ * * In the case of not currently adding any circles, do we even have a problem?
+ * * In the case of not currently adding any circles, check for the case of only a single point and return a short but appropriate path string.
+ * * When adding something, check for the case that the before was just a point.  Then only produce the points in the valid range.
+ *
+ * Note that this can't be ported back to complex-fourier-series.
+ * That requires all paths to be the same length for the sake of interpolating between paths.
+ * But how did that work?  It did work!
+ * 
+ * The width of the eased region around the center of change
+ * is way too big.
+ * It probably needs to be scaled to go with the amplitude.
+ * 
+ * Fill in the table!!!!
+ * No special effects, no transitions.
+ * 
+ * Fix the 3 cursive letters.
  */

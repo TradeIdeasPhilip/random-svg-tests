@@ -61,7 +61,7 @@ path[data-live="back"] {
 }
 path[data-live="front"] {
   stroke: var(--blue);
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.9);
 }
 
 #background {

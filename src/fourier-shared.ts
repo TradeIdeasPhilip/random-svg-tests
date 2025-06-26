@@ -93,13 +93,15 @@ export function samplesToFourier(samples: Complex[]): FourierTerm[] {
 }
 
 export function termsToParametricFunction(
-  terms: FourierTerm[],
-  numTerms: number
+  terms: readonly FourierTerm[],
+  numTerms: number,
+  start = 0
 ): ParametricFunction {
+  const end = Math.min(start + numTerms, terms.length);
   return (t: number): Point => {
     let x = 0,
       y = 0;
-    for (let k = 0; k < Math.min(numTerms, terms.length); k++) {
+    for (let k = start; k < end; k++) {
       const { frequency, amplitude, phase } = terms[k];
       const angle = 2 * Math.PI * frequency * t + phase;
       x += amplitude * Math.cos(angle);

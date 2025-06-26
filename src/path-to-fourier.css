@@ -26,22 +26,34 @@ svg#main {
 }
 
 line#for-scale {
+  display: none;
   stroke: orange;
   stroke-width: var(--base-stroke-width);
 }
 
 path#reference {
   fill: none;
-  stroke: var(--blue);
+  stroke: red;
   /* It seems like vector-effect: non-scaling-stroke would do this automatically, but I never got it to work. */
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 3);
 }
 
 path#samples {
+  /* These circles are too small to show in a video.
+     They were useful to me for development. */
+  display: none;
   fill: none;
   stroke: red;
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.5);
   stroke-linecap: round;
+}
+
+path#live {
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1);
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 #background {

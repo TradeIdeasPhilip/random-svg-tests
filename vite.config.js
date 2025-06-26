@@ -48,6 +48,11 @@ export default defineConfig({
         "двадцать два": resolve(__dirname, "hershey-fonts-viewer.html"),
         "ಇರ್ವತ್ತ ಮೂಜಿ": resolve(__dirname, "path-to-fourier.html"),
       },
+      output: {
+        // Disable code splitting by setting manualChunks to an empty object
+        // Grok suggested this but it doesn't seem to do anything.
+        manualChunks: {},
+      },
     },
   },
   // This is the important part.  The default configuration assumes I have access

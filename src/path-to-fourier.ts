@@ -1,22 +1,22 @@
-import { getById } from "phil-lib/client-misc";
+import { AnimationLoop, getById } from "phil-lib/client-misc";
 import {
   groupTerms,
   samples,
   samplesFromPath,
   samplesToFourier,
+  termsToParametricFunction,
 } from "./fourier-shared";
 import "./path-to-fourier.css";
 import { panAndZoom } from "./transforms";
+import { PathShape } from "./path-shape";
 
-const mainSvg = getById("main", SVGSVGElement);
-mainSvg;
 const scaleG = getById("scaled", SVGGElement);
 const referencePath = getById("reference", SVGPathElement);
 const samplesPath = getById("samples", SVGPathElement);
+const livePath = getById("live", SVGPathElement);
 
 type Options = {
   pathString: string;
-  numberOfDisplaySegments: number;
   numberOfFourierSamples: number;
   maxGroupsToDisplay: number;
 };
@@ -83,20 +83,59 @@ function initialize(options: Options) {
   // Create terms
   const terms = samplesToFourier(samples);
   const script = groupTerms({
-    addTime: 2000,
-    pauseTime: 100,
-    maxGroupsToDisplay: 10,
+    addTime: 100,
+    pauseTime: 900,
+    maxGroupsToDisplay: options.maxGroupsToDisplay,
     terms,
   });
-  console.log(script);
+  const recommendedNumberOfSegments = (numberOfTerms: number) => {
+    const maxFrequency = Math.max(
+      ...terms.slice(0, numberOfTerms).map((term) => term.frequency)
+    );
+    return 8 * maxFrequency + 7;
+  };
+  const timeToPath: ((time: number) => string)[] = script.map((scriptEntry) => {
+    if (scriptEntry.addingCircles == 0) {
+      const parametricFunction = termsToParametricFunction(
+        terms,
+        scriptEntry.usingCircles
+      );
+      const numberOfDisplaySegments = recommendedNumberOfSegments(scriptEntry.usingCircles);
+      const path = PathShape.parametric(
+        parametricFunction,
+        numberOfDisplaySegments
+      );
+      return () => path.rawPath;
+    } else {
+      return () => "";
+    }
+  });
+  function showFrame(timeInMs: number) {
+    function getIndex() {
+      // Should this be a binary search?
+      /**
+       * The first script item that hasn't ended yet.
+       */
+      const index = script.findIndex(({ endTime }) => timeInMs < endTime);
+      if (index == -1) {
+        // Past the end.  Use the last script item.
+        return script.length - 1;
+      } else {
+        return index;
+      }
+    }
+    const index = getIndex();
+    const pathString = timeToPath[index](timeInMs);
+    livePath.setAttribute("d", pathString);
+  }
+  (window as any).showFrame = showFrame;
 }
 
 const scripts = new Map<string, Options>([
   [
     "likeShareAndSubscribe",
     {
-      maxGroupsToDisplay: 20,
-      numberOfDisplaySegments: 2000,
+      maxGroupsToDisplay: 30,
       numberOfFourierSamples: 1024,
       pathString: samples.likeShareAndSubscribe,
     },
@@ -104,15 +143,31 @@ const scripts = new Map<string, Options>([
   [
     "hilbert0",
     {
-      maxGroupsToDisplay: 10,
-      numberOfDisplaySegments: 100,
+      maxGroupsToDisplay: 20,
       numberOfFourierSamples: 1024,
       pathString: samples.hilbert[0],
     },
   ],
+  [
+    "hilbert1",
+    {
+      maxGroupsToDisplay: 20,
+      numberOfFourierSamples: 1024,
+      pathString: samples.hilbert[1],
+    },
+  ],
 ]);
 
-initialize(scripts.get("hilbert0")!);
+initialize(scripts.get("hilbert1")!);
+
+let timeOffset = NaN;
+new AnimationLoop((now) => {
+  if (isNaN(timeOffset)) {
+    timeOffset = now;
+  }
+  const time = now - timeOffset;
+  (window as any).showFrame(time);
+});
 
 /**
  * TODO soon.

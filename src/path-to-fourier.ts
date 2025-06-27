@@ -402,7 +402,7 @@ const scripts = new Map<string, Options>([
   ],
 ]);
 
-initialize(scripts.get("p1")!);
+initialize(scripts.get("hilbert0")!);
 
 let timeOffset = NaN;
 new AnimationLoop((now) => {
@@ -478,22 +478,4 @@ new AnimationLoop((now) => {
  *    t = t / (fraction that we can use) then call the original function.
  *    numberOfSegments = Math.ceil(numberOfSegments * (fraction that we can use))
  *    If (numberOfSegments = 0) then just draw a point.
- */
-
-/**
- * TODO
- * Do any of the samples have a frequency 1 term first, then a frequency 0 term?
- *
- * If they are in the opposite order, that means that we start with a dot that
- * moves to another point then grows into a circle.  My new color scheme highlights
- * a single dot and makes it very easy to see.  Currently the motion is broken, but
- * it looks good in complex-fourier-series where I just slid the dot.  I'm planning
- * to do something slightly more complicated.  It's all good.
- *
- * But the 1 followed by the 0 might be very interesting and I should make sure
- * at least one of the examples does it.  First the point will become a large circle,
- * then the large circle will slide over, but one piece at a time.  The frequency
- * 0 term doesn't even have to be second.  At long as it is not first but the
- * amplitude is high enough that this step is visible and it is not merged with any
- * other terms.
  */

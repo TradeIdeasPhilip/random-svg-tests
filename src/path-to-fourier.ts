@@ -105,7 +105,7 @@ function initialize(options: Options) {
   const terms = samplesToFourier(samples);
   const script = groupTerms({
     /* TODO return these to something sane. */ addTime: 4900,
-    pauseTime: 1100,
+    pauseTime: 100,
     maxGroupsToDisplay: options.maxGroupsToDisplay,
     terms,
   });
@@ -174,6 +174,14 @@ function initialize(options: Options) {
       };
     } else {
       const r = 0.05; // TODO r needs to be smaller in most cases.
+      /**
+       * This creates a function which takes a time in milliseconds,
+       * 0 at the beginning of the script.
+       * The output is scaled to the range 0 - 1,
+       * for use with PathShape.parametric().
+       * The output might be outside of that range.
+       * I.e. the input and output are both numbers but they are interpreted on different scales.
+       */
       const timeToCenter = makeBoundedLinear(
         scriptEntry.startTime,
         -r,
@@ -189,31 +197,82 @@ function initialize(options: Options) {
         scriptEntry.addingCircles,
         scriptEntry.usingCircles
       );
-      const numberOfDisplaySegments = recommendedNumberOfSegments(
+      let numberOfDisplaySegments = recommendedNumberOfSegments(
         scriptEntry.usingCircles + scriptEntry.addingCircles
       );
-      return (timeInMs: number): string => {
-        const centerOfChange = timeToCenter(timeInMs);
-        const getFraction = makeEasing(centerOfChange - r, centerOfChange + r);
-        function parametricFunction(t: number) {
-          const base = usingFunction(t);
-          const fraction = 1 - getFraction(t);
-          if (fraction == 0) {
-            return base;
+      if (
+        scriptEntry.usingCircles == 0 ||
+        (scriptEntry.usingCircles == 1 && hasFixedContribution(terms[0]))
+      ) {
+        // We are converting from a dot to something else.
+        const startingPoint = hasFixedContribution(terms[0]) ?? { x: 0, y: 0 };
+        return (timeInMs: number): string => {
+          const centerOfChange = timeToCenter(timeInMs);
+          const startOfChange = centerOfChange - r;
+          const endOfChange = centerOfChange + r;
+          const getFraction = makeEasing(startOfChange, endOfChange);
+          /**
+           * 0 to `safePartEnds`, inclusive are safe inputs to `parametricFunction()`.
+           */
+          const safePartEnds = Math.min(1, endOfChange);
+          if (safePartEnds <= 0) {
+            // There is no safe part!
+            return `$M${startingPoint.x},${startingPoint.y} L${startingPoint.x},${startingPoint.y}`;
           } else {
-            const adding = addingFunction(t);
-            return {
-              x: base.x + fraction * adding.x,
-              y: base.y + fraction * adding.y,
-            };
+            const frugalSegmentCount = Math.ceil(
+              // TODO that 150 is crude.  The transition might require
+              // more detail than the before or the after.
+              Math.max(numberOfDisplaySegments, 150) * safePartEnds
+            );
+            function parametricFunction(t: number) {
+              t = t * safePartEnds;
+              const base = usingFunction(t);
+              const fraction = 1 - getFraction(t);
+              if (fraction == 0) {
+                return base;
+              } else {
+                const adding = addingFunction(t);
+                return {
+                  x: base.x + fraction * adding.x,
+                  y: base.y + fraction * adding.y,
+                };
+              }
+            }
+            const path = PathShape.parametric(
+              parametricFunction,
+              frugalSegmentCount
+            );
+            return path.rawPath;
           }
-        }
-        const path = PathShape.parametric(
-          parametricFunction,
-          numberOfDisplaySegments
-        );
-        return path.rawPath;
-      };
+        };
+      } else {
+        // Common case:  Converting from one normal shape into another.
+        return (timeInMs: number): string => {
+          const centerOfChange = timeToCenter(timeInMs);
+          const getFraction = makeEasing(
+            centerOfChange - r,
+            centerOfChange + r
+          );
+          function parametricFunction(t: number) {
+            const base = usingFunction(t);
+            const fraction = 1 - getFraction(t);
+            if (fraction == 0) {
+              return base;
+            } else {
+              const adding = addingFunction(t);
+              return {
+                x: base.x + fraction * adding.x,
+                y: base.y + fraction * adding.y,
+              };
+            }
+          }
+          const path = PathShape.parametric(
+            parametricFunction,
+            numberOfDisplaySegments
+          );
+          return path.rawPath;
+        };
+      }
     }
   });
   const amplitudeHelper = new Intl.NumberFormat("en-US", {
@@ -288,6 +347,7 @@ function initialize(options: Options) {
     HTMLTableCellElement
   );
   function showFrame(timeInMs: number) {
+    // Which section of the script applies at this time?
     function getIndex() {
       // Should this be a binary search?
       /**
@@ -302,8 +362,8 @@ function initialize(options: Options) {
       }
     }
     const index = getIndex();
-    const pathString = PathShape.cssifyPath(timeToPath[index](timeInMs));
-    scaleG.style.setProperty("--d", pathString);
+
+    // Update the table
     const formatCircleCount = (value: number) =>
       `${value.toString().padStart(4, FIGURE_SPACE)}`;
     const scriptEntry = script[index];
@@ -339,6 +399,10 @@ function initialize(options: Options) {
     usingAmplitudeElement.innerText = f.usingAmplitude;
     addingAmplitudeElement.innerText = f.addingAmplitude;
     availableAmplitudeElement.innerText = f.availableAmplitude;
+
+    // Draw the path
+    const pathString = PathShape.cssifyPath(timeToPath[index](timeInMs));
+    scaleG.style.setProperty("--d", pathString);
   }
   (window as any).showFrame = showFrame;
 }
@@ -402,16 +466,39 @@ const scripts = new Map<string, Options>([
   ],
 ]);
 
-initialize(scripts.get("hilbert0")!);
+initialize(scripts.get("hilbert1")!);
 
-let timeOffset = NaN;
-new AnimationLoop((now) => {
-  if (isNaN(timeOffset)) {
-    timeOffset = now;
-  }
-  const time = now - timeOffset;
-  (window as any).showFrame(time);
-});
+// Without this setTimeout() the animation would
+// skip a lot of time in the beginning.  A lot of the setup time
+// would happen right after the first frame and after our clock
+// starts.
+setTimeout(() => {
+  let timeOffset = NaN;
+  new AnimationLoop((now) => {
+    if (isNaN(timeOffset)) {
+      timeOffset = now;
+    }
+    const time = now - timeOffset;
+    (window as any).showFrame(time);
+  });
+}, 1);
+
+/**
+ * TODO Minimum good detail!
+ * Each script should include an optional setting regarding the minimum number of segments.
+ * You can specify this in circles!
+ * You say how many circles you saw on the screen when it was good enough.
+ * It already knows how to do the math to convert the number circles into the number of segments.
+ *
+ * p0, p1, and p2 are all giving me trouble.
+ * I'm not sure if it is related.
+ * It jumps around a lot more than I'd expect right around the time of the straight diagonal line.
+ * This is early in the script, not a lot of circles, maybe more segments would help.
+ */
+
+/**
+ * TODO Recenter all of the examples.
+ */
 
 /**
  * TODO
@@ -452,30 +539,15 @@ new AnimationLoop((now) => {
  * Compare that to the length of the reference path.
  * (Or possibly the size of the bBox or the length of the previous path)
  * This seems promising.
- */
-
-/**
- * What happens when we are stuck at one point?
  *
- * We haven't added any terms, yet.
- * Or we only have one term, and its frequency is 0.
- * If we try to draw exactly that, there is already code to detect that special case.
- * Before I added that special case to the code, I got errors because I could not compute the derivative.
- * Now it creates a path that displays as a single dot.
+ * This initial circle seems like it should always have a very big r to look good.
+ * If we're going from a point to a circle, as we often do, nothing else matters.
+ * Always use the same r for the first circle, a big one.
  *
- * But as soon as I try to modify that path I get lots of errors.
- * Part of the path is not moving, so we can't compute the derivative.
- * My library throws an exception and never tries to draw the good parts.
- *
- * Proposal:
- *    A dot is turning into a real shape.
- *    Either we are adding a second term and the first term had frequency 0.
- *    Or we are adding the first term and it does not have a frequency of 0.
- *    Start from our existing algorithm.
- *    But skip the part that doesn't work.
- *    We should be able to go from the beginning of the path to the center of the change + r like normal.
- *    Just watch out for the case where that has a length of 0.
- *    t = t / (fraction that we can use) then call the original function.
- *    numberOfSegments = Math.ceil(numberOfSegments * (fraction that we can use))
- *    If (numberOfSegments = 0) then just draw a point.
+ * But what if we don't go from a dot to a circle?
+ * What if we transition directly from a dot to a frequency 3 circle?
+ * Then it seems like we should have more detail, less smoothing.
+ * Maybe r goes to 1/3 of its size?
+ * Should r depend on the frequency and nothing else?
+ * Is it linear?
  */

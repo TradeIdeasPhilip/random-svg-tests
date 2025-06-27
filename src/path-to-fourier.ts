@@ -370,48 +370,25 @@ new AnimationLoop((now) => {
 });
 
 /**
- * TODO soon.
+ * TODO
+ *
+ * Sometimes the transition between one and the next seems rough.
+ * Like I don't have enough path segments.
+ * It usually happens within the first few add phases.
+ * I.e. when the number of path segments is low.
+ * I need to dump the script to the console so I can see the frequencies
+ * associated with the bad demos.
+ * I can probably just set a minimum number of path segments.
+ * But that minimum might depend on how small r is.
+ */
+
+/**
+ * TODO
  *
  * r is proportional to the amplitude of the circle we are adding.
  * If we are adding multiple circles, maybe the total amplitude.
  * A value of around 1% - 5% of the total distance seems reasonable for the first circle.
  * We will need a smaller r to make the smaller changes more obvious.
- *
- * Do we have to stop in between updates?
- * It might make sense to send multiple updates through at once.
- * As long as there is some space between them, so you can see what's going on.
- * This can help a lot if we have lots of circles to add.
- */
-
-/**
- * What happens when we are stuck at one point?
- * We only have one term, and its frequency is 0.
- * It seems like sometimes that appears as a dot.
- * But other times I get a lot of errors because I can't compute a derivative.
- * Why?
- *
- * Related problem.  Starting with hilbert0.
- * When we at trying to transition from a point at the center to the first circle.
- * Everything fails until nothing is at the center any more.
- * As soon as the easing gets to the point that nothing is exactly at the center, it starts working.
- * I'm tempted to remove any points from the input that have a derivative of 0 because that means we aren't moving and the point isn't important.
- * But that's a little imprecise.
- * I wouldn't start from the center and go out.
- * I'd start from a point near the center and go out.
- * And that point near the center would move around some.
- * Ideally I'd know exactly where the path was interesting.
- * In this case, where the easing went from 0 to more than 0.
- *
- * Seems like there should be some sort of special case when we
- * are trying to display a path created from a Fourier series
- * where some or part of the series is just a point.
- * * In the case of not currently adding any circles, do we even have a problem?
- * * In the case of not currently adding any circles, check for the case of only a single point and return a short but appropriate path string.
- * * When adding something, check for the case that the before was just a point.  Then only produce the points in the valid range.
- *
- * Note that this can't be ported back to complex-fourier-series.
- * That requires all paths to be the same length for the sake of interpolating between paths.
- * But how did that work?  It did work!
  *
  * The width of the eased region around the center of change
  * is way too big.
@@ -421,15 +398,57 @@ new AnimationLoop((now) => {
  */
 
 /**
- * TODO !!!!!
- * Change the Like share and subscribe sample path.
- * Translate it so its center is closer to 0,0.
- * But not too close.
- * Ideally the amplitude of the frequency 0 term will be just slightly less than the amplitude of the frequency 1 term.
- * Currently we try to animate the frequency 0 term before the frequency 1 term.
- * That's causing the bugs and it would not be that visually appealing if I fixed them.
- * The frequency 1 thing should happen first, going from a point to a circle.
- * Next do the frequency 0 thing, sliding the circle over.
+ * What happens when we are stuck at one point?
  *
- * the p1 example has similar issues.
+ * We haven't added any terms, yet.
+ * Or we only have one term, and its frequency is 0.
+ * If we try to draw exactly that, there is already code to detect that special case.
+ * Before I added that special case to the code, I got errors because I could not compute the derivative.
+ * Now it creates a path that displays as a single dot.
+ *
+ * But as soon as I try to modify that path I get lots of errors.
+ * Part of the path is not moving, so we can't compute the derivative.
+ * My library throws an exception and never tries to draw the good parts.
+ *
+ * Proposal:  Consider exactly 2 special cases:
+ *
+ * 1) A dot is moving.
+ *    Going from 0 terms to 1 term with frequency = zero.
+ *    Don't even think about the animation that we do in other places.
+ *    This script is completely unique.
+ *    Draw a single line for the path.
+ *    Both ends start at the first point.
+ *    Use makeEasing() to move the first point from the start to the end.
+ *    Then use makeEasing() to move the second point from the start to the end.
+ *    First one goes from 0 to 2/3, second one goes from 1/3 to 1.
+ *    I.e. some overlap.
+ *
+ * 2) A dot is turning into a real shape.
+ *    Either we are adding a second term and the first term had frequency 0.
+ *    Or we are adding the first term and it does not have a frequency of 0.
+ *    Start from our existing algorithm.
+ *    But skip the part that doesn't work.
+ *    We should be able to go from the beginning of the path to the center of the change + r like normal.
+ *    Just watch out for the case where that has a length of 0.
+ *    t = t / (fraction that we can use) then call the original function.
+ *    numberOfSegments = Math.ceil(numberOfSegments * (fraction that we can use))
+ *    If (numberOfSegments = 0) then just draw a point.
+ */
+
+/**
+ * TODO
+ * Do any of the samples have a frequency 1 term first, then a frequency 0 term?
+ *
+ * If they are in the opposite order, that means that we start with a dot that
+ * moves to another point then grows into a circle.  My new color scheme highlights
+ * a single dot and makes it very easy to see.  Currently the motion is broken, but
+ * it looks good in complex-fourier-series where I just slid the dot.  I'm planning
+ * to do something slightly more complicated.  It's all good.
+ *
+ * But the 1 followed by the 0 might be very interesting and I should make sure
+ * at least one of the examples does it.  First the point will become a large circle,
+ * then the large circle will slide over, but one piece at a time.  The frequency
+ * 0 term doesn't even have to be second.  At long as it is not first but the
+ * amplitude is high enough that this step is visible and it is not merged with any
+ * other terms.
  */

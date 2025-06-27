@@ -272,6 +272,11 @@ function initialize(options: Options) {
     );
     [
       {
+        value: scriptEntry.usingCircles,
+        element1: usingCirclesElement,
+        element2: usingAmplitudeElement,
+      },
+      {
         value: scriptEntry.addingCircles,
         element1: addingCirclesElement,
         element2: addingAmplitudeElement,
@@ -282,7 +287,7 @@ function initialize(options: Options) {
         element2: availableAmplitudeElement,
       },
     ].forEach(({ value, element1, element2 }) => {
-      const opacity = value == 0 ? "0.25" : "";
+      const opacity = value == 0 ? "0.5" : "";
       element1.style.opacity = opacity;
       element2.style.opacity = opacity;
     });
@@ -353,7 +358,7 @@ const scripts = new Map<string, Options>([
   ],
 ]);
 
-initialize(scripts.get("p1")!);
+initialize(scripts.get("likeShareAndSubscribe")!);
 
 let timeOffset = NaN;
 new AnimationLoop((now) => {

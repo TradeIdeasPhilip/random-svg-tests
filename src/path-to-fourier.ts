@@ -1,6 +1,7 @@
 import { AnimationLoop, getById } from "phil-lib/client-misc";
 import {
   groupTerms,
+  hasFixedContribution,
   samples,
   samplesFromPath,
   samplesToFourier,
@@ -128,6 +129,49 @@ function initialize(options: Options) {
         numberOfDisplaySegments
       );
       return () => path.rawPath;
+    } else if (
+      scriptEntry.usingCircles == 0 &&
+      scriptEntry.addingCircles == 1 &&
+      terms[0].frequency == 0
+    ) {
+      /**
+       * Special case:  A dot is moving.
+       *    Going from 0 terms to 1 term with frequency = zero.
+       *    Don't even think about the animation that we do in other places.
+       *    This script is completely unique.
+       *    Draw a single line for the path.
+       *    Both ends start at the first point.
+       *    Use makeEasing() to move the first point from the start to the end.
+       *    Then use makeEasing() to move the second point from the start to the end.
+       *    First one goes from 0 to 2/3, second one goes from 1/3 to 1.
+       *    I.e. some overlap.
+       */
+      const { startTime, endTime } = scriptEntry;
+      const duration = endTime - startTime;
+      const startDelay = duration * 0.25;
+      const effectDuration = duration * 0.5;
+      const getLeadingProgress = makeEasing(
+        startTime + startDelay,
+        startTime + startDelay + effectDuration
+      );
+      const getTrailingProgress = makeEasing(endTime - effectDuration, endTime);
+      const goal = hasFixedContribution(terms[0])!;
+      /**
+       * @param t A value between 0 and 1.
+       * @returns The coordinates as a string.
+       */
+      function location(t: number) {
+        return `${goal.x * t},${goal.y * t}`;
+      }
+      return (t: number) => {
+        const trailingProgress = getTrailingProgress(t);
+        const from = location(trailingProgress);
+        const leadingProgress = getLeadingProgress(t);
+        const to = location(leadingProgress);
+        const pathString = `M ${from} L ${to}`;
+        // console.log({ t, trailingProgress, leadingProgress, pathString });
+        return pathString;
+      };
     } else {
       const r = 0.05; // TODO r needs to be smaller in most cases.
       const timeToCenter = makeBoundedLinear(
@@ -358,7 +402,7 @@ const scripts = new Map<string, Options>([
   ],
 ]);
 
-initialize(scripts.get("likeShareAndSubscribe")!);
+initialize(scripts.get("p1")!);
 
 let timeOffset = NaN;
 new AnimationLoop((now) => {
@@ -395,6 +439,19 @@ new AnimationLoop((now) => {
  * It needs to be scaled to go with the amplitude.
  * When amplitude = 3% —> give me 10th of the easing radius that we have now.
  * Everything else scales linearly.
+ *
+ * There is a FLAW in this logic.
+ * You can't base r directly on the amplitude.
+ * The problem is that all of our amplitudes are percents of the total.
+ * But some examples (e.g. p1) have a very large initial move.
+ * So the first normal circle should have have had a high amplitude
+ * but it was lower than it should have been.
+ *
+ * Maybe there's a better approach.
+ * Look at the raw amplitudes, not the %.
+ * Compare that to the length of the reference path.
+ * (Or possibly the size of the bBox or the length of the previous path)
+ * This seems promising.
  */
 
 /**
@@ -410,20 +467,8 @@ new AnimationLoop((now) => {
  * Part of the path is not moving, so we can't compute the derivative.
  * My library throws an exception and never tries to draw the good parts.
  *
- * Proposal:  Consider exactly 2 special cases:
- *
- * 1) A dot is moving.
- *    Going from 0 terms to 1 term with frequency = zero.
- *    Don't even think about the animation that we do in other places.
- *    This script is completely unique.
- *    Draw a single line for the path.
- *    Both ends start at the first point.
- *    Use makeEasing() to move the first point from the start to the end.
- *    Then use makeEasing() to move the second point from the start to the end.
- *    First one goes from 0 to 2/3, second one goes from 1/3 to 1.
- *    I.e. some overlap.
- *
- * 2) A dot is turning into a real shape.
+ * Proposal:
+ *    A dot is turning into a real shape.
  *    Either we are adding a second term and the first term had frequency 0.
  *    Or we are adding the first term and it does not have a frequency of 0.
  *    Start from our existing algorithm.

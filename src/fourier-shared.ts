@@ -111,6 +111,24 @@ export function termsToParametricFunction(
   };
 }
 
+/**
+ * If a term's frequency is 0 then its contribution will be fixed.
+ * I.e. it will not depend on the angle.
+ * @param term Created by samplesToFourier()
+ * @returns `undefined` if this term does not have a fixed value.
+ * Otherwise returns the contribution of the term.
+ */
+export function hasFixedContribution(term: FourierTerm): Point | undefined {
+  if (term.frequency == 0) {
+    return {
+      x: Math.cos(term.phase) * term.amplitude,
+      y: Math.sin(term.phase) * term.amplitude,
+    };
+  } else {
+    return undefined;
+  }
+}
+
 // TODO This can get noticibly slow for a complex path.  It takes about 1.3 seconds to
 // decode the samples.likeShareAndSubscribe.  It took noticible time for some of the other
 // examples, too.  The time grows slightly faster than linearly as the path gets longer.

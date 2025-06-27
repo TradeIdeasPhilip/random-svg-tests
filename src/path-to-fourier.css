@@ -87,3 +87,7 @@ path[data-live="front"] {
 #progress tr th:first-child {
   text-align: right;
 }
+
+#progress tr:first-child th {
+  text-align: left;
+}

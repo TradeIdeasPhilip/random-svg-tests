@@ -172,6 +172,53 @@ function initialize(options: Options) {
       };
     }
   });
+  const amplitudeHelper = new Intl.NumberFormat("en-US", {
+    minimumSignificantDigits: 5,
+    maximumSignificantDigits: 5,
+    useGrouping: false,
+  }).format;
+  const formatAmplitude = (value: number): string => {
+    if (value < 0) {
+      // I saw this once.
+      // Something should have been zero but through round-off error became negative.
+      // It caused problems downstream.
+      value = 0;
+    }
+    let result = amplitudeHelper(value);
+    const [, beforeDecimalPoint, afterDecimalPoint] =
+      /^([0-9]+)\.([0-9]+)$/.exec(result)!;
+    switch (beforeDecimalPoint.length) {
+      case 3: {
+        // Already perfect.  E.g. 100.00
+        break;
+      }
+      case 2: {
+        // E.g. 10.000
+        result = FIGURE_SPACE + result;
+        break;
+      }
+      case 1: {
+        // E.g. 1.0000
+        result = FIGURE_SPACE + FIGURE_SPACE + result;
+        break;
+      }
+      default: {
+        console.warn({ beforeDecimalPoint, afterDecimalPoint, result });
+        throw new Error("wtf");
+      }
+    }
+    return result + "%";
+  };
+  /**
+   * Cached.
+   *
+   * So I don't have to think about the performance of formatAmplitude()
+   */
+  const formatted = script.map((scriptEntry) => ({
+    usingAmplitude: formatAmplitude(scriptEntry.usingAmplitude),
+    addingAmplitude: formatAmplitude(scriptEntry.addingAmplitude),
+    availableAmplitude: formatAmplitude(scriptEntry.availableAmplitude),
+  }));
   const usingCirclesElement = selectorQuery(
     "[data-using] [data-circles]",
     HTMLTableCellElement
@@ -239,26 +286,10 @@ function initialize(options: Options) {
       element1.style.opacity = opacity;
       element2.style.opacity = opacity;
     });
-    const amplitudeHelper = new Intl.NumberFormat("en-US", {
-      minimumSignificantDigits: 5,
-      maximumSignificantDigits: 5,
-      useGrouping: false,
-    }).format;
-    const formatAmplitude = (value: number) => {
-      if (value < 0) {
-        value = 0;
-      }
-      return amplitudeHelper(value);
-    };
-    usingAmplitudeElement.innerText = formatAmplitude(
-      scriptEntry.usingAmplitude
-    );
-    addingAmplitudeElement.innerText = formatAmplitude(
-      scriptEntry.addingAmplitude
-    );
-    availableAmplitudeElement.innerText = formatAmplitude(
-      scriptEntry.availableAmplitude
-    );
+    const f = formatted[index];
+    usingAmplitudeElement.innerText = f.usingAmplitude;
+    addingAmplitudeElement.innerText = f.addingAmplitude;
+    availableAmplitudeElement.innerText = f.availableAmplitude;
   }
   (window as any).showFrame = showFrame;
 }
@@ -322,7 +353,7 @@ const scripts = new Map<string, Options>([
   ],
 ]);
 
-initialize(scripts.get("likeShareAndSubscribe")!);
+initialize(scripts.get("p1")!);
 
 let timeOffset = NaN;
 new AnimationLoop((now) => {
@@ -336,35 +367,6 @@ new AnimationLoop((now) => {
 /**
  * TODO soon.
  *
- * When we freeze the Fourier series at N circles, that remains the same.
- * We will spend a lot less time frozen, but otherwise the same.
- * The update needs to be much more dynamic.
- * We are *not* interpolating between the two states with integer numbers of circles.
- * Instead, the change will move across the length of the path over time.
- * The font end of the path quickly breaks from the back end, which remains in place.
- * The front end moves to its new place.
- * This change moves through the path like a wave.
- * The end of the path will eventually meet back up with the front of the path.
- * * using(t) = the position computed from all of the circles that we are completely using.
- * * adding(t) = the change to the position computed from the circles that we
- * * display(t) = using(t) + fraction * adding(t)
- * * t = where we are along the path, the parameter.
- * * fraction = a value that changes gradually over time as we animate the addition of the new circles.
- * In complex-fourier-series.html fraction is a simple function of time.
- * It was the same for all values of t.
- * Now there is a center of the change, which is value of t, which changes over time.
- * The center starts just before t=0.
- * Over time the center will move to just past t=1.
- * fraction(t) = 0 when t ≪ the center point.
- * fraction(t) = 1 then t ≫ the center point.
- * fraction(center point) = 0.5.
- * There is a small region around the center point, ±r, where fraction(t) is in flux.
- * Use my standard cos easing function to make fraction(t) smoothly transition from 0 to 1.
- * At the starting time the center of change should be at 0-r.
- * And the ending time the center of change should be at 1+r.
- * I.e. start making changes at the very start of the time period, but ease into it.
- * And end the same way.
- *
  * r is proportional to the amplitude of the circle we are adding.
  * If we are adding multiple circles, maybe the total amplitude.
  * A value of around 1% - 5% of the total distance seems reasonable for the first circle.
@@ -374,16 +376,6 @@ new AnimationLoop((now) => {
  * It might make sense to send multiple updates through at once.
  * As long as there is some space between them, so you can see what's going on.
  * This can help a lot if we have lots of circles to add.
- */
-
-/**
- * TODO Finish the table!
- * The amplitude numbers are not lined up right.
- * The periods should all line up.
- * There is one more step that needs to be copied from complex-fourier-series.ts.
- * Search for keyframe.content = `'${(keyframe.content + "%").padEnd(
- * Add spaces and a %.
- * Work will have to be done up front, not just where the current code is.
  */
 
 /**
@@ -421,4 +413,18 @@ new AnimationLoop((now) => {
  * It needs to be scaled to go with the amplitude.
  * When amplitude = 3% —> give me 10th of the easing radius that we have now.
  * Everything else scales linearly.
+ */
+
+/**
+ * TODO !!!!!
+ * Change the Like share and subscribe sample path.
+ * Translate it so its center is closer to 0,0.
+ * But not too close.
+ * Ideally the amplitude of the frequency 0 term will be just slightly less than the amplitude of the frequency 1 term.
+ * Currently we try to animate the frequency 0 term before the frequency 1 term.
+ * That's causing the bugs and it would not be that visually appealing if I fixed them.
+ * The frequency 1 thing should happen first, going from a point to a circle.
+ * Next do the frequency 0 thing, sliding the circle over.
+ *
+ * the p1 example has similar issues.
  */

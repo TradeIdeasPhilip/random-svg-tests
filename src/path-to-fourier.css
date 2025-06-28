@@ -19,7 +19,9 @@ body {
 }
 
 svg#main {
-  background-color: darkred;
+  /* You should never see this color in production.  
+     That's why I made it such an obvious color. */
+  background-color: hotpink;
   width: 100vw;
   height: 100vh;
   --base-stroke-width: 0.05px;

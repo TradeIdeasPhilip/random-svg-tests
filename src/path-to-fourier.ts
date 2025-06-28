@@ -21,19 +21,12 @@ type Options = {
   pathString: string;
   numberOfFourierSamples: number;
   maxGroupsToDisplay: number;
+  minGoodCircles?: number;
 };
 
 /*
-type Result = {
-  totalTimeMS: number;
-  //Or make this a global
-  // We will need this info when we restart
-  // Or do we restart?  We have a refresh button!
-  // Normally the user interface starts something immediately.
-  // With the recording, does that matter?
-  // We just remove the idea of the recorder configuring anything.
-  // Everything's been preconfigured to run the same way whether it's live or recorded.
-  //
+ TODO add the part for html-to-movie.
+  Rough sketch:
   // Yes, the main program calls initialize() at the start.
   // The only way to reconfigure is to change the main program and restart.
   // The animations all start running by default.
@@ -43,19 +36,6 @@ type Result = {
   //   and when it takes the screenshot.
   // * We will return the length of this presentation.
   //   It will be the same as length of the live animation.
-  //
-  // So, yes, we do need to save this info in a global.
-  //
-  // I keep returning to the same thought:
-  // The requested script should be in the query string.
-  // So we know exactly what to display from the start.
-  // Regardless of live or video.
-  // Initially I can jump between scripts by changing the main program.
-  // But it might be nice to record a lot of small scripts all in one session.
-  // And walk away and not have to keep changing things.
-
-  animations: Animation[];
-};
 */
 
 // TODO add in y1 and y2, rather than just assuming they are 0 and 1.
@@ -173,7 +153,12 @@ function initialize(options: Options) {
         return pathString;
       };
     } else {
-      const r = 0.05; // TODO r needs to be smaller in most cases.
+      const maxFrequency = Math.max(
+        ...terms
+          .slice(0, scriptEntry.usingCircles + scriptEntry.addingCircles)
+          .map((term) => term.frequency)
+      );
+      const r = 0.2 / maxFrequency;
       /**
        * This creates a function which takes a time in milliseconds,
        * 0 at the beginning of the script.
@@ -414,6 +399,7 @@ const scripts = new Map<string, Options>([
       maxGroupsToDisplay: 30,
       numberOfFourierSamples: 1024,
       pathString: samples.likeShareAndSubscribe,
+      minGoodCircles: 10,
     },
   ],
   [
@@ -430,6 +416,7 @@ const scripts = new Map<string, Options>([
       maxGroupsToDisplay: 20,
       numberOfFourierSamples: 1024,
       pathString: samples.hilbert[1],
+      minGoodCircles: 13,
     },
   ],
   [
@@ -466,7 +453,7 @@ const scripts = new Map<string, Options>([
   ],
 ]);
 
-initialize(scripts.get("hilbert1")!);
+initialize(scripts.get("likeShareAndSubscribe")!);
 
 // Without this setTimeout() the animation would
 // skip a lot of time in the beginning.  A lot of the setup time
@@ -486,6 +473,7 @@ setTimeout(() => {
 /**
  * TODO Minimum good detail!
  * Each script should include an optional setting regarding the minimum number of segments.
+ * STARTED!  See minGoodCircles.
  * You can specify this in circles!
  * You say how many circles you saw on the screen when it was good enough.
  * It already knows how to do the math to convert the number circles into the number of segments.
@@ -498,56 +486,4 @@ setTimeout(() => {
 
 /**
  * TODO Recenter all of the examples.
- */
-
-/**
- * TODO
- *
- * Sometimes the transition between one and the next seems rough.
- * Like I don't have enough path segments.
- * It usually happens within the first few add phases.
- * I.e. when the number of path segments is low.
- * I need to dump the script to the console so I can see the frequencies
- * associated with the bad demos.
- * I can probably just set a minimum number of path segments.
- * But that minimum might depend on how small r is.
- */
-
-/**
- * TODO
- *
- * r is proportional to the amplitude of the circle we are adding.
- * If we are adding multiple circles, maybe the total amplitude.
- * A value of around 1% - 5% of the total distance seems reasonable for the first circle.
- * We will need a smaller r to make the smaller changes more obvious.
- *
- * The width of the eased region around the center of change
- * is way too big.
- * It needs to be scaled to go with the amplitude.
- * When amplitude = 3% —> give me 10th of the easing radius that we have now.
- * Everything else scales linearly.
- *
- * There is a FLAW in this logic.
- * You can't base r directly on the amplitude.
- * The problem is that all of our amplitudes are percents of the total.
- * But some examples (e.g. p1) have a very large initial move.
- * So the first normal circle should have have had a high amplitude
- * but it was lower than it should have been.
- *
- * Maybe there's a better approach.
- * Look at the raw amplitudes, not the %.
- * Compare that to the length of the reference path.
- * (Or possibly the size of the bBox or the length of the previous path)
- * This seems promising.
- *
- * This initial circle seems like it should always have a very big r to look good.
- * If we're going from a point to a circle, as we often do, nothing else matters.
- * Always use the same r for the first circle, a big one.
- *
- * But what if we don't go from a dot to a circle?
- * What if we transition directly from a dot to a frequency 3 circle?
- * Then it seems like we should have more detail, less smoothing.
- * Maybe r goes to 1/3 of its size?
- * Should r depend on the frequency and nothing else?
- * Is it linear?
  */

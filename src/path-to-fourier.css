@@ -98,3 +98,10 @@ path[data-live="front"] {
   text-align: left;
   color: var(--blue);
 }
+
+/* When an image appears under the table we use a black outline
+   to make sure the table's text is readable.  */
+td,
+th {
+  filter: url(#black-outline);
+}

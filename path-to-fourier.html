@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>path-to-</title>
+    <title>path-to-fourier</title>
     <script type="module" src="/src/path-to-fourier.ts"></script>
   </head>
   <body>
@@ -13,7 +13,60 @@
       xmlns="http://www.w3.org/2000/svg"
       preserveAspectRatio="xMaxYMin meet"
     >
-      <defs></defs>
+      <defs>
+        <filter
+          id="black-outline"
+          color-interpolation-filters="linearRGB"
+          filterUnits="objectBoundingBox"
+          primitiveUnits="userSpaceOnUse"
+        >
+          <!-- Source: https://yoksel.github.io/svg-filters/#/presets/stroke -->
+          <feMorphology
+            operator="dilate"
+            radius="7 7"
+            in="SourceAlpha"
+            result="morphology"
+          />
+          <feFlood flood-color="#000000" flood-opacity="1" result="flood" />
+          <feComposite
+            in="flood"
+            in2="morphology"
+            operator="in"
+            result="composite"
+          />
+          <feMerge result="merge">
+            <feMergeNode in="composite" result="mergeNode" />
+            <feMergeNode in="SourceGraphic" result="mergeNode1" />
+          </feMerge>
+        </filter>
+        <filter
+          id="black-outline-bad"
+          color-interpolation-filters="linearRGB"
+          filterUnits="objectBoundingBox"
+          primitiveUnits="userSpaceOnUse"
+        >
+          <feMorphology
+            operator="dilate"
+            radius="0.0005 0.0005"
+            x="0%"
+            y="0%"
+            width="100%"
+            height="100%"
+            in="SourceAlpha"
+            result="morphology"
+          />
+          <feBlend
+            mode="normal"
+            x="0%"
+            y="0%"
+            width="100%"
+            height="100%"
+            in="SourceGraphic"
+            in2="morphology"
+            result="blend"
+          />
+        </filter>
+      </defs>
       <rect id="background" width="16" height="9"></rect>
       <line id="for-scale" x1="1" y1="1" x2="15" y2="8"></line>
       <g id="scaled">

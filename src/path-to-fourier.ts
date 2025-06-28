@@ -85,7 +85,7 @@ function initialize(options: Options) {
   // Create terms
   const terms = samplesToFourier(samples);
   const script = groupTerms({
-    /* TODO return these to something sane. */ addTime: 6800,
+    addTime: 4800,
     pauseTime: 200,
     maxGroupsToDisplay: options.maxGroupsToDisplay,
     terms,
@@ -463,6 +463,34 @@ const scripts = new Map<string, Options>([
       bottomText: 'makePolygon(7,2, "My seed 2025a")',
     },
   ],
+  [
+    "Daphne_Oram_1",
+    {
+      maxGroupsToDisplay: 18,
+      pathString: samples.daphneOram1,
+      topText: "Daphne Oram #1",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "Daphne_Oram_2",
+    {
+      maxGroupsToDisplay: 22,
+      pathString: samples.daphneOram2,
+      topText: "Daphne Oram #2",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "water_opossum",
+    {
+      maxGroupsToDisplay: 22,
+      pathString: samples.waterOpossum,
+      topText: "Chironectes (Water Opossum)",
+      bottomText: "Wikimedia Commons",
+      minGoodCircles: 10,
+    },
+  ],
 ]);
 
 {
@@ -481,13 +509,14 @@ const scripts = new Map<string, Options>([
     //initialize({maxGroupsToDisplay:10, pathString:makePolygon(7,2, "My seed 2025a").rawPath});
   }
 }
+
 // Without this setTimeout() the animation would
 // skip a lot of time in the beginning.  A lot of the setup time
 // would happen right after the first frame and after our clock
 // starts.
 setTimeout(() => {
   let timeOffset = NaN;
-  new AnimationLoop((now) => {
+  (window as any).animationLoop = new AnimationLoop((now) => {
     if (isNaN(timeOffset)) {
       timeOffset = now;
     }

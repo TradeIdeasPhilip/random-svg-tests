@@ -85,7 +85,7 @@ function initialize(options: Options) {
   const terms = samplesToFourier(samples);
   const script = groupTerms({
     /* TODO return these to something sane. */ addTime: 4900,
-    pauseTime: 100,
+    pauseTime: 200,
     maxGroupsToDisplay: options.maxGroupsToDisplay,
     terms,
   });
@@ -121,20 +121,15 @@ function initialize(options: Options) {
        *    This script is completely unique.
        *    Draw a single line for the path.
        *    Both ends start at the first point.
-       *    Use makeEasing() to move the first point from the start to the end.
-       *    Then use makeEasing() to move the second point from the start to the end.
-       *    First one goes from 0 to 2/3, second one goes from 1/3 to 1.
-       *    I.e. some overlap.
+       *    Use makeEasing() to move the points smoothly.
        */
       const { startTime, endTime } = scriptEntry;
       const duration = endTime - startTime;
-      const startDelay = duration * 0.25;
-      const effectDuration = duration * 0.5;
       const getLeadingProgress = makeEasing(
-        startTime + startDelay,
-        startTime + startDelay + effectDuration
+        startTime,
+        startTime + duration / 2
       );
-      const getTrailingProgress = makeEasing(endTime - effectDuration, endTime);
+      const getTrailingProgress = makeEasing(startTime, endTime);
       const goal = hasFixedContribution(terms[0])!;
       /**
        * @param t A value between 0 and 1.
@@ -451,9 +446,26 @@ const scripts = new Map<string, Options>([
       pathString: samples.peanocurve[2],
     },
   ],
+  [
+    "square",
+    {
+      maxGroupsToDisplay: 7,
+      numberOfFourierSamples: 1024,
+      pathString: "M-0.5,-0.667 h 1 v 1 h -1 z",
+    },
+  ],
+  [
+    "ellipse",
+    {
+      maxGroupsToDisplay: 7,
+      numberOfFourierSamples: 1024,
+      pathString: "M1,0 A1,1.25 0 1 1 -1,0 A1,1.25 0 1 1 1,0 z",
+    },
+  ],
 ]);
 
-initialize(scripts.get("likeShareAndSubscribe")!);
+initialize(scripts.get("hilbert1")!);
+//initialize();
 
 // Without this setTimeout() the animation would
 // skip a lot of time in the beginning.  A lot of the setup time
@@ -471,6 +483,60 @@ setTimeout(() => {
 }, 1);
 
 /**
+ * TODO
+ * Consider a different approach to the animations.
+ *
+ * We still start with two versions of the fourier paths,
+ * the second created with one or a few more segments than the first.
+ *
+ * We still have a center of change.
+ * Before the center of change we display the newer series with more terms.
+ * After the change we display the older series with fewer terms.
+ *
+ * We have two different paths, one for the newer part, before the center.
+ * And another path for the older part, after the center of change.
+ * We do *not* try to connect them smoothly.
+ * Each one ends at the center.
+ * They will probably not touch at their ends because one is always offset from the other by the new terms.
+ *
+ * The new, growing part is drawn with a thin blue line.
+ * The old, shrinking part is draw with a thicker white line.
+ * The thin blue line is drawn on top of the thicker white line.
+ *
+ * There is still an r describing the size of the region around the center of change.
+ * This might use the same formula.
+ *
+ * There is another line tracking the new formula.
+ * This is a thicker white line.
+ * It starts at 0, just like the blue line that's tracking the new formulas.
+ * It ends at Math.max(0, center of change - r).
+ * It is drawn at the bottom of the stack.
+ *
+ * And there is another line tracking the old formula.
+ * This is thin and blue and will be drawn on top.
+ * It will be drawn from Math.min(1, center of change + r) to 1.
+ *
+ * Away from the center of change you see the old formula and you see the new formula,
+ * just like when these are frozen between changes,
+ * And just like they are now.
+ * But near the center of change you only see one blue line and one white line.
+ * So it should be easy to see the relative positions of the ends of those two lines.
+ * Ideally you'll notice the one orbiting around the other.
+ *
+ * At the beginning of the animation,
+ * the lines showing the new formula are completely transparent.
+ * And they would be dots if they were visible.
+ * And the lines showing the old formula are completely visible and the go the entire way around.
+ *
+ * The entire animation goes from t = -r to t = 1+r, linearly.
+ * In the time between -r and 0, the blue line for the old, shrinking part will start moving forward.
+ * The formulas for the line positions should be the same for the entire range, -r to 1+r.
+ * In that same time, between -r and 0, the lines for the new formula go from completely transparent to completely opaque.
+ * In the time from 1 to 1+r the lines for the old formula fade to transparent.
+ * from 0 - 1 all lines are fully opaque.
+ */
+
+/**
  * TODO Minimum good detail!
  * Each script should include an optional setting regarding the minimum number of segments.
  * STARTED!  See minGoodCircles.
@@ -482,6 +548,9 @@ setTimeout(() => {
  * I'm not sure if it is related.
  * It jumps around a lot more than I'd expect right around the time of the straight diagonal line.
  * This is early in the script, not a lot of circles, maybe more segments would help.
+ *
+ * See previous TODO.  Major changes to the way we draw things.
+ * Should make it easier to pick the right number of points.
  */
 
 /**

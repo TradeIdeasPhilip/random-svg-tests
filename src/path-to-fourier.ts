@@ -465,9 +465,22 @@ const scripts = new Map<string, Options>([
   ],
 ]);
 
-initialize(scripts.get("star7")!);
-//initialize({maxGroupsToDisplay:10, pathString:makePolygon(7,2, "My seed 2025a").rawPath});
-
+{
+  const requested = new URLSearchParams(window.location.search).get(
+    "script_name"
+  );
+  if (requested) {
+    const script = scripts.get(requested);
+    if (!script) {
+      console.log(`invalid script name: ${requested}`, scripts);
+      throw new Error("wtf");
+    }
+    initialize(script);
+  } else {
+    initialize(scripts.get("star7")!);
+    //initialize({maxGroupsToDisplay:10, pathString:makePolygon(7,2, "My seed 2025a").rawPath});
+  }
+}
 // Without this setTimeout() the animation would
 // skip a lot of time in the beginning.  A lot of the setup time
 // would happen right after the first frame and after our clock

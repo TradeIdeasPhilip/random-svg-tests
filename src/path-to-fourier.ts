@@ -2,6 +2,7 @@ import { AnimationLoop, getById } from "phil-lib/client-misc";
 import {
   groupTerms,
   hasFixedContribution,
+  makePolygon,
   samples,
   samplesFromPath,
   samplesToFourier,
@@ -13,15 +14,18 @@ import { PathShape } from "./path-shape";
 import { FIGURE_SPACE, makeBoundedLinear, makeLinear } from "phil-lib/misc";
 import { ease, selectorQuery } from "./utility";
 
+const numberOfFourierSamples = 1024;
+
 const scaleG = getById("scaled", SVGGElement);
 const referencePath = getById("reference", SVGPathElement);
 const samplesPath = getById("samples", SVGPathElement);
 
 type Options = {
   pathString: string;
-  numberOfFourierSamples: number;
   maxGroupsToDisplay: number;
   minGoodCircles?: number;
+  topText?: string;
+  bottomText?: string;
 };
 
 /*
@@ -71,10 +75,7 @@ function initialize(options: Options) {
   scaleG.style.transform = transform.toString();
   scaleG.style.setProperty("--path-scale", scale.toString());
   // Take the samples.
-  const samples = samplesFromPath(
-    options.pathString,
-    options.numberOfFourierSamples
-  );
+  const samples = samplesFromPath(options.pathString, numberOfFourierSamples);
   // Show where were the samples taken.
   let samplesPathD = "";
   samples.forEach(([x, y]) => {
@@ -84,7 +85,7 @@ function initialize(options: Options) {
   // Create terms
   const terms = samplesToFourier(samples);
   const script = groupTerms({
-    /* TODO return these to something sane. */ addTime: 4900,
+    /* TODO return these to something sane. */ addTime: 6800,
     pauseTime: 200,
     maxGroupsToDisplay: options.maxGroupsToDisplay,
     terms,
@@ -392,7 +393,6 @@ const scripts = new Map<string, Options>([
     "likeShareAndSubscribe",
     {
       maxGroupsToDisplay: 30,
-      numberOfFourierSamples: 1024,
       pathString: samples.likeShareAndSubscribe,
       minGoodCircles: 10,
     },
@@ -401,7 +401,6 @@ const scripts = new Map<string, Options>([
     "hilbert0",
     {
       maxGroupsToDisplay: 20,
-      numberOfFourierSamples: 1024,
       pathString: samples.hilbert[0],
     },
   ],
@@ -409,7 +408,6 @@ const scripts = new Map<string, Options>([
     "hilbert1",
     {
       maxGroupsToDisplay: 20,
-      numberOfFourierSamples: 1024,
       pathString: samples.hilbert[1],
       minGoodCircles: 13,
     },
@@ -418,7 +416,6 @@ const scripts = new Map<string, Options>([
     "hilbert4",
     {
       maxGroupsToDisplay: 20,
-      numberOfFourierSamples: 1024,
       pathString: samples.hilbert[4],
     },
   ],
@@ -426,7 +423,6 @@ const scripts = new Map<string, Options>([
     "p0",
     {
       maxGroupsToDisplay: 20,
-      numberOfFourierSamples: 1024,
       pathString: samples.peanocurve[0],
     },
   ],
@@ -434,7 +430,6 @@ const scripts = new Map<string, Options>([
     "p1",
     {
       maxGroupsToDisplay: 20,
-      numberOfFourierSamples: 1024,
       pathString: samples.peanocurve[1],
     },
   ],
@@ -442,7 +437,6 @@ const scripts = new Map<string, Options>([
     "p2",
     {
       maxGroupsToDisplay: 20,
-      numberOfFourierSamples: 1024,
       pathString: samples.peanocurve[2],
     },
   ],
@@ -450,7 +444,6 @@ const scripts = new Map<string, Options>([
     "square",
     {
       maxGroupsToDisplay: 7,
-      numberOfFourierSamples: 1024,
       pathString: "M-0.5,-0.667 h 1 v 1 h -1 z",
     },
   ],
@@ -458,14 +451,22 @@ const scripts = new Map<string, Options>([
     "ellipse",
     {
       maxGroupsToDisplay: 7,
-      numberOfFourierSamples: 1024,
       pathString: "M1,0 A1,1.25 0 1 1 -1,0 A1,1.25 0 1 1 1,0 z",
+    },
+  ],
+  [
+    "star7",
+    {
+      maxGroupsToDisplay: 8,
+      pathString: makePolygon(7, 2, "My seed 2025a").rawPath,
+      topText: "Random 7 Pointed Star",
+      bottomText: 'makePolygon(7,2, "My seed 2025a")',
     },
   ],
 ]);
 
-initialize(scripts.get("hilbert1")!);
-//initialize();
+initialize(scripts.get("star7")!);
+//initialize({maxGroupsToDisplay:10, pathString:makePolygon(7,2, "My seed 2025a").rawPath});
 
 // Without this setTimeout() the animation would
 // skip a lot of time in the beginning.  A lot of the setup time
@@ -483,60 +484,6 @@ setTimeout(() => {
 }, 1);
 
 /**
- * TODO
- * Consider a different approach to the animations.
- *
- * We still start with two versions of the fourier paths,
- * the second created with one or a few more segments than the first.
- *
- * We still have a center of change.
- * Before the center of change we display the newer series with more terms.
- * After the change we display the older series with fewer terms.
- *
- * We have two different paths, one for the newer part, before the center.
- * And another path for the older part, after the center of change.
- * We do *not* try to connect them smoothly.
- * Each one ends at the center.
- * They will probably not touch at their ends because one is always offset from the other by the new terms.
- *
- * The new, growing part is drawn with a thin blue line.
- * The old, shrinking part is draw with a thicker white line.
- * The thin blue line is drawn on top of the thicker white line.
- *
- * There is still an r describing the size of the region around the center of change.
- * This might use the same formula.
- *
- * There is another line tracking the new formula.
- * This is a thicker white line.
- * It starts at 0, just like the blue line that's tracking the new formulas.
- * It ends at Math.max(0, center of change - r).
- * It is drawn at the bottom of the stack.
- *
- * And there is another line tracking the old formula.
- * This is thin and blue and will be drawn on top.
- * It will be drawn from Math.min(1, center of change + r) to 1.
- *
- * Away from the center of change you see the old formula and you see the new formula,
- * just like when these are frozen between changes,
- * And just like they are now.
- * But near the center of change you only see one blue line and one white line.
- * So it should be easy to see the relative positions of the ends of those two lines.
- * Ideally you'll notice the one orbiting around the other.
- *
- * At the beginning of the animation,
- * the lines showing the new formula are completely transparent.
- * And they would be dots if they were visible.
- * And the lines showing the old formula are completely visible and the go the entire way around.
- *
- * The entire animation goes from t = -r to t = 1+r, linearly.
- * In the time between -r and 0, the blue line for the old, shrinking part will start moving forward.
- * The formulas for the line positions should be the same for the entire range, -r to 1+r.
- * In that same time, between -r and 0, the lines for the new formula go from completely transparent to completely opaque.
- * In the time from 1 to 1+r the lines for the old formula fade to transparent.
- * from 0 - 1 all lines are fully opaque.
- */
-
-/**
  * TODO Minimum good detail!
  * Each script should include an optional setting regarding the minimum number of segments.
  * STARTED!  See minGoodCircles.
@@ -548,9 +495,6 @@ setTimeout(() => {
  * I'm not sure if it is related.
  * It jumps around a lot more than I'd expect right around the time of the straight diagonal line.
  * This is early in the script, not a lot of circles, maybe more segments would help.
- *
- * See previous TODO.  Major changes to the way we draw things.
- * Should make it easier to pick the right number of points.
  */
 
 /**

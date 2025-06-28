@@ -1,7 +1,37 @@
 import { fft } from "fft-js";
 import { LCommand, ParametricFunction, PathShape, Point } from "./path-shape";
-import { PathWrapper } from "./utility";
+import { PathWrapper, Random } from "./utility";
 import { initializedArray } from "phil-lib/misc";
+
+/**
+ *
+ * @param numberOfPoints
+ * @param skip 0 to make a polygon.
+ * 1 to make a star, if numberOfPoints is odd and at least 5.
+ * 2 to make a different star, if numberOfPoints is odd and at least 7.
+ * @param random A random number generator or a seed for a new random number generator.
+ */
+export function makePolygon(
+  numberOfPoints: number,
+  skip: number,
+  random: (() => number) | string = "My seed 2025",
+  randomness = 0.25
+) {
+  const rotate = ((2 * Math.PI) / numberOfPoints) * (1 + skip);
+  if (typeof random === "string") {
+    random = Random.fromString(random);
+  }
+  const jiggle = () => (random() - 0.5) * randomness;
+  const vertices = initializedArray(numberOfPoints, (i) => {
+    const θ = i * rotate;
+    return { x: Math.cos(θ) + jiggle(), y: Math.sin(θ) + jiggle() };
+  });
+  const commands = vertices.map((vertex, index) => {
+    const nextVertex = vertices[(index + 1) % numberOfPoints];
+    return new LCommand(vertex.x, vertex.y, nextVertex.x, nextVertex.y);
+  });
+  return new PathShape(commands);
+}
 
 export const samples = {
   /**

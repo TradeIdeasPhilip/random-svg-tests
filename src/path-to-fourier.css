@@ -38,6 +38,8 @@ path#reference {
   stroke: red;
   /* It seems like vector-effect: non-scaling-stroke would do this automatically, but I never got it to work. */
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 4);
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 path#samples {

@@ -54,7 +54,6 @@ path[data-live] {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  d: var(--d);
 }
 
 path[data-live="back"] {
@@ -64,6 +63,13 @@ path[data-live="back"] {
 path[data-live="front"] {
   stroke: var(--blue);
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.9);
+}
+
+path[data-which="to"] {
+  d: var(--d-to);
+}
+path[data-which="from"] {
+  d: var(--d-from);
 }
 
 #background {

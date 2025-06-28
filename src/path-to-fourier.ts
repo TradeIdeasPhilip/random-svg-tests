@@ -9,8 +9,14 @@ import {
 } from "./fourier-shared";
 import "./path-to-fourier.css";
 import { panAndZoom } from "./transforms";
-import { PathShape } from "./path-shape";
-import { FIGURE_SPACE, makeBoundedLinear, makeLinear } from "phil-lib/misc";
+import { ParametricFunction, PathShape } from "./path-shape";
+import {
+  FIGURE_SPACE,
+  LinearFunction,
+  makeBoundedLinear,
+  makeLinear,
+  radiansPerDegree,
+} from "phil-lib/misc";
 import { ease, selectorQuery } from "./utility";
 
 const scaleG = getById("scaled", SVGGElement);
@@ -84,7 +90,7 @@ function initialize(options: Options) {
   // Create terms
   const terms = samplesToFourier(samples);
   const script = groupTerms({
-    /* TODO return these to something sane. */ addTime: 4900,
+    /* TODO return these to something sane. */ addTime: 5000,
     pauseTime: 200,
     maxGroupsToDisplay: options.maxGroupsToDisplay,
     terms,
@@ -95,8 +101,25 @@ function initialize(options: Options) {
     );
     return 8 * maxFrequency + 7;
   };
-  const timeToPath: ((time: number) => string)[] = script.map((scriptEntry) => {
+  const backToPath = selectorQuery(
+    '[data-live="back"][data-which="to"]',
+    SVGPathElement
+  );
+  const backFromPath = selectorQuery(
+    '[data-live="back"][data-which="from"]',
+    SVGPathElement
+  );
+  const frontToPath = selectorQuery(
+    '[data-live="front"][data-which="to"]',
+    SVGPathElement
+  );
+  const frontFromPath = selectorQuery(
+    '[data-live="front"][data-which="from"]',
+    SVGPathElement
+  );
+  const timeToAction: ((time: number) => void)[] = script.map((scriptEntry) => {
     if (scriptEntry.addingCircles == 0) {
+      // Static.  Nothing is being added.  Freeze on a single path.
       const parametricFunction = termsToParametricFunction(
         terms,
         scriptEntry.usingCircles
@@ -108,7 +131,15 @@ function initialize(options: Options) {
         parametricFunction,
         numberOfDisplaySegments
       );
-      return () => path.rawPath;
+      const pathString = path.cssPath;
+      return () => {
+        backToPath.style.opacity = "";
+        backToPath.style.d = pathString;
+        frontToPath.style.opacity = "";
+        frontToPath.style.d = pathString;
+        frontFromPath.style.d = "";
+        backFromPath.style.d = "";
+      };
     } else if (
       scriptEntry.usingCircles == 0 &&
       scriptEntry.addingCircles == 1 &&
@@ -143,17 +174,53 @@ function initialize(options: Options) {
         const from = location(trailingProgress);
         const leadingProgress = getLeadingProgress(t);
         const to = location(leadingProgress);
-        const pathString = `M ${from} L ${to}`;
-        // console.log({ t, trailingProgress, leadingProgress, pathString });
-        return pathString;
+        const pathString =PathShape.cssifyPath( `M ${from} L ${to}`);
+        backToPath.style.opacity = "";
+        backToPath.style.d = pathString;
+        frontToPath.style.opacity = "";
+        frontToPath.style.d = pathString;
+        frontFromPath.style.d = "";
+        backFromPath.style.d = "";
       };
     } else {
-      const maxFrequency = Math.max(
+      // for each path, need formula for outside time to initial t.
+      // and the formula for the outside time to final t.
+      // and the path element.
+      // and the formula for creating the path, created from the terms.
+      // and a formula for mapping outside time to opacity.
+      // and the recommended number of display segments, based on the maximum frequency in the formula for the path.
+      type PathInfo = {
+        outsideTimeToInitialT: LinearFunction;
+        outsideTimeToFinalT: LinearFunction;
+        element: SVGPathElement;
+        parametricFunction: ParametricFunction;
+        outsideTimeToOpacity: LinearFunction;
+        maxFrequency: number;
+      };
+      const allPaths: PathInfo[] = [];
+      const maxToFrequency = Math.max(
         ...terms
           .slice(0, scriptEntry.usingCircles + scriptEntry.addingCircles)
           .map((term) => term.frequency)
       );
-      const r = 0.2 / maxFrequency;
+      const maxFromFrequency = Math.max(
+        ...terms
+          .slice(0, scriptEntry.usingCircles)
+          .map((term) => term.frequency)
+      );
+      if (maxFromFrequency > maxToFrequency) {
+        throw new Error("wtf");
+      }
+      const maxFrequency = maxToFrequency;
+      const r = 0.1 / Math.sqrt(maxFrequency);
+      const animationProgressToOutsideTime = makeLinear(
+        -r,
+        scriptEntry.startTime,
+        1 + r,
+        scriptEntry.endTime
+      );
+      const mainStartTime = animationProgressToOutsideTime(0);
+      const mainEndTime = animationProgressToOutsideTime(1);
       /**
        * This creates a function which takes a time in milliseconds,
        * 0 at the beginning of the script.
@@ -162,97 +229,91 @@ function initialize(options: Options) {
        * The output might be outside of that range.
        * I.e. the input and output are both numbers but they are interpreted on different scales.
        */
-      const timeToCenter = makeBoundedLinear(
+      const timeToCenter = makeLinear(
         scriptEntry.startTime,
         -r,
         scriptEntry.endTime,
         1 + r
       );
-      const usingFunction = termsToParametricFunction(
-        terms,
-        scriptEntry.usingCircles
-      );
-      const addingFunction = termsToParametricFunction(
-        terms,
-        scriptEntry.addingCircles,
-        scriptEntry.usingCircles
-      );
-      let numberOfDisplaySegments = recommendedNumberOfSegments(
-        scriptEntry.usingCircles + scriptEntry.addingCircles
-      );
-      if (
-        scriptEntry.usingCircles == 0 ||
-        (scriptEntry.usingCircles == 1 && hasFixedContribution(terms[0]))
-      ) {
-        // We are converting from a dot to something else.
-        const startingPoint = hasFixedContribution(terms[0]) ?? { x: 0, y: 0 };
-        return (timeInMs: number): string => {
-          const centerOfChange = timeToCenter(timeInMs);
-          const startOfChange = centerOfChange - r;
-          const endOfChange = centerOfChange + r;
-          const getFraction = makeEasing(startOfChange, endOfChange);
+       /**
+       * There is another line tracking the new formula.
+       * This is a thicker white line.
+       * It starts at 0, just like the blue line that's tracking the new formulas.
+       * It ends at Math.max(0, center of change - r).
+       * It is drawn at the bottom of the stack.
+       */
+      allPaths.push({
+        // This is the path that is slightly delayed.
+        element: backToPath,
+        maxFrequency: maxToFrequency,
+        parametricFunction: termsToParametricFunction(
+          terms,
+          scriptEntry.addingCircles+
+          scriptEntry.usingCircles
+        ),
+        outsideTimeToFinalT: (t: number) => Math.max(0, timeToCenter(t) - r),
+        outsideTimeToInitialT: () => 0,
+        outsideTimeToOpacity: makeBoundedLinear(
+          scriptEntry.startTime,
+          0,
+          mainStartTime,
+          1
+        ),
+      });
+      allPaths.push({
+        element: backFromPath,
+        maxFrequency: maxFrequency,
+        parametricFunction: termsToParametricFunction(
+          terms,
+          scriptEntry.usingCircles
+        ),
+        outsideTimeToFinalT: () => 1,
+        outsideTimeToInitialT: (t: number) => Math.min(1,timeToCenter( t)),
+        outsideTimeToOpacity: makeBoundedLinear(
+          mainEndTime,
+          1,
+          scriptEntry.endTime,
+          0
+        ),
+      });
+      allPaths.push({
+        ...allPaths[0],
+        element: frontToPath,
+        outsideTimeToFinalT: (t: number) => Math.max(0, timeToCenter(t)),
+      });
+      allPaths.push({
+        ...allPaths[1],
+        element: frontFromPath,
+        outsideTimeToInitialT: (t: number) => Math.min(1,timeToCenter( t )+ radiansPerDegree),
+      });
+     return (timeInMs: number): void => {
+        allPaths.forEach((pathInfo) => {
+          const style = pathInfo.element.style;
+          const initialT = pathInfo.outsideTimeToInitialT(timeInMs);
+          const finalT = pathInfo.outsideTimeToFinalT(timeInMs);
           /**
-           * 0 to `safePartEnds`, inclusive are safe inputs to `parametricFunction()`.
+           * This will be a value between 0 and 1, inclusive.
            */
-          const safePartEnds = Math.min(1, endOfChange);
-          if (safePartEnds <= 0) {
-            // There is no safe part!
-            return `$M${startingPoint.x},${startingPoint.y} L${startingPoint.x},${startingPoint.y}`;
+          const distance = finalT - initialT;
+          let pathString: string;
+          if (distance < 0) {
+            throw new Error("wtf");
+          } else if (distance == 0) {
+            const point = pathInfo.parametricFunction(initialT);
+            pathString = `M${point.x},${point.y} l0,0`;
           } else {
-            const frugalSegmentCount = Math.ceil(
-              // TODO that 150 is crude.  The transition might require
-              // more detail than the before or the after.
-              Math.max(numberOfDisplaySegments, 150) * safePartEnds
+            const numberOfDisplaySegments = Math.ceil(
+              8 * pathInfo.maxFrequency * distance
             );
-            function parametricFunction(t: number) {
-              t = t * safePartEnds;
-              const base = usingFunction(t);
-              const fraction = 1 - getFraction(t);
-              if (fraction == 0) {
-                return base;
-              } else {
-                const adding = addingFunction(t);
-                return {
-                  x: base.x + fraction * adding.x,
-                  y: base.y + fraction * adding.y,
-                };
-              }
-            }
-            const path = PathShape.parametric(
-              parametricFunction,
-              frugalSegmentCount
-            );
-            return path.rawPath;
+            const range = makeLinear(0, initialT, 1, finalT);
+            const f = (t: number) => pathInfo.parametricFunction(range(t));
+            const path = PathShape.parametric(f, numberOfDisplaySegments);
+            pathString = path.rawPath;
           }
-        };
-      } else {
-        // Common case:  Converting from one normal shape into another.
-        return (timeInMs: number): string => {
-          const centerOfChange = timeToCenter(timeInMs);
-          const getFraction = makeEasing(
-            centerOfChange - r,
-            centerOfChange + r
-          );
-          function parametricFunction(t: number) {
-            const base = usingFunction(t);
-            const fraction = 1 - getFraction(t);
-            if (fraction == 0) {
-              return base;
-            } else {
-              const adding = addingFunction(t);
-              return {
-                x: base.x + fraction * adding.x,
-                y: base.y + fraction * adding.y,
-              };
-            }
-          }
-          const path = PathShape.parametric(
-            parametricFunction,
-            numberOfDisplaySegments
-          );
-          return path.rawPath;
-        };
-      }
+          style.opacity = pathInfo.outsideTimeToOpacity(timeInMs).toString();
+          style.d = PathShape.cssifyPath(pathString);
+        });
+      };
     }
   });
   const amplitudeHelper = new Intl.NumberFormat("en-US", {
@@ -381,8 +442,7 @@ function initialize(options: Options) {
     availableAmplitudeElement.innerText = f.availableAmplitude;
 
     // Draw the path
-    const pathString = PathShape.cssifyPath(timeToPath[index](timeInMs));
-    scaleG.style.setProperty("--d", pathString);
+    timeToAction[index](timeInMs);
   }
   (window as any).showFrame = showFrame;
 }
@@ -464,7 +524,7 @@ const scripts = new Map<string, Options>([
   ],
 ]);
 
-initialize(scripts.get("hilbert1")!);
+initialize(scripts.get("likeShareAndSubscribe")!);
 //initialize();
 
 // Without this setTimeout() the animation would
@@ -473,7 +533,7 @@ initialize(scripts.get("hilbert1")!);
 // starts.
 setTimeout(() => {
   let timeOffset = NaN;
-  new AnimationLoop((now) => {
+ (window as any).animationLoop= new AnimationLoop((now) => {
     if (isNaN(timeOffset)) {
       timeOffset = now;
     }
@@ -487,7 +547,7 @@ setTimeout(() => {
  * Consider a different approach to the animations.
  *
  * We still start with two versions of the fourier paths,
- * the second created with one or a few more segments than the first.
+ * the second created with one or a few more terms than the first.
  *
  * We still have a center of change.
  * Before the center of change we display the newer series with more terms.

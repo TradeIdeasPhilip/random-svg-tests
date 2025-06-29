@@ -502,6 +502,78 @@ const scripts = new Map<string, Options>([
       bottomText: "Wikimedia Commons",
     },
   ],
+  [
+    "airplane",
+    {
+      maxGroupsToDisplay: 20,
+      pathString: samples.airplane,
+      topText: "Airplane",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "head_facing_right",
+    {
+      maxGroupsToDisplay: 14,
+      pathString: samples.headFacingRight,
+      topText: "Head Facing Right",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "Lavater",
+    {
+      maxGroupsToDisplay: 14,
+      pathString: samples.lavater,
+      topText: "Johann Kaspar Lavaters",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "man_walking",
+    {
+      maxGroupsToDisplay: 17,
+      pathString: samples.manWalking,
+      bottomText: "Wikimedia Commons",
+      topText: "Man Walking",
+    },
+  ],
+  [
+    "bear",
+    {
+      maxGroupsToDisplay: 17,
+      pathString: samples.bear,
+      topText: "Bear",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "head_facing_left",
+    {
+      maxGroupsToDisplay: 9,
+      pathString: samples.headFacingLeft,
+      topText: "Head Facing Left",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "kiwi",
+    {
+      maxGroupsToDisplay: 17,
+      pathString: samples.kiwi,
+      topText: "Kiwi",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "hand",
+    {
+      maxGroupsToDisplay: 15,
+      pathString: samples.hand,
+      topText: "Hand",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
 ]);
 
 {
@@ -516,7 +588,7 @@ const scripts = new Map<string, Options>([
     }
     initialize(script);
   } else {
-    initialize(scripts.get("star7")!);
+    initialize(scripts.get("hand")!);
     //initialize({maxGroupsToDisplay:10, pathString:makePolygon(7,2, "My seed 2025a").rawPath});
   }
 }

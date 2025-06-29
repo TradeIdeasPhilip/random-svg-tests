@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>path-to-fourier</title>
-    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತ ಮೂಜಿ-CjSxhuPa.js"></script>
+    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತ ಮೂಜಿ-UursuilR.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-wGF4FraP.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-ZHNZ3-cL.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-n6EbRjvk.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-D2jUDy1w.js">
-    <link rel="modulepreload" crossorigin href="./assets/fourier-shared-DMwfk1EW.js">
+    <link rel="modulepreload" crossorigin href="./assets/fourier-shared-DuW6XbeN.js">
     <link rel="stylesheet" crossorigin href="./assets/ಇರ್ವತ್ತ ಮೂಜಿ-CcxRu9Gr.css">
   </head>
   <body>
@@ -45,33 +45,6 @@
             <feMergeNode in="composite" result="mergeNode" />
             <feMergeNode in="SourceGraphic" result="mergeNode1" />
           </feMerge>
-        </filter>
-        <filter
-          id="black-outline-bad"
-          color-interpolation-filters="linearRGB"
-          filterUnits="objectBoundingBox"
-          primitiveUnits="userSpaceOnUse"
-        >
-          <feMorphology
-            operator="dilate"
-            radius="0.0005 0.0005"
-            x="0%"
-            y="0%"
-            width="100%"
-            height="100%"
-            in="SourceAlpha"
-            result="morphology"
-          />
-          <feBlend
-            mode="normal"
-            x="0%"
-            y="0%"
-            width="100%"
-            height="100%"
-            in="SourceGraphic"
-            in2="morphology"
-            result="blend"
-          />
         </filter>
       </defs>
       <rect id="background" width="16" height="9"></rect>

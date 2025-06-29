@@ -90,10 +90,14 @@ function initialize(options: Options) {
     maxGroupsToDisplay: options.maxGroupsToDisplay,
     terms,
   });
-  const recommendedNumberOfSegments = (numberOfTerms: number) => {
+  const getMaxFrequency = (numberOfTerms: number) => {
     const maxFrequency = Math.max(
-      ...terms.slice(0, numberOfTerms).map((term) => term.frequency)
+      ...terms.slice(0, numberOfTerms).map((term) => Math.abs(term.frequency))
     );
+    return maxFrequency;
+  };
+  const recommendedNumberOfSegments = (numberOfTerms: number) => {
+    const maxFrequency = getMaxFrequency(numberOfTerms);
     return 8 * maxFrequency + 7;
   };
   const timeToPath: ((time: number) => string)[] = script.map((scriptEntry) => {
@@ -149,10 +153,8 @@ function initialize(options: Options) {
         return pathString;
       };
     } else {
-      const maxFrequency = Math.max(
-        ...terms
-          .slice(0, scriptEntry.usingCircles + scriptEntry.addingCircles)
-          .map((term) => term.frequency)
+      const maxFrequency = getMaxFrequency(
+        scriptEntry.usingCircles + scriptEntry.addingCircles
       );
       const r = 0.2 / maxFrequency;
       /**
@@ -489,6 +491,15 @@ const scripts = new Map<string, Options>([
       topText: "Chironectes (Water Opossum)",
       bottomText: "Wikimedia Commons",
       minGoodCircles: 10,
+    },
+  ],
+  [
+    "cat",
+    {
+      maxGroupsToDisplay: 10,
+      pathString: samples.cat,
+      topText: "Cat",
+      bottomText: "Wikimedia Commons",
     },
   ],
 ]);

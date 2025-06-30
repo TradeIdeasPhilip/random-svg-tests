@@ -3,11 +3,11 @@ import {
   groupTerms,
   hasFixedContribution,
   makePolygon,
-  samples,
   samplesFromPath,
   samplesToFourier,
   termsToParametricFunction,
 } from "./fourier-shared";
+import { samples } from "./fourier-samples";
 import "./path-to-fourier.css";
 import { panAndZoom } from "./transforms";
 import { PathShape } from "./path-shape";
@@ -571,6 +571,25 @@ const scripts = new Map<string, Options>([
       maxGroupsToDisplay: 15,
       pathString: samples.hand,
       topText: "Hand",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "carpe",
+    {
+      maxGroupsToDisplay: 16,
+      pathString: samples.carpe,
+      topText: "Carpe",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "pigeon",
+    {
+      // I can't get this one to work.  😠
+      maxGroupsToDisplay: 19,
+      pathString: samples.pigeon,
+      topText: "Pigeon",
       bottomText: "Wikimedia Commons",
     },
   ],

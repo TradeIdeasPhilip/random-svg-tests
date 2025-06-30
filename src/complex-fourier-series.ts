@@ -15,12 +15,12 @@ import { lerpPoints } from "./math-to-path";
 import { cursiveLetters, futuraLLetters } from "./hershey-fonts/hershey-fonts";
 import {
   groupTerms,
-  samples,
   samplesFromParametric,
   samplesToFourier,
   ScriptEntry,
   termsToParametricFunction,
 } from "./fourier-shared";
+import { samples } from "./fourier-samples";
 
 /**
  * This is a simple way to interface with the user provided script.

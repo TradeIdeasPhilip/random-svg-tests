@@ -257,12 +257,14 @@ export function samplesFromPathOrig(
   });
 }
 
-// TODO !!! This is not right!  It is a step in the right direction,
-// but the weights are wrong.
-// Things near the front of the path get more weight than identical things near the end of the path.
-// Even nearby segments, the number of verticies is not linear compared to the length of the segment.
-// This shows the problem off well, especially with 2048 circles:
-// http://localhost:5173/path-to-fourier.html?script_name=hilbert4
+// This is more complicated than samplesFromPathOrig but it give you 3 things:
+// * It is faster.  I was thinking about doing this just for the performance gain.
+//   There is an issue where calling getPoint() on a long and complicated path gets slow.
+// * It fills in the jumps.
+//   They are replaced with straight lines.
+//   That would have happened anyway, but this avoids the crazy oscilations.
+// * This makes sure that every point named explicitly in the path string will be sampled.
+//   Which is essential if one part of your path has a lot of detail.
 export function samplesFromPath(
   pathString: string,
   numberOfTerms: number
@@ -318,14 +320,8 @@ export function samplesFromPath(
        * This is sorted with the longest items first in the list.
        * We will be removing the smallest items first, `pop`-ing them.
        */
-      const working = lengths
-        .filter((segmentInfo) => segmentInfo.length > 0)
-        .sort((a, b) => b.length - a.length);
-      let verticiesAvailable = numberOfTerms - working.length;
-      if (verticiesAvailable < 0) {
-        throw new Error("wtf");
-      }
-      working.forEach((segmentInfo) => (segmentInfo.numberOfVerticies = 1));
+      const working = lengths.toSorted((a, b) => b.length - a.length);
+      let verticiesAvailable = numberOfTerms;
       let lengthAvailable = sum(working.map(({ length }) => length));
       while (true) {
         if (verticiesAvailable == 0) {
@@ -335,19 +331,20 @@ export function samplesFromPath(
         if (!segmentInfo) {
           throw new Error("wtf");
         }
-        const idealNumberOfVerticies =
-          ((verticiesAvailable + 1) / lengthAvailable) * segmentInfo.length;
-        const numberOfVerticies = Math.max(
-          1,
-          Math.round(idealNumberOfVerticies)
-        );
-        const newlyAllocated = numberOfVerticies - 1;
-        segmentInfo.numberOfVerticies = numberOfVerticies;
-        verticiesAvailable -= newlyAllocated;
-        lengthAvailable -= segmentInfo.length;
+        if (segmentInfo.length > 0) {
+          const idealNumberOfVerticies =
+            (verticiesAvailable / lengthAvailable) * segmentInfo.length;
+          const numberOfVerticies = Math.max(
+            1,
+            Math.round(idealNumberOfVerticies)
+          );
+          segmentInfo.numberOfVerticies = numberOfVerticies;
+          verticiesAvailable -= numberOfVerticies;
+          lengthAvailable -= segmentInfo.length;
+        }
       }
     }
-    console.table(lengths);
+    //console.table(lengths);
     const result = new Array<Complex>();
     lengths.forEach(({ length, numberOfVerticies, path }) => {
       if (numberOfVerticies > 0) {
@@ -389,7 +386,7 @@ export function samplesFromPath(
      * I.e. always do the staring point and never do the ending point.
      */
   } catch (reason) {
-    console.warn(reason);
+    console.warn("using fallback", reason);
     return samplesFromPathOrig(pathString, numberOfTerms);
   }
 }

@@ -14,7 +14,7 @@ import { PathShape } from "./path-shape";
 import { FIGURE_SPACE, makeBoundedLinear, makeLinear } from "phil-lib/misc";
 import { ease, selectorQuery } from "./utility";
 
-const numberOfFourierSamples = 2048;
+const numberOfFourierSamples = 1024;
 
 const scaleG = getById("scaled", SVGGElement);
 const referencePath = getById("reference", SVGPathElement);
@@ -424,14 +424,14 @@ const scripts = new Map<string, Options>([
   [
     "p0",
     {
-      maxGroupsToDisplay: 20,
+      maxGroupsToDisplay: 7,
       pathString: samples.peanocurve[0],
     },
   ],
   [
     "p1",
     {
-      maxGroupsToDisplay: 20,
+      maxGroupsToDisplay: 10,
       pathString: samples.peanocurve[1],
     },
   ],
@@ -486,7 +486,7 @@ const scripts = new Map<string, Options>([
   [
     "water_opossum",
     {
-      maxGroupsToDisplay: 22,
+      maxGroupsToDisplay: 9,
       pathString: samples.waterOpossum,
       topText: "Chironectes (Water Opossum)",
       bottomText: "Wikimedia Commons",

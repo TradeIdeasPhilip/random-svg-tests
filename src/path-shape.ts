@@ -1631,9 +1631,13 @@ export class PathShape {
     additionalSegments: number,
     tolerance: number
   ): PathShape {
+    f;
+    initialSegments;
+    additionalSegments;
+    tolerance;
     // See my hand written notes.  This should not be hard.
     throw new Error("TODO");
-    // New and improved thoughts:  
+    // New and improved thoughts:
     // This is focused on deglitching.
     // There are lots of possibilities for smoothing and other general improvements.
     // But those are a distraction.
@@ -1649,8 +1653,8 @@ export class PathShape {
     // Maybe a smaller version, since the glitch didn't go across the screen, but still it was far enough off course to notice.
     //
     // If a segment is an error command, a failed Q, we ignore it.
-    // It is being painted as a line segment, 
-    // the shortest distance between the end points, 
+    // It is being painted as a line segment,
+    // the shortest distance between the end points,
     // exactly the opposite of the glitches I'm looking for.
     //
     // The measurement is the (length of the segment) / (shortest distance between the end points)

@@ -241,6 +241,9 @@ export class Random {
   }
   static create(seed = this.newSeed()): RandomFunction {
     console.info(seed);
+    // The following line throws a lot of exceptions, by design.
+    // If you checked "pause on caught exceptions", and you are here,
+    // just hit resume.
     const seedObject: unknown = JSON.parse(seed);
     if (!(seedObject instanceof Array)) {
       throw new Error("invalid input");

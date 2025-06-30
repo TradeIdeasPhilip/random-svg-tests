@@ -1321,6 +1321,9 @@ export class PathShape {
           }
         | { command: "L"; x0: number; y0: number; x: number; y: number };
       // '{"commands":[{"command":"Q","x0":7.5,"y0":-7.5,"x1":7.5,"y1":-9.375,"x":5.625,"y":-9.375,"creationInfo":{"source":"controlPoints"}}]}'
+      // The following line throws a lot of exceptions, by design.
+      // If you checked "pause on caught exceptions", and you are here,
+      // just hit resume.
       const sourceCommands: CommandDescription[] = JSON.parse(source).commands;
       const commands: Command[] = sourceCommands.map((sourceCommand) => {
         switch (sourceCommand.command) {
@@ -1621,6 +1624,68 @@ export class PathShape {
       numberOfSegments
     ).pathShape;
     return result;
+  }
+  static parametric1(
+    f: ParametricFunction,
+    initialSegments: number,
+    additionalSegments: number,
+    tolerance: number
+  ): PathShape {
+    // See my hand written notes.  This should not be hard.
+    throw new Error("TODO");
+    // New and improved thoughts:  
+    // This is focused on deglitching.
+    // There are lots of possibilities for smoothing and other general improvements.
+    // But those are a distraction.
+    // If I'm right, the glitches are rare events that I can catch and fix.
+    // Basically, any time you see a parabola segment get really big.
+    // It's possible that the input function really was shaped like a long, thin parabola segment.
+    // But it's unlikely that our normal algorithm would break the function up like that.
+    // An artist who's drawing in inkscape might know what he's doing and use one long segment where it works.
+    // But even if such a segment existed in the function, we would still chop it into pieces.
+    //
+    // Sometimes things aren't huge, but they still jump suddenly.
+    // I'm working under the assumption that this is the same issue.
+    // Maybe a smaller version, since the glitch didn't go across the screen, but still it was far enough off course to notice.
+    //
+    // If a segment is an error command, a failed Q, we ignore it.
+    // It is being painted as a line segment, 
+    // the shortest distance between the end points, 
+    // exactly the opposite of the glitches I'm looking for.
+    //
+    // The measurement is the (length of the segment) / (shortest distance between the end points)
+    // Off the top of my head, 2 seems like a reasonable cutoff.
+    // We can find out what the value is for circles made of 8 segments.
+    // This is what I consider normal and acceptable, so it's a good point of comparison.
+    //
+    // We don't care about interpolating this path against another path.
+    // They might have different numbers of segments because of this algorithm.
+    //
+    // Basic idea:  If we find a bad Q command, we break it in half.
+    // We add one new sample half way between those two endpoints.
+    //
+    // Issue:  We want limits.  Should we prioritize these?  Largest ones first?
+    // In case we right out of fixes.
+    // We want to have a hard limit on the maximum number of fixes.
+    // Ideally that's not a problem.
+    // I'm thinking either there are just a few glitches, or there's a serious problem.
+    // In the latter case, if I find too many glitches, I just give up.
+    //
+    // Plan B:  If I can't fix a bad Q command, I could always make it a line segment.
+    // Does that help?
+    // It's probably an improvement over leaving the glitches in. ? ?
+    //
+    // Issue:  After breaking, one half could still be bad.
+    // Record that case in the log.  I don't know if this is common or not.
+    // There's no reason we shouldn't recursively try to break that bad things into smaller pieces.
+    // With a limit on how far we can go to prevent an infinite loop or exponential blowup.
+    //
+    // Improvement:  Try to spread the change out.
+    // If the bad segment is at the front or end of the path, use the simple approach described above.
+    // Otherwise, replace the glitchy piece, its predecessor and its successor.
+    // Replace all three of them with four new segments, each taking 3/4 of the space.
+    // Maybe one of those points was the problem:
+    // It was not just a lack of precision, but a little bit of bad luck.
   }
   /**
    * Avoid displaying numbers like 6.661338147750939e-16.

@@ -1,7 +1,13 @@
 import { fft } from "fft-js";
-import { LCommand, ParametricFunction, PathShape, Point } from "./path-shape";
+import {
+  Command,
+  LCommand,
+  ParametricFunction,
+  PathShape,
+  Point,
+} from "./path-shape";
 import { PathWrapper, Random } from "./utility";
-import { initializedArray } from "phil-lib/misc";
+import { initializedArray, sum } from "phil-lib/misc";
 
 /**
  *
@@ -136,13 +142,20 @@ export const samples = {
   hand: "M339,214 Q350,217 357,224 Q365,232 379,263 Q393,295 417,374 Q441,453 454,514 C454,514 467.371,573.25 468,575 C468.629,576.75 470.129,577.5 472.879,577 C475.629,576.5 475,572 475,572 L466,511 Q457,450 438,377 Q420,304 416,278 Q412,252 416,242 Q420,232 432,224 Q444,217 459,221 Q474,225 484,235 Q495,246 507,272 Q519,298 534,348 Q549,398 564,468 Q580,539 583,572 Q587,605 604,644 Q621,683 639,709 Q658,736 674,752 Q691,768 698,767 Q705,766 713,756 Q722,747 749,686 Q776,625 792,606 Q808,587 825,574 Q842,561 859,554 Q877,547 894,547 Q911,547 919,553 Q927,560 926,567 Q926,574 912,599 Q898,624 874,690 Q850,757 847,772 Q845,788 847,798 Q849,808 848,839 Q847,871 843,882 Q840,893 795,968 Q751,1044 727,1072 Q703,1100 704,1126 Q705,1153 722,1245 L739,1338 L582,1338 L426,1338 L427,1308 Q428,1279 422,1246 Q417,1213 397,1180 Q378,1147 345,1103 Q312,1060 292,1025 Q273,991 251,934 Q230,878 218,830 Q206,783 157,683 Q108,584 100,560 Q92,536 92,524 Q92,513 102,502 Q112,492 119,491 Q126,490 133,493 Q141,496 207,606 C207,606 269.871,711.75 273,716 C276.129,720.25 301.621,732.75 294,694 Q286.379,655.25 294,694 Q294,677 230,520 C230,520 174.758,394 170.758,376.5 C166.758,359 168,351 168,351 Q170,339 177,332 Q184,326 196,322 Q209,319 216,321 Q224,324 230,330 Q236,337 244,358 Q253,380 297,467 Q341,554 352,587 C352,587 361.121,615.5 364,620 C366.879,624.5 379.871,635.5 377,612 Q374.129,588.5 377,612 Q377,601 359,528 Q342,455 314,357 C314,357 294.758,292.5 290.758,274 C286.758,255.5 288.758,242.5 288.758,242.5 C296.758,224.5 298.742,221.5 315,217 C331.258,212.5 339,214 339,214 z",
 };
 
+// Flip it left to right.  The table was coveringing his head and beak.
+// Now it's covering his butt.
+// Use .reverse() to restore the original clockwise direction.
+samples.kiwi = PathShape.fromString(samples.kiwi)
+  .transform(new DOMMatrix("scaleX(-1)"))
+  .reverse().rawPath;
+
 export interface FourierTerm {
   frequency: number;
   amplitude: number;
   phase: number;
 }
 
-export type Complex = [number, number];
+export type Complex = [real: number, imaginary: number];
 
 export function samplesFromParametric(
   func: ParametricFunction,
@@ -229,7 +242,7 @@ export function hasFixedContribution(term: FourierTerm): Point | undefined {
 // TODO This can get noticibly slow for a complex path.  It takes about 1.3 seconds to
 // decode the samples.likeShareAndSubscribe.  It took noticible time for some of the other
 // examples, too.  The time grows slightly faster than linearly as the path gets longer.
-export function samplesFromPath(
+export function samplesFromPathOrig(
   pathString: string,
   numberOfTerms: number
 ): Complex[] {
@@ -242,6 +255,143 @@ export function samplesFromPath(
     const point = path.getPoint((totalLength / segmentCount) * index);
     return [point.x, point.y];
   });
+}
+
+// TODO !!! This is not right!  It is a step in the right direction,
+// but the weights are wrong.
+// Things near the front of the path get more weight than identical things near the end of the path.
+// Even nearby segments, the number of verticies is not linear compared to the length of the segment.
+// This shows the problem off well, especially with 2048 circles:
+// http://localhost:5173/path-to-fourier.html?script_name=hilbert4
+export function samplesFromPath(
+  pathString: string,
+  numberOfTerms: number
+): Complex[] {
+  const caliper = new PathWrapper();
+  try {
+    const commands = PathShape.fromString(pathString).commands;
+    if (commands.length == 0) {
+      throw new Error("wtf");
+    }
+    const connectedCommands = new Array<Command>();
+    commands.forEach((command, index) => {
+      connectedCommands.push(command);
+      const nextCommand = commands[(index + 1) % commands.length];
+      if (PathShape.needAnM(command, nextCommand)) {
+        const newSegment = new LCommand(
+          command.x,
+          command.y,
+          nextCommand.x0,
+          nextCommand.y0
+        );
+        connectedCommands.push(newSegment);
+      }
+    });
+    const subPaths = connectedCommands.map(
+      (command) => new PathShape([command])
+    );
+    const lengths = subPaths.map(
+      (
+        path,
+        originalIndex
+      ): {
+        readonly path: PathShape;
+        readonly length: number;
+        readonly originalIndex: number;
+        numberOfVerticies: number;
+      } => {
+        caliper.d = path.rawPath;
+        const length = caliper.length;
+        return {
+          path,
+          length: length,
+          numberOfVerticies: 0,
+          originalIndex,
+        };
+      }
+    );
+    {
+      /**
+       * This contains the same objects as the `lengths` array.
+       * We are modifying the objects' `numberOfVerticies` property.
+       *
+       * This is sorted with the longest items first in the list.
+       * We will be removing the smallest items first, `pop`-ing them.
+       */
+      const working = lengths
+        .filter((segmentInfo) => segmentInfo.length > 0)
+        .sort((a, b) => b.length - a.length);
+      let verticiesAvailable = numberOfTerms - working.length;
+      if (verticiesAvailable < 0) {
+        throw new Error("wtf");
+      }
+      working.forEach((segmentInfo) => (segmentInfo.numberOfVerticies = 1));
+      let lengthAvailable = sum(working.map(({ length }) => length));
+      while (true) {
+        if (verticiesAvailable == 0) {
+          break;
+        }
+        const segmentInfo = working.pop();
+        if (!segmentInfo) {
+          throw new Error("wtf");
+        }
+        const idealNumberOfVerticies =
+          ((verticiesAvailable + 1) / lengthAvailable) * segmentInfo.length;
+        const numberOfVerticies = Math.max(
+          1,
+          Math.round(idealNumberOfVerticies)
+        );
+        const newlyAllocated = numberOfVerticies - 1;
+        segmentInfo.numberOfVerticies = numberOfVerticies;
+        verticiesAvailable -= newlyAllocated;
+        lengthAvailable -= segmentInfo.length;
+      }
+    }
+    console.table(lengths);
+    const result = new Array<Complex>();
+    lengths.forEach(({ length, numberOfVerticies, path }) => {
+      if (numberOfVerticies > 0) {
+        caliper.d = path.rawPath;
+        for (let i = 0; i < numberOfVerticies; i++) {
+          const distance = (i / numberOfVerticies) * length;
+          const { x, y } = caliper.getPoint(distance);
+          result.push([x, y]);
+        }
+      }
+    });
+    return result;
+    /**
+     * create a sorted copy of the lengths array, sorted by path length.
+     * keep track of the number of vertices available,
+     * starting with what we were given,
+     * decreasing as we dole them out.
+     *
+     * can this get rid of the filter/flatMap above?
+     * This step, not "const lengths = subPaths.map"
+     * should get rid of paths with 0 length.
+     * yes!!
+     *
+     * Start processing from the short end.
+     * If a length is 0, skip the command entirely and continue on to the next.
+     * Given the number of verticies avilable and the amount of distance available,
+     * what is the ideal number of verticies per distance?
+     * and what is the ideal number of verticies for this command?
+     * Round to an integer.
+     * Set a min value of 1 vertex.
+     * Store the result for this record, remove it from the list, and repeat.
+     */
+    /**
+     * Now that we know how many vertexes are allocated for each command,
+     * the rest is trivial.
+     * Go back to the original, unsorted array of lengths.
+     * Go through them in order.
+     * For i = (0 ... n-1), look at position i/n*length.
+     * I.e. always do the staring point and never do the ending point.
+     */
+  } catch (reason) {
+    console.warn(reason);
+    return samplesFromPathOrig(pathString, numberOfTerms);
+  }
 }
 
 function getAmplitudes(terms: readonly FourierTerm[]) {

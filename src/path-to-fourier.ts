@@ -14,7 +14,7 @@ import { PathShape } from "./path-shape";
 import { FIGURE_SPACE, makeBoundedLinear, makeLinear } from "phil-lib/misc";
 import { ease, selectorQuery } from "./utility";
 
-const numberOfFourierSamples = 1024;
+const numberOfFourierSamples = 2048;
 
 const scaleG = getById("scaled", SVGGElement);
 const referencePath = getById("reference", SVGPathElement);
@@ -417,7 +417,7 @@ const scripts = new Map<string, Options>([
   [
     "hilbert4",
     {
-      maxGroupsToDisplay: 20,
+      maxGroupsToDisplay: 30,
       pathString: samples.hilbert[4],
     },
   ],

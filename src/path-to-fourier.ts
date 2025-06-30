@@ -593,6 +593,33 @@ const scripts = new Map<string, Options>([
       bottomText: "Wikimedia Commons",
     },
   ],
+  [
+    "smallAirplane",
+    {
+      maxGroupsToDisplay: 16,
+      pathString: samples.smallAirplane,
+      topText: "Robin DR400",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "hawk",
+    {
+      maxGroupsToDisplay: 8,
+      pathString: samples.hawk,
+      topText: "Hawk",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "songBird",
+    {
+      maxGroupsToDisplay: 7,
+      pathString: samples.songBird,
+      topText: "Song Bird",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
 ]);
 
 {

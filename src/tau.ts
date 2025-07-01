@@ -30,6 +30,9 @@ type Animator = {
  */
 const mainHandwriting: Animator = (() => {
   const element = getById("main-handwriting", SVGUseElement);
+   element.style.strokeDasharray = `0, ${tauPathLength + 1}, ${
+    tauPathLength + 1
+  },0`;
   const timingFunction = makeLinear(0, 0, 1, -tauPathLength);
   function show(t: number): void {
     assertValidT(t);

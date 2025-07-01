@@ -11,6 +11,7 @@ import {
   radiansPerDegree,
 } from "phil-lib/misc";
 import { transform } from "./transforms";
+import { PathWrapper } from "./utility";
 
 const formatForSvg = new Intl.NumberFormat("en-US", {
   maximumSignificantDigits: 8,
@@ -1625,12 +1626,38 @@ export class PathShape {
     ).pathShape;
     return result;
   }
+  static #caliper = new PathWrapper();
   static parametric1(
     f: ParametricFunction,
     initialSegments: number,
     additionalSegments: number,
     tolerance: number
   ): PathShape {
+    // SIMPLE TEST
+    // Call parametric() to do the work.
+    // Check each segment to see if any are above 2x the straight line distance.
+    // If so report to the console.
+    //   "2 bad segments, worst is 23.923×, 2,300 segments total"
+    //   "4 bad segments, worst is 3.5186481821703355, 831 segments total."
+    // Either way, return the result.
+    const result = this.parametric(f, initialSegments);
+    let badCount = 0;
+    let worstRatio = 0;
+    result.commands.forEach(command => {
+      const subPath = new this([command]);
+      this.#caliper.d=subPath.rawPath;
+      const actualLength = this.#caliper.length;
+const shortestLength = Math.hypot(command.x0-command.x,command.y0-command.y);
+      const ratio = actualLength / shortestLength;
+      if (ratio>=2) {
+        badCount ++;
+        worstRatio=Math.max(worstRatio,ratio);
+      }
+    });
+    if (badCount) {
+      console.log(`${badCount} bad segments, worst is ${worstRatio}, ${result.commands.length} segments total.`);
+    }
+    return result;
     f;
     initialSegments;
     additionalSegments;

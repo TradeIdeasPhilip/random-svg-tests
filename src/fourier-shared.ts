@@ -40,13 +40,6 @@ export function makePolygon(
   return new PathShape(commands);
 }
 
-// Flip it left to right.  The table was covering his head and beak.
-// Now it's covering his butt.
-// Use .reverse() to restore the original clockwise direction.
-samples.kiwi = PathShape.fromString(samples.kiwi)
-  .transform(new DOMMatrix("scaleX(-1)"))
-  .reverse().rawPath;
-
 export interface FourierTerm {
   frequency: number;
   amplitude: number;

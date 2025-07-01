@@ -109,9 +109,9 @@ function initialize(options: Options) {
       const numberOfDisplaySegments = recommendedNumberOfSegments(
         scriptEntry.usingCircles
       );
-      const path = PathShape.parametric(
+      const path = PathShape.parametric1(
         parametricFunction,
-        numberOfDisplaySegments
+        numberOfDisplaySegments,0,0
       );
       return () => path.rawPath;
     } else if (
@@ -221,9 +221,9 @@ function initialize(options: Options) {
                 };
               }
             }
-            const path = PathShape.parametric(
+            const path = PathShape.parametric1(
               parametricFunction,
-              frugalSegmentCount
+              frugalSegmentCount,0,0
             );
             return path.rawPath;
           }
@@ -249,9 +249,9 @@ function initialize(options: Options) {
               };
             }
           }
-          const path = PathShape.parametric(
+          const path = PathShape.parametric1(
             parametricFunction,
-            numberOfDisplaySegments
+            numberOfDisplaySegments,0,0
           );
           return path.rawPath;
         };
@@ -505,7 +505,7 @@ const scripts = new Map<string, Options>([
   [
     "airplane",
     {
-      maxGroupsToDisplay: 20,
+      maxGroupsToDisplay: 15,
       pathString: samples.airplane,
       topText: "Airplane",
       bottomText: "Wikimedia Commons",
@@ -523,7 +523,7 @@ const scripts = new Map<string, Options>([
   [
     "Lavater",
     {
-      maxGroupsToDisplay: 14,
+      maxGroupsToDisplay: 9,
       pathString: samples.lavater,
       topText: "Johann Kaspar Lavaters",
       bottomText: "Wikimedia Commons",
@@ -550,7 +550,7 @@ const scripts = new Map<string, Options>([
   [
     "head_facing_left",
     {
-      maxGroupsToDisplay: 9,
+      maxGroupsToDisplay: 13,
       pathString: samples.headFacingLeft,
       topText: "Head Facing Left",
       bottomText: "Wikimedia Commons",
@@ -669,5 +669,5 @@ setTimeout(() => {
  */
 
 /**
- * TODO Recenter all of the examples.
+ * TODO Recenter some or all of the examples.
  */

@@ -1630,40 +1630,67 @@ export class PathShape {
   static parametric1(
     f: ParametricFunction,
     initialSegments: number,
-    additionalSegments: number,
-    tolerance: number
+    recursionCount = 0
   ): PathShape {
     // SIMPLE TEST
     // Call parametric() to do the work.
     // Check each segment to see if any are above 2x the straight line distance.
     // If so report to the console.
-    //   "2 bad segments, worst is 23.923×, 2,300 segments total"
-    //   "4 bad segments, worst is 3.5186481821703355, 831 segments total."
+    //   4.4 3.5 2.3 ✽ ✽ 16, 64, 66
+    //   4.4
+    //   4.4 2.1 2.2 ✽ ✽ 16, ⟦72, 73⟧
+    //   Infinity Infinity Infinity Infinity Infinity Infinity Infinity ✽ ✽ ⟦0, 1, 2, 3, 4, 5, 6⟧
     // Either way, return the result.
     const result = this.parametric(f, initialSegments);
-    let badCount = 0;
-    let worstRatio = 0;
-    result.commands.forEach(command => {
+    const badCases: { ratio: number; index: number }[] = [];
+    result.commands.forEach((command, index, array) => {
       const subPath = new this([command]);
-      this.#caliper.d=subPath.rawPath;
+      this.#caliper.d = subPath.rawPath;
       const actualLength = this.#caliper.length;
-const shortestLength = Math.hypot(command.x0-command.x,command.y0-command.y);
+      const shortestLength = Math.hypot(
+        command.x0 - command.x,
+        command.y0 - command.y
+      );
       const ratio = actualLength / shortestLength;
-      if (ratio>=2) {
-        badCount ++;
-        worstRatio=Math.max(worstRatio,ratio);
+      if (ratio >= 2) {
+        badCases.push({
+          ratio,
+          index,
+        });
       }
     });
-    if (badCount) {
-      console.log(`${badCount} bad segments, worst is ${worstRatio}, ${result.commands.length} segments total.`);
+    if (badCases.length > 0) {
+      let message = badCases.map(({ ratio }) => ratio.toFixed(1)).join(" ");
+      if (badCases.length > 1) {
+        message += " ✽ ✽ ";
+        const groups: (typeof badCases)[] = [];
+        badCases.forEach((thisCase) => {
+          const previousGroup = groups.at(-1);
+          if (
+            previousGroup &&
+            previousGroup.at(-1)!.index + 1 == thisCase.index
+          ) {
+            previousGroup.push(thisCase);
+          } else {
+            groups.push([thisCase]);
+          }
+        });
+        groups.forEach((group) => {
+          if (group.length > 1) {
+            // This case is rare but present.  I only saw a pair, nothing longer.
+            message +=
+              "⟦" +
+              group.map((badCase) => badCase.ratio.toFixed(1)).join(", ") +
+              "⟧";
+          }
+        });
+      }
+      if (recursionCount > 0) {
+        message += ` recursionCount=${recursionCount}`;
+      }
+      console.log(message);
     }
     return result;
-    f;
-    initialSegments;
-    additionalSegments;
-    tolerance;
-    // See my hand written notes.  This should not be hard.
-    throw new Error("TODO");
     // New and improved thoughts:
     // This is focused on deglitching.
     // There are lots of possibilities for smoothing and other general improvements.
@@ -1717,6 +1744,7 @@ const shortestLength = Math.hypot(command.x0-command.x,command.y0-command.y);
     // Replace all three of them with four new segments, each taking 3/4 of the space.
     // Maybe one of those points was the problem:
     // It was not just a lack of precision, but a little bit of bad luck.
+    // If there are multiple bad segments in a row, join them and their two neighbors all at once.
   }
   /**
    * Avoid displaying numbers like 6.661338147750939e-16.

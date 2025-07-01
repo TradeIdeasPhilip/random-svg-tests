@@ -111,7 +111,7 @@ function initialize(options: Options) {
       );
       const path = PathShape.parametric1(
         parametricFunction,
-        numberOfDisplaySegments,0,0
+        numberOfDisplaySegments
       );
       return () => path.rawPath;
     } else if (
@@ -223,7 +223,7 @@ function initialize(options: Options) {
             }
             const path = PathShape.parametric1(
               parametricFunction,
-              frugalSegmentCount,0,0
+              frugalSegmentCount
             );
             return path.rawPath;
           }
@@ -251,7 +251,7 @@ function initialize(options: Options) {
           }
           const path = PathShape.parametric1(
             parametricFunction,
-            numberOfDisplaySegments,0,0
+            numberOfDisplaySegments
           );
           return path.rawPath;
         };

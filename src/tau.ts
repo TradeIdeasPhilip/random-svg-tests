@@ -30,9 +30,6 @@ type Animator = {
  */
 const mainHandwriting: Animator = (() => {
   const element = getById("main-handwriting", SVGUseElement);
-  element.style.strokeDasharray = `0, ${tauPathLength + 1}, ${
-    tauPathLength + 1
-  },0`;
   const timingFunction = makeLinear(0, 0, 1, -tauPathLength);
   function show(t: number): void {
     assertValidT(t);
@@ -200,6 +197,7 @@ const conversationHandwriting: Animator["show"] = (() => {
   const handwriting = new HandwritingEffect(parent);
   const textLayout = new TextLayout(40);
   textLayout.rightMargin = 1000;
+  textLayout.lineHeight *= 0.87;
   textLayout.CRLF();
   textLayout.baseline += 10;
   function say(text: string, className: "student" | "teacher") {
@@ -234,7 +232,7 @@ const conversationHandwriting: Animator["show"] = (() => {
   const timingFunction = makeBoundedLinear(0.05, 0, 0.8, 1);
 
   function show(t: number): void {
-    parent.style.setProperty("--t", timingFunction(t).toFixed(6));
+    handwriting.setProgress(timingFunction(t));
     assertValidT(t);
   }
   return show;

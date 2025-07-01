@@ -30,4 +30,11 @@ export class HandwritingEffect {
     const totalLength = this.soFar;
     this.parent.style.setProperty("--total-length", totalLength.toString());
   }
+  /**
+   *
+   * @param t 0 for nothing drawn.  1 for everything drawn.
+   */
+  setProgress(t: number) {
+    this.parent.style.setProperty("--t", t.toString());
+  }
 }

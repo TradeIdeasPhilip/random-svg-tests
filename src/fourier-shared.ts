@@ -8,7 +8,6 @@ import {
 } from "./path-shape";
 import { PathWrapper, Random } from "./utility";
 import { initializedArray, sum } from "phil-lib/misc";
-import { samples } from "./fourier-samples";
 
 /**
  *

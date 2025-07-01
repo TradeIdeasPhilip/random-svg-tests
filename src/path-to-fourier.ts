@@ -205,6 +205,7 @@ function initialize(options: Options) {
             const frugalSegmentCount = Math.ceil(
               // TODO that 150 is crude.  The transition might require
               // more detail than the before or the after.
+              // Or it might require less, not that we are glitch-free.
               Math.max(numberOfDisplaySegments, 150) * safePartEnds
             );
             function parametricFunction(t: number) {
@@ -655,7 +656,13 @@ setTimeout(() => {
 }, 1);
 
 /**
- * TODO Minimum good detail!
+ * Maybe not.  This was mostly aimed at avoiding glitches.
+ * But that problem appears to be fixed elsewhere,
+ * PathShape.parametric1().
+ *
+ * If anything, we should look at scaling back the detail right now.
+ *
+ * TODO Minimum good detail
  * Each script should include an optional setting regarding the minimum number of segments.
  * STARTED!  See minGoodCircles.
  * You can specify this in circles!
@@ -669,5 +676,13 @@ setTimeout(() => {
  */
 
 /**
- * TODO Recenter some or all of the examples.
+ * TODO Recenter some or all of the examples. ‼️‼️‼️
+ */
+
+/**
+ * TODO Display the top and bottom text.
+ * Copy from the left side of tau.*
+ * lineFont with handwriting effect.
+ *
+ *
  */

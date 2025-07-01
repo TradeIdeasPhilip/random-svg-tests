@@ -1627,23 +1627,38 @@ export class PathShape {
     return result;
   }
   static #caliper = new PathWrapper();
+  /**
+   * This is similar to parametric(), but this version is glitch-free.
+   *
+   * This version removes some ugly glitches.
+   * That's any place where the graphic suddenly goes way off on a long, thing parabola.
+   * These were artifacts of my algorithm, not the requested function.
+   *
+   * In exchange for this you don't know for certain how many segments will be in the path.
+   * We start with the requested number, then add more as necessary to patch the glitches.
+   * This would cause a problem for interpolation.
+   * @param f The function to turn into a path.
+   * @param initialSegments The ideal numbers of segments in the path.
+   * @param recursionCount For internal use and debugging.
+   * For most purposes, keep the default.
+   * @returns A new path approximating the function, f.
+   */
   static parametric1(
     f: ParametricFunction,
     initialSegments: number,
     recursionCount = 0
   ): PathShape {
-    // SIMPLE TEST
-    // Call parametric() to do the work.
-    // Check each segment to see if any are above 2x the straight line distance.
-    // If so report to the console.
-    //   4.4 3.5 2.3 ✽ ✽ 16, 64, 66
-    //   4.4
-    //   4.4 2.1 2.2 ✽ ✽ 16, ⟦72, 73⟧
-    //   Infinity Infinity Infinity Infinity Infinity Infinity Infinity ✽ ✽ ⟦0, 1, 2, 3, 4, 5, 6⟧
-    // Either way, return the result.
-    const result = this.parametric(f, initialSegments);
-    const badCases: { ratio: number; index: number }[] = [];
-    result.commands.forEach((command, index, array) => {
+    if (recursionCount > 0) {
+      console.log(recursionCount);
+    }
+    const firstTry = this.parametric(f, initialSegments);
+    const commands = firstTry.commands.map((command, index, array) => {
+      const initialT = index / array.length;
+      const finalT = (index + 1) / array.length;
+      return { command, initialT, finalT };
+    });
+    let index = 0;
+    const isGood = (command: Command): boolean => {
       const subPath = new this([command]);
       this.#caliper.d = subPath.rawPath;
       const actualLength = this.#caliper.length;
@@ -1652,45 +1667,60 @@ export class PathShape {
         command.y0 - command.y
       );
       const ratio = actualLength / shortestLength;
-      if (ratio >= 2) {
-        badCases.push({
-          ratio,
-          index,
-        });
-      }
-    });
-    if (badCases.length > 0) {
-      let message = badCases.map(({ ratio }) => ratio.toFixed(1)).join(" ");
-      if (badCases.length > 1) {
-        message += " ✽ ✽ ";
-        const groups: (typeof badCases)[] = [];
-        badCases.forEach((thisCase) => {
-          const previousGroup = groups.at(-1);
-          if (
-            previousGroup &&
-            previousGroup.at(-1)!.index + 1 == thisCase.index
-          ) {
-            previousGroup.push(thisCase);
-          } else {
-            groups.push([thisCase]);
+      // !isFinite(ratio) is because of that silly degenerate case where we get a point, a circle of radius 0.
+      return ratio < 2 || !isFinite(ratio);
+    };
+    while (index < commands.length) {
+      const command = commands[index].command;
+      if (isGood(command)) {
+        index++;
+      } else {
+        const startIndex = Math.max(0, index - 1);
+        /**
+         * The last index to include is the one *before* this value.
+         */
+        let endIndex = index + 1;
+        while (endIndex < commands.length) {
+          const nextCommand = commands[endIndex].command;
+          endIndex++;
+          if (isGood(nextCommand)) {
+            break;
           }
-        });
-        groups.forEach((group) => {
-          if (group.length > 1) {
-            // This case is rare but present.  I only saw a pair, nothing longer.
-            message +=
-              "⟦" +
-              group.map((badCase) => badCase.ratio.toFixed(1)).join(", ") +
-              "⟧";
-          }
-        });
+        }
+        const initialT = commands[startIndex].initialT;
+        const finalT = commands[endIndex - 1].finalT;
+        const localTime = makeLinear(0, initialT, 1, finalT);
+        const newF = (t: number) => f(localTime(t));
+        const numberOfCommandsToReplace = endIndex - startIndex;
+        const numberOfReplacementCommands = numberOfCommandsToReplace + 1;
+        const replacement = this.parametric1(
+          newF,
+          numberOfReplacementCommands,
+          recursionCount + 1
+        );
+        commands.splice(
+          startIndex,
+          numberOfCommandsToReplace,
+          ...replacement.commands.map(
+            (
+              command,
+              index,
+              array
+            ): {
+              command: Command;
+              initialT: number;
+              finalT: number;
+            } => {
+              const initialT = localTime(index / array.length);
+              const finalT = localTime((index + 1) / array.length);
+              return { command, initialT, finalT };
+            }
+          )
+        );
+        index += numberOfReplacementCommands;
       }
-      if (recursionCount > 0) {
-        message += ` recursionCount=${recursionCount}`;
-      }
-      console.log(message);
     }
-    return result;
+    return new PathShape(commands.map((command) => command.command));
     // New and improved thoughts:
     // This is focused on deglitching.
     // There are lots of possibilities for smoothing and other general improvements.

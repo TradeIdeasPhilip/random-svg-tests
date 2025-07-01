@@ -11,7 +11,89 @@ import {
   radiansPerDegree,
 } from "phil-lib/misc";
 import { transform } from "./transforms";
-import { PathWrapper } from "./utility";
+
+/**
+ * This is a wrapper around an `SVGPathElement`.
+ *
+ * You cannot call `getPointAtLength()` or `getTotalLength()` on a `<path>` object without doing some extra work.
+ */
+export class PathWrapper {
+  /**
+   * The path needs to be attached to an SVG and both need to be visible,
+   * Otherwise a call to `this.length` or `this.getPoint()` will return incorrect values.
+   */
+  readonly #svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  readonly #path = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "path"
+  );
+  constructor() {
+    this.#svg.style.width = "0";
+    this.#svg.style.height = "0";
+    this.#svg.style.position = "absolute";
+    this.#svg.appendChild(this.#path);
+    document.body.appendChild(this.#svg);
+  }
+  get d(): string {
+    return this.#path.getAttribute("d") ?? "";
+  }
+  /**
+   * Read or set the value of the `d` attribute of the path.
+   *
+   * The default value is "".
+   *
+   * Attempting to set `d` to an invalid value with throw an `Error`.
+   * The value of `d` will remain unchanged.
+   */
+  set d(newValue: string) {
+    this.#path.style.d = "";
+    this.#path.style.d = PathShape.cssifyPath(newValue);
+    /**
+     * Error checking is complicated.
+     * If you set the d attribute to a bad value it will print an error message on the console, but it will not report anything to the program.
+     * The attribute will be set to the bad value.
+     * Attempting to call `this.length` or `this.getPoint()` will throw an error.
+     * If you set the d style property to a bad value, nothing will be reported, but the property value will not change.
+     * On success,the new value will change, but **not** necessarily to an exact copy of the requested value.
+     */
+    const success = this.#path.style.d != "";
+    this.#path.style.d = "";
+    if (success) {
+      this.#path.setAttribute("d", newValue);
+    } else {
+      throw new Error("Invalid path");
+    }
+  }
+  /**
+   * Returns true if this is in the default state, `d == ""`.
+   */
+  get empty() {
+    return this.d == "";
+  }
+  /**
+   * Returns this to the default state, `d == ""`.
+   */
+  clear() {
+    this.d = "";
+  }
+  /**
+   * Returns the length of the path.  0 for an empty path.
+   */
+  get length() {
+    return this.#path.getTotalLength();
+  }
+  /**
+   * Find a point along the path.
+   * @param distance 0 for the start of the path.
+   * this.length for the end of the path.
+   * Values below 0 return the start of the path.
+   * Values above this.length return the end of the path.
+   * @returns The point at `distance` from the start of the path.
+   */
+  getPoint(distance: number) {
+    return this.#path.getPointAtLength(distance);
+  }
+}
 
 const formatForSvg = new Intl.NumberFormat("en-US", {
   maximumSignificantDigits: 8,

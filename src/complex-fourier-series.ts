@@ -1,11 +1,16 @@
 import { AnimationLoop, getById } from "phil-lib/client-misc";
 import "./style.css";
 import "./complex-fourier-series.css";
-import { ParametricFunction, PathShape, Point, QCommand } from "./path-shape";
+import {
+  ParametricFunction,
+  PathShape,
+  PathWrapper,
+  Point,
+  QCommand,
+} from "./path-shape";
 import {
   makeTSplitter,
   makeTSplitterA,
-  PathWrapper,
   Random,
   selectorQuery,
   selectorQueryAll,
@@ -595,10 +600,7 @@ class AnimateRequestedVsReconstructed {
       let d = "";
       const keyframes = script.map(({ offset, usingCircles }): Keyframe => {
         if (usingCircles != lastNumberOfTerms) {
-          const reconstructedF = termsToParametricFunction(
-            terms,
-            usingCircles
-          );
+          const reconstructedF = termsToParametricFunction(terms, usingCircles);
           const reconstructedPath = PathShape.parametric(
             reconstructedF,
             support.sampleCount + index

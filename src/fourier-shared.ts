@@ -4,9 +4,10 @@ import {
   LCommand,
   ParametricFunction,
   PathShape,
+  PathWrapper,
   Point,
 } from "./path-shape";
-import { PathWrapper, Random } from "./utility";
+import { Random } from "./utility";
 import { initializedArray, sum } from "phil-lib/misc";
 
 /**

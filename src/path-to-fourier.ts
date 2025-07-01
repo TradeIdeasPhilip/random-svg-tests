@@ -684,5 +684,8 @@ setTimeout(() => {
  * Copy from the left side of tau.*
  * lineFont with handwriting effect.
  *
+ * See handwriting-effect.*, it looks easy!
+ * See tau.ts for an example of how to use it.
  *
+ * Search for "new TextLayout" in hershey-font-viewer.ts for another example of creating the letters, the input to handwriting-effect.
  */

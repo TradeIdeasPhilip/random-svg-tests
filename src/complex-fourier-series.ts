@@ -4,7 +4,7 @@ import "./complex-fourier-series.css";
 import {
   ParametricFunction,
   PathShape,
-  PathWrapper,
+  PathCaliper,
   Point,
   QCommand,
 } from "./path-shape";
@@ -135,7 +135,7 @@ export const support = {
       return Random.fromString(seed);
     }
   },
-  referencePath: new PathWrapper(),
+  referencePath: new PathCaliper(),
   samples,
   cursiveLetters,
   futuraLLetters,

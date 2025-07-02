@@ -3,6 +3,7 @@ import {
   groupTerms,
   hasFixedContribution,
   makePolygon,
+  recenter,
   samplesFromPath,
   samplesToFourier,
   termsToParametricFunction,
@@ -109,7 +110,7 @@ function initialize(options: Options) {
       const numberOfDisplaySegments = recommendedNumberOfSegments(
         scriptEntry.usingCircles
       );
-      const path = PathShape.parametric1(
+      const path = PathShape.glitchFreeParametric(
         parametricFunction,
         numberOfDisplaySegments
       );
@@ -222,7 +223,7 @@ function initialize(options: Options) {
                 };
               }
             }
-            const path = PathShape.parametric1(
+            const path = PathShape.glitchFreeParametric(
               parametricFunction,
               frugalSegmentCount
             );
@@ -250,7 +251,7 @@ function initialize(options: Options) {
               };
             }
           }
-          const path = PathShape.parametric1(
+          const path = PathShape.glitchFreeParametric(
             parametricFunction,
             numberOfDisplaySegments
           );
@@ -411,7 +412,7 @@ const scripts = new Map<string, Options>([
     "hilbert1",
     {
       maxGroupsToDisplay: 20,
-      pathString: samples.hilbert[1],
+      pathString: recenter(samples.hilbert[1]).rawPath,
       minGoodCircles: 13,
     },
   ],
@@ -419,28 +420,28 @@ const scripts = new Map<string, Options>([
     "hilbert4",
     {
       maxGroupsToDisplay: 30,
-      pathString: samples.hilbert[4],
+      pathString: recenter(samples.hilbert[4]).rawPath,
     },
   ],
   [
     "p0",
     {
       maxGroupsToDisplay: 7,
-      pathString: samples.peanocurve[0],
+      pathString: recenter(samples.peanocurve[0]).rawPath,
     },
   ],
   [
     "p1",
     {
       maxGroupsToDisplay: 10,
-      pathString: samples.peanocurve[1],
+      pathString: recenter(samples.peanocurve[1]).rawPath,
     },
   ],
   [
     "p2",
     {
       maxGroupsToDisplay: 20,
-      pathString: samples.peanocurve[2],
+      pathString: recenter(samples.peanocurve[2]).rawPath,
     },
   ],
   [
@@ -469,8 +470,8 @@ const scripts = new Map<string, Options>([
   [
     "Daphne_Oram_1",
     {
-      maxGroupsToDisplay: 18,
-      pathString: samples.daphneOram1,
+      maxGroupsToDisplay: 17,
+      pathString: recenter(samples.daphneOram1).rawPath,
       topText: "Daphne Oram #1",
       bottomText: "Wikimedia Commons",
     },
@@ -479,7 +480,7 @@ const scripts = new Map<string, Options>([
     "Daphne_Oram_2",
     {
       maxGroupsToDisplay: 22,
-      pathString: samples.daphneOram2,
+      pathString: recenter(samples.daphneOram2, 0.025, 0.71).rawPath,
       topText: "Daphne Oram #2",
       bottomText: "Wikimedia Commons",
     },
@@ -497,8 +498,8 @@ const scripts = new Map<string, Options>([
   [
     "cat",
     {
-      maxGroupsToDisplay: 10,
-      pathString: samples.cat,
+      maxGroupsToDisplay: 9,
+      pathString: recenter(samples.cat).rawPath,
       topText: "Cat",
       bottomText: "Wikimedia Commons",
     },
@@ -507,7 +508,7 @@ const scripts = new Map<string, Options>([
     "airplane",
     {
       maxGroupsToDisplay: 15,
-      pathString: samples.airplane,
+      pathString: recenter(samples.airplane, 0.3, 0.7).rawPath,
       topText: "Airplane",
       bottomText: "Wikimedia Commons",
     },
@@ -515,8 +516,8 @@ const scripts = new Map<string, Options>([
   [
     "head_facing_right",
     {
-      maxGroupsToDisplay: 14,
-      pathString: samples.headFacingRight,
+      maxGroupsToDisplay: 12,
+      pathString: recenter(samples.headFacingRight).rawPath,
       topText: "Head Facing Right",
       bottomText: "Wikimedia Commons",
     },
@@ -524,8 +525,8 @@ const scripts = new Map<string, Options>([
   [
     "Lavater",
     {
-      maxGroupsToDisplay: 9,
-      pathString: samples.lavater,
+      maxGroupsToDisplay: 8,
+      pathString: recenter(samples.lavater).rawPath,
       topText: "Johann Kaspar Lavaters",
       bottomText: "Wikimedia Commons",
     },
@@ -533,8 +534,8 @@ const scripts = new Map<string, Options>([
   [
     "man_walking",
     {
-      maxGroupsToDisplay: 17,
-      pathString: samples.manWalking,
+      maxGroupsToDisplay: 16,
+      pathString: recenter(samples.manWalking).rawPath,
       bottomText: "Wikimedia Commons",
       topText: "Man Walking",
     },
@@ -542,8 +543,8 @@ const scripts = new Map<string, Options>([
   [
     "bear",
     {
-      maxGroupsToDisplay: 17,
-      pathString: samples.bear,
+      maxGroupsToDisplay: 16,
+      pathString: recenter(samples.bear).rawPath,
       topText: "Bear",
       bottomText: "Wikimedia Commons",
     },
@@ -552,7 +553,7 @@ const scripts = new Map<string, Options>([
     "head_facing_left",
     {
       maxGroupsToDisplay: 13,
-      pathString: samples.headFacingLeft,
+      pathString: recenter(samples.headFacingLeft).rawPath,
       topText: "Head Facing Left",
       bottomText: "Wikimedia Commons",
     },
@@ -561,7 +562,7 @@ const scripts = new Map<string, Options>([
     "kiwi",
     {
       maxGroupsToDisplay: 17,
-      pathString: samples.kiwi,
+      pathString: recenter(samples.kiwi, 1, 0.85).rawPath,
       topText: "Kiwi",
       bottomText: "Wikimedia Commons",
     },
@@ -570,7 +571,7 @@ const scripts = new Map<string, Options>([
     "hand",
     {
       maxGroupsToDisplay: 15,
-      pathString: samples.hand,
+      pathString: recenter(samples.hand, 0.8, 0.2).rawPath,
       topText: "Hand",
       bottomText: "Wikimedia Commons",
     },
@@ -579,7 +580,7 @@ const scripts = new Map<string, Options>([
     "carpe",
     {
       maxGroupsToDisplay: 16,
-      pathString: samples.carpe,
+      pathString: recenter(samples.carpe).rawPath,
       topText: "Carpe",
       bottomText: "Wikimedia Commons",
     },
@@ -598,7 +599,7 @@ const scripts = new Map<string, Options>([
     "smallAirplane",
     {
       maxGroupsToDisplay: 16,
-      pathString: samples.smallAirplane,
+      pathString: recenter(samples.smallAirplane, 0.8, 0.7).rawPath,
       topText: "Robin DR400",
       bottomText: "Wikimedia Commons",
     },
@@ -607,7 +608,7 @@ const scripts = new Map<string, Options>([
     "hawk",
     {
       maxGroupsToDisplay: 8,
-      pathString: samples.hawk,
+      pathString: recenter(samples.hawk).rawPath,
       topText: "Hawk",
       bottomText: "Wikimedia Commons",
     },
@@ -616,7 +617,7 @@ const scripts = new Map<string, Options>([
     "songBird",
     {
       maxGroupsToDisplay: 7,
-      pathString: samples.songBird,
+      pathString: recenter(samples.songBird).rawPath,
       topText: "Song Bird",
       bottomText: "Wikimedia Commons",
     },
@@ -668,15 +669,6 @@ setTimeout(() => {
  * You can specify this in circles!
  * You say how many circles you saw on the screen when it was good enough.
  * It already knows how to do the math to convert the number circles into the number of segments.
- *
- * p0, p1, and p2 are all giving me trouble.
- * I'm not sure if it is related.
- * It jumps around a lot more than I'd expect right around the time of the straight diagonal line.
- * This is early in the script, not a lot of circles, maybe more segments would help.
- */
-
-/**
- * TODO Recenter some or all of the examples. ‼️‼️‼️
  */
 
 /**

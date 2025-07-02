@@ -4,11 +4,47 @@ import {
   LCommand,
   ParametricFunction,
   PathShape,
-  PathWrapper,
+  PathCaliper,
   Point,
 } from "./path-shape";
 import { Random } from "./utility";
-import { initializedArray, sum } from "phil-lib/misc";
+import { initializedArray, lerp, sum } from "phil-lib/misc";
+
+const sharedCaliper = new PathCaliper();
+
+/**
+ * Transform a path.
+ * Translate it so that the origin of the path is in a particular location relative to the bounding box of the path.
+ *
+ * Often I `panAndZoom` so the origin is irrelevant.
+ * Which is good because the origin is at odd places in a lot of the art that I steal.
+ * However, when you do a fourier transform, the origin is relevant.
+ *
+ * In the current animations the body of the image is panned and zoomed into place.
+ * But the animation starts with a point drawn at the origin.
+ * The animation has to move toward the center of the final image.
+ * That's why I talk about moving the origin, relative to the image,
+ * rather than moving the image relative to the origin.
+ * @param path The path to transform
+ * @param x 0 puts the origin at the far left of the bounding box,
+ * 1 puts it at the far right, 0.5 in the middle.
+ * The default is 0.5.
+ * @param y 0 puts the origin at the top of the bounding box,
+ * 1 puts it at the bottom, 0.5 in the middle.
+ * The default is 0.5.
+ * @returns The transformed path.
+ */
+export function recenter(path: PathShape | string, x = 0.5, y = 0.5) {
+  const pathShape =
+    path instanceof PathShape ? path : PathShape.fromString(path);
+  const pathString = typeof path === "string" ? path : path.rawPath;
+  sharedCaliper.d = pathString;
+  const bBox = sharedCaliper.getBBox();
+  const Δx = -lerp(bBox.x, bBox.x + bBox.width, x);
+  const Δy = -lerp(bBox.y, bBox.y + bBox.height, y);
+  const result = pathShape.translate(Δx, Δy);
+  return result;
+}
 
 /**
  *
@@ -137,7 +173,7 @@ export function samplesFromPathOrig(
   pathString: string,
   numberOfTerms: number
 ): Complex[] {
-  const path = new PathWrapper();
+  const path = new PathCaliper();
   path.d = pathString;
   const sampleCount = numberOfTerms;
   const segmentCount = sampleCount - 1;
@@ -160,7 +196,7 @@ export function samplesFromPath(
   pathString: string,
   numberOfTerms: number
 ): Complex[] {
-  const caliper = new PathWrapper();
+  const caliper = new PathCaliper();
   try {
     const commands = PathShape.fromString(pathString).commands;
     if (commands.length == 0) {

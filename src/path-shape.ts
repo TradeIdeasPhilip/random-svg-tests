@@ -9,15 +9,17 @@ import {
   polarToRectangular,
   positiveModulo,
   radiansPerDegree,
+  RealSvgRect,
 } from "phil-lib/misc";
 import { transform } from "./transforms";
+import { assertNonNullable } from "./utility";
 
 /**
  * This is a wrapper around an `SVGPathElement`.
  *
  * You cannot call `getPointAtLength()` or `getTotalLength()` on a `<path>` object without doing some extra work.
  */
-export class PathWrapper {
+export class PathCaliper {
   /**
    * The path needs to be attached to an SVG and both need to be visible,
    * Otherwise a call to `this.length` or `this.getPoint()` will return incorrect values.
@@ -33,6 +35,12 @@ export class PathWrapper {
     this.#svg.style.position = "absolute";
     this.#svg.appendChild(this.#path);
     document.body.appendChild(this.#svg);
+  }
+  getBBox(): RealSvgRect {
+    // bBox explicitly does not require the path to be visible.
+    // I've just included it here for convenience.
+    // Put all the related tools together.
+    return this.#path.getBBox();
   }
   get d(): string {
     return this.#path.getAttribute("d") ?? "";
@@ -278,10 +286,8 @@ export class QCommand implements Command {
    *
    * This version takes 2 points as inputs.
    * See `line4()` if you have 4 numbers.
-   * @param x0 Initial x
-   * @param y0 Initial y
-   * @param x Final x
-   * @param y Final y
+   * @param from Initial point
+   * @param to Final point
    * @returns A new Q command.
    */
   static line2(from: Point, to: Point) {
@@ -1364,6 +1370,9 @@ export class PathShape {
         }
         continue;
       }
+      // This could be a faulty path string.
+      // This could be a command that I just haven't implemented yet.
+      // And sometimes it's a small bit of syntax that I missed.
       throw fail("Confused.");
     }
     return new this(commands);
@@ -1708,30 +1717,49 @@ export class PathShape {
     ).pathShape;
     return result;
   }
-  static #caliper = new PathWrapper();
   /**
    * This is similar to parametric(), but this version is glitch-free.
    *
    * This version removes some ugly glitches.
-   * That's any place where the graphic suddenly goes way off on a long, thing parabola.
+   * That's any place where the graphic suddenly goes way off on a long, thin parabola.
    * These were artifacts of my algorithm, not the requested function.
    *
-   * In exchange for this you don't know for certain how many segments will be in the path.
+   * In exchange for this, you don't know for certain how many segments will be in the path.
    * We start with the requested number, then add more as necessary to patch the glitches.
    * This would cause a problem for interpolation.
    * @param f The function to turn into a path.
    * @param initialSegments The ideal numbers of segments in the path.
-   * @param recursionCount For internal use and debugging.
-   * For most purposes, keep the default.
    * @returns A new path approximating the function, f.
+   * Or `undefined` to say we gave up.
    */
-  static parametric1(
+  static glitchFreeParametric(
+    f: ParametricFunction,
+    initialSegments: number
+  ): PathShape {
+    const result = this.#glitchFreeParametric(f, initialSegments, 0);
+    return assertNonNullable(result);
+  }
+  static #caliper = new PathCaliper();
+  /**
+   * This is a helper function for glitchFreeParametric().
+   * @param f The function to turn into a path.
+   * @param initialSegments The ideal numbers of segments in the path.
+   * @param recursionCount 0 for calls from any other function.
+   * @returns A new path approximating the function, f.
+   * Or `undefined` to say we gave up.
+   */
+  static #glitchFreeParametric(
     f: ParametricFunction,
     initialSegments: number,
-    recursionCount = 0
-  ): PathShape {
+    recursionCount: number
+  ): PathShape | undefined {
     if (recursionCount > 0) {
       console.log(recursionCount);
+    }
+    if (recursionCount >= 4) {
+      // Avoid an infinite loop / stack overflow.
+      console.log("⚝");
+      return undefined;
     }
     const firstTry = this.parametric(f, initialSegments);
     const commands = firstTry.commands.map((command, index, array) => {
@@ -1775,31 +1803,48 @@ export class PathShape {
         const newF = (t: number) => f(localTime(t));
         const numberOfCommandsToReplace = endIndex - startIndex;
         const numberOfReplacementCommands = numberOfCommandsToReplace + 1;
-        const replacement = this.parametric1(
+        const replacement = this.#glitchFreeParametric(
           newF,
           numberOfReplacementCommands,
           recursionCount + 1
         );
-        commands.splice(
-          startIndex,
-          numberOfCommandsToReplace,
-          ...replacement.commands.map(
-            (
-              command,
-              index,
-              array
-            ): {
-              command: Command;
-              initialT: number;
-              finalT: number;
-            } => {
-              const initialT = localTime(index / array.length);
-              const finalT = localTime((index + 1) / array.length);
-              return { command, initialT, finalT };
-            }
-          )
-        );
-        index += numberOfReplacementCommands;
+        if (replacement === undefined) {
+          // We hit a limit on our recursion.
+          if (recursionCount > 0) {
+            // If this is not the top level recursion,
+            // pass the message up.
+            return undefined;
+          }
+          // We are at the top level of recursion.
+          // Use a simpler approach.
+          // Connect the two endpoints with a straight line.
+          const segmentInfo = commands[index];
+          const { x0, y0, x, y } = segmentInfo.command;
+          segmentInfo.command = QCommand.line4(x0, y0, x, y);
+          index++;
+        } else {
+          //
+          commands.splice(
+            startIndex,
+            numberOfCommandsToReplace,
+            ...replacement.commands.map(
+              (
+                command,
+                index,
+                array
+              ): {
+                command: Command;
+                initialT: number;
+                finalT: number;
+              } => {
+                const initialT = localTime(index / array.length);
+                const finalT = localTime((index + 1) / array.length);
+                return { command, initialT, finalT };
+              }
+            )
+          );
+          index += numberOfReplacementCommands;
+        }
       }
     }
     return new PathShape(commands.map((command) => command.command));

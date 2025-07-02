@@ -33,8 +33,28 @@ export class HandwritingEffect {
   /**
    *
    * @param t 0 for nothing drawn.  1 for everything drawn.
+   * In between means to interpolate.
+   * Values outside of this range should be avoided.
    */
   setProgress(t: number) {
     this.parent.style.setProperty("--t", t.toString());
+  }
+  /**
+   * This is similar to setProgress().
+   * By specifying progress in length,
+   * we can write short things quickly,
+   * and take more time to write longer things,
+   * like in the real world.
+   * @param length 0 means hide everything.
+   * Positive values mean to show more.
+   * This says how much length, in SVG user units, to show.
+   * See `this.soFar` for the current length (so far).
+   *
+   * Out of range values are capped.
+   */
+  setProgressLength(length: number) {
+    const proportion = length / this.soFar;
+    const safe = Math.min(1, Math.max(0, proportion));
+    this.setProgress(safe);
   }
 }

@@ -271,7 +271,6 @@ export function samplesFromPath(
         }
       }
     }
-    console.table(lengths);
     const result = new Array<Complex>();
     lengths.forEach(({ length, numberOfVertices, path }) => {
       if (numberOfVertices > 0) {

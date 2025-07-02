@@ -815,7 +815,7 @@ export function makeLineFont(fontMetrics: number | LineFontMetrics): Font {
     const shape = PathBuilder.M(left, capitalTop)
       .L(left, baseline)
       .M(advance, capitalTop)
-      .L(left + 0.5, middle)
+      .L(left + strokeWidth, middle)
       .L(advance, baseline).pathShape;
     add("K", shape, advance);
   }

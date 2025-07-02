@@ -14,6 +14,8 @@ import { panAndZoom } from "./transforms";
 import { PathShape } from "./path-shape";
 import { FIGURE_SPACE, makeBoundedLinear, makeLinear } from "phil-lib/misc";
 import { ease, selectorQuery } from "./utility";
+import { HandwritingEffect } from "./handwriting-effect";
+import { TextLayout } from "./letters-more";
 
 const numberOfFourierSamples = 1024;
 
@@ -331,7 +333,36 @@ function initialize(options: Options) {
     "[data-available] [data-amplitude]",
     HTMLTableCellElement
   );
+  function initializeHandwriting(parent: SVGGElement, text: string) {
+    const handwriting = new HandwritingEffect(parent);
+    const textLayout = new TextLayout(0.5);
+    textLayout.leftMargin = 0;
+    textLayout.rightMargin = 16;
+    textLayout.CRLF();
+    const layoutInfo = textLayout.addText(text);
+    layoutInfo.forEach((letter) => {
+      handwriting.add({
+        baseline: letter.baseline,
+        x: letter.x,
+        shape: letter.description.shape,
+      });
+    });
+    const strokeWidth = textLayout.font.get("0")!.fontMetrics.strokeWidth;
+    parent.style.strokeWidth = strokeWidth.toString();
+    handwriting.setProgress(0);
+    return handwriting;
+  }
+  const topHandwriting = initializeHandwriting(
+    getById("topText", SVGGElement),
+    options.topText ?? ""
+  );
+  const bottomHandwriting = initializeHandwriting(
+    getById("bottomText", SVGGElement),
+    options.bottomText ?? ""
+  );
   function showFrame(timeInMs: number) {
+    topHandwriting.setProgressLength(((timeInMs - 750) / 1000) * 3);
+    bottomHandwriting.setProgressLength(((timeInMs - 5000) / 1000) * 3);
     // Which section of the script applies at this time?
     function getIndex() {
       // Should this be a binary search?
@@ -399,6 +430,8 @@ const scripts = new Map<string, Options>([
       maxGroupsToDisplay: 30,
       pathString: samples.likeShareAndSubscribe,
       minGoodCircles: 10,
+      topText: "Cursive Writing",
+      bottomText: "Hershey Fonts",
     },
   ],
   [
@@ -406,6 +439,8 @@ const scripts = new Map<string, Options>([
     {
       maxGroupsToDisplay: 20,
       pathString: samples.hilbert[0],
+      topText: "Hilbert, First Order",
+      bottomText: "Wikipedia",
     },
   ],
   [
@@ -414,6 +449,8 @@ const scripts = new Map<string, Options>([
       maxGroupsToDisplay: 20,
       pathString: recenter(samples.hilbert[1]).rawPath,
       minGoodCircles: 13,
+      topText: "Hilbert, Second Order",
+      bottomText: "Wikipedia",
     },
   ],
   [
@@ -421,6 +458,8 @@ const scripts = new Map<string, Options>([
     {
       maxGroupsToDisplay: 30,
       pathString: recenter(samples.hilbert[4]).rawPath,
+      topText: "Hilbert, Fifth Order",
+      bottomText: "Wikipedia",
     },
   ],
   [
@@ -428,6 +467,8 @@ const scripts = new Map<string, Options>([
     {
       maxGroupsToDisplay: 7,
       pathString: recenter(samples.peanocurve[0]).rawPath,
+      topText: "Peano Curve #0",
+      bottomText: "Wikipedia",
     },
   ],
   [
@@ -435,6 +476,8 @@ const scripts = new Map<string, Options>([
     {
       maxGroupsToDisplay: 10,
       pathString: recenter(samples.peanocurve[1]).rawPath,
+      topText: "Peano Curve #1",
+      bottomText: "Wikipedia",
     },
   ],
   [
@@ -442,6 +485,8 @@ const scripts = new Map<string, Options>([
     {
       maxGroupsToDisplay: 20,
       pathString: recenter(samples.peanocurve[2]).rawPath,
+      topText: "Peano Curve #2",
+      bottomText: "Wikipedia",
     },
   ],
   [
@@ -490,7 +535,7 @@ const scripts = new Map<string, Options>([
     {
       maxGroupsToDisplay: 9,
       pathString: samples.waterOpossum,
-      topText: "Chironectes (Water Opossum)",
+      topText: "Water Opossum",
       bottomText: "Wikimedia Commons",
       minGoodCircles: 10,
     },

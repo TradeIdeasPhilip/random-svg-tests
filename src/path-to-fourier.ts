@@ -26,7 +26,6 @@ const samplesPath = getById("samples", SVGPathElement);
 type Options = {
   pathString: string;
   maxGroupsToDisplay: number;
-  minGoodCircles?: number;
   topText?: string;
   bottomText?: string;
 };
@@ -64,6 +63,18 @@ function makeEasing(x1: number, x2: number) {
   return customEasing;
 }
 
+let scriptEndTime = NaN;
+
+let showFrame = (timeInMs: number): void => {
+  timeInMs;
+  console.error("not ready yet");
+};
+
+(window as any).showFrame = (frameNumber: number) => {
+  const timeInMs = (frameNumber / 60) * 1000;
+  showFrame(timeInMs);
+};
+
 function initialize(options: Options) {
   // Reference path.
   referencePath.setAttribute("d", options.pathString);
@@ -93,6 +104,7 @@ function initialize(options: Options) {
     maxGroupsToDisplay: options.maxGroupsToDisplay,
     terms,
   });
+  scriptEndTime = script.at(-1)!.endTime;
   const getMaxFrequency = (numberOfTerms: number) => {
     const maxFrequency = Math.max(
       ...terms.slice(0, numberOfTerms).map((term) => Math.abs(term.frequency))
@@ -360,7 +372,7 @@ function initialize(options: Options) {
     getById("bottomText", SVGGElement),
     options.bottomText ?? ""
   );
-  function showFrame(timeInMs: number) {
+  showFrame = (timeInMs: number) => {
     topHandwriting.setProgressLength(((timeInMs - 750) / 1000) * 3);
     bottomHandwriting.setProgressLength(((timeInMs - 5000) / 1000) * 3);
     // Which section of the script applies at this time?
@@ -419,8 +431,7 @@ function initialize(options: Options) {
     // Draw the path
     const pathString = PathShape.cssifyPath(timeToPath[index](timeInMs));
     scaleG.style.setProperty("--d", pathString);
-  }
-  (window as any).showFrame = showFrame;
+  };
 }
 
 const scripts = new Map<string, Options>([
@@ -429,7 +440,6 @@ const scripts = new Map<string, Options>([
     {
       maxGroupsToDisplay: 30,
       pathString: samples.likeShareAndSubscribe,
-      minGoodCircles: 10,
       topText: "Cursive Writing",
       bottomText: "Hershey Fonts",
     },
@@ -448,7 +458,6 @@ const scripts = new Map<string, Options>([
     {
       maxGroupsToDisplay: 20,
       pathString: recenter(samples.hilbert[1]).rawPath,
-      minGoodCircles: 13,
       topText: "Hilbert, Second Order",
       bottomText: "Wikipedia",
     },
@@ -537,7 +546,6 @@ const scripts = new Map<string, Options>([
       pathString: samples.waterOpossum,
       topText: "Water Opossum",
       bottomText: "Wikimedia Commons",
-      minGoodCircles: 10,
     },
   ],
   [
@@ -667,6 +675,15 @@ const scripts = new Map<string, Options>([
       bottomText: "Wikimedia Commons",
     },
   ],
+  [
+    "etchASketch",
+    {
+      maxGroupsToDisplay: 21,
+      pathString: recenter(samples.etchASketch, 0.9, 0).rawPath,
+      topText: "Skyline",
+      bottomText: "MacGameStore",
+    },
+  ],
 ]);
 
 {
@@ -686,43 +703,40 @@ const scripts = new Map<string, Options>([
   }
 }
 
+let animationLoop: AnimationLoop;
+
 // Without this setTimeout() the animation would
 // skip a lot of time in the beginning.  A lot of the setup time
 // would happen right after the first frame and after our clock
 // starts.
 setTimeout(() => {
   let timeOffset = NaN;
-  (window as any).animationLoop = new AnimationLoop((now) => {
+  animationLoop = new AnimationLoop((now) => {
     if (isNaN(timeOffset)) {
       timeOffset = now;
     }
     const time = now - timeOffset;
-    (window as any).showFrame(time);
+    showFrame(time);
   });
+  (window as any).animationLoop = animationLoop;
 }, 1);
 
-/**
- * Maybe not.  This was mostly aimed at avoiding glitches.
- * But that problem appears to be fixed elsewhere,
- * PathShape.parametric1().
- *
- * If anything, we should look at scaling back the detail right now.
- *
- * TODO Minimum good detail
- * Each script should include an optional setting regarding the minimum number of segments.
- * STARTED!  See minGoodCircles.
- * You can specify this in circles!
- * You say how many circles you saw on the screen when it was good enough.
- * It already knows how to do the math to convert the number circles into the number of segments.
- */
+function initScreenCapture(script: unknown) {
+  document
+    .querySelectorAll("[data-hideBeforeScreenshot]")
+    .forEach((element) => {
+      if (!(element instanceof SVGElement || element instanceof HTMLElement)) {
+        throw new Error("wtf");
+      }
+      element.style.display = "none";
+    });
+  animationLoop.cancel();
+  return {
+    source: "path-to-fourier.ts",
+    script,
+    firstFrame: 0,
+    lastFrame: Math.floor((scriptEndTime / 1000) * 60),
+  };
+}
 
-/**
- * TODO Display the top and bottom text.
- * Copy from the left side of tau.*
- * lineFont with handwriting effect.
- *
- * See handwriting-effect.*, it looks easy!
- * See tau.ts for an example of how to use it.
- *
- * Search for "new TextLayout" in hershey-font-viewer.ts for another example of creating the letters, the input to handwriting-effect.
- */
+(window as any).initScreenCapture = initScreenCapture;

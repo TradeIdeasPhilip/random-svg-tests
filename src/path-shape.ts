@@ -1141,7 +1141,9 @@ const lCommandContinuation = new RegExp(
 const lCommandRelative = new RegExp(
   `^l${afterCommand}${number}${between}${number}(.*)$`
 );
+const hCommand = new RegExp(`^H${afterCommand}${number}(.*)$`);
 const hCommandRelative = new RegExp(`^h${afterCommand}${number}(.*)$`);
+const vCommand = new RegExp(`^V${afterCommand}${number}(.*)$`);
 const vCommandRelative = new RegExp(`^v${afterCommand}${number}(.*)$`);
 const vCommandContinuation = new RegExp(`^${between}${number}(.*)$`);
 const hCommandContinuation = vCommandContinuation;
@@ -1297,6 +1299,13 @@ export class PathShape {
         }
         continue;
       }
+      if ((found = hCommand.exec(remaining))) {
+        const x = parseOrThrow(found[1]);
+        const current = new LCommand(x0, y0, x, y0);
+        push(current);
+        remaining = found[2];
+        continue;
+      }
       if ((found = hCommandRelative.exec(remaining))) {
         while (found) {
           const dx = parseOrThrow(found[1]);
@@ -1305,6 +1314,13 @@ export class PathShape {
           remaining = found[2];
           found = hCommandContinuation.exec(remaining);
         }
+        continue;
+      }
+      if ((found = vCommand.exec(remaining))) {
+        const y = parseOrThrow(found[1]);
+        const current = new LCommand(x0, y0, x0, y);
+        push(current);
+        remaining = found[2];
         continue;
       }
       if ((found = vCommandRelative.exec(remaining))) {

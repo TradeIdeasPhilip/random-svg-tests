@@ -30,20 +30,6 @@ type Options = {
   bottomText?: string;
 };
 
-/*
- TODO add the part for html-to-movie.
-  Rough sketch:
-  // Yes, the main program calls initialize() at the start.
-  // The only way to reconfigure is to change the main program and restart.
-  // The animations all start running by default.
-  // If the recorder sends an initialization request:
-  // * We will pause all animations.
-  //   We don't want any change between when the recorder asks for a frame
-  //   and when it takes the screenshot.
-  // * We will return the length of this presentation.
-  //   It will be the same as length of the live animation.
-*/
-
 // TODO add in y1 and y2, rather than just assuming they are 0 and 1.
 function makeEasing(x1: number, x2: number) {
   if (x1 >= x2) {
@@ -447,7 +433,7 @@ const scripts = new Map<string, Options>([
   [
     "hilbert0",
     {
-      maxGroupsToDisplay: 20,
+      maxGroupsToDisplay: 9,
       pathString: samples.hilbert[0],
       topText: "Hilbert, First Order",
       bottomText: "Wikipedia",

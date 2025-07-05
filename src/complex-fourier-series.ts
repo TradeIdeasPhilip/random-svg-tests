@@ -1,4 +1,9 @@
-import { AnimationLoop, getById } from "phil-lib/client-misc";
+import {
+  AnimationLoop,
+  getById,
+  selectorQuery,
+  selectorQueryAll,
+} from "phil-lib/client-misc";
 import "./style.css";
 import "./complex-fourier-series.css";
 import {
@@ -8,14 +13,14 @@ import {
   Point,
   QCommand,
 } from "./path-shape";
+import { makeTSplitter, makeTSplitterA } from "./utility";
 import {
-  makeTSplitter,
-  makeTSplitterA,
+  assertClass,
+  FIGURE_SPACE,
+  lerp,
+  makeLinear,
   Random,
-  selectorQuery,
-  selectorQueryAll,
-} from "./utility";
-import { assertClass, FIGURE_SPACE, lerp, makeLinear } from "phil-lib/misc";
+} from "phil-lib/misc";
 import { lerpPoints } from "./math-to-path";
 import { cursiveLetters, futuraLLetters } from "./hershey-fonts/hershey-fonts";
 import {

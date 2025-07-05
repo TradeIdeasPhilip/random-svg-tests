@@ -1,15 +1,16 @@
-import { getById } from "phil-lib/client-misc";
+import { getById, selectorQueryAll } from "phil-lib/client-misc";
 import "./style.css";
 import "./tangent-line-2.css";
 import {
   count,
   FULL_CIRCLE,
   initializedArray,
+  lcm,
   makeBoundedLinear,
   makeLinear,
 } from "phil-lib/misc";
 import { PathShape, QCommand } from "./path-shape";
-import { assertValidT, lcm, makeTSplitterA, selectorQueryAll } from "./utility";
+import { assertValidT, makeTSplitterA } from "./utility";
 
 const WIDTH = 1920;
 const HEIGHT = 1080;

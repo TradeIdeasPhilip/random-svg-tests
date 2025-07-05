@@ -1,4 +1,4 @@
-import { AnimationLoop, getById } from "phil-lib/client-misc";
+import { AnimationLoop, getById, selectorQuery } from "phil-lib/client-misc";
 import {
   groupTerms,
   hasFixedContribution,
@@ -13,7 +13,7 @@ import "./path-to-fourier.css";
 import { panAndZoom } from "./transforms";
 import { PathShape } from "./path-shape";
 import { FIGURE_SPACE, makeBoundedLinear, makeLinear } from "phil-lib/misc";
-import { ease, selectorQuery } from "./utility";
+import { ease } from "./utility";
 import { HandwritingEffect } from "./handwriting-effect";
 import { TextLayout } from "./letters-more";
 

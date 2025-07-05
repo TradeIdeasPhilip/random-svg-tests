@@ -1,6 +1,7 @@
 import {
   angleBetween,
   assertFinite,
+  assertNonNullable,
   degreesPerRadian,
   initializedArray,
   lerp,
@@ -12,7 +13,6 @@ import {
   RealSvgRect,
 } from "phil-lib/misc";
 import { transform } from "./transforms";
-import { assertNonNullable } from "./utility";
 
 /**
  * This is a wrapper around an `SVGPathElement`.

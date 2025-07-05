@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "fft-js": "^0.0.12",
-    "phil-lib": "^1.4.0",
+    "phil-lib": "github:TradeIdeasPhilip/phil-lib",
     "roughjs": "^4.6.6"
   }
 }

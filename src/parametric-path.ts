@@ -1,8 +1,12 @@
-import { AnimationLoop, download, getById } from "phil-lib/client-misc";
+import {
+  AnimationLoop,
+  download,
+  getById,
+  selectorQuery,
+} from "phil-lib/client-misc";
 import "./style.css";
 import "./parametric-path.css";
 import { ParametricFunction, PathShape, Point } from "./path-shape";
-import { selectorQuery } from "./utility";
 import { assertClass, FIGURE_SPACE, pickAny } from "phil-lib/misc";
 import { panAndZoom } from "./transforms";
 

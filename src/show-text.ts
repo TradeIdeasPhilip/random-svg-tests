@@ -1,15 +1,10 @@
-import { AnimationLoop, getById } from "phil-lib/client-misc";
-import {
-  assertValidT,
-  makeTSplitter,
-  Random,
-  selectorQueryAll,
-} from "./utility";
+import { AnimationLoop, getById, selectorQueryAll } from "phil-lib/client-misc";
+import { assertValidT, makeTSplitter } from "./utility";
 import "./show-text.css";
 import { TextLayout } from "./letters-more";
 import { makeLineFont } from "./line-font";
 import { makeRoughShape } from "./rough-lib";
-import { LinearFunction, makeLinear, parseIntX } from "phil-lib/misc";
+import { LinearFunction, makeLinear, parseIntX, Random } from "phil-lib/misc";
 
 const inputTextArea = getById("input", HTMLTextAreaElement);
 const randomSeedInput = getById("randomSeed", HTMLInputElement);

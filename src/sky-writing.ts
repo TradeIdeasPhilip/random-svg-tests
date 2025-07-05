@@ -5,7 +5,7 @@ import { describeFont, DescriptionOfLetter, Font } from "./letters-base";
 import { PathShape } from "./path-shape";
 import { makeLineFont } from "./line-font";
 import { createPathDebugger } from "./path-debugger-widget";
-import { assertFinite, degreesPerRadian, HasSeed, Random } from "phil-lib/misc";
+import { assertFinite, degreesPerRadian, Random } from "phil-lib/misc";
 import { makeRoughShape } from "./rough-lib";
 
 // MARK: One time setup
@@ -236,7 +236,7 @@ class Rough extends AnimationController {
    * @param baseFont Start from this font.
    * @returns The new font.
    */
-  static makeRoughFont(baseFont: Font, seed?: string): Font & HasSeed {
+  static makeRoughFont(baseFont: Font, seed?: string): Font {
     const font: Font = new Map();
     if (seed == "" || seed === undefined) {
       seed = Random.newSeed();
@@ -489,13 +489,17 @@ document.querySelectorAll('input[name="type"]').forEach((element) => {
 
 function testCircleApproximation() {
   const chars = [..."♡◯◡"];
-const  font = makeLineFont(42);
-  chars.forEach(char => {
+  const font = makeLineFont(42);
+  chars.forEach((char) => {
     console.log(char);
     console.table(
-    font.get(char)!.shape.commands.map((command) =>{
-      return {incoming : command.incomingAngle*degreesPerRadian,outgoing:command.outgoingAngle*degreesPerRadian}
-    }));
-  })
+      font.get(char)!.shape.commands.map((command) => {
+        return {
+          incoming: command.incomingAngle * degreesPerRadian,
+          outgoing: command.outgoingAngle * degreesPerRadian,
+        };
+      })
+    );
+  });
 }
 testCircleApproximation();

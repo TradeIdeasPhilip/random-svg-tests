@@ -9,10 +9,11 @@ import {
   parseFloatX,
   polarToRectangular,
   radiansPerDegree,
+  Random,
 } from "phil-lib/misc";
 
 import { createPathDebugger } from "./path-debugger-widget";
-import { averageAngle, Random } from "./utility";
+import { averageAngle } from "./utility";
 import { makeRoughShape } from "./rough-lib";
 
 /**

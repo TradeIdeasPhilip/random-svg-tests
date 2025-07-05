@@ -1,6 +1,10 @@
-import { AnimationLoop, getById } from "phil-lib/client-misc";
+import {
+  AnimationLoop,
+  getById,
+  selectorQuery,
+  selectorQueryAll,
+} from "phil-lib/client-misc";
 import "./parabola-tangent-line.css";
-import { selectorQuery, selectorQueryAll } from "./utility";
 import {
   assertClass,
   FULL_CIRCLE,
@@ -550,7 +554,6 @@ function addTools(svgElement: SVGSVGElement) {
 selectorQueryAll("svg", SVGSVGElement).forEach((svgElement) =>
   addTools(svgElement)
 );
-
 
 /*
 

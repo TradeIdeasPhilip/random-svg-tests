@@ -1,6 +1,10 @@
-import { AnimationLoop, getById } from "phil-lib/client-misc";
+import {
+  AnimationLoop,
+  getById,
+  selectorQuery,
+  selectorQueryAll,
+} from "phil-lib/client-misc";
 import "./some4.css";
-import { selectorQuery, selectorQueryAll } from "./utility";
 import { ParametricFunction, PathShape } from "./path-shape";
 import { initializedArray, lerp, makeLinear, parseIntX } from "phil-lib/misc";
 
@@ -32,7 +36,7 @@ abstract class functionInfo {
   }
   /**
    * The function itself.
-   * @param x 
+   * @param x
    */
   abstract f(x: number): number;
   /**
@@ -43,7 +47,7 @@ abstract class functionInfo {
     readonly imaginary: number;
   }[];
   /**
-   * 
+   *
    * @param x A value that we might want to call the function at.
    * @returns `true` if this function is undefined at that value of x.
    */

@@ -1,8 +1,8 @@
 import { makeLinear } from "phil-lib/misc";
 import "./text-for-derivative.css";
-import { GetFrameNumber, selectorQueryAll } from "./utility";
+import { GetFrameNumber } from "./utility";
 import { PathBuilder } from "./path-shape";
-import { getById } from "phil-lib/client-misc";
+import { getById, selectorQueryAll } from "phil-lib/client-misc";
 
 const getFrameNumber = new GetFrameNumber();
 

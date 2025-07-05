@@ -1,11 +1,12 @@
 import {
   FULL_CIRCLE,
   angleBetween,
+  assertNonNullable,
   initializedArray,
   zip,
 } from "phil-lib/misc";
 import { LCommand, PathShape, Point, QCommand } from "../path-shape";
-import { assertNonNullable, averageAngle } from "../utility";
+import { averageAngle } from "../utility";
 
 // https://emergent.unpythonic.net/software/hershey
 // curl https://media.unpythonic.net/emergent-files/software/hershey/cursive.jhf> src/hersey-fonts/cursive.jhf

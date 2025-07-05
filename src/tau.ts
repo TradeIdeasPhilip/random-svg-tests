@@ -1,16 +1,12 @@
-import { getById } from "phil-lib/client-misc";
+import { getById, selectorQueryAll } from "phil-lib/client-misc";
 import "./tau.css";
-import {
-  assertValidT,
-  makeTSplitter,
-  Random,
-  selectorQueryAll,
-} from "./utility";
+import { assertValidT, makeTSplitter } from "./utility";
 import {
   initializedArray,
   makeBoundedLinear,
   makeLinear,
   positiveModulo,
+  Random,
 } from "phil-lib/misc";
 import { PathShape } from "./path-shape";
 import { TextLayout } from "./letters-more";
@@ -30,7 +26,7 @@ type Animator = {
  */
 const mainHandwriting: Animator = (() => {
   const element = getById("main-handwriting", SVGUseElement);
-   element.style.strokeDasharray = `0, ${tauPathLength + 1}, ${
+  element.style.strokeDasharray = `0, ${tauPathLength + 1}, ${
     tauPathLength + 1
   },0`;
   const timingFunction = makeLinear(0, 0, 1, -tauPathLength);

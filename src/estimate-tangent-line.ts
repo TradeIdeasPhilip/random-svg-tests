@@ -1,4 +1,4 @@
-import { getById } from "phil-lib/client-misc";
+import { getById, selectorQueryAll } from "phil-lib/client-misc";
 import "./estimate-tangent-line.css";
 import {
   assertClass,
@@ -8,7 +8,7 @@ import {
   makeLinear,
   polarToRectangular,
 } from "phil-lib/misc";
-import { assertValidT, makeTSplitter, selectorQueryAll } from "./utility";
+import { assertValidT, makeTSplitter } from "./utility";
 
 const mainSvg = getById("main", SVGSVGElement);
 const legend = getById("legend", SVGGElement);

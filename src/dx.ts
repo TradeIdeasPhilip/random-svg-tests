@@ -1,7 +1,7 @@
 import "./style.css";
 import "./dx.css";
-import { getById } from "phil-lib/client-misc";
-import { GetFrameNumber, selectorQueryAll } from "./utility";
+import { getById, selectorQueryAll } from "phil-lib/client-misc";
+import { GetFrameNumber } from "./utility";
 import {
   assertFinite,
   FULL_CIRCLE,

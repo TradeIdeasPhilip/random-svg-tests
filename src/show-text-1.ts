@@ -1,12 +1,7 @@
 import "./show-text-1.css";
 import { AnimationLoop, getById } from "phil-lib/client-misc";
-import { LinearFunction, makeLinear, parseIntX } from "phil-lib/misc";
-import {
-  assertValidT,
-  constantAcceleration,
-  makeTSplitter,
-  Random,
-} from "./utility";
+import { LinearFunction, makeLinear, parseIntX, Random } from "phil-lib/misc";
+import { assertValidT, constantAcceleration, makeTSplitter } from "./utility";
 import { LetterLayoutInfo, TextLayout } from "./letters-more";
 import { makeLineFont } from "./line-font";
 import { Font } from "./letters-base";

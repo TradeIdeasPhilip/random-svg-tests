@@ -1,18 +1,10 @@
 import {
   angleBetween,
-  assertClass,
   assertFinite,
   makeBoundedLinear,
   parseIntX,
-  pick,
   sum,
 } from "phil-lib/misc";
-
-// TODO
-//
-// fix assertFinite() to use Number.isFinite() rather than Window.isFinite() !!!
-//
-// Promote: selectorQueryAll(), selectorQuery(), Random, getDataUrl(), gcd(), lcm(), pickAny()
 
 export function averageAngle(angle1: number, angle2: number) {
   const between = angleBetween(angle1, angle2);
@@ -38,240 +30,6 @@ export function previousCount(key: string): number {
   previousCountPrivate.set(key, result + 1);
   return result;
 }
-
-/**
- * This is a wrapper around `window.selectorQueryAll()`.
- * This is analogous to `getById()`.
- *
- * This includes a lot of assertions.
- * These have good error messages aimed at a developer.
- * The assumption is that you will run this very early in the main program and store the results in a constant.
- * If there is a problem we want to catch it ASAP.
- *
- * You can set the min and max number of elements.
- * That's another thing that's good to check early.
- * The default range is 1 - Infinity.
- * Set `min` to 0 to completely disable this test.
- *
- * @param selector What you are looking for.  E.g. `"[data-precisionIssues]"`
- * @param ty The expected type of the items.  E.g. `SVGTextElement`
- * @param min The minimum number of items allowed.  Defaults to 1.
- * @param max The maximum number of items allowed.  Defaults to Infinity.
- * @returns An array containing all of the objects that matches the selector.
- * @throws If we don't get the right number of objects or if any of the objects have the wrong type.
- */
-export function selectorQueryAll<T extends Element>(
-  selector: string,
-  ty: { new (): T },
-  min = 1,
-  max = Infinity,
-  start: Pick<Document, "querySelectorAll"> = document
-): readonly T[] {
-  const result: T[] = [];
-  start.querySelectorAll(selector).forEach((element) => {
-    result.push(assertClass(element, ty));
-  });
-  if (result.length < min || result.length > max) {
-    throw new Error(
-      `Expecting "${selector}" to return [${min} - ${max}] instances of ${ty.name}, found ${result.length}.`
-    );
-  }
-  return result;
-}
-
-export function selectorQuery<T extends Element>(
-  selector: string,
-  ty: { new (): T },
-  start: Pick<Document, "querySelectorAll"> = document
-): T {
-  return selectorQueryAll(selector, ty, 1, 1, start)[0];
-}
-
-type RandomFunction = {
-  readonly currentSeed: string;
-  (): number;
-};
-
-/**
- * This provides a random number generator that can be seeded.
- * `Math.rand()` cannot be seeded.  Using a seed will allow
- * me to repeat things in the debugger when my program acts
- * strange.
- *
- * I temporarily copied this from phil-lib so I could add some
- * features.  TODO merge it back in.
- */
-export class Random {
-  private constructor() {
-    throw new Error("wtf");
-  }
-  /**
-   * Creates a new random number generator using the sfc32 algorithm.
-   *
-   * sfc32 (Simple Fast Counter) is part of the [PractRand](http://pracrand.sourceforge.net/)
-   * random number testing suite (which it passes of course).
-   * sfc32 has a 128-bit state and is very fast in JS.
-   *
-   * [Source](https://stackoverflow.com/a/47593316/971955)
-   * @param a A 32 bit integer.  The 1st part of the seed.
-   * @param b A 32 bit integer.  The 2nd part of the seed.
-   * @param c A 32 bit integer.  The 3rd part of the seed.
-   * @param d A 32 bit integer.  The 4th part of the seed.
-   * @returns A function that will act a lot like `Math.rand()`, but it starts from the given seed.
-   */
-  private static sfc32(
-    a: number,
-    b: number,
-    c: number,
-    d: number
-  ): RandomFunction {
-    function random() {
-      a |= 0;
-      b |= 0;
-      c |= 0;
-      d |= 0;
-      let t = (((a + b) | 0) + d) | 0;
-      d = (d + 1) | 0;
-      a = b ^ (b >>> 9);
-      b = (c + (c << 3)) | 0;
-      c = (c << 21) | (c >>> 11);
-      c = (c + t) | 0;
-      return (t >>> 0) / 4294967296;
-    }
-    const result = random as RandomFunction;
-    Object.defineProperty(result, "currentSeed", {
-      get() {
-        return JSON.stringify([a, b, c, d]);
-      },
-    });
-    return result;
-  }
-  static #nextSeedInt = 42;
-  static seedIsValid(seed: string): boolean {
-    try {
-      this.create(seed);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  static create(seed = this.newSeed()): RandomFunction {
-    console.info(seed);
-    // The following line throws a lot of exceptions, by design.
-    // If you checked "pause on caught exceptions", and you are here,
-    // just hit resume.
-    const seedObject: unknown = JSON.parse(seed);
-    if (!(seedObject instanceof Array)) {
-      throw new Error("invalid input");
-    }
-    if (seedObject.length != 4) {
-      throw new Error("invalid input");
-    }
-    const [a, b, c, d] = seedObject;
-    if (
-      !(
-        typeof a == "number" &&
-        typeof b == "number" &&
-        typeof c == "number" &&
-        typeof d == "number"
-      )
-    ) {
-      throw new Error("invalid input");
-    }
-    return this.sfc32(a, b, c, d);
-  }
-  /**
-   *
-   * @returns A new seed value appropriate for use in a call to `Random.create()`.
-   * This will be reasonably random.
-   *
-   * The seed is intended to be opaque, a magic cookie.
-   * It's something that's easy to copy and paste.
-   * Don't try to parse or create one of these.
-   */
-  static newSeed() {
-    const ints: number[] = [];
-    ints.push(Date.now() | 0);
-    ints.push(this.#nextSeedInt++ | 0);
-    ints.push((Math.random() * 2 ** 31) | 0);
-    ints.push((performance.now() * 10000) | 0);
-    const seed = JSON.stringify(ints);
-    return seed;
-  }
-  /**
-   * Create a new random number generator based on a string.
-   * The result will be repeatable.
-   * I.e. the same input will always lead the the same random number generator.
-   * @param s Any string is acceptable.
-   * This can include random things like "try again 27".
-   *
-   * And it can include special things like "[1,2,3,4]" which are generated by this library.
-   * randomNumberGenerator.currentSeed() will return a seed that can be used to clone the random number generator in its current statue.
-   * @returns A new random number generator.
-   */
-  static fromString(s: string): RandomFunction {
-    try {
-      return this.create(s);
-    } catch {
-      return this.create(this.anyStringToSeed(s));
-    }
-  }
-  /**
-   *
-   * @param input Any string is valid.
-   * Reasonable inputs include "My game", "My game 32", "My game 33", "在你用中文测试过之前你还没有测试过它。".
-   * I.e. you might just add or change one character, and you want to maximize the resulting change.
-   */
-  static anyStringToSeed(input: string): string {
-    function rotateLeft32(value: number, shift: number): number {
-      return ((value << shift) | (value >>> (32 - shift))) >>> 0;
-    }
-    const ints = [0x9e3779b9, 0x243f6a88, 0x85a308d3, 0x13198a2e];
-    const data = new TextEncoder().encode(input);
-    data.forEach((byte) => {
-      ints[0] ^= byte;
-      ints[0] = rotateLeft32(ints[0], 3);
-      ints[1] ^= byte;
-      ints[1] = rotateLeft32(ints[1], 5);
-      ints[2] ^= byte;
-      ints[2] = rotateLeft32(ints[2], 7);
-      ints[3] ^= byte;
-      ints[3] = rotateLeft32(ints[3], 11);
-    });
-    // Final mixing step
-    ints[0] ^= rotateLeft32(ints[1], 7);
-    ints[1] ^= rotateLeft32(ints[2], 11);
-    ints[2] ^= rotateLeft32(ints[3], 13);
-    ints[3] ^= rotateLeft32(ints[0], 17);
-    return JSON.stringify(ints);
-  }
-  static test() {
-    const maxGenerators = 10;
-    const iterationsPerCycle = 20;
-    const generators = [this.create()];
-    while (generators.length <= maxGenerators) {
-      for (let iteration = 0; iteration < iterationsPerCycle; iteration++) {
-        const results = generators.map((generator) => generator());
-        for (let i = 1; i < results.length; i++) {
-          if (results[i] !== results[0]) {
-            debugger;
-            throw new Error("wtf");
-          }
-        }
-      }
-      const currentSeed = pick(generators).currentSeed;
-      generators.forEach((generator) => {
-        if (generator.currentSeed != currentSeed) {
-          debugger;
-          throw new Error("wtf");
-        }
-      });
-      generators.push(this.create(currentSeed)!);
-    }
-  }
-}
-
-(window as any).Random = Random;
 
 /**
  * Assert that `t` is between 0 and 1, inclusive.
@@ -376,20 +134,6 @@ export function makeTSplitterA(
 }
 
 /**
- * Asserts that the value is not `undefined` or `null`.
- * Similar to ! or NonNullable, but also performs the check at runtime.
- * @param value The value to check and return.
- * @returns The given value.
- * @throws If `value === undefined || value === null`.
- */
-export function assertNonNullable<T>(value: T): NonNullable<T> {
-  if (value === undefined || value === null) {
-    throw new Error("wtf");
-  }
-  return value;
-}
-
-/**
  * Creates a new function f() from one number to another where:
  *   * y = f(x) defines a parabola,
  *   * f(0) = 0,
@@ -419,49 +163,6 @@ export function constantAcceleration(r: number) {
   const a = 1 - b;
   const result = (t: number) => a * t * t + b * t;
   return result;
-}
-
-/**
- * Convert an image into a data url.
- * @param url A url that points to an image.
- * @returns A data url that represents the same image.
- */
-export async function getDataUrl(url: string) {
-  const image = document.createElement("img");
-  image.src = url;
-  await image.decode();
-  const height = image.naturalHeight;
-  const width = image.naturalWidth;
-  if (height == 0 || width == 0) {
-    // The documentation suggests that decode() will throw an exception if there is a problem.
-    // However, as I recall the promise resolves to undefined as soon as the image succeeds or fails.
-    // I'm using this test to know if it failed.
-    throw new Error("problem with image");
-  }
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext("2d");
-  if (!context) {
-    throw new Error("wtf");
-  }
-  context.drawImage(image, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL();
-}
-
-/**
- * Greatest Common Divisor.
- */
-export function gcd(a: number, b: number) {
-  if (!b) {
-    return a;
-  }
-  return gcd(b, a % b);
-}
-
-/** Least Common Multiple */
-export function lcm(a: number, b: number) {
-  return (a * b) / gcd(a, b);
 }
 
 /**
@@ -524,21 +225,4 @@ export function ease(t: number): number {
   const cosine = Math.cos(angle);
   const result = (1 - cosine) / 2;
   return result;
-}
-
-/**
- * Pick any arbitrary element from the container.
- * @param container Presumably a Map or a Set.
- * Something with a `.values()` iterator.
- * @returns An item in the set or a value from the map.  Unless the input is empty, then this returns undefined.
- */
-export function pickAny<T>(
-  container: Pick<ReadonlySet<T>, "values">
-): T | undefined {
-  const first = container.values().next();
-  if (first.done) {
-    return undefined;
-  } else {
-    return first.value;
-  }
 }

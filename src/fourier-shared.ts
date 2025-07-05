@@ -7,8 +7,7 @@ import {
   PathCaliper,
   Point,
 } from "./path-shape";
-import { Random } from "./utility";
-import { initializedArray, lerp, sum } from "phil-lib/misc";
+import { initializedArray, lerp, Random, sum } from "phil-lib/misc";
 
 const sharedCaliper = new PathCaliper();
 

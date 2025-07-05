@@ -1,5 +1,5 @@
+import { pickAny } from "phil-lib/misc";
 import { PathShape } from "./path-shape";
-import { pickAny } from "./utility";
 
 export type FontMetrics = {
   /**
@@ -126,7 +126,11 @@ export function resizeFont(originalFont: Font, newSize: number): Font {
         // Expecting all letters to come from the same font.
         throw new Error("wtf");
       }
-      const newLetter = new DescriptionOfLetter(originalLetter.shape.transform(matrix),originalLetter.advance*ratio,newFontMetrics);
+      const newLetter = new DescriptionOfLetter(
+        originalLetter.shape.transform(matrix),
+        originalLetter.advance * ratio,
+        newFontMetrics
+      );
       newFont.set(key, newLetter);
     });
   }

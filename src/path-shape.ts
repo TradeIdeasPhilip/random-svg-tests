@@ -3,6 +3,7 @@ import {
   assertFinite,
   assertNonNullable,
   degreesPerRadian,
+  FULL_CIRCLE,
   initializedArray,
   lerp,
   makeLinear,
@@ -100,6 +101,19 @@ export class PathCaliper {
    */
   getPoint(distance: number) {
     return this.#path.getPointAtLength(distance);
+  }
+  load(path: string | Command | PathShape) {
+    if (typeof path !== "string") {
+      if (!(path instanceof PathShape)) {
+        path = new PathShape([path]);
+      }
+      path = path.rawPath;
+    }
+    this.d = path;
+  }
+  measure(path: string | Command | PathShape) {
+    this.load(path);
+    return this.length;
   }
 }
 
@@ -238,6 +252,10 @@ export type QCreationInfo = Readonly<
   | { source: "angles"; success: boolean; angle0: number; angle: number }
 >;
 
+export type QCommandFromAngles = QCommand & {
+  creationInfo: { source: "angles" };
+};
+
 export class QCommand implements Command {
   reverse(): QCommand {
     return QCommand.controlPoints(
@@ -329,7 +347,6 @@ export class QCommand implements Command {
     y: number,
     angle: number
   ) {
-    type QCommandFromAngles = QCommand & { creationInfo: { source: "angles" } };
     assertFinite(x0, y0, angle0, x, y, angle);
     const controlPoint = findIntersection(
       {
@@ -2067,3 +2084,183 @@ function findIntersection(r1: Ray, r2: Ray): Point | undefined {
     return { x, y };
   }
 }
+
+function assertFromAngles(command: Command) {
+  if (!(command instanceof QCommand)) {
+    // I can't use assertClass() here because QCommand has a private constructor.
+    throw new Error("wtf");
+  }
+  if (command.creationInfo.source != "angles") {
+    throw new Error("wtf");
+  }
+  return command as QCommandFromAngles;
+}
+
+type CommandInfo = {
+  command: QCommandFromAngles;
+  startT: number;
+  endT: number;
+  lineLength: number;
+  curveLength: number;
+};
+
+export class ParametricToPath {
+  static readonly #caliper = new PathCaliper();
+  #commands: CommandInfo[];
+  constructor(readonly f: ParametricFunction, initialSegmentCount: number) {
+    this.#commands = PathShape.parametric(f, initialSegmentCount).commands.map(
+      (command, index, array): CommandInfo => ({
+        command: assertFromAngles(command),
+        startT: index / array.length,
+        endT: (index + 1) / array.length,
+        curveLength: ParametricToPath.#caliper.measure(command),
+        lineLength: Math.hypot(command.x - command.x0, command.y - command.y0),
+      })
+    );
+  }
+  get commands(): readonly Readonly<CommandInfo>[] {
+    return this.#commands;
+  }
+  /**
+   * Based on info.curveLength, but accentuated.
+   *
+   * My first try was info.curveLength**2, but some values of curveLength are less than 1 so they actually shrank.
+   * @param info
+   * @returns Same units as info.lineLength and info.curveLength, but longer.
+   */
+  metric(info: CommandInfo) {
+    if (
+      info.command.creationInfo.source == "angles" &&
+      !info.command.creationInfo.success
+    ) {
+      return 3 * info.lineLength;
+    } else {
+      return info.curveLength ** 2 / info.lineLength;
+    }
+  }
+  addOne() {
+    let worstMetric = -Infinity;
+    let worstMetricIndex = NaN;
+    this.#commands.forEach((commandInfo, index) => {
+      const metric = this.metric(commandInfo);
+      if (metric > worstMetric) {
+        worstMetric = metric;
+        worstMetricIndex = index;
+      }
+    });
+    const toSplit = this.#commands[worstMetricIndex];
+    const { startT, endT } = toSplit;
+    const midpointT = (startT + endT) / 2;
+    const midPoint = this.f(midpointT);
+    // From PathBuilder.addParametricPath():
+    // const ε = 0.01 / numberOfSegments;
+    // This is consistent with PathBuilder.addParametricPath.
+    // As the segments are broken into smaller pieces,
+    // ε scales linearly with them.
+    const ε = 0.01 * (midpointT - startT);
+    const midPointAngle = getDirection(this.f, midpointT, ε);
+    const firstCommand = QCommand.angles(
+      toSplit.command.x0,
+      toSplit.command.y0,
+      toSplit.command.requestedIncomingAngle,
+      midPoint.x,
+      midPoint.y,
+      midPointAngle
+    );
+    const secondCommand = QCommand.angles(
+      midPoint.x,
+      midPoint.y,
+      midPointAngle,
+      toSplit.command.x,
+      toSplit.command.y,
+      toSplit.command.requestedOutgoingAngle
+    );
+    const newCommands: CommandInfo[] = [
+      {
+        startT,
+        endT: midpointT,
+        command: firstCommand,
+        lineLength: Math.hypot(
+          firstCommand.x - firstCommand.x1,
+          firstCommand.y - firstCommand.y1
+        ),
+        curveLength: ParametricToPath.#caliper.measure(firstCommand),
+      },
+      {
+        startT: midpointT,
+        endT,
+        command: secondCommand,
+        lineLength: Math.hypot(
+          secondCommand.x - secondCommand.x1,
+          secondCommand.y - secondCommand.y1
+        ),
+        curveLength: ParametricToPath.#caliper.measure(secondCommand),
+      },
+    ];
+    const removed = this.#commands.splice(worstMetricIndex, 1, ...newCommands);
+    return { newCommands, removed, worstMetric, worstMetricIndex };
+  }
+  get segmentCount() {
+    return this.#commands.length;
+  }
+  get pathShape() {
+    return new PathShape(this.#commands.map(({ command }) => command));
+  }
+  summarize() {
+    function summarizeArray(numbers: number[]) {
+      numbers.sort((a, b) => a - b);
+      const count = numbers.length;
+      function rank(r: number) {
+        const maxIndex = numbers.length - 1;
+        const index = maxIndex * r;
+        if (Number.isInteger(index)) {
+          return numbers[index];
+        } else {
+          const lowIndex = Math.floor(index);
+          const highIndex = lowIndex + 1;
+          const where = index - lowIndex;
+          const result = lerp(numbers[lowIndex], numbers[highIndex], where);
+          return result;
+        }
+      }
+      if (numbers.length < 2) {
+        throw new Error("wtf");
+      }
+      const quartiles = initializedArray(5, (n) => rank(n / 4));
+      let sx = 0;
+      let sxx = 0;
+      numbers.forEach((number) => {
+        sx += number;
+        sxx += number * number;
+      });
+      const mean = sx / count;
+      const standardDeviation = Math.sqrt(
+        (sxx - count * mean * mean) / (count - 1)
+      );
+      return {
+        quartiles,
+        mean,
+        standardDeviation,
+      };
+    }
+    return {
+      lineLength: summarizeArray(
+        this.#commands.map(({ lineLength }) => lineLength)
+      ),
+      curveLength: summarizeArray(
+        this.#commands.map(({ curveLength }) => curveLength)
+      ),
+      metric: summarizeArray(
+        this.#commands.map((commandInfo) => this.metric(commandInfo))
+      ),
+      count: this.#commands.length,
+    };
+  }
+  static chordRatio(numberOfChords: number) {
+    const arcLength = FULL_CIRCLE / numberOfChords;
+    // Chord Length = 2 * radius * sin(arc length / (2 * radius))
+    const chordLength = 2 * 1 * Math.sin(arcLength / (2 * 1));
+    return arcLength / chordLength;
+  }
+}
+(window as any).ParametricToPath = ParametricToPath;

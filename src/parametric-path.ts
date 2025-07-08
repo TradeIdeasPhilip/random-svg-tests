@@ -6,7 +6,12 @@ import {
 } from "phil-lib/client-misc";
 import "./style.css";
 import "./parametric-path.css";
-import { ParametricFunction, PathShape, Point } from "./path-shape";
+import {
+  ParametricFunction,
+  ParametricToPath,
+  PathShape,
+  Point,
+} from "./path-shape";
 import { assertClass, FIGURE_SPACE, pickAny } from "phil-lib/misc";
 import { panAndZoom } from "./transforms";
 
@@ -734,6 +739,19 @@ addAnotherInput();
 
 {
   const sampleCountInput = getById("segmentCountInput", HTMLInputElement);
+  function showPathShape(pathShape: PathShape) {
+    SampleOutput.setPathShape(pathShape);
+    const pathElement = SampleOutput.pathElement();
+    const boundingBox = pathElement.getBBox();
+    console.log(boundingBox);
+    pathInfoElement.innerText = `Path length = ${pathElement.getTotalLength()}.  Bounding box = {top: ${
+      boundingBox.y
+    }, left: ${boundingBox.x}, height: ${boundingBox.height}, width: ${
+      boundingBox.width
+    }}`;
+    resultElement.innerText = pathElement.outerHTML;
+  }
+  (window as any).showPathShape = showPathShape;
   const doItNow = () => {
     ErrorBox.clear();
     const sourceText =
@@ -768,6 +786,10 @@ addAnotherInput();
     let pathShape: PathShape;
     try {
       pathShape = PathShape.parametric(f1, sampleCountInput.valueAsNumber);
+      (window as any).parametricToPath = new ParametricToPath(
+        f1,
+        sampleCountInput.valueAsNumber
+      );
     } catch (reason: unknown) {
       if (reason instanceof Error) {
         ErrorBox.displayError(reason);
@@ -776,16 +798,7 @@ addAnotherInput();
         throw reason;
       }
     }
-    SampleOutput.setPathShape(pathShape);
-    const pathElement = SampleOutput.pathElement();
-    const boundingBox = pathElement.getBBox();
-    console.log(boundingBox);
-    pathInfoElement.innerText = `Path length = ${pathElement.getTotalLength()}.  Bounding box = {top: ${
-      boundingBox.y
-    }, left: ${boundingBox.x}, height: ${boundingBox.height}, width: ${
-      boundingBox.width
-    }}`;
-    resultElement.innerText = pathElement.outerHTML;
+    showPathShape(pathShape);
   };
   let scheduled = false;
   const doItSoon = () => {
@@ -905,3 +918,13 @@ addAnotherInput();
 // * Better error handlers.
 //   Sometimes it just says "WTF"
 //   And NaN is reported as "null" in the error messages.
+
+/**
+ * Things to try on the console:
+ * parametricToPath.commands.map(command=>command.curveLength/command.lineLength)
+ * Math.max(...parametricToPath.commands.map(command=>command.curveLength/command.lineLength))
+ * parametricToPath.addOne();showPathShape(parametricToPath.pathShape);
+ * parametricToPath.summarize().metric
+ * ParametricToPath.chordRatio(8)
+ * console.table(parametricToPath.commands.map(command=>({curveLength:command.curveLength, ratio:command.curveLength/command.lineLength,metric:command.curveLength**2/command.lineLength})))
+ */

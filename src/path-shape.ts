@@ -2102,53 +2102,65 @@ type CommandInfo = {
   endT: number;
   lineLength: number;
   curveLength: number;
+  metric: number;
 };
 
 export class ParametricToPath {
   static readonly #caliper = new PathCaliper();
+  /**
+   * Invariant:
+   * * This array is sorted by the metric field, highest values at the end.
+   * * The array is never empty.
+   * * The startT and endT values of all of the elements in the array
+   * will cover the range 0 - 1 with no gaps or duplicates.
+   */
   #commands: CommandInfo[];
   constructor(readonly f: ParametricFunction, initialSegmentCount: number) {
-    this.#commands = PathShape.parametric(f, initialSegmentCount).commands.map(
-      (command, index, array): CommandInfo => ({
-        command: assertFromAngles(command),
-        startT: index / array.length,
-        endT: (index + 1) / array.length,
-        curveLength: ParametricToPath.#caliper.measure(command),
-        lineLength: Math.hypot(command.x - command.x0, command.y - command.y0),
+    initialSegmentCount = 2; // for testing and fun
+    this.#commands = PathShape.parametric(f, initialSegmentCount)
+      .commands.map((command, index, array): CommandInfo => {
+        const startT = index / array.length;
+        const endT = (index + 1) / array.length;
+        return this.#createCommandInfo(startT, endT, assertFromAngles(command));
       })
-    );
+      .sort((a, b) => a.metric - b.metric);
   }
   get commands(): readonly Readonly<CommandInfo>[] {
     return this.#commands;
   }
-  /**
-   * Based on info.curveLength, but accentuated.
-   *
-   * My first try was info.curveLength**2, but some values of curveLength are less than 1 so they actually shrank.
-   * @param info
-   * @returns Same units as info.lineLength and info.curveLength, but longer.
-   */
-  metric(info: CommandInfo) {
-    if (
-      info.command.creationInfo.source == "angles" &&
-      !info.command.creationInfo.success
-    ) {
-      return 3 * info.lineLength;
-    } else {
-      return info.curveLength ** 2 / info.lineLength;
-    }
+  #insert(newCommandInfo: CommandInfo) {
+    this.#commands.splice(
+      this.#commands.findLastIndex(
+        (commandInfo) => commandInfo.metric <= newCommandInfo.metric
+      ) + 1,
+      0,
+      newCommandInfo
+    );
+  }
+  #createCommandInfo(
+    startT: number,
+    endT: number,
+    command: QCommandFromAngles
+  ): CommandInfo {
+    const lineLength = Math.hypot(
+      command.x - command.x0,
+      command.y - command.y0
+    );
+    const curveLength = ParametricToPath.#caliper.measure(command);
+    const metric = command.creationInfo.success
+      ? curveLength ** 2 / lineLength
+      : 3 * lineLength;
+    return {
+      startT,
+      endT,
+      command,
+      lineLength,
+      curveLength,
+      metric,
+    };
   }
   addOne() {
-    let worstMetric = -Infinity;
-    let worstMetricIndex = NaN;
-    this.#commands.forEach((commandInfo, index) => {
-      const metric = this.metric(commandInfo);
-      if (metric > worstMetric) {
-        worstMetric = metric;
-        worstMetricIndex = index;
-      }
-    });
-    const toSplit = this.#commands[worstMetricIndex];
+    const toSplit = this.#commands.pop()!;
     const { startT, endT } = toSplit;
     const midpointT = (startT + endT) / 2;
     const midPoint = this.f(midpointT);
@@ -2167,6 +2179,7 @@ export class ParametricToPath {
       midPoint.y,
       midPointAngle
     );
+    this.#insert(this.#createCommandInfo(startT, midpointT, firstCommand));
     const secondCommand = QCommand.angles(
       midPoint.x,
       midPoint.y,
@@ -2175,36 +2188,18 @@ export class ParametricToPath {
       toSplit.command.y,
       toSplit.command.requestedOutgoingAngle
     );
-    const newCommands: CommandInfo[] = [
-      {
-        startT,
-        endT: midpointT,
-        command: firstCommand,
-        lineLength: Math.hypot(
-          firstCommand.x - firstCommand.x1,
-          firstCommand.y - firstCommand.y1
-        ),
-        curveLength: ParametricToPath.#caliper.measure(firstCommand),
-      },
-      {
-        startT: midpointT,
-        endT,
-        command: secondCommand,
-        lineLength: Math.hypot(
-          secondCommand.x - secondCommand.x1,
-          secondCommand.y - secondCommand.y1
-        ),
-        curveLength: ParametricToPath.#caliper.measure(secondCommand),
-      },
-    ];
-    const removed = this.#commands.splice(worstMetricIndex, 1, ...newCommands);
-    return { newCommands, removed, worstMetric, worstMetricIndex };
+    this.#insert(this.#createCommandInfo(midpointT, endT, secondCommand));
+    return { toSplit, firstCommand, secondCommand };
   }
   get segmentCount() {
     return this.#commands.length;
   }
   get pathShape() {
-    return new PathShape(this.#commands.map(({ command }) => command));
+    return new PathShape(
+      this.#commands
+        .toSorted((a, b) => a.startT - b.startT)
+        .map(({ command }) => command)
+    );
   }
   summarize() {
     function summarizeArray(numbers: number[]) {
@@ -2250,9 +2245,7 @@ export class ParametricToPath {
       curveLength: summarizeArray(
         this.#commands.map(({ curveLength }) => curveLength)
       ),
-      metric: summarizeArray(
-        this.#commands.map((commandInfo) => this.metric(commandInfo))
-      ),
+      metric: summarizeArray(this.#commands.map(({ metric }) => metric)),
       count: this.#commands.length,
     };
   }

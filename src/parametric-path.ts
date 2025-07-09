@@ -415,9 +415,31 @@ class SampleOutput {
     to.y = bBox.y;
     to.width = bBox.width;
     to.height = bBox.height;
+    // Check for just one of the numbers being 0.
+    // SVG doesn't like that and will refuse to draw anything.
+    if (to.width == 0) {
+      if (to.height != 0) {
+        to.width = to.height / 10;
+        to.x -= to.width / 2;
+      }
+    } else if (to.height == 0) {
+      to.height = to.width / 10;
+      to.y -= to.height / 2;
+    }
     const aspectRatio = bBox.width / bBox.height;
     /**
      * Arbitrary base height in pixels.
+     *
+     * This was a failed attempt at fixing an issue in Safari.
+     * By default Chrome tries to respect the aspect ratio of the content.
+     * If you specify the width or height using CSS, but let the other one float,
+     * Chrome would always fill in the other one to maintain the aspect ratio.
+     * Exactly like it does with <img> tags.
+     *
+     * However, that's broken in Safari.
+     * I get all sorts of odd sizes and shapes.
+     * Grok suggested that I specify a height and width, as another way to tell Safari what the aspect ratio should be.
+     * This didn't really work.
      */
     const intrinsicHeight = 300;
     const intrinsicWidth = intrinsicHeight * aspectRatio;
@@ -921,10 +943,61 @@ addAnotherInput();
 
 /**
  * Things to try on the console:
+ * showPathShape(parametricToPath.pathShape)
+ * parametricToPath.addOne()
+ * console.table(parametricToPath.commands)
+ * parametricToPath.addOne();showPathShape(parametricToPath.pathShape);console.table(parametricToPath.commands)
+ *
+ *
  * parametricToPath.commands.map(command=>command.curveLength/command.lineLength)
  * Math.max(...parametricToPath.commands.map(command=>command.curveLength/command.lineLength))
- * parametricToPath.addOne();showPathShape(parametricToPath.pathShape);
  * parametricToPath.summarize().metric
  * ParametricToPath.chordRatio(8)
- * console.table(parametricToPath.commands.map(command=>({curveLength:command.curveLength, ratio:command.curveLength/command.lineLength,metric:command.curveLength**2/command.lineLength})))
+ */
+
+/**
+ * The end criteria and the sort criteria must be the same!
+ * Don't worry about glitches, they will get caught by the normal machinery.
+ *
+ * The straight line distance did not capture the curve well enough.
+ * Our goal is to find places where the estimated curve does not match the desired curve very well.
+ * Straight line distance worked well for circles, but not for real shapes.
+ * Some parts of the desired curve really are shaped a lot like parabolas.
+ * The straight line missed that and caused us to break up a lot of good segments.
+ * If we break up too many good segments, if we have too many false positives, there's no value to this algorithm.
+ * Instead of the straight line, break the path into four line segments, and take the sum of their lengths.
+ *
+ * The initial sort key will be the difference between the length of the curve and the length of the 4 segments.
+ * (Absolute value?)
+ * That may need some tweaking, but that's a good start.
+ *
+ * What about problems where we fall back to a straight line segments?
+ * In that case we look at two separate issues.
+ * We can compare the bezier distance (a straight line by design)
+ * to the poly line distance, just like in normal cases.
+ *
+ * But we also have to worry about the corners.
+ * The visibility of the corner problem has nothing to do with the length of the segment.
+ * (Possibly excepting a very small segment, who's length was around the size of its width.)
+ * We could judge the size of the error by comparing the actual angle to the desired angle.
+ * We'd need a constant or something to put that angle onto the same scale as the differences
+ * in length.
+ * Each of these issues is separate and cumulative.
+ * The error associated with this segment will be the error that we compute for the length
+ * plus the error of each corner.
+ *
+ * If something is a perfect parabola segment,
+ * our test won't give it a perfect score,
+ * excepting the degenerate case of a line segment.
+ * The end points of the line segments will all be on the parabola,
+ * but we're not measuring that.
+ * In this case the bezier parabola will always be slightly longer than the segments.
+ * Reasonable errors could cause the difference to be positive, negative, or even exactly 0.
+ *
+ * One thought would be to compare the new points we looked up from the parametric function to the corresponding point on the bezier curve.
+ * That fails because I don't know exactly what point on the parabola (which I can specify in terms of distance from the end)
+ * corresponds to what point from the function (which I can specify with the t parameter).
+ *
+ * Maybe we can do something similar.
+ * Is there a formula for the distance between a point a bezier segment?
  */

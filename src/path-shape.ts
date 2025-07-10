@@ -2122,6 +2122,7 @@ type CommandInfo = {
    * The error.
    *
    * Use this to decide what needs more attention and what is acceptable.
+   * Our goal is to find places where the estimated curve does not match the desired curve very well.
    */
   metric: number;
 };
@@ -2167,6 +2168,16 @@ export class ParametricToPath {
    * - But can I really give up and not worry about a best alternative?
    * - Maybe on failure it returns undefined.
    * - If the caller wants he can ?? that into something safer like PathShape.parametric().
+   *
+   * Fix the scale & slop issues at the same time.
+   * - You can enter a diagonal size in the constructor.
+   * - Or you can give an SVGRect and we will compute the diagonal.
+   * - Or you can leave that blank, and we'll figure that out on our own.
+   * - Set the default number of initial segments to 16 or 32 or something reasonable like that.
+   * - If the diagonal was not already specified,
+   * then use the initial commands from the initial segments and get a bBox() from that.
+   * - It is not optional or changeable after that.  (And it was not required before that!)
+   * - Fixing the diagonal means we have no reason not to use the depth first search option.
    */
   #commands: CommandInfo[];
   constructor(readonly f: ParametricFunction, initialSegmentCount: number) {
@@ -2221,6 +2232,20 @@ export class ParametricToPath {
     const metric = Math.abs(polyLineLength - curveLength);
     if (!command.creationInfo.success) {
       // TODO add additional penalties for the corners.
+      /**
+       * What about problems where we fall back to a straight line segments?
+       * We also have to worry about the corners.
+       * The visibility of the corner problem has nothing to do with the length of the segment.
+       * (Possibly excepting a very small segment, who's length was around the size of its width.)
+       * We could judge the size of the error by comparing the actual angle to the desired angle.
+       * We'd need a constant or something to put that angle onto the same scale as the differences
+       * in length.
+       * Each of these issues is separate and cumulative.
+       * The error associated with this segment will be the error that we compute for the length
+       * plus the error of each corner.
+       * If two straight pieces both touch, ignore the point between them, no penalty.
+       * TODO!
+       */
     }
     return {
       startT,
@@ -2245,8 +2270,8 @@ export class ParametricToPath {
    * This will always add one more segment.
    * Consider calling `go()` instead.
    * `go()` will call this function in a loop until `done()`.
-   * This function is public only for development reasons.
-   * @returns Debug info about the change.
+   * This function is public __only for development__ reasons.
+   * @returns Debug info about the change.  Likely to change.
    */
   addOne() {
     const toSplit = this.#commands.pop()!;
@@ -2268,7 +2293,12 @@ export class ParametricToPath {
       midPoint.y,
       midPointAngle
     );
-    this.#insert(this.#createCommandInfo(startT, midpointT, firstCommand));
+    const firstCommandInfo = this.#createCommandInfo(
+      startT,
+      midpointT,
+      firstCommand
+    );
+    this.#insert(firstCommandInfo);
     const secondCommand = QCommand.angles(
       midPoint.x,
       midPoint.y,
@@ -2277,8 +2307,13 @@ export class ParametricToPath {
       toSplit.command.y,
       toSplit.command.requestedOutgoingAngle
     );
-    this.#insert(this.#createCommandInfo(midpointT, endT, secondCommand));
-    return { toSplit, firstCommand, secondCommand };
+    const secondCommandInfo = this.#createCommandInfo(
+      midpointT,
+      endT,
+      secondCommand
+    );
+    this.#insert(secondCommandInfo);
+    return { toSplit, firstCommandInfo, secondCommandInfo };
   }
   /**
    *

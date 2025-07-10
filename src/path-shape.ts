@@ -102,6 +102,11 @@ export class PathCaliper {
   getPoint(distance: number) {
     return this.#path.getPointAtLength(distance);
   }
+  /**
+   * A way of setting the `d` property.
+   * This automatically converts from other formats to a string.
+   * @param path Set `this.d` to this value.
+   */
   load(path: string | Command | PathShape) {
     if (typeof path !== "string") {
       if (!(path instanceof PathShape)) {
@@ -111,6 +116,13 @@ export class PathCaliper {
     }
     this.d = path;
   }
+  /**
+   * This is a wrapper around `this.load()` and `this.length`.
+   *
+   * This is a convenience in a lot of place where you just want a function call, not an object.
+   * @param path To be measured.
+   * @returns The length of the path.
+   */
   measure(path: string | Command | PathShape) {
     this.load(path);
     return this.length;
@@ -2169,7 +2181,7 @@ export class ParametricToPath {
    * - Maybe on failure it returns undefined.
    * - If the caller wants he can ?? that into something safer like PathShape.parametric().
    *
-   * Fix the scale & slop issues at the same time.
+   * Fix the scale & slop issues at the same time.  (Or first!)
    * - You can enter a diagonal size in the constructor.
    * - Or you can give an SVGRect and we will compute the diagonal.
    * - Or you can leave that blank, and we'll figure that out on our own.
@@ -2178,17 +2190,34 @@ export class ParametricToPath {
    * then use the initial commands from the initial segments and get a bBox() from that.
    * - It is not optional or changeable after that.  (And it was not required before that!)
    * - Fixing the diagonal means we have no reason not to use the depth first search option.
+   * - Are we worried about a glitch right before the request stage?
+   * - I.e. a really ugly picture with something sticking way out and seriously distorting the bounding box.
+   * - How about calling glitchFreeParametric() instead of parametric()?
+   * - How does that work in extremes, like the butterfly curve, with lots of straight lines?
    */
   #commands: CommandInfo[];
-  constructor(readonly f: ParametricFunction, initialSegmentCount: number) {
-    initialSegmentCount = 2; // for testing and fun. TODO remove this!!!
-    this.#commands = PathShape.parametric(f, initialSegmentCount)
-      .commands.map((command, index, array): CommandInfo => {
+  readonly #cutoff: number;
+  constructor(
+    readonly f: ParametricFunction,
+    initialSegmentCount = 16,
+    diagonal?: number | RealSvgRect
+  ) {
+    const initialPath = PathShape.parametric(f, initialSegmentCount);
+    this.#commands = initialPath.commands
+      .map((command, index, array): CommandInfo => {
         const startT = index / array.length;
         const endT = (index + 1) / array.length;
         return this.#createCommandInfo(startT, endT, assertFromAngles(command));
       })
       .sort((a, b) => a.metric - b.metric);
+    if (diagonal === undefined) {
+      ParametricToPath.#caliper.load(initialPath);
+      diagonal = ParametricToPath.#caliper.getBBox();
+    }
+    if (typeof diagonal != "number") {
+      diagonal = Math.hypot(diagonal.height, diagonal.width);
+    }
+    this.#cutoff = 0.001 * diagonal;
   }
   get commands(): readonly Readonly<CommandInfo>[] {
     return this.#commands;
@@ -2320,20 +2349,7 @@ export class ParametricToPath {
    * @returns true if the curve is good enough and requires no more work.
    */
   done() {
-    // Yuck.  this.pathShape includes sorting the list.
-    // TODO an ability for the user to specify the bBox in advance.
-    // In the Fourier examples, and probably a lot more, we know the final bBox.
-    // If not the exact bBox, the size that we reserved in the GUI,
-    // And that's probably more relevant!
-    // TODO maybe that bBox should NOT be optional.
-    // It would make my code a lot simpler if I didn't have a complete list to maintain.
-    // I'm thinking about depth first search, maybe add items to the list when I'm done with them,
-    // never before.  Never delete an item from the list.  Temp stuff is all on the stack.
-    ParametricToPath.#caliper.load(this.pathShape);
-    const bBox = ParametricToPath.#caliper.getBBox();
-    const diagonal = Math.hypot(bBox.width, bBox.height);
-    const cutoff = 0.001 * diagonal;
-    return this.commands.at(-1)!.metric < cutoff;
+    return this.commands.at(-1)!.metric < this.#cutoff;
   }
   /**
    * The main event.  Do as much process as needed then stop.

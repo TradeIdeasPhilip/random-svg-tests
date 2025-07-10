@@ -808,10 +808,7 @@ addAnotherInput();
     let pathShape: PathShape;
     try {
       pathShape = PathShape.parametric(f1, sampleCountInput.valueAsNumber);
-      (window as any).parametricToPath = new ParametricToPath(
-        f1,
-        sampleCountInput.valueAsNumber
-      );
+      (window as any).parametricToPath = new ParametricToPath(f1);
     } catch (reason: unknown) {
       if (reason instanceof Error) {
         ErrorBox.displayError(reason);
@@ -1007,4 +1004,10 @@ addAnotherInput();
  * It should be easy to get a parametric function estimating any of the standard samples with n circles.
  * This might not appear in complex-fourier-series.* support object because it was being done automatically by that page.
  * The inputs to this page might be the outputs from that page.
+ *
+ * MOVE THE DEVELOPMENT EFFORT to complex-fourier-series.ts
+ * When it starts the animation it should save a few things to global variables.
+ * I want the list of terms, and an easy way to turn them into parametric functions.
+ * And I need a way to display the result.  Maybe take over the path in the first demo.
+ * Mostly run from the console so I can examine the detailed dump().
  */

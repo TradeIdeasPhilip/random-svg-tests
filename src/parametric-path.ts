@@ -958,6 +958,7 @@ addAnotherInput();
 /**
  * The end criteria and the sort criteria must be the same!
  * Don't worry about glitches, they will get caught by the normal machinery.
+ * DONE!
  *
  * The straight line distance did not capture the curve well enough.
  * Our goal is to find places where the estimated curve does not match the desired curve very well.
@@ -966,15 +967,17 @@ addAnotherInput();
  * The straight line missed that and caused us to break up a lot of good segments.
  * If we break up too many good segments, if we have too many false positives, there's no value to this algorithm.
  * Instead of the straight line, break the path into four line segments, and take the sum of their lengths.
+ * DONE!  This works very well.
  *
  * The initial sort key will be the difference between the length of the curve and the length of the 4 segments.
- * (Absolute value?)
- * That may need some tweaking, but that's a good start.
+ * (Absolute value!)
+ * DONE!
  *
  * What about problems where we fall back to a straight line segments?
  * In that case we look at two separate issues.
  * We can compare the bezier distance (a straight line by design)
  * to the poly line distance, just like in normal cases.
+ * DONE!
  *
  * But we also have to worry about the corners.
  * The visibility of the corner problem has nothing to do with the length of the segment.
@@ -985,6 +988,8 @@ addAnotherInput();
  * Each of these issues is separate and cumulative.
  * The error associated with this segment will be the error that we compute for the length
  * plus the error of each corner.
+ * If two straight pieces both touch, ignore the point between them, no penalty.
+ * TODO!
  *
  * If something is a perfect parabola segment,
  * our test won't give it a perfect score,
@@ -993,11 +998,125 @@ addAnotherInput();
  * but we're not measuring that.
  * In this case the bezier parabola will always be slightly longer than the segments.
  * Reasonable errors could cause the difference to be positive, negative, or even exactly 0.
+ * NOT A PROBLEM.  The error quickly and exponentially rushes toward 0.
+ * It may never get there, but it gets past any reasonable cutoff very quickly.
  *
  * One thought would be to compare the new points we looked up from the parametric function to the corresponding point on the bezier curve.
  * That fails because I don't know exactly what point on the parabola (which I can specify in terms of distance from the end)
  * corresponds to what point from the function (which I can specify with the t parameter).
- *
  * Maybe we can do something similar.
  * Is there a formula for the distance between a point a bezier segment?
+ * NO.  The current solution is working well and this doesn't seem promising
+ *
+ * These are examples of the errors I saw from my new error function.
+ * abs(curve length - polyline length)
+ * The default/automatic cutoff will still give us 8 segments; it was selected to do so.
+ * Notice how quickly and continuously and exponentially the error / segment drops.
+ * Multiply that by the total number of segments for the total error, but it's still exponential improvement.
+ *
+ * Circle with radius 1, parameter 2π.
+ * 2 segments, metric =  1.0614672205021392
+ * 4 segments, metric =  0.06250394727032704
+ * 8 segments, metric =  0.0025846433585409168
+ * 16 segments, metric = 0.00019730529368222616
+ * 32 segments, metric = 0.000020999629849971502
+ * 64 segments, metric = 0.000002556277850979116
+ *
+ *
+ * We should keep the total polyLineLength and the total curveLength for each segment.
+ * NO
+ * We should total these for the entire curve to make sense of the errors.
+ * NO.  We're using the diagonal of the bBox now.
+ * What happens when one segment suddenly blows up?
+ * - It looked like a short segment before we sampled enough points.
+ * - It is actually much, much bigger, like it made a big loop between the two samples points, which were close to each other.
+ * - Of course, the error in that segment goes up by a huge amount, as it should.
+ * - And the other errors seem tiny now that we have *context*.
+ * - Unlike a glitch, one split probably won't be enough to fix this.
+ * - We are exploring a lot of new space and will want some time to explore it.
+ * - The sorting metric -- total error for this segment -- is already sufficient.
+ * - It will keep the new area at the top of the priority queue as long as needed.
+ * - What about the end condition?
+ * - We might want to compare the individual errors to the total length of the curve, as a way of scaling it, probably not, the width and heigh of the bBox would be better.
+ * - We might want to compare to total error to the total length as the exit condition.
+ * - We might want to cap the largest single error.  Even if the total error is good enough for us to pass, don't let any really bad ones through, glitches.
+ * No.
+ * - Think about the butterfly curve.  (And test it!!!)
+ * - The parameter (or diagonal) of the bBox seems like a good way to set a scale to measure these absolute errors.
+ * - A constant times the parameter gives us the maximum amount of error.
+ * - Maybe an outside parameter to tweak it, a factor defaulting to 1, multiplied by the minimum.
+ * - Keep the outside parameter saying how many to start with!
+ * - We are currently starting from 2 just to push the algorithm while I watch.
+ * Does it matter that we keep splitting the error up into smaller pieces?
+ * - Lets says we start with one segment which has an absolute error of 4.
+ * - We split that into two segments and we measure an error of 2 (or 1.999) for each one.
+ * - Then we split each of those into two segments and we measure an error of 1 (or 0.995) for each one.
+ * - So, by our metric, things are 4x better (or slightly more!)
+ * - But our total error is (more or less) unchanged
+ * - Remember that we are using the *total* error of each segment as a metric, not a ratio.
+ * - So it makes some sense to talk about the sum of all of these, not the max, as an exit criteria.
+ * - I.e. we should look at the total error for the exit condition.
+ * - And probably the largest error, too, a hybrid.
+ * But does that case really happen?
+ * - When I looked at the circle example, the total errors were reducing by a factor of 5-10 after each split.
+ * - That continues through (at least) 64 segments, when I usually stop at 8 segments.
+ * - If that trend is common, then we don't have to worry about errors accumulating, only the largest error.
+ * - And I think it will, that's why I created that metric, it's a very good model of reality.
+ * - When the algorithm discovers large new sections of the butterfly curve it will see big new errors in the metric.
+ * -
+ * The problem I'm worried about is milling around too long, splitting things up after I'm not getting much out of it.
+ * - Making way too many segments just because the improvements are slowing down.
+ * - Diminishing marginal returns as we add more segments.
+ * - This can quickly lead to an exponential blowup ending when we hit our segment hard limit.
+ * - I.e. we always hit our hard limit, so we failed.
+ * - My goal is to dynamically add more segments where they will help and only there.
+ * - Maybe we need another rule.
+ * - If we don't make any progress when we split something up,
+ * - We undo the split,
+ * - And we change the original command to have a metric of 0.
+ * - I.e. do not try to make any more improvements to this segment,
+ * - and do not hold up the result because of this segment.
+ * How does that suggestion stack up against a segment that legitimately grows a lot?
+ * - As discussed above, assume we under-sampled.
+ * - Just try it.  Butterfly curve!!!
+ * DONE.  Butterfly and many other curves tested.  More testing on the way.
+ *
+ * Is the automatic bBox calculation going to cause problems?
+ * - If I get a glitch, the bBox will grow a lot.
+ * - It might grow roughly in proportion with the spurious curveLength.
+ * - Assume the metric is accurate, something close to curveLength.
+ * - That should still cause a high enough metric to cause us to grab it.
+ * - But it won't stand out like it used it.
+ * I HAVEN'T SEEN ANY PROBLEMS, SO FAR.
+ *
+ *
+ * TODO why do I only get the command, not the command info in ParametricToPath.addOne()'s return value?
+ *
+ * Don't end on a glitch?!!?!
+ *
+ * Error just under 0.2% of the measured diagonal seems like a good cutoff.
+ * End with the worst metric gets below 0.002 * diagonal.
+ *
+ *
+ * parametricToPath.addOne();showPathShape(parametricToPath.pathShape);[parametricToPath.commands.length, parametricToPath.commands.at(-1).metric]
+ */
+
+/**
+ * TODO Add a slider input to adjust the starting point of any path.
+ * Aimed at closed paths.
+ *   Keep this at 0 for open paths.
+ * The simple ellipse already has this, but it should be done globally.
+ * Start at the input value, go to 1, then loop back to 0 and continue to the input value.
+ * The transform is linear.  Everything is rotated by the same amount.
+ */
+
+/**
+ * TODO Add a lot of items to parametric-path's support object.
+ * Maybe everything from http://localhost:5173/complex-fourier-series.html
+ * At least the polygon.
+ * And also add some stuff from fourier-shared.
+ * It should be easy for parametric-path.* to display any of the results from complex-fourier-series.*.
+ * It should be easy to get a parametric function estimating any of the standard samples with n circles.
+ * This might not appear in complex-fourier-series.* support object because it was being done automatically by that page.
+ * The inputs to this page might be the outputs from that page.
  */

@@ -2098,13 +2098,52 @@ function assertFromAngles(command: Command) {
 
 type CommandInfo = {
   command: QCommandFromAngles;
+  /**
+   * A value between 0 (inclusive) and `endT` (exclusive).
+   *
+   * `startT` is the parameter that I should apply to the function to know about the start of this path segment.
+   */
   startT: number;
+  /**
+   * A value between `startT` (exclusive) and 1 (inclusive).
+   *
+   * `startT` is the parameter that I should apply to the function to know about the start of this path segment.
+   */
   endT: number;
-  lineLength: number;
+  /**
+   * A good estimate of what the length of this curve should be.
+   */
+  polyLineLength: number;
+  /**
+   * The actual length of the curve we are displaying.
+   */
   curveLength: number;
+  /**
+   * The error.
+   *
+   * Use this to decide what needs more attention and what is acceptable.
+   */
   metric: number;
 };
 
+/**
+ * This provides a way to create a path from a parametric function.
+ * This provides the same basic functionality as PathShape.parametric()
+ * and PathShape.glitchFreeParametric().
+ *
+ * This class tries to feel out the function to automatically decide how many segments to use.
+ * And the segments do not all need to be the same size.
+ * So more detailed parts of the curve can receive a lot more segments than the boring parts of the curve.
+ *
+ * Ideally this could reduce the number of segments that we create to get similar quality.
+ * I'm currently seeing about the same number of segments as when I manually tweak PathShape.parametric().
+ * But I can't always manually tweak things, so the old way I'd probably add a lot of slack.
+ * In that case I could reduce the number of segments.
+ * ParametricToPath gives good results without the need for so much padding and guessing.
+ *
+ * This is a class, instead of a function, mostly for development.
+ * This makes it easy for me to step through and see what's going on.
+ */
 export class ParametricToPath {
   static readonly #caliper = new PathCaliper();
   /**
@@ -2113,10 +2152,25 @@ export class ParametricToPath {
    * * The array is never empty.
    * * The startT and endT values of all of the elements in the array
    * will cover the range 0 - 1 with no gaps or duplicates.
+   *
+   * TODO Do we need a sorted list?
+   * It seems like a simple depth first search would be fine.
+   * For the most part the order doesn't seem to matter.
+   * - Possible exception, when we are computing the bBox every time,
+   * - especially when we don't have enough sample points to start with.
+   * This was helpful in development, I could really see what was going on.
+   * This will need a way to dump it's state if it hits the limit and has to stop
+   * - But maybe that's only in development.
+   * - It seems like running into that hard limit is a serious error, maybe an exception, in live code.
+   * - Sometimes you want the best possible instead of failing, I guess.
+   * - I like the idea of getting rid of the sorted list and its O(n²) nonsense.
+   * - But can I really give up and not worry about a best alternative?
+   * - Maybe on failure it returns undefined.
+   * - If the caller wants he can ?? that into something safer like PathShape.parametric().
    */
   #commands: CommandInfo[];
   constructor(readonly f: ParametricFunction, initialSegmentCount: number) {
-    initialSegmentCount = 2; // for testing and fun
+    initialSegmentCount = 2; // for testing and fun. TODO remove this!!!
     this.#commands = PathShape.parametric(f, initialSegmentCount)
       .commands.map((command, index, array): CommandInfo => {
         const startT = index / array.length;
@@ -2128,6 +2182,10 @@ export class ParametricToPath {
   get commands(): readonly Readonly<CommandInfo>[] {
     return this.#commands;
   }
+  /**
+   * Maintain the order of the list.  Insert the new item into the correct position.
+   * @param newCommandInfo To insert.
+   */
   #insert(newCommandInfo: CommandInfo) {
     this.#commands.splice(
       this.#commands.findLastIndex(
@@ -2142,23 +2200,54 @@ export class ParametricToPath {
     endT: number,
     command: QCommandFromAngles
   ): CommandInfo {
-    const lineLength = Math.hypot(
-      command.x - command.x0,
-      command.y - command.y0
-    );
+    const subSegmentCount = 4;
+    let polyLineLength = 0;
+    {
+      const endPoints: Point[] = [{ x: command.x0, y: command.y0 }];
+      for (let i = 1; i < subSegmentCount; i++) {
+        const internalPosition = i / subSegmentCount;
+        const t = lerp(startT, endT, internalPosition);
+        endPoints.push(this.f(t));
+      }
+      endPoints.push({ x: command.x, y: command.y });
+      endPoints.forEach((start, index) => {
+        const end = endPoints[index + 1];
+        if (end) {
+          polyLineLength += Math.hypot(start.x - end.x, start.y - end.y);
+        }
+      });
+    }
     const curveLength = ParametricToPath.#caliper.measure(command);
-    const metric = command.creationInfo.success
-      ? curveLength ** 2 / lineLength
-      : 3 * lineLength;
+    const metric = Math.abs(polyLineLength - curveLength);
+    if (!command.creationInfo.success) {
+      // TODO add additional penalties for the corners.
+    }
     return {
       startT,
       endT,
       command,
-      lineLength,
+      polyLineLength,
       curveLength,
       metric,
     };
   }
+  /**
+   * This is a simple wrapper around `addOne()`.
+   * This is aimed at the console where you might not want to write a loop.
+   * @param count How many items to add.
+   */
+  add(count: number) {
+    for (let i = 0; i < count; i++) this.addOne();
+  }
+  /**
+   * Take the worst item segment and break it into two.
+   *
+   * This will always add one more segment.
+   * Consider calling `go()` instead.
+   * `go()` will call this function in a loop until `done()`.
+   * This function is public only for development reasons.
+   * @returns Debug info about the change.
+   */
   addOne() {
     const toSplit = this.#commands.pop()!;
     const { startT, endT } = toSplit;
@@ -2191,9 +2280,46 @@ export class ParametricToPath {
     this.#insert(this.#createCommandInfo(midpointT, endT, secondCommand));
     return { toSplit, firstCommand, secondCommand };
   }
-  get segmentCount() {
-    return this.#commands.length;
+  /**
+   *
+   * @returns true if the curve is good enough and requires no more work.
+   */
+  done() {
+    // Yuck.  this.pathShape includes sorting the list.
+    // TODO an ability for the user to specify the bBox in advance.
+    // In the Fourier examples, and probably a lot more, we know the final bBox.
+    // If not the exact bBox, the size that we reserved in the GUI,
+    // And that's probably more relevant!
+    // TODO maybe that bBox should NOT be optional.
+    // It would make my code a lot simpler if I didn't have a complete list to maintain.
+    // I'm thinking about depth first search, maybe add items to the list when I'm done with them,
+    // never before.  Never delete an item from the list.  Temp stuff is all on the stack.
+    ParametricToPath.#caliper.load(this.pathShape);
+    const bBox = ParametricToPath.#caliper.getBBox();
+    const diagonal = Math.hypot(bBox.width, bBox.height);
+    const cutoff = 0.001 * diagonal;
+    return this.commands.at(-1)!.metric < cutoff;
   }
+  /**
+   * The main event.  Do as much process as needed then stop.
+   * @param maxNewSegments This is aimed at keeping the program from running forever.
+   * The default is currently way too log.
+   * @returns the reason we stopped.  TODO remove this, it's just a noisy copy of this.done()
+   */
+  go(maxNewSegments = 50) {
+    for (let i = 0; i < maxNewSegments; i++) {
+      if (this.done()) {
+        return true;
+      }
+      this.addOne();
+    }
+    return false;
+  }
+  /**
+   * This can be slow.
+   * It's reasonably to call once, but you probably don't want to call it in a loop.
+   * And there is no caching, this will do work on every call.
+   */
   get pathShape() {
     return new PathShape(
       this.#commands
@@ -2201,6 +2327,10 @@ export class ParametricToPath {
         .map(({ command }) => command)
     );
   }
+  /**
+   * Collect and return debug info.
+   * @returns Some statics on the state of `this.#commands`.
+   */
   summarize() {
     function summarizeArray(numbers: number[]) {
       numbers.sort((a, b) => a - b);
@@ -2239,16 +2369,58 @@ export class ParametricToPath {
       };
     }
     return {
-      lineLength: summarizeArray(
-        this.#commands.map(({ lineLength }) => lineLength)
+      polyLineLength: summarizeArray(
+        this.#commands.map(({ polyLineLength }) => polyLineLength)
       ),
       curveLength: summarizeArray(
         this.#commands.map(({ curveLength }) => curveLength)
       ),
       metric: summarizeArray(this.#commands.map(({ metric }) => metric)),
+      tCoverage: summarizeArray(
+        this.#commands.map(({ startT, endT }) => endT - startT)
+      ),
+      generation: summarizeArray(
+        this.#commands.map(({ startT, endT }) => -Math.log2(endT - startT))
+      ),
       count: this.#commands.length,
     };
   }
+  /**
+   * A quick debug dump.
+   * This sends a table to the console.
+   */
+  dump() {
+    console.table(
+      this.commands.map(({ startT, endT, metric, curveLength }) => {
+        return {
+          startT,
+          tCoverage: endT - startT,
+          generation: -Math.log2(endT - startT),
+          metric,
+          curveLength,
+        };
+      })
+    );
+  }
+  /**
+   * This is a metric I sometimes use for measuring errors.
+   *
+   * I know that if I create a circle with only 4 segments it won't look good.
+   * But if I use 8, it will look good.
+   * More importantly, numbers slightly bigger than 8 don't make a big difference.
+   * I.e. I start to see diminishing marginal returns as I add more than 8 pieces.
+   * This function shows that to me.
+   *
+   * Note that the algorithm now uses a polyline with 4 segments to go with each curve segment.
+   * So you might want to multiply your input by 4 to see how well the new metric can estimate your errors.
+   *
+   * This function is not used in production.
+   * It's only used for development, usually from the console.
+   * @param numberOfChords What if I divide the circle into this many pieces?
+   * Does not have to be an integer.
+   * @returns The ratio of the arc of a circle and the chord of the same circle covering the same angle.
+   * This gives us an idea how closely a line segment can approximate a curve.
+   */
   static chordRatio(numberOfChords: number) {
     const arcLength = FULL_CIRCLE / numberOfChords;
     // Chord Length = 2 * radius * sin(arc length / (2 * radius))

@@ -34,11 +34,37 @@ const codeSamples: ReadonlyArray<{
 const height = 1;
 // Use the first slider to change the width of the ellipse.
 const width = height * support.input(0) * 2;
-// Use the second slider to change the starting point on the ellipse.
-// This doesn't matter in a static ellipse, but it can be important in some animations and other special cases.
-const angle = (t + support.input(1)) * 2 * Math.PI;
+const angle = t * 2 * Math.PI;
 const x = width * Math.cos(angle);
 const y = height * Math.sin(angle);`,
+  },
+  {
+    name: "Square",
+    code: `// Square from Polar Form
+const θ = t * Math.PI * 2;
+const r = 1/(Math.abs(Math.cos(θ) - Math.sin(θ)) + Math.abs(Math.cos(θ) + Math.sin(θ)));
+const x = r * Math.cos(θ);
+const y = r * Math.sin(θ);`,
+  },
+  {
+    name: "Cusps",
+    code: `// This pushes the limits of my graphing software.
+// This software is aimed at smooth curves.
+
+// Once around the circle.
+const θ = t * Math.PI * 2;
+
+// The first input is the number of cusps, 1-10
+const cuspCount = Math.round(support.input(0)*9.999+0.5);
+
+// Far left looks like a cloud, cusps pointing inward.
+// Far right looks like a star, cusps pointing outward.
+// Dead center is smooth, no cusps.
+const amplitude = 2 * (support.input(1) - 0.5);
+
+const r = 2 - amplitude * Math.abs(Math.sin(t * Math.PI * cuspCount));
+const x = r * Math.cos(θ);
+const y = r * Math.sin(θ);`,
   },
   {
     name: "Circle with Wavy Edge",
@@ -731,7 +757,7 @@ function addAnotherInput() {
   const index = inputValues.length;
   const initialValue = 0.5;
   const tag = `<div class="has-slider">
-      <input type="range" min="0" max="1" value="${initialValue}" step="0.00001" oninput="copyNewInput(this, ${index})" />
+      <input type="range" min="0" max="1" value="${initialValue}" step="any" oninput="copyNewInput(this, ${index})" />
       <code>support.input(${index})</code> =
       <span>${initialValue.toString().padEnd(7, "0")}</span>
     </div>`;
@@ -760,7 +786,15 @@ addAnotherInput();
 addAnotherInput();
 
 {
-  const sampleCountInput = getById("segmentCountInput", HTMLInputElement);
+  const segmentCountInput = getById("segmentCountInput", HTMLInputElement);
+  /**
+   * The far left means that `t` sweeps from 0 to 1. This is the
+   * default. Set this ¼ of the way from the left to make `t` start
+   * at 0.25, sweep toward 1, wrap around at 0, then move back to 0.25 to
+   * finish. The right end of the scale means to start from 1, which is
+   * effectively the same as starting from 0.
+   */
+  const startAtInput = getById("startAtInput", HTMLInputElement);
   function showPathShape(pathShape: PathShape) {
     SampleOutput.setPathShape(pathShape);
     const pathElement = SampleOutput.pathElement();
@@ -793,7 +827,9 @@ addAnotherInput();
         throw reason;
       }
     }
+    const startAt = startAtInput.valueAsNumber;
     const f1: ParametricFunction = (t: number) => {
+      t = (t + startAt) % 1;
       const result: Point = f(t, support);
       if (!(Number.isFinite(result.x) && Number.isFinite(result.y))) {
         throw new Error(
@@ -807,7 +843,7 @@ addAnotherInput();
 
     let pathShape: PathShape;
     try {
-      pathShape = PathShape.parametric(f1, sampleCountInput.valueAsNumber);
+      pathShape = PathShape.parametric(f1, segmentCountInput.valueAsNumber);
       (window as any).parametricToPath = new ParametricToPath(f1);
     } catch (reason: unknown) {
       if (reason instanceof Error) {
@@ -833,16 +869,26 @@ addAnotherInput();
   ClipAndMaskSupport.doItSoon = doItSoon; // This is ugly.  Need to reorganize.
   goButton.addEventListener("click", doItSoon);
 
-  const sampleCountSpan = getById("segmentCountSpan", HTMLSpanElement);
-  const updateSampleCountSpan = () => {
-    sampleCountSpan.innerText = sampleCountInput.value.padStart(
+  const segmentCountSpan = getById("segmentCountSpan", HTMLSpanElement);
+  const updateSegmentCountSpan = () => {
+    segmentCountSpan.innerText = segmentCountInput.value.padStart(
       3,
       FIGURE_SPACE
     );
   };
-  updateSampleCountSpan();
-  sampleCountInput.addEventListener("change", () => {
-    updateSampleCountSpan();
+  updateSegmentCountSpan();
+  segmentCountInput.addEventListener("input", () => {
+    updateSegmentCountSpan();
+    doItSoon();
+  });
+
+  const startAtSpan = getById("startAtSpan", HTMLSpanElement);
+  const updateStartAtSpan = () => {
+    startAtSpan.innerText = startAtInput.valueAsNumber.toFixed(5);
+  };
+  updateStartAtSpan();
+  startAtInput.addEventListener("input", () => {
+    updateStartAtSpan();
     doItSoon();
   });
 
@@ -871,9 +917,19 @@ addAnotherInput();
   }
 
   {
-    // This functionality is also available in the <select> element.
-    // But making it all visible helps the AI.
+    /**
+     * A list of all code samples.
+     * Read the entire body of each sample.
+     * Load the one of your choice with one click.
+     *
+     * This functionality is also available in the <select> element.
+     * But making it all visible helps the AI.
+     */
     const codeSamplesHolder = getById("codeSamplesHolder", HTMLDivElement);
+    /**
+     * The highest element on the page that the user might want to see as he works with a new formula.
+     * Will will scroll to this line because it's a pain to manually scroll back and forth.
+     */
     const segmentCountHolder = getById("segmentCountHolder", HTMLDivElement);
     const template = `<div>
         <div data-description>
@@ -977,34 +1033,11 @@ addAnotherInput();
  */
 
 /**
- * TODO Add a slider input to adjust the starting point of any path.
- * Aimed at closed paths.
- *   Keep this at 0 for open paths.
- * The simple ellipse already has this, but it should be done globally.
- * Start at the input value, go to 1, then loop back to 0 and continue to the input value.
- * The transform is linear.  Everything is rotated by the same amount.
- *
- */
-
-/**
  * TODO Add a radio button to switch between the traditional and new parametric path.
  * Where the former asks you how many segments to use, this will tell you how many it did use.
  */
 
 /**
- * to don't: Add a lot of items to parametric-path's support object.
- * NO.  That would require a major change to this platform.
- * We'd a one time setup like in complex-fourier-series.*.
- * I don't want to deal with that right now.
- *
- * Maybe everything from http://localhost:5173/complex-fourier-series.html
- * At least the polygon.
- * And also add some stuff from fourier-shared.
- * It should be easy for parametric-path.* to display any of the results from complex-fourier-series.*.
- * It should be easy to get a parametric function estimating any of the standard samples with n circles.
- * This might not appear in complex-fourier-series.* support object because it was being done automatically by that page.
- * The inputs to this page might be the outputs from that page.
- *
  * MOVE THE DEVELOPMENT EFFORT to complex-fourier-series.ts
  * When it starts the animation it should save a few things to global variables.
  * I want the list of terms, and an easy way to turn them into parametric functions.

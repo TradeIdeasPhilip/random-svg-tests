@@ -62,6 +62,29 @@ const y = b * Math.sin(freqY * angle);
       <option>Check console for details.</option>
     </select>
     <button id="nextSample">Next Sample</button>
+    <h2 data-hide>Offset</h2>
+    <p data-hide>
+      The far left means that <code>t</code> sweeps from 0 to 1. This is the
+      default. Set this ¼ of the way from the left to make <code>t</code> start
+      at 0.25, sweep toward 1, wrap around at 0, then move back to 0.25 to
+      finish. The right end of the scale means to start from 1, which is
+      effectively the same as starting from 0. For a closed path this setting
+      should not change the basic shape that gets stroked or filled. However,
+      the difference can be obvious in some animations and other special
+      effects.
+    </p>
+    <div class="has-slider">
+      <span> <code>t</code> starts at: </span>
+      <input
+        id="startAtInput"
+        type="range"
+        min="0"
+        max="1"
+        step="any"
+        value="0"
+      />
+      <span id="startAtSpan"></span>
+    </div>
     <h2 data-hide>Precision</h2>
     <p data-hide>
       This software will make a path approximating your function. This software

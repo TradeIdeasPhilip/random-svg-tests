@@ -226,6 +226,31 @@ function f(t) {
 }`,
   },
   {
+    name: "Cusps",
+    code: `// This pushes the limits of my graphing software.
+// This software is aimed at smooth curves.
+
+// The first input is the number of cusps, 1-10
+const cuspCount = Math.round(support.input(0)*9.999+0.5);
+
+// Second input:  
+//   Far left looks like a cloud, cusps pointing inward.
+//   Far right looks like a star, cusps pointing outward.
+//   Dead center is smooth, no cusps.
+const amplitude = 2 * (support.input(1) - 0.5);
+
+
+function f(t) {
+  // Once around the circle.
+  const θ = t * Math.PI * 2;
+
+  const r = 2 - amplitude * Math.abs(Math.sin(t * Math.PI * cuspCount));
+  const x = r * Math.cos(θ);
+  const y = r * Math.sin(θ);
+  return { x, y };
+}`,
+  },
+  {
     name: "SVG Path",
     code: `// Also consider support.samples.hilbert[0] ... support.samples.hilbert[3]
 //   and support.samples.peanocurve[0] ... support.samples.peanocurve[2] 

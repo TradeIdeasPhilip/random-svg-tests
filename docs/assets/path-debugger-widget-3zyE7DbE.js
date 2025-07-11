@@ -1,4 +1,4 @@
-import{m as g}from"./misc-BHUyxQfl.js";import{P as F,Q as H}from"./path-shape-D-vLKZJh.js";import{c as Q}from"./client-misc-B8CxQsfg.js";function _(d){const L=document.createElement("div");L.innerHTML=`
+import{m as g}from"./misc-BHUyxQfl.js";import{P as F,Q as H}from"./path-shape-6jRnKkU7.js";import{c as Q}from"./client-misc-B8CxQsfg.js";function _(d){const L=document.createElement("div");L.innerHTML=`
       <div class="pathDebugger">
         <svg
           xmlns="http://www.w3.org/2000/svg"

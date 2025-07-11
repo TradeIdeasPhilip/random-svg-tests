@@ -1054,7 +1054,7 @@ export class PathBuilder {
     if (numberOfSegments <= 0) {
       throw new Error("wtf");
     }
-    const ε = 0.01 / numberOfSegments;
+    const ε = 0.0001 / numberOfSegments;
     const samples = initializedArray(numberOfSegments + 1, (index) => {
       const t = index / numberOfSegments;
       const point = f(t);
@@ -2168,9 +2168,7 @@ export class ParametricToPath {
    *
    * TODO Do we need a sorted list?
    * It seems like a simple depth first search would be fine.
-   * For the most part the order doesn't seem to matter.
-   * - Possible exception, when we are computing the bBox every time,
-   * - especially when we don't have enough sample points to start with.
+   * The order doesn't seem to matter.
    * This was helpful in development, I could really see what was going on.
    * This will need a way to dump it's state if it hits the limit and has to stop
    * - But maybe that's only in development.
@@ -2181,18 +2179,11 @@ export class ParametricToPath {
    * - Maybe on failure it returns undefined.
    * - If the caller wants he can ?? that into something safer like PathShape.parametric().
    *
-   * Fix the scale & slop issues at the same time.  (Or first!)
-   * - You can enter a diagonal size in the constructor.
-   * - Or you can give an SVGRect and we will compute the diagonal.
-   * - Or you can leave that blank, and we'll figure that out on our own.
-   * - Set the default number of initial segments to 16 or 32 or something reasonable like that.
-   * - If the diagonal was not already specified,
-   * then use the initial commands from the initial segments and get a bBox() from that.
-   * - It is not optional or changeable after that.  (And it was not required before that!)
-   * - Fixing the diagonal means we have no reason not to use the depth first search option.
+   * TODO
    * - Are we worried about a glitch right before the request stage?
    * - I.e. a really ugly picture with something sticking way out and seriously distorting the bounding box.
    * - How about calling glitchFreeParametric() instead of parametric()?
+   * - Need to make a small change to that so it exports the t values for each command.
    * - How does that work in extremes, like the butterfly curve, with lots of straight lines?
    */
   #commands: CommandInfo[];
@@ -2312,7 +2303,7 @@ export class ParametricToPath {
     // This is consistent with PathBuilder.addParametricPath.
     // As the segments are broken into smaller pieces,
     // ε scales linearly with them.
-    const ε = 0.01 * (midpointT - startT);
+    const ε = 0.0001 * (midpointT - startT);
     const midPointAngle = getDirection(this.f, midpointT, ε);
     const firstCommand = QCommand.angles(
       toSplit.command.x0,
@@ -2355,16 +2346,11 @@ export class ParametricToPath {
    * The main event.  Do as much process as needed then stop.
    * @param maxNewSegments This is aimed at keeping the program from running forever.
    * The default is currently way too log.
-   * @returns the reason we stopped.  TODO remove this, it's just a noisy copy of this.done()
    */
-  go(maxNewSegments = 50) {
-    for (let i = 0; i < maxNewSegments; i++) {
-      if (this.done()) {
-        return true;
-      }
+  go(maxNewSegments = 50): void {
+    for (let i = 0; i < maxNewSegments && !this.done(); i++) {
       this.addOne();
     }
-    return false;
   }
   /**
    * This can be slow.

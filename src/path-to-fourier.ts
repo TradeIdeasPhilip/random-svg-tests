@@ -11,7 +11,7 @@ import {
 import { samples } from "./fourier-samples";
 import "./path-to-fourier.css";
 import { panAndZoom } from "./transforms";
-import { PathShape } from "./path-shape";
+import { ParametricToPath, PathShape } from "./path-shape";
 import { FIGURE_SPACE, makeBoundedLinear, makeLinear } from "phil-lib/misc";
 import { ease } from "./utility";
 import { HandwritingEffect } from "./handwriting-effect";
@@ -84,6 +84,15 @@ function initialize(options: Options) {
   samplesPath.setAttribute("d", samplesPathD);
   // Create terms
   const terms = samplesToFourier(samples);
+  (window as any).debugPath = (termCount: number) => {
+    const parametricFunction = termsToParametricFunction(terms, termCount);
+    const parametricToPath = new ParametricToPath(parametricFunction);
+    parametricToPath.go(5000);
+    parametricToPath.dump();
+    console.log(parametricToPath)
+    referencePath.setAttribute("d", parametricToPath.pathShape.rawPath);
+  };
+  console.log("Try debugPath(2);");
   const script = groupTerms({
     addTime: 4800,
     pauseTime: 200,

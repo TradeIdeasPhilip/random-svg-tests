@@ -1043,4 +1043,7 @@ addAnotherInput();
  * I want the list of terms, and an easy way to turn them into parametric functions.
  * And I need a way to display the result.  Maybe take over the path in the first demo.
  * Mostly run from the console so I can examine the detailed dump().
+ *
+ * Notice the test code for ParametricToPath in path-to-fourier.ts.
+ * Add something similar to complex-fourier-series.ts.
  */

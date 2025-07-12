@@ -1668,28 +1668,6 @@ export class PathShape {
       .join(" ");
   }
   /**
-   * Like css path, but broken each time the pen is lifted.
-   * Each string in the result is a valid path where all of the parts are connected.
-   *
-   * @deprecated This was aimed at a very specific case involving rough.js.
-   * If you need it you can create something similar yourself.
-   * TODO remove this.
-   */
-  get cssPaths(): string[] {
-    return this.splitOnMove().map((shape) => shape.cssPath);
-  }
-  /**
-   * Like raw path, but broken each time the pen is lifted.
-   * Each string in the result is a valid path where all of the parts are connected.
-   *
-   * @deprecated This was aimed at a very specific case involving rough.js.
-   * If you need it you can create something similar yourself.
-   * TODO remove this.
-   */
-  get rawPaths(): string[] {
-    return this.splitOnMove().map((shape) => shape.rawPath);
-  }
-  /**
    * Split this PathShape into smaller PathShapes.
    * Break it on the move (M) commands, so each of the
    * new shapes can be use independently.

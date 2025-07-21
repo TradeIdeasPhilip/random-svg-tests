@@ -1,0 +1,1141 @@
+import { AnimationLoop, getById, selectorQuery } from "phil-lib/client-misc";
+import {
+  groupTerms,
+  hasFixedContribution,
+  makePolygon,
+  recenter,
+  samplesFromPath,
+  samplesToFourier,
+  termsToParametricFunction,
+} from "./fourier-shared";
+import { samples } from "./fourier-samples";
+import "./fourier-smackdown.css";
+import { panAndZoom } from "./transforms";
+import { ParametricToPath, PathShape } from "./path-shape";
+import {
+  assertNonNullable,
+  FIGURE_SPACE,
+  initializedArray,
+  makeBoundedLinear,
+  makeLinear,
+  positiveModulo,
+} from "phil-lib/misc";
+import { ease } from "./utility";
+import { HandwritingEffect } from "./handwriting-effect";
+import { TextLayout } from "./letters-more";
+
+/**
+ * Color Scheme:
+ * white background several pastel colors
+ * https://www.google.com/search?q=color%20palette%20white%20background%20several%20pastel%20colors&udm=2&tbs=rimg:CYC4ZCE2OfVIYW_1YzAeBy7uVsgIAwAIA2AIA4AIA&hl=en&sa=X&ved=0CBsQuIIBahcKEwiApIrqxseOAxUAAAAAHQAAAAAQBw&biw=1440&bih=812&dpr=2
+ * 
+ * According to Grok:
+ * Pastel colors in CSS are defined by:High lightness (60%–90% in HSL),
+ * Low to moderate saturation (20%–50% in HSL),
+ * Any hue, depending on the desired color (pink, blue, green, etc.).
+ * Examples:
+ * * Pastel Pink: hsl(330, 50%, 85%) or #F5B7D0 (rgb(245, 183, 208))
+ * * Pastel Blue: hsl(200, 40%, 80%) or #A3D5F2 (rgb(163, 213, 242))
+ * * Pastel Green: hsl(160, 35%, 85%) or #C1EAD9 (rgb(193, 234, 217))
+ * * Pastel Yellow: hsl(60, 40%, 85%) or #F5E8B7 (rgb(245, 232, 183))
+ * 
+ * The goal is a calming experience.
+ */
+
+
+const numberOfFourierSamples = 1024;
+
+const scaleG = getById("scaled", SVGGElement);
+const referencePath = getById("reference", SVGPathElement);
+const samplesPath = getById("samples", SVGPathElement);
+
+type Options = {
+  pathString: string;
+  maxGroupsToDisplay: number;
+  topText?: string;
+  bottomText?: string;
+};
+
+// TODO add in y1 and y2, rather than just assuming they are 0 and 1.
+function makeEasing(x1: number, x2: number) {
+  if (x1 >= x2) {
+    throw new Error("wtf");
+  }
+  const inputMap = makeLinear(x1, 0, x2, 1);
+  function customEasing(t: number) {
+    if (t <= x1) {
+      return 0;
+    } else if (t >= x2) {
+      return 1;
+    }
+    const input = inputMap(t);
+    const eased = ease(input);
+    return eased;
+  }
+  return customEasing;
+}
+
+let scriptEndTime = NaN;
+
+let showFrame = (timeInMs: number): void => {
+  timeInMs;
+  console.error("not ready yet");
+};
+
+(window as any).showFrame = (frameNumber: number) => {
+  const timeInMs = (frameNumber / 60) * 1000;
+  showFrame(timeInMs);
+};
+
+function initialize(options: Options) {
+  // Reference path.
+  referencePath.setAttribute("d", options.pathString);
+  const transform = panAndZoom(
+    referencePath.getBBox(),
+    //mainSvg.viewBox.baseVal,
+    { x: 1, y: 1, width: 14, height: 7 },
+    "srcRect fits completely into destRect",
+    1
+  );
+  const scale = transform.a;
+  scaleG.style.transform = transform.toString();
+  scaleG.style.setProperty("--path-scale", scale.toString());
+  // Take the samples.
+  const samples = samplesFromPath(options.pathString, numberOfFourierSamples);
+  // Show where were the samples taken.
+  let samplesPathD = "";
+  samples.forEach(([x, y]) => {
+    samplesPathD += `M${x},${y}l0,0`;
+  });
+  samplesPath.setAttribute("d", samplesPathD);
+  // Create terms
+  const terms = samplesToFourier(samples);
+  (window as any).debugPath = (termCount: number) => {
+    const parametricFunction = termsToParametricFunction(terms, termCount);
+    const parametricToPath = new ParametricToPath(parametricFunction);
+    parametricToPath.go(5000);
+    parametricToPath.dump();
+    console.log(parametricToPath);
+    referencePath.setAttribute("d", parametricToPath.pathShape.rawPath);
+  };
+  console.log("Try debugPath(2);");
+  const script = groupTerms({
+    addTime: 4800,
+    pauseTime: 200,
+    maxGroupsToDisplay: options.maxGroupsToDisplay,
+    terms,
+  });
+  scriptEndTime = script.at(-1)!.endTime;
+  const getMaxFrequency = (numberOfTerms: number) => {
+    const maxFrequency = Math.max(
+      ...terms.slice(0, numberOfTerms).map((term) => Math.abs(term.frequency))
+    );
+    return maxFrequency;
+  };
+  const recommendedNumberOfSegments = (numberOfTerms: number) => {
+    const maxFrequency = getMaxFrequency(numberOfTerms);
+    return 8 * maxFrequency + 7;
+  };
+  const timeToPath: ((time: number) => string)[] = script.map((scriptEntry) => {
+    if (scriptEntry.addingCircles == 0) {
+      const parametricFunction = termsToParametricFunction(
+        terms,
+        scriptEntry.usingCircles
+      );
+      const numberOfDisplaySegments = recommendedNumberOfSegments(
+        scriptEntry.usingCircles
+      );
+      const path = PathShape.glitchFreeParametric(
+        parametricFunction,
+        numberOfDisplaySegments
+      );
+      return () => path.rawPath;
+    } else if (
+      scriptEntry.usingCircles == 0 &&
+      scriptEntry.addingCircles == 1 &&
+      terms[0].frequency == 0
+    ) {
+      /**
+       * Special case:  A dot is moving.
+       *    Going from 0 terms to 1 term with frequency = zero.
+       *    Don't even think about the animation that we do in other places.
+       *    This script is completely unique.
+       *    Draw a single line for the path.
+       *    Both ends start at the first point.
+       *    Use makeEasing() to move the points smoothly.
+       */
+      const { startTime, endTime } = scriptEntry;
+      const duration = endTime - startTime;
+      const getLeadingProgress = makeEasing(
+        startTime,
+        startTime + duration / 2
+      );
+      const getTrailingProgress = makeEasing(startTime, endTime);
+      const goal = hasFixedContribution(terms[0])!;
+      /**
+       * @param t A value between 0 and 1.
+       * @returns The coordinates as a string.
+       */
+      function location(t: number) {
+        return `${goal.x * t},${goal.y * t}`;
+      }
+      return (t: number) => {
+        const trailingProgress = getTrailingProgress(t);
+        const from = location(trailingProgress);
+        const leadingProgress = getLeadingProgress(t);
+        const to = location(leadingProgress);
+        const pathString = `M ${from} L ${to}`;
+        // console.log({ t, trailingProgress, leadingProgress, pathString });
+        return pathString;
+      };
+    } else {
+      const maxFrequency = getMaxFrequency(
+        scriptEntry.usingCircles + scriptEntry.addingCircles
+      );
+      const r = 0.2 / maxFrequency;
+      /**
+       * This creates a function which takes a time in milliseconds,
+       * 0 at the beginning of the script.
+       * The output is scaled to the range 0 - 1,
+       * for use with PathShape.parametric().
+       * The output might be outside of that range.
+       * I.e. the input and output are both numbers but they are interpreted on different scales.
+       */
+      const timeToCenter = makeBoundedLinear(
+        scriptEntry.startTime,
+        -r,
+        scriptEntry.endTime,
+        1 + r
+      );
+      const usingFunction = termsToParametricFunction(
+        terms,
+        scriptEntry.usingCircles
+      );
+      const addingFunction = termsToParametricFunction(
+        terms,
+        scriptEntry.addingCircles,
+        scriptEntry.usingCircles
+      );
+      let numberOfDisplaySegments = recommendedNumberOfSegments(
+        scriptEntry.usingCircles + scriptEntry.addingCircles
+      );
+      if (
+        scriptEntry.usingCircles == 0 ||
+        (scriptEntry.usingCircles == 1 && hasFixedContribution(terms[0]))
+      ) {
+        // We are converting from a dot to something else.
+        const startingPoint = hasFixedContribution(terms[0]) ?? { x: 0, y: 0 };
+        return (timeInMs: number): string => {
+          const centerOfChange = timeToCenter(timeInMs);
+          const startOfChange = centerOfChange - r;
+          const endOfChange = centerOfChange + r;
+          const getFraction = makeEasing(startOfChange, endOfChange);
+          /**
+           * 0 to `safePartEnds`, inclusive are safe inputs to `parametricFunction()`.
+           */
+          const safePartEnds = Math.min(1, endOfChange);
+          if (safePartEnds <= 0) {
+            // There is no safe part!
+            return `$M${startingPoint.x},${startingPoint.y} L${startingPoint.x},${startingPoint.y}`;
+          } else {
+            const frugalSegmentCount = Math.ceil(
+              // TODO that 150 is crude.  The transition might require
+              // more detail than the before or the after.
+              // Or it might require less, not that we are glitch-free.
+              Math.max(numberOfDisplaySegments, 150) * safePartEnds
+            );
+            function parametricFunction(t: number) {
+              t = t * safePartEnds;
+              const base = usingFunction(t);
+              const fraction = 1 - getFraction(t);
+              if (fraction == 0) {
+                return base;
+              } else {
+                const adding = addingFunction(t);
+                return {
+                  x: base.x + fraction * adding.x,
+                  y: base.y + fraction * adding.y,
+                };
+              }
+            }
+            const path = PathShape.glitchFreeParametric(
+              parametricFunction,
+              frugalSegmentCount
+            );
+            return path.rawPath;
+          }
+        };
+      } else {
+        // Common case:  Converting from one normal shape into another.
+        return (timeInMs: number): string => {
+          const centerOfChange = timeToCenter(timeInMs);
+          const getFraction = makeEasing(
+            centerOfChange - r,
+            centerOfChange + r
+          );
+          function parametricFunction(t: number) {
+            const base = usingFunction(t);
+            const fraction = 1 - getFraction(t);
+            if (fraction == 0) {
+              return base;
+            } else {
+              const adding = addingFunction(t);
+              return {
+                x: base.x + fraction * adding.x,
+                y: base.y + fraction * adding.y,
+              };
+            }
+          }
+          const path = PathShape.glitchFreeParametric(
+            parametricFunction,
+            numberOfDisplaySegments
+          );
+          return path.rawPath;
+        };
+      }
+    }
+  });
+  const amplitudeHelper = new Intl.NumberFormat("en-US", {
+    minimumSignificantDigits: 5,
+    maximumSignificantDigits: 5,
+    useGrouping: false,
+  }).format;
+  const formatAmplitude = (value: number): string => {
+    if (value < 0) {
+      // I saw this once.
+      // Something should have been zero but through round-off error became negative.
+      // It caused problems downstream.
+      value = 0;
+    }
+    let result = amplitudeHelper(value);
+    const [, beforeDecimalPoint, afterDecimalPoint] =
+      /^([0-9]+)\.([0-9]+)$/.exec(result)!;
+    switch (beforeDecimalPoint.length) {
+      case 3: {
+        // Already perfect.  E.g. 100.00
+        break;
+      }
+      case 2: {
+        // E.g. 10.000
+        result = FIGURE_SPACE + result;
+        break;
+      }
+      case 1: {
+        // E.g. 1.0000
+        result = FIGURE_SPACE + FIGURE_SPACE + result;
+        break;
+      }
+      default: {
+        console.warn({ beforeDecimalPoint, afterDecimalPoint, result });
+        throw new Error("wtf");
+      }
+    }
+    return result + "%";
+  };
+  /**
+   * Cached.
+   *
+   * So I don't have to think about the performance of formatAmplitude()
+   */
+  const formatted = script.map((scriptEntry) => ({
+    usingAmplitude: formatAmplitude(scriptEntry.usingAmplitude),
+    addingAmplitude: formatAmplitude(scriptEntry.addingAmplitude),
+    availableAmplitude: formatAmplitude(scriptEntry.availableAmplitude),
+  }));
+  const usingCirclesElement = selectorQuery(
+    "[data-using] [data-circles]",
+    HTMLTableCellElement
+  );
+  const usingAmplitudeElement = selectorQuery(
+    "[data-using] [data-amplitude]",
+    HTMLTableCellElement
+  );
+  const addingCirclesElement = selectorQuery(
+    "[data-adding] [data-circles]",
+    HTMLTableCellElement
+  );
+  const addingAmplitudeElement = selectorQuery(
+    "[data-adding] [data-amplitude]",
+    HTMLTableCellElement
+  );
+  const availableCirclesElement = selectorQuery(
+    "[data-available] [data-circles]",
+    HTMLTableCellElement
+  );
+  const availableAmplitudeElement = selectorQuery(
+    "[data-available] [data-amplitude]",
+    HTMLTableCellElement
+  );
+  function initializeHandwriting(parent: SVGGElement, text: string) {
+    const handwriting = new HandwritingEffect(parent);
+    const textLayout = new TextLayout(0.5);
+    textLayout.leftMargin = 0;
+    textLayout.rightMargin = 16;
+    textLayout.CRLF();
+    const layoutInfo = textLayout.addText(text);
+    layoutInfo.forEach((letter) => {
+      handwriting.add({
+        baseline: letter.baseline,
+        x: letter.x,
+        shape: letter.description.shape,
+      });
+    });
+    const strokeWidth = textLayout.font.get("0")!.fontMetrics.strokeWidth;
+    parent.style.strokeWidth = strokeWidth.toString();
+    handwriting.setProgress(0);
+    return handwriting;
+  }
+  const topHandwriting = initializeHandwriting(
+    getById("topText", SVGGElement),
+    options.topText ?? ""
+  );
+  const bottomHandwriting = initializeHandwriting(
+    getById("bottomText", SVGGElement),
+    options.bottomText ?? ""
+  );
+  showFrame = (timeInMs: number) => {
+    topHandwriting.setProgressLength(((timeInMs - 750) / 1000) * 3);
+    bottomHandwriting.setProgressLength(((timeInMs - 5000) / 1000) * 3);
+    // Which section of the script applies at this time?
+    function getIndex() {
+      // Should this be a binary search?
+      /**
+       * The first script item that hasn't ended yet.
+       */
+      const index = script.findIndex(({ endTime }) => timeInMs < endTime);
+      if (index == -1) {
+        // Past the end.  Use the last script item.
+        return script.length - 1;
+      } else {
+        return index;
+      }
+    }
+    const index = getIndex();
+
+    // Update the table
+    const formatCircleCount = (value: number) =>
+      `${value.toString().padStart(4, FIGURE_SPACE)}`;
+    const scriptEntry = script[index];
+    usingCirclesElement.innerText = formatCircleCount(scriptEntry.usingCircles);
+    addingCirclesElement.innerText = formatCircleCount(
+      scriptEntry.addingCircles
+    );
+    availableCirclesElement.innerText = formatCircleCount(
+      scriptEntry.availableCircles
+    );
+    [
+      {
+        value: scriptEntry.usingCircles,
+        element1: usingCirclesElement,
+        element2: usingAmplitudeElement,
+      },
+      {
+        value: scriptEntry.addingCircles,
+        element1: addingCirclesElement,
+        element2: addingAmplitudeElement,
+      },
+      {
+        value: scriptEntry.availableCircles,
+        element1: availableCirclesElement,
+        element2: availableAmplitudeElement,
+      },
+    ].forEach(({ value, element1, element2 }) => {
+      const opacity = value == 0 ? "0.5" : "";
+      element1.style.opacity = opacity;
+      element2.style.opacity = opacity;
+    });
+    const f = formatted[index];
+    usingAmplitudeElement.innerText = f.usingAmplitude;
+    addingAmplitudeElement.innerText = f.addingAmplitude;
+    availableAmplitudeElement.innerText = f.availableAmplitude;
+
+    // Draw the path
+    const pathString = PathShape.cssifyPath(timeToPath[index](timeInMs));
+    scaleG.style.setProperty("--d", pathString);
+  };
+}
+
+const scripts = new Map<string, Options>([
+  [
+    "likeShareAndSubscribe",
+    {
+      maxGroupsToDisplay: 30,
+      pathString: samples.likeShareAndSubscribe,
+      topText: "Cursive Writing",
+      bottomText: "Hershey Fonts",
+    },
+  ],
+  [
+    "hilbert0",
+    {
+      maxGroupsToDisplay: 9,
+      pathString: samples.hilbert[0],
+      topText: "Hilbert, First Order",
+      bottomText: "Wikipedia",
+    },
+  ],
+  [
+    "hilbert1",
+    {
+      maxGroupsToDisplay: 20,
+      pathString: recenter(samples.hilbert[1]).rawPath,
+      topText: "Hilbert, Second Order",
+      bottomText: "Wikipedia",
+    },
+  ],
+  [
+    "hilbert4",
+    {
+      maxGroupsToDisplay: 30,
+      pathString: recenter(samples.hilbert[4]).rawPath,
+      topText: "Hilbert, Fifth Order",
+      bottomText: "Wikipedia",
+    },
+  ],
+  [
+    "p0",
+    {
+      maxGroupsToDisplay: 7,
+      pathString: recenter(samples.peanocurve[0]).rawPath,
+      topText: "Peano Curve #0",
+      bottomText: "Wikipedia",
+    },
+  ],
+  [
+    "p1",
+    {
+      maxGroupsToDisplay: 10,
+      pathString: recenter(samples.peanocurve[1]).rawPath,
+      topText: "Peano Curve #1",
+      bottomText: "Wikipedia",
+    },
+  ],
+  [
+    "p2",
+    {
+      maxGroupsToDisplay: 20,
+      pathString: recenter(samples.peanocurve[2]).rawPath,
+      topText: "Peano Curve #2",
+      bottomText: "Wikipedia",
+    },
+  ],
+  [
+    "square",
+    {
+      maxGroupsToDisplay: 7,
+      pathString: "M-0.5,-0.667 h 1 v 1 h -1 z",
+    },
+  ],
+  [
+    "ellipse",
+    {
+      maxGroupsToDisplay: 7,
+      pathString: "M1,0 A1,1.25 0 1 1 -1,0 A1,1.25 0 1 1 1,0 z",
+    },
+  ],
+  [
+    "star7",
+    {
+      maxGroupsToDisplay: 8,
+      pathString: makePolygon(7, 2, "My seed 2025a").rawPath,
+      topText: "Random 7 Pointed Star",
+      bottomText: 'makePolygon(7,2, "My seed 2025a")',
+    },
+  ],
+  [
+    "Daphne_Oram_1",
+    {
+      maxGroupsToDisplay: 17,
+      pathString: recenter(samples.daphneOram1).rawPath,
+      topText: "Daphne Oram #1",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "Daphne_Oram_2",
+    {
+      maxGroupsToDisplay: 22,
+      pathString: recenter(samples.daphneOram2, 0.025, 0.71).rawPath,
+      topText: "Daphne Oram #2",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "water_opossum",
+    {
+      maxGroupsToDisplay: 9,
+      pathString: samples.waterOpossum,
+      topText: "Water Opossum",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "cat",
+    {
+      maxGroupsToDisplay: 9,
+      pathString: recenter(samples.cat).rawPath,
+      topText: "Cat",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "airplane",
+    {
+      maxGroupsToDisplay: 15,
+      pathString: recenter(samples.airplane, 0.3, 0.7).rawPath,
+      topText: "Airplane",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "head_facing_right",
+    {
+      maxGroupsToDisplay: 12,
+      pathString: recenter(samples.headFacingRight).rawPath,
+      topText: "Head Facing Right",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "Lavater",
+    {
+      maxGroupsToDisplay: 8,
+      pathString: recenter(samples.lavater).rawPath,
+      topText: "Johann Kaspar Lavaters",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "man_walking",
+    {
+      maxGroupsToDisplay: 16,
+      pathString: recenter(samples.manWalking).rawPath,
+      bottomText: "Wikimedia Commons",
+      topText: "Man Walking",
+    },
+  ],
+  [
+    "bear",
+    {
+      maxGroupsToDisplay: 16,
+      pathString: recenter(samples.bear).rawPath,
+      topText: "Bear",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "head_facing_left",
+    {
+      maxGroupsToDisplay: 13,
+      pathString: recenter(samples.headFacingLeft).rawPath,
+      topText: "Head Facing Left",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "kiwi",
+    {
+      maxGroupsToDisplay: 17,
+      pathString: recenter(samples.kiwi, 1, 0.85).rawPath,
+      topText: "Kiwi",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "hand",
+    {
+      maxGroupsToDisplay: 15,
+      pathString: recenter(samples.hand, 0.8, 0.2).rawPath,
+      topText: "Hand",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "carpe",
+    {
+      maxGroupsToDisplay: 16,
+      pathString: recenter(samples.carpe).rawPath,
+      topText: "Carpe",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "pigeon",
+    {
+      // I can't get this one to work.  😠
+      maxGroupsToDisplay: 19,
+      pathString: samples.pigeon,
+      topText: "Pigeon",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "smallAirplane",
+    {
+      maxGroupsToDisplay: 16,
+      pathString: recenter(samples.smallAirplane, 0.8, 0.7).rawPath,
+      topText: "Robin DR400",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "hawk",
+    {
+      maxGroupsToDisplay: 8,
+      pathString: recenter(samples.hawk).rawPath,
+      topText: "Hawk",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "songBird",
+    {
+      maxGroupsToDisplay: 7,
+      pathString: recenter(samples.songBird).rawPath,
+      topText: "Song Bird",
+      bottomText: "Wikimedia Commons",
+    },
+  ],
+  [
+    "etchASketch",
+    {
+      maxGroupsToDisplay: 21,
+      pathString: recenter(samples.etchASketch, 0.9, 0).rawPath,
+      topText: "Skyline",
+      bottomText: "MacGameStore",
+    },
+  ],
+]);
+
+{
+  const requested = new URLSearchParams(window.location.search).get(
+    "script_name"
+  );
+  if (requested) {
+    const script = scripts.get(requested);
+    if (!script) {
+      console.log(`invalid script name: ${requested}`, scripts);
+      throw new Error("wtf");
+    }
+    initialize(script);
+  } else {
+    initialize(scripts.get("hand")!);
+    //initialize({maxGroupsToDisplay:10, pathString:makePolygon(7,2, "My seed 2025a").rawPath});
+  }
+}
+
+let animationLoop: AnimationLoop;
+
+// Without this setTimeout() the animation would
+// skip a lot of time in the beginning.  A lot of the setup time
+// would happen right after the first frame and after our clock
+// starts.
+setTimeout(() => {
+  let timeOffset = NaN;
+  animationLoop = new AnimationLoop((now) => {
+    if (isNaN(timeOffset)) {
+      timeOffset = now;
+    }
+    const time = now - timeOffset;
+    showFrame(time);
+  });
+  (window as any).animationLoop = animationLoop;
+}, 1);
+
+function initScreenCapture(script: unknown) {
+  document
+    .querySelectorAll("[data-hideBeforeScreenshot]")
+    .forEach((element) => {
+      if (!(element instanceof SVGElement || element instanceof HTMLElement)) {
+        throw new Error("wtf");
+      }
+      element.style.display = "none";
+    });
+  animationLoop.cancel();
+  return {
+    source: "path-to-fourier.ts",
+    script,
+    firstFrame: 0,
+    lastFrame: Math.floor((scriptEndTime / 1000) * 60),
+  };
+}
+
+(window as any).initScreenCapture = initScreenCapture;
+
+/**
+ * A pair of vertices.
+ * The order doesn't matter.
+ */
+class Edge {
+  constructor(readonly vertex1: number, readonly vertex2: number) {}
+  has(vertex: number) {
+    return vertex == this.vertex1 || vertex == this.vertex2;
+  }
+  other(vertex: number) {
+    if (this.vertex1 == vertex) {
+      return this.vertex2;
+    }
+    if (this.vertex2 == vertex) {
+      return this.vertex1;
+    }
+    return undefined;
+  }
+}
+
+/**
+ * Look up a value in an array.
+ * 
+ * If the array is empty, throw an Error.
+ * Otherwise this always returns an element from the array.
+ * 
+ * If the index is in range, this is the same as array[index].
+ * -1 refers to the last valid index, as in array.at().
+ * However, this function goes even further.
+ * It's like the array's contents are repeated over and over forever in both directions.
+ * @param array Look in here.
+ * @param index At this index.
+ * @returns The value in that place.
+ * @throws If the array is empty, throw an error.
+ */
+function getMod<T>(array: readonly T[], index: number): T {
+  if (array.length == 0) {
+    throw new Error("empty array");
+  }
+  index = positiveModulo(index, array.length);
+  return array[index];
+}
+
+/**
+ * A read only array of vertex numbers.
+ * 
+ * The vertices are numbered 0 through n-1.
+ * 
+ * These are usually stored in a canonical form.
+ * This help reduce the number of uninteresting variations we get.
+ * Start from vertex 0.
+ * It's a loop, it doesn't matter where we start.
+ * Then immediately move to vertex 2.
+ * (We are assuming that there is an edge between those two, which works with my current examples.)
+ * So we don't consider the same loop moving in the opposite direction.
+ * 
+ * When we report a solution, we always return to the same point where we started.
+ * I.e. the first and last value in this array will be identical.
+ * But when we are rotating the array to make a key string, then we remove that last item from the list.
+ * A normal rotate doesn't work when the first item (and only the first item) is duplicated.
+ * And the last item was redundant, so it doesn't add any value to our key.
+ */
+type Path = readonly number[];
+
+/**
+ * This searches a graph and returns all Euler circuits.
+ */
+class Progress {
+  /**
+   * 
+   * @param pathSoFar Outbox
+   * @param remainingEdges Inbox
+   */
+  private constructor(
+    readonly pathSoFar: Path,
+    readonly remainingEdges: Edge[]
+  ) {}
+  /**
+   * 
+   * @returns Where can we go in exactly one step.
+   */
+  oneStep() {
+    const initialVertex = assertNonNullable(this.pathSoFar.at(-1));
+    return this.remainingEdges.flatMap((edge, index) => {
+      const nextVertex = edge.other(initialVertex);
+      if (
+        nextVertex === undefined ||
+        (this.pathSoFar.length == 1 && nextVertex != 1)
+      ) {
+        return [];
+      }
+      // Add the new vertex and remove the edge we used to get there.
+      const next = new Progress(
+        [...this.pathSoFar, nextVertex],
+        this.remainingEdges.toSpliced(index, 1)
+      );
+      return next;
+    });
+  }
+  *#depthFirstSearch(): Generator<Path> {
+    if (this.remainingEdges.length == 0) {
+      // No more work to do.  Yield the result.
+      yield this.pathSoFar;
+    } else {
+      const options = this.oneStep();
+      for (const nextStep of options) {
+        yield* nextStep.#depthFirstSearch();
+      }
+    }
+  }
+  /**
+   * Generates all Euler circuits of a graph.
+   * 
+   * This restricts the results to start at vertex 0.
+   * That removes any paths that were identical except that they start at a different place in the circuit.
+   * And it restricts direction we travel to avoid paths that are identical except for the direction.
+   * @param allEdges A description of a graph.
+   */
+  static *get(allEdges: Edge[]) {
+    const start = new this([0], allEdges);
+    // TODO filter out the trivial duplicates
+    yield* start.#depthFirstSearch();
+  }
+  /**
+   * This adds a filter on top of `Progress.get()`.
+   * 
+   * This removes any paths that would be the same as an existing path aside from a rotation or reversing the direction.
+   * This makes sense for things like the star inscribed in a circle, because that example has those symmetries.
+   * This might not always make sense.
+   * @param allEdges A description of a graph.
+   */
+  static *getUnique(allEdges: Edge[]) {
+    const numberOfVertices =
+      Math.max(
+        ...allEdges.map((edge) => Math.max(edge.vertex1, edge.vertex2))
+      ) + 1;
+    const accountedFor = new Set<string>();
+    for (const solution of this.get(allEdges)) {
+      const rotatable = solution.slice(0, solution.length - 1);
+      const key = this.#makeKey(rotatable);
+      if (!accountedFor.has(key)) {
+        // We found something new!
+        yield solution;
+        accountedFor.add(key);
+        const rotations = this.#rotations(rotatable, numberOfVertices).map(
+          (path) => this.#makeKey(path)
+        );
+        for (const rotation of rotations) {
+          accountedFor.add(rotation);
+        }
+        console.log("adding", key, rotations);
+      } else {
+        console.log("skipping duplicate", key);
+      }
+    }
+  }
+  static #makeKey(path: Path) {
+    return String.fromCharCode(...path.map((value) => value + 65));
+  }
+  static #rotations(path: Path, vertexCount: number) {
+    const result = new Array<Path>();
+    for (let index = 1; index < path.length; index++) {
+      const value = path[index];
+      const desiredValue = (value + 1) % vertexCount;
+      const nextValue = getMod(path, index + 1);
+      if (desiredValue == nextValue) {
+        result.push(
+          initializedArray(path.length, (destinationIndex) => {
+            const sourceValue = getMod(path, destinationIndex + index);
+            const destinationValue = positiveModulo(
+              sourceValue - value,
+              vertexCount
+            );
+            return destinationValue;
+          })
+        );
+      } else {
+        const previousValue = getMod(path, index - 1);
+        if (previousValue == desiredValue) {
+          result.push(
+            initializedArray(path.length, (destinationIndex) => {
+              const sourceValue = getMod(path, index - destinationIndex);
+              const destinationValue = positiveModulo(
+                sourceValue - value,
+                vertexCount
+              );
+              return destinationValue;
+            })
+          );
+        }
+      }
+    }
+    return result;
+  }
+  static getSamples() {
+    function inscribed(
+      vertexCount: number,
+      ...increments: [firstIncrement: number, ...remainingIncrements: number[]]
+    ) {
+      return initializedArray(vertexCount, (initialVertex) =>
+        increments.map(
+          (incrementBy) =>
+            new Edge(initialVertex, (initialVertex + incrementBy) % vertexCount)
+        )
+      ).flat();
+    }
+    return {
+      /**
+       * A 5 pointed star inside a pentagon.
+       */
+      pentagram: inscribed(5, 1, 2),
+      /**
+       * The edges of a dodecahedron.
+       * Which are the same as a 6 pointed star inside a hexagon.
+       */
+      dodecahedron: inscribed(6, 1, 2),
+      /**
+       * Just a square.
+       */
+      square: inscribed(4, 1),
+      /**
+       * A simple n sided polygon where n is currently 10.
+       */
+      hex: inscribed(10, 1),
+    };
+  }
+}
+
+(window as any).Progress = Progress;
+
+/**
+ * CONTENT / TODO
+ * 
+ * Sierpiński triangle!!!
+ * 
+ * Open star vs star.  7 point random vs...
+ *   5 point random?
+ *   other type of 7 point random?
+ *   Try and see what looks best
+ * Zoom in on the corners of the stars
+ *
+ * The inscribed heptagram
+ *   show several versions at once.
+ *   Each one will end with all the circle segments being one color and the straight segments being another color
+ *   We trace the colors from the beginning, based on the t parameter, but they only make sense at the end.
+ *   In one version the two colors will initially be all grouped together.
+ *   In another version the two colors will initially alternate as much as possible.
+ *   And more version.
+ *
+ * And at least one version with 7 points and all of the lines in there.
+ *   And three colors for the three types of lines.
+ *   Again, one version with each of the three colors initially grouped together.
+ *   And at least one with the 3 colors in a row repeating 7 times initially.
+ *   Probably more than one interesting repeating pattern.
+ *   And probably some interesting random patterns.
+ *
+ * Dodecahedron vs tesseract
+ *   Use the picture from https://math.stackexchange.com/a/1092697/1191892
+ *     We will have a normal path that we work with to do the FFT and the like.
+ *     But the reference image will be hand drawn.
+ *     Imagine something very similar to that, but vector graphics.
+ *     Keep the thin black lines.
+ *     Keep the dotted lines, maybe a little better than they did it.
+ *     Draw this **on top** of the Fourier output.
+ *     Usually it's on the bottom, but I want to keep these thin lines.
+ *     The dashed line, when it covers the fourier output, should still give the idea that those lines are in the back.
+ *   There are a lot of nice pictures of tesseracts out there.
+ *     Maybe steal one as is!
+ *     The all seem to have significant girth to the lines, 
+ *     and in an important way that I don't want to change.
+ *     Draw one of those in the background.
+ *     Do the normal FFT on top, but with fairly thin lines that won't completely cover the picture.
+ *     Nice candidate, high res png:  https://en.wiktionary.org/wiki/tesseract#/media/File:Schlegel_wireframe_8-cell.png
+ *     Lower quality, but slightly easier to see:  https://www.daviddarling.info/encyclopedia/T/tesseract.html#google_vignette
+ * 
+ *
+ * Dodecahedron vs star.
+ *   Inscribed jewish star.
+ *   Start from two pictures of the dodecahedron.
+ *   One morphs smoothly into the star.
+ *   Same exact graph.
+ *   The picture is distorted slightly, but as little as possible.
+ *
+ * Dodecahedron vs dodecahedron
+ *   I had some simple and repetitive ones.
+ *   It would be interesting to start with two of those.
+ *   There are so many to choose from.
+ *     Run the fourier transform on each of them.
+ *     Compare the results to see if there are trends.
+ *     Group them maybe by which frequency has the highest amplitude
+ *
+ * Stars with more sides to see if I can make that first thing spin more times.
+ * Lots of combinations., maybe spread randomly on the screen, not all the same size.
+ *
+ * 3 identical shapes, 7 pointed random stars, but they are squashed to different aspect ratios.
+ *
+ * hand drawn, multiple stars making a super star.  Or at least a triangle.
+ *
+ * https://courses.lumenlearning.com/waymakermath4libarts/chapter/euler-circuits/
+ * Multiple versions of the envelope.
+ *
+ * https://webwork.moravian.edu/100.2/sec_EulProbs.html
+ * 4.6.2 and 4.6.3
+ *
+ * https://en.wikipedia.org/wiki/Even_circuit_theorem
+ * Both from the image
+ *
+ * hilbert5?  Can I do it?  I'll need more than 1024 circles.
+ *
+ * hilbert4 -- Show the other smaller ones as it's filling in detail.
+ * Can I do with the the piano curves?
+ * Can I find other space filling curves?
+ *
+ * Hilbert 0 -- Show the original effect.
+ * Show similar for one of the space filling curves and like share and subscribe
+ *
+ * Multiple squares?
+ *   The one that slows down in the corners
+ *   Can I make it worse than the original h0?
+ *
+ * Words:
+ *   "Your name here"?
+ *   supercalifragilisticexpialidocious
+ *     Break it in half?  So it can be on two lines
+ *   "Avada Kedavra"
+ * "Euler circuit"
+ * One color per letter?
+ *   "Euler circuits are" on top, bigger letters, supercalifragilisticexpialidocious on bottom, smaller letters
+ *
+ *
+ * Mandelbrot !
+ *
+ * Reverse fourier.
+ *   Show one full image (all circles used) and one dot (no circles used)
+ *   Then move the terms from the first to the second one by one
+ *   So the first will show terms n-1024 and the second one will show terms 0 - (n-1)
+ *   The second one is a normal fourier drawing and the scale will remain fixed.
+ *   The first one will quickly shrink a lot, so we need to keep zooming in,
+ *
+ *
+ * A series of 4 of 5 similar items, each slightly more distorted than the next,
+ * maybe the first one converges very quickly but the later on ones take more time.
+ * Maybes stars with more and more randomness, or even forced to be further off.
+ *
+ * Can I have some image or path that is changing continuously over time,
+ * And then do a fourier on top of that?
+ * We probably don't want the fourier animating at the same time as the shape is changing.
+ * Instead show n snapshots on the screen of the first n interesting images.
+ * Probably need to fix the scale based on the largest that the item can be.
+ * So if you're looking at just the first circle, it can grow and shrink.
+ * Maybe force the frequency 0 term to be first and always included.
+ * So you might see a circle in the first sample that moves and grows or shrinks.
+ * Hmm.  If we sort the terms by amplitude, the order can change as the subject changes.
+ * Maybe take n samples over the lifetime of the animation, and look at the max or average amplitude or such. 
+ * Similar to previous idea.
+ * 
+ */
+
+/**
+ * Things to try at the console:
+ * 
+ * samples = Progress.getSamples()
+ * [...Progress.getUnique(samples.hex)].length
+ * fourier-smackdown.ts:828 adding ABCDEFGHIJ (9) ['ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ']
+ * 1
+ * 
+ * [...Progress.get(samples.pentagram)].length/5
+ * 26.4
+ * [...Progress.getUnique(samples.pentagram)].length
+ * lots of debug stuff omitted 
+ * 28
+ * 
+ * [...Progress.get(samples.dodecahedron)].length/6
+ * 62
+ * lots of debug stuff omitted
+ * 66
+ */

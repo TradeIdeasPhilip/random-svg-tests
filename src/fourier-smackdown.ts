@@ -1148,7 +1148,36 @@ test();
       pathBuilder.L(x, y);
     }
   } while (pointIndex != 0);
-  const pathString = pathBuilder.pathShape.rawPath;
+  const pathBuilder2 = PathBuilder.M(points[0].x, points[0].y).circle(
+    0,
+    0,
+    "cw"
+  );
+  for (let i = 0; i < 5; i++) {
+    const index = positiveModulo((i + 1) * 2, 5);
+    const { x, y } = points[index];
+    pathBuilder2.L(x, y);
+  }
+  const pathBuilder3 = PathBuilder.M(points[0].x, points[0].y);
+  pointIndex = 0;
+  do {
+    // One segment clockwise along the outer loop.
+    pointIndex++;
+    pointIndex = positiveModulo(pointIndex, 5);
+    {
+      const { x, y } = points[pointIndex];
+      pathBuilder3.arc(0, 0, x, y, "cw");
+    }
+    // Then two segments forward along the straightaway.
+    pointIndex += 2;
+    pointIndex = positiveModulo(pointIndex, 5);
+    {
+      const { x, y } = points[pointIndex];
+      pathBuilder3.L(x, y);
+    }
+  } while (pointIndex != 0);
+
+  const pathString = pathBuilder3.pathShape.rawPath;
   console.log(pathString);
   initialize({
     maxGroupsToDisplay: 7,

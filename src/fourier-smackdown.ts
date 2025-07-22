@@ -11,16 +11,17 @@ import {
 import { samples } from "./fourier-samples";
 import "./fourier-smackdown.css";
 import { panAndZoom } from "./transforms";
-import { ParametricToPath, PathShape } from "./path-shape";
+import { ParametricToPath, PathBuilder, PathShape } from "./path-shape";
 import {
   assertNonNullable,
   FIGURE_SPACE,
+  FULL_CIRCLE,
   initializedArray,
   makeBoundedLinear,
   makeLinear,
   positiveModulo,
 } from "phil-lib/misc";
-import { ease } from "./utility";
+import { ease, getMod } from "./utility";
 import { HandwritingEffect } from "./handwriting-effect";
 import { TextLayout } from "./letters-more";
 
@@ -28,7 +29,7 @@ import { TextLayout } from "./letters-more";
  * Color Scheme:
  * white background several pastel colors
  * https://www.google.com/search?q=color%20palette%20white%20background%20several%20pastel%20colors&udm=2&tbs=rimg:CYC4ZCE2OfVIYW_1YzAeBy7uVsgIAwAIA2AIA4AIA&hl=en&sa=X&ved=0CBsQuIIBahcKEwiApIrqxseOAxUAAAAAHQAAAAAQBw&biw=1440&bih=812&dpr=2
- * 
+ *
  * According to Grok:
  * Pastel colors in CSS are defined by:High lightness (60%–90% in HSL),
  * Low to moderate saturation (20%–50% in HSL),
@@ -38,10 +39,9 @@ import { TextLayout } from "./letters-more";
  * * Pastel Blue: hsl(200, 40%, 80%) or #A3D5F2 (rgb(163, 213, 242))
  * * Pastel Green: hsl(160, 35%, 85%) or #C1EAD9 (rgb(193, 234, 217))
  * * Pastel Yellow: hsl(60, 40%, 85%) or #F5E8B7 (rgb(245, 232, 183))
- * 
+ *
  * The goal is a calming experience.
  */
-
 
 const numberOfFourierSamples = 1024;
 
@@ -77,10 +77,7 @@ function makeEasing(x1: number, x2: number) {
 
 let scriptEndTime = NaN;
 
-let showFrame = (timeInMs: number): void => {
-  timeInMs;
-  console.error("not ready yet");
-};
+let showFrame: (timeInMs: number) => void = () => {};
 
 (window as any).showFrame = (frameNumber: number) => {
   const timeInMs = (frameNumber / 60) * 1000;
@@ -707,7 +704,7 @@ const scripts = new Map<string, Options>([
   ],
 ]);
 
-{
+if (0) {
   const requested = new URLSearchParams(window.location.search).get(
     "script_name"
   );
@@ -783,33 +780,10 @@ class Edge {
 }
 
 /**
- * Look up a value in an array.
- * 
- * If the array is empty, throw an Error.
- * Otherwise this always returns an element from the array.
- * 
- * If the index is in range, this is the same as array[index].
- * -1 refers to the last valid index, as in array.at().
- * However, this function goes even further.
- * It's like the array's contents are repeated over and over forever in both directions.
- * @param array Look in here.
- * @param index At this index.
- * @returns The value in that place.
- * @throws If the array is empty, throw an error.
- */
-function getMod<T>(array: readonly T[], index: number): T {
-  if (array.length == 0) {
-    throw new Error("empty array");
-  }
-  index = positiveModulo(index, array.length);
-  return array[index];
-}
-
-/**
  * A read only array of vertex numbers.
- * 
+ *
  * The vertices are numbered 0 through n-1.
- * 
+ *
  * These are usually stored in a canonical form.
  * This help reduce the number of uninteresting variations we get.
  * Start from vertex 0.
@@ -817,7 +791,7 @@ function getMod<T>(array: readonly T[], index: number): T {
  * Then immediately move to vertex 2.
  * (We are assuming that there is an edge between those two, which works with my current examples.)
  * So we don't consider the same loop moving in the opposite direction.
- * 
+ *
  * When we report a solution, we always return to the same point where we started.
  * I.e. the first and last value in this array will be identical.
  * But when we are rotating the array to make a key string, then we remove that last item from the list.
@@ -831,7 +805,7 @@ type Path = readonly number[];
  */
 class Progress {
   /**
-   * 
+   *
    * @param pathSoFar Outbox
    * @param remainingEdges Inbox
    */
@@ -840,7 +814,7 @@ class Progress {
     readonly remainingEdges: Edge[]
   ) {}
   /**
-   * 
+   *
    * @returns Where can we go in exactly one step.
    */
   oneStep() {
@@ -874,7 +848,7 @@ class Progress {
   }
   /**
    * Generates all Euler circuits of a graph.
-   * 
+   *
    * This restricts the results to start at vertex 0.
    * That removes any paths that were identical except that they start at a different place in the circuit.
    * And it restricts direction we travel to avoid paths that are identical except for the direction.
@@ -887,7 +861,7 @@ class Progress {
   }
   /**
    * This adds a filter on top of `Progress.get()`.
-   * 
+   *
    * This removes any paths that would be the same as an existing path aside from a rotation or reversing the direction.
    * This makes sense for things like the star inscribed in a circle, because that example has those symmetries.
    * This might not always make sense.
@@ -994,9 +968,9 @@ class Progress {
 
 /**
  * CONTENT / TODO
- * 
+ *
  * Sierpiński triangle!!!
- * 
+ *
  * Open star vs star.  7 point random vs...
  *   5 point random?
  *   other type of 7 point random?
@@ -1030,13 +1004,13 @@ class Progress {
  *     The dashed line, when it covers the fourier output, should still give the idea that those lines are in the back.
  *   There are a lot of nice pictures of tesseracts out there.
  *     Maybe steal one as is!
- *     The all seem to have significant girth to the lines, 
+ *     The all seem to have significant girth to the lines,
  *     and in an important way that I don't want to change.
  *     Draw one of those in the background.
  *     Do the normal FFT on top, but with fairly thin lines that won't completely cover the picture.
  *     Nice candidate, high res png:  https://en.wiktionary.org/wiki/tesseract#/media/File:Schlegel_wireframe_8-cell.png
  *     Lower quality, but slightly easier to see:  https://www.daviddarling.info/encyclopedia/T/tesseract.html#google_vignette
- * 
+ *
  *
  * Dodecahedron vs star.
  *   Inscribed jewish star.
@@ -1115,27 +1089,71 @@ class Progress {
  * Maybe force the frequency 0 term to be first and always included.
  * So you might see a circle in the first sample that moves and grows or shrinks.
  * Hmm.  If we sort the terms by amplitude, the order can change as the subject changes.
- * Maybe take n samples over the lifetime of the animation, and look at the max or average amplitude or such. 
+ * Maybe take n samples over the lifetime of the animation, and look at the max or average amplitude or such.
  * Similar to previous idea.
- * 
+ *
  */
 
 /**
  * Things to try at the console:
- * 
+ *
  * samples = Progress.getSamples()
  * [...Progress.getUnique(samples.hex)].length
  * fourier-smackdown.ts:828 adding ABCDEFGHIJ (9) ['ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ', 'ABCDEFGHIJ']
  * 1
- * 
+ *
  * [...Progress.get(samples.pentagram)].length/5
  * 26.4
  * [...Progress.getUnique(samples.pentagram)].length
- * lots of debug stuff omitted 
+ * lots of debug stuff omitted
  * 28
- * 
+ *
  * [...Progress.get(samples.dodecahedron)].length/6
  * 62
  * lots of debug stuff omitted
  * 66
  */
+
+function test() {
+  const samples = Progress.getSamples();
+  const paths = Progress.getUnique(samples.pentagram);
+  console.log(paths, (paths as object).constructor.name);
+  for (const _path of paths) {
+  }
+}
+test();
+
+{
+  const points = initializedArray(5, (n) => {
+    const angle = (FULL_CIRCLE * n) / 5 + FULL_CIRCLE / 4;
+    const x = Math.cos(angle);
+    const y = Math.sin(angle);
+    return { x, y };
+  });
+  const pathBuilder = PathBuilder.M(points[0].x, points[0].y);
+  let pointIndex = 0;
+  do {
+    // One segment clockwise along the outer loop.
+    pointIndex++;
+    pointIndex = positiveModulo(pointIndex, 5);
+    {
+      const { x, y } = points[pointIndex];
+      pathBuilder.arc(0, 0, x, y, "cw");
+    }
+    // Then two segments back along the straightaway.
+    pointIndex -= 2;
+    pointIndex = positiveModulo(pointIndex, 5);
+    {
+      const { x, y } = points[pointIndex];
+      pathBuilder.L(x, y);
+    }
+  } while (pointIndex != 0);
+  const pathString = pathBuilder.pathShape.rawPath;
+  console.log(pathString);
+  initialize({
+    maxGroupsToDisplay: 7,
+    pathString: pathString,
+    topText: "Pentagram",
+    bottomText: "Bottom Text",
+  });
+}

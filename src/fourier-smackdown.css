@@ -14,7 +14,17 @@ body {
   padding: 0;
   margin: 0;
   background-color: blueviolet;
-  --blue: hwb(204.42deg 0% 0%);
+  --pastel-blue: hsl(200, 50%, 70%);
+  --darker-blue: hsl(200, 60%, 50%);
+  --pastel-lavender: hsl(270, 45%, 75%);
+  --darker-purple: hsl(270, 55%, 55%);
+  --pastel-pink: hsl(340, 50%, 70%);
+  --darker-pink: hsl(340, 60%, 50%);
+  --pastel-mint: hsl(170, 45%, 70%);
+  --darker-teal: hsl(170, 55%, 50%);
+  --pastel-coral: hsl(15, 50%, 70%);
+  --darker-coral: hsl(15, 60%, 50%);
+
   overflow: hidden;
 }
 
@@ -35,7 +45,8 @@ line#for-scale {
 
 path#reference {
   fill: none;
-  stroke: red;
+  stroke: var(--darker-coral);
+
   /* It seems like vector-effect: non-scaling-stroke would do this automatically, but I never got it to work. */
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 4);
   stroke-linecap: round;
@@ -60,25 +71,27 @@ path[data-live] {
 }
 
 path[data-live="back"] {
-  stroke: white;
+  stroke: none;
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
 }
 path[data-live="front"] {
-  stroke: var(--blue);
+  filter: url(#dropShadow);
+  stroke: var(--pastel-coral);
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.9);
 }
 
 #background {
-  fill: black;
+  fill: url(#backgroundGradient);
+  filter: url(#noiseFilter);
 }
 
 #topText {
-  stroke: var(--blue);
+  stroke: var(--pastel-blue);
   transform: translate(0.5px, 0px);
 }
 
 #bottomText {
-  stroke: white;
+  stroke: var(--darker-blue);
   transform: translate(0.5px, 7.25px);
 }
 
@@ -87,6 +100,7 @@ path[data-live="front"] {
   top: 0;
   bottom: 0;
   display: flex;
+  display: none;
   align-items: center;
 }
 

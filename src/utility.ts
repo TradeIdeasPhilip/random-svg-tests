@@ -3,6 +3,7 @@ import {
   assertFinite,
   makeBoundedLinear,
   parseIntX,
+  positiveModulo,
   sum,
 } from "phil-lib/misc";
 
@@ -11,24 +12,27 @@ export function averageAngle(angle1: number, angle2: number) {
   return angle1 + between / 2;
 }
 
-const previousCountPrivate = new Map<string, number>();
 /**
+ * Look up a value in an array.
  *
- * This is mostly aimed at debugging.
- * In C++ I'd add something like this as a static variable within a function, right where I need it.
- * In TypeScript I have to make a global variable or a class static variable.
- * That's just not always convenient.
- * Especially when I'm moving the debug code from one place to another.
- * @param key Each key gets its own counter.
- * This function call replaces a variable, so think of key as the variable name.
- * @returns 0 the first time you call this on a specific key.
- * 1 the second time.
- * 2 the third time. etc.
+ * If the array is empty, throw an Error.
+ * Otherwise this always returns an element from the array.
+ *
+ * If the index is in range, this is the same as array[index].
+ * -1 refers to the last valid index, as in array.at().
+ * However, this function goes even further.
+ * It's like the array's contents are repeated over and over forever in both directions.
+ * @param array Look in here.
+ * @param index At this index.
+ * @returns The value in that place.
+ * @throws If the array is empty, throw an error.
  */
-export function previousCount(key: string): number {
-  const result = previousCountPrivate.get(key) ?? 0;
-  previousCountPrivate.set(key, result + 1);
-  return result;
+export function getMod<T>(array: readonly T[], index: number): T {
+  if (array.length == 0) {
+    throw new Error("empty array");
+  }
+  index = positiveModulo(index, array.length);
+  return array[index];
 }
 
 /**

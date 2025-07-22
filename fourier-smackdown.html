@@ -14,33 +14,54 @@
       preserveAspectRatio="xMaxYMin meet"
     >
       <defs>
-        <filter
-          id="black-outline"
-          color-interpolation-filters="linearRGB"
-          filterUnits="objectBoundingBox"
-          primitiveUnits="userSpaceOnUse"
+        <linearGradient
+          id="backgroundGradient"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
         >
-          <!-- Source: https://yoksel.github.io/svg-filters/#/presets/stroke -->
-          <feMorphology
-            operator="dilate"
-            radius="7 7"
-            in="SourceAlpha"
-            result="morphology"
+          <stop offset="0%" style="stop-color: hsl(220, 10%, 30%)" />
+          <stop offset="100%" style="stop-color: hsl(220, 15%, 40%)" />
+        </linearGradient>
+        <filter id="dropShadow">
+          <feDropShadow
+            dx="0.05"
+            dy="0.05"
+            stdDeviation="0.01"
+            flood-color="hsl(220, 10%, 10%)"
+            flood-opacity="1"
           />
-          <feFlood flood-color="#000000" flood-opacity="1" result="flood" />
-          <feComposite
-            in="flood"
-            in2="morphology"
-            operator="in"
-            result="composite"
+        </filter>
+
+        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color: hsl(200, 50%, 70%)" />
+          <stop offset="100%" style="stop-color: hsl(200, 60%, 50%)" />
+        </linearGradient>
+
+        <filter id="noiseFilter" filterUnits="userSpaceOnUse">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.15"
+            numOctaves="2"
+            stitchTiles="stitch"
+            result="noise"
           />
-          <feMerge result="merge">
-            <feMergeNode in="composite" result="mergeNode" />
-            <feMergeNode in="SourceGraphic" result="mergeNode1" />
-          </feMerge>
+          <feBlend
+            mode="overlay"
+            in="SourceGraphic"
+            in2="noise"
+            result="blended"
+          />
+          <feComponentTransfer in="blended" result="adjusted">
+            <feFuncR type="linear" slope="0.85" intercept="0" />
+            <feFuncG type="linear" slope="0.85" intercept="0" />
+            <feFuncB type="linear" slope="0.85" intercept="0" />
+          </feComponentTransfer>
+          <feGaussianBlur in="adjusted" stdDeviation="0.05" />
         </filter>
       </defs>
-      <rect id="background" width="16" height="9"></rect>
+      <rect id="background" width="18" height="11" x="-1" y="-1"></rect>
       <line id="for-scale" x1="1" y1="1" x2="15" y2="8"></line>
       <g id="topText"></g>
       <g id="bottomText"></g>

@@ -390,7 +390,72 @@ function initialize(options: Options) {
     getById("bottomText", SVGGElement),
     options.bottomText ?? ""
   );
+  function precomputeNoise() {
+    // TODO change the seed.
+    const noiseCanvas = document.createElement("canvas");
+    noiseCanvas.width = 3840;
+    noiseCanvas.height = 2160;
+    const ctx = noiseCanvas.getContext("2d", { colorSpace: "display-p3" })!;
+
+    // Draw gradient
+    const gradient = ctx.createLinearGradient(0, 0, 3840, 2160); // 135°
+    gradient.addColorStop(0, "hsl(220, 10%, 30%)");
+    gradient.addColorStop(1, "hsl(220, 15%, 40%)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 3840, 2160);
+
+    // Draw noise with overlay
+    ctx.globalCompositeOperation = "overlay";
+    ctx.filter = "url(#noiseFilter)";
+    ctx.fillStyle = "rgb(255, 165, 0)"; // Burnt orange, opaque
+    ctx.fillRect(0, 0, 3840, 2160);
+    ctx.filter = "none";
+    ctx.globalCompositeOperation = "source-over";
+    return noiseCanvas;
+  }
+  const noiseImage = precomputeNoise();
+  const canvas = getById("backgroundCanvas", HTMLCanvasElement);
+  const context = assertNonNullable(
+    canvas.getContext("2d", { colorSpace: "display-p3" })
+  );
+  //const srgbCanvas =getById("srgbCanvas", HTMLCanvasElement);
+  //const srgbCtx = srgbCanvas.getContext('2d', { colorSpace: 'srgb' })!;
+  console.log(noiseImage, canvas, context);
+  function renderBackground(time: number, noiseCanvas: HTMLCanvasElement) {
+    // Draw precomputed gradient + noise
+    context.drawImage(noiseCanvas, 0, 0);
+    // Scale with solid color using multiply
+    const phases = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3]; // 0°, 120°, 240°
+    const t = (time % 10) / 10; // Normalize to [0,1]
+    const [r, g, b] = phases.map((phase) => {
+      const sinValue = Math.sin(2 * Math.PI * t + phase); // [-1, 1]
+      return 0.4 + (0.45 * (sinValue + 1)) / 2; // [0.4, 0.85]
+    });
+    context.globalCompositeOperation = "multiply";
+    context.fillStyle = `rgb(${r * 255}, ${g * 255}, ${b * 255})`;
+    context.fillRect(0, 0, 3840, 2160);
+    context.globalCompositeOperation = "source-over";
+
+    //const imageData = context.getImageData(0, 0, canvas.width, canvas.height, {colorSpace:"srgb"});
+    // srgbCtx.putImageData(imageData, 0, 0);
+
+    //srgbCtx.drawImage(canvas, 0, 0);
+
+    // canvas.toBlob(blob => {
+    //   console.log("start");
+    //   if (!blob) throw new Error('Blob creation failed');
+    //   const img = new Image();
+    //   img.src = URL.createObjectURL(blob);
+    //   img.onload = () => {
+    //     console.log("done")
+    //     srgbCtx.drawImage(img, 0, 0);
+    //     URL.revokeObjectURL(img.src); // Clean up
+    //     //resolve(canvas);
+    //   };
+    // }, 'image/png');
+  }
   showFrame = (timeInMs: number) => {
+    renderBackground(timeInMs / 1000, noiseImage);
     topHandwriting.setProgressLength(((timeInMs - 750) / 1000) * 3);
     bottomHandwriting.setProgressLength(((timeInMs - 5000) / 1000) * 3);
     // Which section of the script applies at this time?
@@ -1177,7 +1242,7 @@ test();
     }
   } while (pointIndex != 0);
 
-  const pathString = pathBuilder3.pathShape.rawPath;
+  const pathString = pathBuilder.pathShape.rawPath;
   console.log(pathString);
   initialize({
     maxGroupsToDisplay: 7,

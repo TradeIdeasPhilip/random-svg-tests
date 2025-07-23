@@ -7,6 +7,7 @@
     <script type="module" src="/src/fourier-smackdown.ts"></script>
   </head>
   <body>
+    <canvas id="backgroundCanvas" width="3840" height="2160"></canvas>
     <svg
       id="main"
       viewBox="0 0 16 9"
@@ -14,16 +15,23 @@
       preserveAspectRatio="xMaxYMin meet"
     >
       <defs>
-        <linearGradient
-          id="backgroundGradient"
-          x1="0%"
-          y1="0%"
-          x2="100%"
-          y2="100%"
+        <filter
+          id="noiseFilter"
+          filterUnits="userSpaceOnUse"
+          x="-0.1"
+          y="-0.1"
+          width="3840.2"
+          height="2160.2"
         >
-          <stop offset="0%" style="stop-color: hsl(220, 10%, 30%)" />
-          <stop offset="100%" style="stop-color: hsl(220, 15%, 40%)" />
-        </linearGradient>
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.001"
+            numOctaves="2"
+            stitchTiles="stitch"
+            result="noise"
+            seed="4"
+          />
+        </filter>
         <filter id="dropShadow">
           <feDropShadow
             dx="0.05"
@@ -34,15 +42,70 @@
           />
         </filter>
 
-        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style="stop-color: hsl(200, 50%, 70%)" />
-          <stop offset="100%" style="stop-color: hsl(200, 60%, 50%)" />
-        </linearGradient>
-
-        <filter id="noiseFilter" filterUnits="userSpaceOnUse">
+        <filter
+          id="noiseFilterXXXX"
+          filterUnits="userSpaceOnUse"
+          x="-0.1"
+          y="-0.1"
+          width="16.2"
+          height="9.2"
+        >
           <feTurbulence
             type="fractalNoise"
-            baseFrequency="0.15"
+            baseFrequency="0.1"
+            numOctaves="2"
+            stitchTiles="stitch"
+            result="noise"
+            seed="1"
+          >
+            <!-- Animate noise opacity instead of slope -->
+            <animate
+              attributeName="opacity"
+              dur="1s"
+              values="0.0;1;0.0"
+              keyTimes="0;0.5;1"
+              calcMode="spline"
+              keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
+              repeatCount="indefinite"
+              begin="0s"
+            />
+          </feTurbulence>
+          <feBlend
+            mode="overlay"
+            in="SourceGraphic"
+            in2="noise"
+            result="blended"
+          />
+          <!-- Dither to mask banding -->
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.5"
+            numOctaves="1"
+            result="dither"
+          />
+          <feColorMatrix
+            in="dither"
+            type="matrix"
+            values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"
+            result="ditherScaled"
+          />
+          <feComposite
+            in="blended"
+            in2="ditherScaled"
+            operator="arithmetic"
+            k1="0"
+            k2="1"
+            k3="1"
+            k4="0"
+            result="final"
+          />
+          <feGaussianBlur in="final" stdDeviation="0.01" />
+        </filter>
+
+        <filter id="noiseFilterXX" filterUnits="userSpaceOnUse">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.01"
             numOctaves="2"
             stitchTiles="stitch"
             result="noise"
@@ -55,14 +118,54 @@
             result="blended"
           />
           <feComponentTransfer in="blended" result="adjusted">
-            <feFuncR type="linear" slope="0.85" intercept="0" />
-            <feFuncG type="linear" slope="0.85" intercept="0" />
-            <feFuncB type="linear" slope="0.85" intercept="0" />
+            <feFuncR id="slopeR" type="linear" slope="0.4" intercept="0">
+              <animate
+                attributeName="slope"
+                dur="10s"
+                values="0.4;0.85;0.4"
+                keyTimes="0;0.5;1"
+                calcMode="spline"
+                keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
+                repeatCount="indefinite"
+                begin="0s"
+              />
+            </feFuncR>
+            <feFuncG id="slopeG" type="linear" slope="0.4" intercept="0">
+              <animate
+                attributeName="slope"
+                dur="10s"
+                values="0.4;0.85;0.4"
+                keyTimes="0;0.5;1"
+                calcMode="spline"
+                keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
+                repeatCount="indefinite"
+                begin="3.33s"
+              />
+            </feFuncG>
+            <feFuncB id="slopeB" type="linear" slope="0.4" intercept="0">
+              <animate
+                attributeName="slope"
+                dur="10s"
+                values="0.4;0.85;0.4"
+                keyTimes="0;0.5;1"
+                calcMode="spline"
+                keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
+                repeatCount="indefinite"
+                begin="6.67s"
+              />
+            </feFuncB>
           </feComponentTransfer>
-          <feGaussianBlur in="adjusted" stdDeviation="0.05" />
+          <!--
+          <feComponentTransfer>
+            <feFuncR type="linear" slope="0.01"></feFuncG>
+          </feComponentTransfer>
+          <feComponentTransfer>
+            <feFuncR type="linear" slope="100"></feFuncG>
+          </feComponentTransfer>-
+          <feGaussianBlur stdDeviation="0.01" />
+          -->
         </filter>
       </defs>
-      <rect id="background" width="18" height="11" x="-1" y="-1"></rect>
       <line id="for-scale" x1="1" y1="1" x2="15" y2="8"></line>
       <g id="topText"></g>
       <g id="bottomText"></g>
@@ -97,5 +200,6 @@
         </tr>
       </table>
     </div>
+    //<canvas id="srgbCanvas" width="3840" height="2160"></canvas>
   </body>
 </html>

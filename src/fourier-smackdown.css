@@ -29,13 +29,24 @@ body {
 }
 
 svg#main {
-  /* You should never see this color in production.  
-     That's why I made it such an obvious color. */
-  background-color: hotpink;
   width: 100vw;
   height: 100vh;
   --base-stroke-width: 0.05px;
 }
+
+#backgroundCanvas {
+  width: calc(min(100vw, 177.77777778vh));
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: -1;
+}
+
+/*
+#srgbCanvas {
+  width: calc(min(100vw, 177.77777778vh));
+}
+*/
 
 line#for-scale {
   display: none;
@@ -78,11 +89,6 @@ path[data-live="front"] {
   filter: url(#dropShadow);
   stroke: var(--pastel-coral);
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.9);
-}
-
-#background {
-  fill: url(#backgroundGradient);
-  filter: url(#noiseFilter);
 }
 
 #topText {

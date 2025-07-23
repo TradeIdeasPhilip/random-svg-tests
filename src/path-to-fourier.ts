@@ -89,7 +89,7 @@ function initialize(options: Options) {
     const parametricToPath = new ParametricToPath(parametricFunction);
     parametricToPath.go(5000);
     parametricToPath.dump();
-    console.log(parametricToPath)
+    console.log(parametricToPath);
     referencePath.setAttribute("d", parametricToPath.pathShape.rawPath);
   };
   console.log("Try debugPath(2);");
@@ -210,7 +210,7 @@ function initialize(options: Options) {
           const safePartEnds = Math.min(1, endOfChange);
           if (safePartEnds <= 0) {
             // There is no safe part!
-            return `$M${startingPoint.x},${startingPoint.y} L${startingPoint.x},${startingPoint.y}`;
+            return `M${startingPoint.x},${startingPoint.y} L${startingPoint.x},${startingPoint.y}`;
           } else {
             const frugalSegmentCount = Math.ceil(
               // TODO that 150 is crude.  The transition might require

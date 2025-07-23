@@ -20,6 +20,7 @@ import {
   makeBoundedLinear,
   makeLinear,
   positiveModulo,
+  Random,
 } from "phil-lib/misc";
 import { ease, getMod } from "./utility";
 import { HandwritingEffect } from "./handwriting-effect";
@@ -47,7 +48,7 @@ const numberOfFourierSamples = 1024;
 
 const scaleG = getById("scaled", SVGGElement);
 const referencePath = getById("reference", SVGPathElement);
-const samplesPath = getById("samples", SVGPathElement);
+const livePath = selectorQuery("[data-live]", SVGPathElement);
 
 type Options = {
   pathString: string;
@@ -99,12 +100,6 @@ function initialize(options: Options) {
   scaleG.style.setProperty("--path-scale", scale.toString());
   // Take the samples.
   const samples = samplesFromPath(options.pathString, numberOfFourierSamples);
-  // Show where were the samples taken.
-  let samplesPathD = "";
-  samples.forEach(([x, y]) => {
-    samplesPathD += `M${x},${y}l0,0`;
-  });
-  samplesPath.setAttribute("d", samplesPathD);
   // Create terms
   const terms = samplesToFourier(samples);
   (window as any).debugPath = (termCount: number) => {
@@ -233,7 +228,7 @@ function initialize(options: Options) {
           const safePartEnds = Math.min(1, endOfChange);
           if (safePartEnds <= 0) {
             // There is no safe part!
-            return `$M${startingPoint.x},${startingPoint.y} L${startingPoint.x},${startingPoint.y}`;
+            return `M${startingPoint.x},${startingPoint.y} L${startingPoint.x},${startingPoint.y}`;
           } else {
             const frugalSegmentCount = Math.ceil(
               // TODO that 150 is crude.  The transition might require
@@ -418,9 +413,6 @@ function initialize(options: Options) {
   const context = assertNonNullable(
     canvas.getContext("2d", { colorSpace: "display-p3" })
   );
-  //const srgbCanvas =getById("srgbCanvas", HTMLCanvasElement);
-  //const srgbCtx = srgbCanvas.getContext('2d', { colorSpace: 'srgb' })!;
-  console.log(noiseImage, canvas, context);
   function renderBackground(time: number, noiseCanvas: HTMLCanvasElement) {
     // Draw precomputed gradient + noise
     context.drawImage(noiseCanvas, 0, 0);
@@ -435,24 +427,6 @@ function initialize(options: Options) {
     context.fillStyle = `rgb(${r * 255}, ${g * 255}, ${b * 255})`;
     context.fillRect(0, 0, 3840, 2160);
     context.globalCompositeOperation = "source-over";
-
-    //const imageData = context.getImageData(0, 0, canvas.width, canvas.height, {colorSpace:"srgb"});
-    // srgbCtx.putImageData(imageData, 0, 0);
-
-    //srgbCtx.drawImage(canvas, 0, 0);
-
-    // canvas.toBlob(blob => {
-    //   console.log("start");
-    //   if (!blob) throw new Error('Blob creation failed');
-    //   const img = new Image();
-    //   img.src = URL.createObjectURL(blob);
-    //   img.onload = () => {
-    //     console.log("done")
-    //     srgbCtx.drawImage(img, 0, 0);
-    //     URL.revokeObjectURL(img.src); // Clean up
-    //     //resolve(canvas);
-    //   };
-    // }, 'image/png');
   }
   showFrame = (timeInMs: number) => {
     renderBackground(timeInMs / 1000, noiseImage);
@@ -512,8 +486,8 @@ function initialize(options: Options) {
     availableAmplitudeElement.innerText = f.availableAmplitude;
 
     // Draw the path
-    const pathString = PathShape.cssifyPath(timeToPath[index](timeInMs));
-    scaleG.style.setProperty("--d", pathString);
+    const pathString = timeToPath[index](timeInMs);
+    livePath.setAttribute("d", pathString);
   };
 }
 
@@ -951,9 +925,9 @@ class Progress {
         for (const rotation of rotations) {
           accountedFor.add(rotation);
         }
-        console.log("adding", key, rotations);
+        //console.log("adding", key, rotations);
       } else {
-        console.log("skipping duplicate", key);
+        //console.log("skipping duplicate", key);
       }
     }
   }
@@ -1195,7 +1169,7 @@ test();
     const y = Math.sin(angle);
     return { x, y };
   });
-  const pathBuilder = PathBuilder.M(points[0].x, points[0].y);
+  const pathBuilder1 = PathBuilder.M(points[0].x, points[0].y);
   let pointIndex = 0;
   do {
     // One segment clockwise along the outer loop.
@@ -1203,14 +1177,14 @@ test();
     pointIndex = positiveModulo(pointIndex, 5);
     {
       const { x, y } = points[pointIndex];
-      pathBuilder.arc(0, 0, x, y, "cw");
+      pathBuilder1.arc(0, 0, x, y, "cw");
     }
     // Then two segments back along the straightaway.
     pointIndex -= 2;
     pointIndex = positiveModulo(pointIndex, 5);
     {
       const { x, y } = points[pointIndex];
-      pathBuilder.L(x, y);
+      pathBuilder1.L(x, y);
     }
   } while (pointIndex != 0);
   const pathBuilder2 = PathBuilder.M(points[0].x, points[0].y).circle(
@@ -1242,10 +1216,59 @@ test();
     }
   } while (pointIndex != 0);
 
+  const colorPairs = [
+    { light: "var(--pastel-blue)", dark: "var(--darker-blue)" },
+    { light: "var(--pastel-lavender)", dark: "var(--darker-purple)" },
+    { light: "var(--pastel-pink)", dark: "var(--darker-pink)" },
+    { light: "var(--pastel-mint)", dark: "var(--darker-teal)" },
+    { light: "var(--pastel-coral)", dark: "var(--darker-coral)" },
+  ];
+  const random = Random.fromString(
+    `${performance.now()}/${Math.random}/${new Date().toString()}/${Date.now()}`
+  );
+  const allPaths = [...Progress.getUnique(Progress.getSamples().pentagram)];
+  const index = (random() * allPaths.length) | 0;
+  const path = allPaths[index];
+  const colors = colorPairs[(random() * colorPairs.length) | 0];
+  console.log({ index, path, ...colors });
+  livePath.style.stroke = colors.light;
+  referencePath.style.stroke = colors.dark;
+
+  const pathBuilder = PathBuilder.M(points[0].x, points[0].y);
+  path.forEach((vertex, index) => {
+    if (index == 0) {
+      if (vertex != 0) {
+        throw new Error("wtf");
+      }
+    } else {
+      const { x, y } = points[vertex];
+      const previousVertex = path[index - 1];
+      const stepsForward = positiveModulo(vertex - previousVertex, 5);
+      switch (stepsForward) {
+        case 1: {
+          pathBuilder.arc(0, 0, x, y, "cw");
+          break;
+        }
+        case 2:
+        case 3: {
+          pathBuilder.L(x, y);
+          break;
+        }
+        case 4: {
+          pathBuilder.arc(0, 0, x, y, "ccw");
+          break;
+        }
+        default: {
+          throw new Error("wtf");
+        }
+      }
+    }
+  });
+
   const pathString = pathBuilder.pathShape.rawPath;
   console.log(pathString);
   initialize({
-    maxGroupsToDisplay: 7,
+    maxGroupsToDisplay: 12,
     pathString: pathString,
     topText: "Pentagram",
     bottomText: "Bottom Text",

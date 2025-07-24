@@ -54,7 +54,7 @@ line#for-scale {
   stroke-width: var(--base-stroke-width);
 }
 
-path#reference {
+path[data-reference] {
   fill: none;
   stroke: var(--darker-coral);
 
@@ -70,16 +70,6 @@ path[data-live] {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1.5);
-}
-
-#topText {
-  stroke: var(--pastel-blue);
-  transform: translate(0.5px, 0px);
-}
-
-#bottomText {
-  stroke: var(--darker-blue);
-  transform: translate(0.5px, 7.25px);
 }
 
 #table-container {

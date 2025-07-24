@@ -1777,7 +1777,7 @@ export class PathShape {
     recursionCount: number
   ): PathShape | undefined {
     if (recursionCount > 0) {
-      console.log(recursionCount);
+      //console.log(recursionCount);
     }
     if (recursionCount >= 4) {
       // Avoid an infinite loop / stack overflow.

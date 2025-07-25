@@ -8,7 +8,12 @@ import {
 } from "./fourier-shared";
 import "./fourier-smackdown.css";
 import { panAndZoom } from "./transforms";
-import { ParametricToPath, PathBuilder, PathShape } from "./path-shape";
+import {
+  ParametricToPath,
+  PathBuilder,
+  PathCaliper,
+  PathShape,
+} from "./path-shape";
 import {
   assertNonNullable,
   FULL_CIRCLE,
@@ -17,6 +22,7 @@ import {
   makeLinear,
   positiveModulo,
   Random,
+  ReadOnlyRect,
 } from "phil-lib/misc";
 import { ease, getMod } from "./utility";
 
@@ -50,6 +56,8 @@ type Options = {
   pathString: string;
   maxGroupsToDisplay: number;
   destination: Destination;
+  referenceColor: string;
+  liveColor: string;
 };
 
 // TODO add in y1 and y2, rather than just assuming they are 0 and 1.
@@ -71,8 +79,6 @@ function makeEasing(x1: number, x2: number) {
   return customEasing;
 }
 
-let scriptEndTime = NaN;
-
 let showFrame: (timeInMs: number) => void = () => {};
 
 (window as any).showFrame = (frameNumber: number) => {
@@ -80,11 +86,19 @@ let showFrame: (timeInMs: number) => void = () => {};
   showFrame(timeInMs);
 };
 
+/**
+ * This knows about the SVG elements implementing this effect.
+ * And this knows about the screen real estate reserves for this effect.
+ * These are closely related as we use the SVG element to transform the effect to make it fit.
+ */
 class Destination {
   readonly #gElement: SVGGElement;
   readonly #referencePath: SVGPathElement;
   readonly #livePath: SVGPathElement;
-  constructor(queryString: string) {
+  constructor(
+    queryString: string,
+    readonly getTransform: (content: ReadOnlyRect) => DOMMatrix
+  ) {
     this.#gElement = selectorQuery(queryString, SVGGElement);
     this.#referencePath = selectorQuery(
       "[data-reference]",
@@ -111,9 +125,140 @@ class Destination {
   setLivePath(d: string) {
     this.#livePath.setAttribute("d", d);
   }
-  static right = new Destination("#scaled");
+  setTransform(transform: DOMMatrix) {
+    const scale = transform.a;
+    this.#gElement.style.transform = transform.toString();
+    this.#gElement.style.setProperty("--path-scale", scale.toString());
+  }
+  static right = new Destination("#scaled", (content: ReadOnlyRect) =>
+    panAndZoom(
+      content,
+      { x: 1, y: 1, width: 14, height: 7 },
+      "srcRect fits completely into destRect",
+      1
+    )
+  );
 }
 
+/**
+ * This is the trippy canvas that I use in the background.
+ *
+ * This is a canvas because I was pushing the limits and this is the only way to use floating point precision colors.
+ * There are a lot of other ugly implementation details hidden in here, you don't want to know.
+ */
+class Background {
+  readonly #canvas = getById("backgroundCanvas", HTMLCanvasElement);
+  readonly #baselineNoise = this.#precomputeNoise();
+  readonly #context = assertNonNullable(
+    this.#canvas.getContext("2d", { colorSpace: "display-p3" })
+  );
+  #precomputeNoise() {
+    // TODO change the seed.
+    const noiseCanvas = document.createElement("canvas");
+    noiseCanvas.width = 3840;
+    noiseCanvas.height = 2160;
+    const ctx = noiseCanvas.getContext("2d", { colorSpace: "display-p3" })!;
+
+    // Draw gradient
+    const gradient = ctx.createLinearGradient(0, 0, 3840, 2160); // 135°
+    gradient.addColorStop(0, "hsl(220, 10%, 30%)");
+    gradient.addColorStop(1, "hsl(220, 15%, 40%)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 3840, 2160);
+
+    // Draw noise with overlay
+    ctx.globalCompositeOperation = "overlay";
+    ctx.filter = "url(#noiseFilter)";
+    ctx.fillStyle = "rgb(255, 165, 0)"; // Burnt orange, opaque
+    ctx.fillRect(0, 0, 3840, 2160);
+    ctx.filter = "none";
+    ctx.globalCompositeOperation = "source-over";
+    return noiseCanvas;
+  }
+  draw(timeInMs: number) {
+    const context = this.#context;
+    // Draw precomputed gradient + noise
+    context.drawImage(this.#baselineNoise, 0, 0);
+    // Scale with solid color using multiply
+    const phases = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3]; // 0°, 120°, 240°
+    const period = 25000;
+    const t = (timeInMs % period) / period; // Normalize to [0,1]
+    const [r, g, b] = phases.map((phase) => {
+      const sinValue = Math.sin(2 * Math.PI * t + phase); // [-1, 1]
+      return 0.4 + (0.45 * (sinValue + 1)) / 2; // [0.4, 0.85]
+    });
+    context.globalCompositeOperation = "multiply";
+    context.fillStyle = `rgb(${r * 255}, ${g * 255}, ${b * 255})`;
+    context.fillRect(0, 0, 3840, 2160);
+    context.globalCompositeOperation = "source-over";
+  }
+  extract(timeInMS?: number) {
+    if (timeInMS !== undefined) {
+      this.draw(timeInMS);
+    }
+    const { promise, resolve, reject } = Promise.withResolvers<Blob>();
+    this.#canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          // Unexpected but possible.
+          reject("wtf");
+        } else {
+          resolve(blob);
+        }
+      },
+      "image/png",
+      1.0
+    );
+    return promise;
+  }
+}
+const background = new Background();
+
+(window as any).customBackground = background;
+
+const pathCaliper = new PathCaliper();
+
+class FourierAnimation {
+  hide() {
+    this.#destination.hide();
+  }
+  show(t: number) {
+    this.#destination.show(this.#referenceColor, this.#liveColor);
+    this.#destination.setReferencePath(this.#pathString);
+    this.#destination.setTransform(this.#transform);
+  }
+  readonly endTime: number;
+  readonly #pathString: string;
+  readonly #destination: Destination;
+  readonly #referenceColor: string;
+  readonly #liveColor: string;
+  readonly #transform: DOMMatrix;
+  readonly #timeToPath!: readonly ((time: number) => string)[];
+  constructor(options: Options) {
+    this.#pathString = options.pathString;
+    this.#destination = options.destination;
+    this.#referenceColor = options.referenceColor;
+    this.#liveColor = options.liveColor;
+    pathCaliper.d = this.#pathString;
+    this.#transform = this.#destination.getTransform(pathCaliper.getBBox());
+    // Take the samples.
+    const samples = samplesFromPath(options.pathString, numberOfFourierSamples);
+    // Create terms
+    const terms = samplesToFourier(samples);
+    const script = groupTerms({
+      addTime: 4800,
+      pauseTime: 200,
+      maxGroupsToDisplay: options.maxGroupsToDisplay,
+      terms,
+    });
+    this.endTime = script.at(-1)!.endTime;
+  }
+}
+
+//TODO I'm in the process of moving this stuff into the FourierAnimation class.
+// I want to make multiple instances of the animation.
+// Multiple on the screen at the same time, each configured slightly differently.
+// Currently this function is still in use, not FourierAnimation.
 function initialize(options: Options) {
   // Reference path.
   referencePath.setAttribute("d", options.pathString);
@@ -147,7 +292,8 @@ function initialize(options: Options) {
     maxGroupsToDisplay: options.maxGroupsToDisplay,
     terms,
   });
-  scriptEndTime = script.at(-1)!.endTime;
+  //scriptEndTime = script.at(-1)!.endTime;
+  // Moved!
   const getMaxFrequency = (numberOfTerms: number) => {
     const maxFrequency = Math.max(
       ...terms.slice(0, numberOfTerms).map((term) => Math.abs(term.frequency))
@@ -317,51 +463,14 @@ function initialize(options: Options) {
       }
     }
   });
-  function precomputeNoise() {
-    // TODO change the seed.
-    const noiseCanvas = document.createElement("canvas");
-    noiseCanvas.width = 3840;
-    noiseCanvas.height = 2160;
-    const ctx = noiseCanvas.getContext("2d", { colorSpace: "display-p3" })!;
 
-    // Draw gradient
-    const gradient = ctx.createLinearGradient(0, 0, 3840, 2160); // 135°
-    gradient.addColorStop(0, "hsl(220, 10%, 30%)");
-    gradient.addColorStop(1, "hsl(220, 15%, 40%)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 3840, 2160);
-
-    // Draw noise with overlay
-    ctx.globalCompositeOperation = "overlay";
-    ctx.filter = "url(#noiseFilter)";
-    ctx.fillStyle = "rgb(255, 165, 0)"; // Burnt orange, opaque
-    ctx.fillRect(0, 0, 3840, 2160);
-    ctx.filter = "none";
-    ctx.globalCompositeOperation = "source-over";
-    return noiseCanvas;
-  }
-  const noiseImage = precomputeNoise();
-  const canvas = getById("backgroundCanvas", HTMLCanvasElement);
-  const context = assertNonNullable(
-    canvas.getContext("2d", { colorSpace: "display-p3" })
-  );
-  function renderBackground(time: number, noiseCanvas: HTMLCanvasElement) {
-    // Draw precomputed gradient + noise
-    context.drawImage(noiseCanvas, 0, 0);
-    // Scale with solid color using multiply
-    const phases = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3]; // 0°, 120°, 240°
-    const t = (time % 10) / 10; // Normalize to [0,1]
-    const [r, g, b] = phases.map((phase) => {
-      const sinValue = Math.sin(2 * Math.PI * t + phase); // [-1, 1]
-      return 0.4 + (0.45 * (sinValue + 1)) / 2; // [0.4, 0.85]
-    });
-    context.globalCompositeOperation = "multiply";
-    context.fillStyle = `rgb(${r * 255}, ${g * 255}, ${b * 255})`;
-    context.fillRect(0, 0, 3840, 2160);
-    context.globalCompositeOperation = "source-over";
-  }
+  /**
+   *
+   * @param time In seconds
+   * @param noiseCanvas
+   */
   showFrame = (timeInMs: number) => {
-    renderBackground(timeInMs / 1000, noiseImage);
+    background.draw(timeInMs);
     // Which section of the script applies at this time?
     function getIndex() {
       // Should this be a binary search?
@@ -413,10 +522,11 @@ function initScreenCapture(script: unknown) {
     });
   animationLoop.cancel();
   return {
-    source: "path-to-fourier.ts",
+    source: "fourier-smackdown.ts",
     script,
     firstFrame: 0,
-    lastFrame: Math.floor((scriptEndTime / 1000) * 60),
+    // 60 seconds x 60 frames per second.
+    lastFrame: Math.floor(60 * 60),
   };
 }
 
@@ -793,52 +903,6 @@ test();
     const y = Math.sin(angle);
     return { x, y };
   });
-  const pathBuilder1 = PathBuilder.M(points[0].x, points[0].y);
-  let pointIndex = 0;
-  do {
-    // One segment clockwise along the outer loop.
-    pointIndex++;
-    pointIndex = positiveModulo(pointIndex, 5);
-    {
-      const { x, y } = points[pointIndex];
-      pathBuilder1.arc(0, 0, x, y, "cw");
-    }
-    // Then two segments back along the straightaway.
-    pointIndex -= 2;
-    pointIndex = positiveModulo(pointIndex, 5);
-    {
-      const { x, y } = points[pointIndex];
-      pathBuilder1.L(x, y);
-    }
-  } while (pointIndex != 0);
-  const pathBuilder2 = PathBuilder.M(points[0].x, points[0].y).circle(
-    0,
-    0,
-    "cw"
-  );
-  for (let i = 0; i < 5; i++) {
-    const index = positiveModulo((i + 1) * 2, 5);
-    const { x, y } = points[index];
-    pathBuilder2.L(x, y);
-  }
-  const pathBuilder3 = PathBuilder.M(points[0].x, points[0].y);
-  pointIndex = 0;
-  do {
-    // One segment clockwise along the outer loop.
-    pointIndex++;
-    pointIndex = positiveModulo(pointIndex, 5);
-    {
-      const { x, y } = points[pointIndex];
-      pathBuilder3.arc(0, 0, x, y, "cw");
-    }
-    // Then two segments forward along the straightaway.
-    pointIndex += 2;
-    pointIndex = positiveModulo(pointIndex, 5);
-    {
-      const { x, y } = points[pointIndex];
-      pathBuilder3.L(x, y);
-    }
-  } while (pointIndex != 0);
 
   const colorPairs = [
     { light: "var(--pastel-blue)", dark: "var(--darker-blue)" },
@@ -895,5 +959,7 @@ test();
     maxGroupsToDisplay: 12,
     pathString: pathString,
     destination: Destination.right,
+    liveColor: colors.light,
+    referenceColor: colors.dark,
   });
 }

@@ -175,23 +175,64 @@ class Background {
     ctx.globalCompositeOperation = "source-over";
     return noiseCanvas;
   }
-  draw(timeInMs: number) {
-    const context = this.#context;
-    // Draw precomputed gradient + noise
-    context.drawImage(this.#baselineNoise, 0, 0);
-    // Scale with solid color using multiply
-    const phases = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3]; // 0°, 120°, 240°
-    const period = 25000;
-    const t = (timeInMs % period) / period; // Normalize to [0,1]
-    const [r, g, b] = phases.map((phase) => {
-      const sinValue = Math.sin(2 * Math.PI * t + phase); // [-1, 1]
-      return 0.4 + (0.45 * (sinValue + 1)) / 2; // [0.4, 0.85]
-    });
-    context.globalCompositeOperation = "multiply";
-    context.fillStyle = `rgb(${r * 255}, ${g * 255}, ${b * 255})`;
-    context.fillRect(0, 0, 3840, 2160);
-    context.globalCompositeOperation = "source-over";
+  draw(t: number): void {
+    // t is in milliseconds, convert to seconds
+    const tSec = t / 1000;
+
+    // Exponential period: 10s at t=0, ~80s at t=480s
+    const basePeriod = 10 * Math.pow(1.00823, tSec);
+    const fastPeriod = basePeriod / 5;
+
+    // Triangle wave: maps t to [0,1]
+    const triangleWave = (t: number, period: number) =>
+      1 - Math.abs((t % period) / (period / 2) - 1);
+
+    // Multiplier range: 0.08–0.24 (RGB 20–60)
+    const minMultiplier = 0.15;
+    const maxMultiplier = 0.4;
+    const range = maxMultiplier - minMultiplier;
+
+    // Red: Triangle, nominal period (control)
+    const rMultiplier = minMultiplier + range * triangleWave(tSec, basePeriod);
+
+    // Green: Sine, nominal period, 120° offset
+    const gMultiplier =
+      minMultiplier +
+      range *
+        (0.5 +
+          0.5 * Math.sin((2 * Math.PI * (tSec + basePeriod / 3)) / basePeriod));
+
+    // Blue: Triangle, 5x faster, 120° offset
+    const bMultiplier =
+      minMultiplier + range * triangleWave(tSec + fastPeriod / 3, fastPeriod);
+
+    // Reset canvas with original noise image
+    this.#context.drawImage(
+      this.#baselineNoise,
+      0,
+      0,
+      this.#canvas.width,
+      this.#canvas.height
+    );
+
+    // Apply multipliers via multiply mode
+    this.#context.globalCompositeOperation = "multiply";
+    this.#context.fillStyle = `rgb(${rMultiplier * 255}, ${
+      gMultiplier * 255
+    }, ${bMultiplier * 255})`;
+    this.#context.fillRect(0, 0, this.#canvas.width, this.#canvas.height);
+    this.#context.globalCompositeOperation = "source-over";
   }
+  /**
+   * Request the current frame as a blob.
+   *
+   * This is aimed at development, not production.
+   * Among other things, this is slow.
+   * It also exports is a very slightly different format than the production method,
+   * so you might not get the same results.
+   * @param timeInMS Advance to this time.  The default is to keep the current time.
+   * @returns A promise to a blob.
+   */
   extract(timeInMS?: number) {
     if (timeInMS !== undefined) {
       this.draw(timeInMS);
@@ -472,6 +513,8 @@ function initialize(options: Options) {
   showFrame = (timeInMs: number) => {
     background.draw(timeInMs);
     // Which section of the script applies at this time?
+    const scriptEndTime = script.at(-1)!.endTime;
+    timeInMs %= scriptEndTime;
     function getIndex() {
       // Should this be a binary search?
       /**
@@ -525,8 +568,8 @@ function initScreenCapture(script: unknown) {
     source: "fourier-smackdown.ts",
     script,
     firstFrame: 0,
-    // 60 seconds x 60 frames per second.
-    lastFrame: Math.floor(60 * 60),
+    // 8 minutes * 60 seconds/minute x 60 frames per second.
+    lastFrame: Math.floor(8 * 60 * 60),
   };
 }
 

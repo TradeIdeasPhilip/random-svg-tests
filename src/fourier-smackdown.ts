@@ -164,10 +164,10 @@ class Background {
     gradient.addColorStop(0, "hsl(220, 10%, 30%)");
     gradient.addColorStop(1, "hsl(220, 15%, 40%)");
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 3840, 2160);
+    //ctx.fillRect(0, 0, 3840, 2160);
 
     // Draw noise with overlay
-    ctx.globalCompositeOperation = "overlay";
+    ctx.globalCompositeOperation = "source-over";
     ctx.filter = "url(#noiseFilter)";
     ctx.fillStyle = "rgb(255, 165, 0)"; // Burnt orange, opaque
     ctx.fillRect(0, 0, 3840, 2160);
@@ -175,53 +175,27 @@ class Background {
     ctx.globalCompositeOperation = "source-over";
     return noiseCanvas;
   }
-  draw(t: number): void {
-    // t is in milliseconds, convert to seconds
-    const tSec = t / 1000;
-
-    // Exponential period: 10s at t=0, ~80s at t=480s
-    const basePeriod = 10 * Math.pow(1.00823, tSec);
-    const fastPeriod = basePeriod / 5;
-
-    // Triangle wave: maps t to [0,1]
-    const triangleWave = (t: number, period: number) =>
-      1 - Math.abs((t % period) / (period / 2) - 1);
-
-    // Multiplier range: 0.08–0.24 (RGB 20–60)
-    const minMultiplier = 0.15;
-    const maxMultiplier = 0.4;
-    const range = maxMultiplier - minMultiplier;
-
-    // Red: Triangle, nominal period (control)
-    const rMultiplier = minMultiplier + range * triangleWave(tSec, basePeriod);
-
-    // Green: Sine, nominal period, 120° offset
-    const gMultiplier =
-      minMultiplier +
-      range *
-        (0.5 +
-          0.5 * Math.sin((2 * Math.PI * (tSec + basePeriod / 3)) / basePeriod));
-
-    // Blue: Triangle, 5x faster, 120° offset
-    const bMultiplier =
-      minMultiplier + range * triangleWave(tSec + fastPeriod / 3, fastPeriod);
-
-    // Reset canvas with original noise image
-    this.#context.drawImage(
-      this.#baselineNoise,
-      0,
-      0,
-      this.#canvas.width,
-      this.#canvas.height
+  readonly #brightnessRange = makeLinear(
+    -1,
+    /* min value */ 0.15,
+    1,
+    /* max value */ 0.33
+  );
+  draw(timeInMs: number) {
+    const context = this.#context;
+    // Draw precomputed gradient + noise
+    context.drawImage(this.#baselineNoise, 0, 0);
+    // Scale with solid color using multiply
+    const phases = [0, FULL_CIRCLE / 3, FULL_CIRCLE * (2 / 3)]; // 0°, 120°, 240°
+    const period = 60000;
+    const t = ((timeInMs % period) / period) * FULL_CIRCLE; // Normalize to [0, 2π]
+    const [r, g, b] = phases.map((phase) =>
+      this.#brightnessRange(Math.sin(t + phase))
     );
-
-    // Apply multipliers via multiply mode
-    this.#context.globalCompositeOperation = "multiply";
-    this.#context.fillStyle = `rgb(${rMultiplier * 255}, ${
-      gMultiplier * 255
-    }, ${bMultiplier * 255})`;
-    this.#context.fillRect(0, 0, this.#canvas.width, this.#canvas.height);
-    this.#context.globalCompositeOperation = "source-over";
+    context.globalCompositeOperation = "multiply";
+    context.fillStyle = `rgb(${r * 255}, ${g * 255}, ${b * 255})`;
+    context.fillRect(0, 0, 3840, 2160);
+    context.globalCompositeOperation = "source-over";
   }
   /**
    * Request the current frame as a blob.
@@ -568,8 +542,8 @@ function initScreenCapture(script: unknown) {
     source: "fourier-smackdown.ts",
     script,
     firstFrame: 0,
-    // 8 minutes * 60 seconds/minute x 60 frames per second.
-    lastFrame: Math.floor(8 * 60 * 60),
+    // 1 minute * 60 seconds/minute x 60 frames per second.
+    lastFrame: Math.floor(1 * 60 * 60),
   };
 }
 

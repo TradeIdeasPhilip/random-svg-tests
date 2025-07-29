@@ -20,6 +20,7 @@ import {
   initializedArray,
   makeBoundedLinear,
   makeLinear,
+  parseIntX,
   positiveModulo,
   Random,
   ReadOnlyRect,
@@ -53,6 +54,7 @@ const referencePath = selectorQuery("[data-reference]", SVGPathElement);
 const livePath = selectorQuery("[data-live]", SVGPathElement);
 
 type Options = {
+  backgroundSeed: number;
   pathString: string;
   maxGroupsToDisplay: number;
   destination: Destination;
@@ -148,11 +150,15 @@ class Destination {
  */
 class Background {
   readonly #canvas = getById("backgroundCanvas", HTMLCanvasElement);
-  readonly #baselineNoise = this.#precomputeNoise();
+  readonly #baselineNoise: HTMLCanvasElement;
+  constructor(seed: number) {
+    this.#baselineNoise = this.#precomputeNoise(seed);
+  }
   readonly #context = assertNonNullable(
     this.#canvas.getContext("2d", { colorSpace: "display-p3" })
   );
-  #precomputeNoise() {
+  #precomputeNoise(seed: number) {
+    selectorQuery("feTurbulence", SVGFETurbulenceElement).seed.baseVal = seed;
     // TODO change the seed.
     const noiseCanvas = document.createElement("canvas");
     noiseCanvas.width = 3840;
@@ -227,9 +233,6 @@ class Background {
     return promise;
   }
 }
-const background = new Background();
-
-(window as any).customBackground = background;
 
 const pathCaliper = new PathCaliper();
 
@@ -479,6 +482,9 @@ function initialize(options: Options) {
     }
   });
 
+  const background = new Background(options.backgroundSeed);
+  (window as any).customBackground = background;
+
   /**
    *
    * @param time In seconds
@@ -488,7 +494,7 @@ function initialize(options: Options) {
     background.draw(timeInMs);
     // Which section of the script applies at this time?
     const scriptEndTime = script.at(-1)!.endTime;
-    timeInMs %= scriptEndTime;
+    //timeInMs %= scriptEndTime;
     function getIndex() {
       // Should this be a binary search?
       /**
@@ -921,6 +927,8 @@ test();
     return { x, y };
   });
 
+  const allPaths = [...Progress.getUnique(Progress.getSamples().pentagram)];
+
   const colorPairs = [
     { light: "var(--pastel-blue)", dark: "var(--darker-blue)" },
     { light: "var(--pastel-lavender)", dark: "var(--darker-purple)" },
@@ -928,14 +936,26 @@ test();
     { light: "var(--pastel-mint)", dark: "var(--darker-teal)" },
     { light: "var(--pastel-coral)", dark: "var(--darker-coral)" },
   ];
-  const random = Random.fromString(
-    `${performance.now()}/${Math.random}/${new Date().toString()}/${Date.now()}`
+
+  const random = Random.fromString("fourier-smackdown.ts");
+  const colorsByIndex = initializedArray(allPaths.length, () => {
+    const index = (random() * 3) | 0;
+    const thisTime = colorPairs[index];
+    colorPairs.splice(index, 1);
+    colorPairs.push(thisTime);
+    return thisTime;
+  });
+
+  const requestedIndex = parseIntX(
+    new URLSearchParams(window.location.search).get("index")
   );
-  const allPaths = [...Progress.getUnique(Progress.getSamples().pentagram)];
-  const index = (random() * allPaths.length) | 0;
+  const index = requestedIndex ?? (Math.random() * allPaths.length) | 0;
+  
+
   const path = allPaths[index];
-  const colors = colorPairs[(random() * colorPairs.length) | 0];
-  console.log({ index, path, ...colors });
+  const colors = colorsByIndex[index];
+  console.log({ requestedIndex,index, path, ...colors });
+  console.log(allPaths);
   livePath.style.stroke = colors.light;
   referencePath.style.stroke = colors.dark;
 
@@ -978,5 +998,6 @@ test();
     destination: Destination.right,
     liveColor: colors.light,
     referenceColor: colors.dark,
+    backgroundSeed:index
   });
 }

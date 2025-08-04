@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>👋 fourier-smackdown</title>
+    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತನಾಲ್-r2X2qiJC.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
+    <link rel="modulepreload" crossorigin href="./assets/misc-BHUyxQfl.js">
+    <link rel="modulepreload" crossorigin href="./assets/client-misc-B8CxQsfg.js">
+    <link rel="modulepreload" crossorigin href="./assets/path-shape-CZZKMsju.js">
+    <link rel="modulepreload" crossorigin href="./assets/fourier-shared-_PrSLLN4.js">
+    <link rel="modulepreload" crossorigin href="./assets/utility-Dgy6CMn3.js">
+    <link rel="stylesheet" crossorigin href="./assets/ಇರ್ವತ್ತನಾಲ್-B14OQ9x4.css">
+  </head>
+  <body>
+    <canvas id="backgroundCanvas" width="3840" height="2160"></canvas>
+    <svg
+      id="main"
+      viewBox="0 0 16 9"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMaxYMin meet"
+    >
+      <defs>
+        <filter
+          id="noiseFilter"
+          filterUnits="userSpaceOnUse"
+          x="-0.1"
+          y="-0.1"
+          width="3840.2"
+          height="2160.2"
+        >
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.0015"
+            numOctaves="2"
+            stitchTiles="stitch"
+            result="noise"
+            seed="4"
+          />
+        </filter>
+        <filter id="dropShadow">
+          <feDropShadow
+            dx="0.05"
+            dy="0.05"
+            stdDeviation="0.01"
+            flood-color="hsl(220, 10%, 10%)"
+            flood-opacity="1"
+          />
+        </filter>
+      </defs>
+      <line id="for-scale" x1="1" y1="1" x2="15" y2="8"></line>
+      <g id="topText"></g>
+      <g id="scaled">
+        <path data-reference></path>
+        <path data-live></path>
+      </g>
+    </svg>
+  </body>
+</html>

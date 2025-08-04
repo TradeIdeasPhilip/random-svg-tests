@@ -83,8 +83,8 @@ function makeEasing(x1: number, x2: number) {
 
 let showFrame: (timeInMs: number) => void = () => {};
 
-(window as any).showFrame = (frameNumber: number) => {
-  const timeInMs = (frameNumber / 60) * 1000;
+(window as any).showFrame = (timeInMs: number) => {
+  //const timeInMs = (frameNumber / 60) * 1000;
   showFrame(timeInMs);
 };
 
@@ -183,10 +183,18 @@ class Background {
   }
   readonly #brightnessRange = makeLinear(
     -1,
-    /* min value */ 0.15,
+    /* min value */ 0.333,
     1,
-    /* max value */ 0.33
+    /* max value */ 0.667
   );
+  #lastDebugRow = 0;
+  addDebugText(text: string) {
+    const y = this.#lastDebugRow * 216 + 108;
+    this.#lastDebugRow = (this.#lastDebugRow + 1) % 10;
+    this.#context.font = "100px sans-serif";
+    this.#context.fillStyle = "white";
+    this.#context.fillText(text, 20, y);
+  }
   draw(timeInMs: number) {
     const context = this.#context;
     // Draw precomputed gradient + noise
@@ -240,7 +248,7 @@ class FourierAnimation {
   hide() {
     this.#destination.hide();
   }
-  show(t: number) {
+  show(_t: number) {
     this.#destination.show(this.#referenceColor, this.#liveColor);
     this.#destination.setReferencePath(this.#pathString);
     this.#destination.setTransform(this.#transform);
@@ -251,7 +259,7 @@ class FourierAnimation {
   readonly #referenceColor: string;
   readonly #liveColor: string;
   readonly #transform: DOMMatrix;
-  readonly #timeToPath!: readonly ((time: number) => string)[];
+  //  readonly #timeToPath!: readonly ((time: number) => string)[];
   constructor(options: Options) {
     this.#pathString = options.pathString;
     this.#destination = options.destination;
@@ -272,6 +280,7 @@ class FourierAnimation {
     this.endTime = script.at(-1)!.endTime;
   }
 }
+FourierAnimation; // TODO actually use this!
 
 //TODO I'm in the process of moving this stuff into the FourierAnimation class.
 // I want to make multiple instances of the animation.
@@ -491,9 +500,16 @@ function initialize(options: Options) {
    * @param noiseCanvas
    */
   showFrame = (timeInMs: number) => {
+    // TODO the comments say seconds but the variable name says ms.
+    // Tests suggests that "seconds" is accurate.
     background.draw(timeInMs);
+    background.addDebugText(
+      `frame #${Math.round((timeInMs / 1000) * 60)} @${(
+        timeInMs / 1000
+      ).toFixed(3)} seconds`
+    );
     // Which section of the script applies at this time?
-    const scriptEndTime = script.at(-1)!.endTime;
+    //const scriptEndTime = script.at(-1)!.endTime;
     //timeInMs %= scriptEndTime;
     function getIndex() {
       // Should this be a binary search?
@@ -547,9 +563,8 @@ function initScreenCapture(script: unknown) {
   return {
     source: "fourier-smackdown.ts",
     script,
-    firstFrame: 0,
-    // 1 minute * 60 seconds/minute x 60 frames per second.
-    lastFrame: Math.floor(1 * 60 * 60),
+    seconds: 60,
+    devicePixelRatio,
   };
 }
 
@@ -888,6 +903,16 @@ class Progress {
  * Maybe take n samples over the lifetime of the animation, and look at the max or average amplitude or such.
  * Similar to previous idea.
  *
+ * I'm very curious about the frequencies of the circles as they appear on the screen.
+ * I was originally focused on amplitude, and it's still good to sort and group by that.
+ * But watching things appear, trying to understand them, I'd love to see the frequency of each circle.
+ * Definitely a number.
+ * And also a circle that spins with the correct frequency and phase.
+ * Update it with the main animation.
+ * Pause at the same times and make one full cycle in the full time.
+ * Always a full sized circle so it's easy to see the quick motion.
+ * Consider a conic gradient (css or canvas, svg doesn't support it.)
+ * The 0 point will be a hard edge.  And it's all gradient as you get back.
  */
 
 /**
@@ -950,11 +975,10 @@ test();
     new URLSearchParams(window.location.search).get("index")
   );
   const index = requestedIndex ?? (Math.random() * allPaths.length) | 0;
-  
 
   const path = allPaths[index];
   const colors = colorsByIndex[index];
-  console.log({ requestedIndex,index, path, ...colors });
+  console.log({ requestedIndex, index, path, ...colors });
   console.log(allPaths);
   livePath.style.stroke = colors.light;
   referencePath.style.stroke = colors.dark;
@@ -998,6 +1022,6 @@ test();
     destination: Destination.right,
     liveColor: colors.light,
     referenceColor: colors.dark,
-    backgroundSeed:index
+    backgroundSeed: index,
   });
 }

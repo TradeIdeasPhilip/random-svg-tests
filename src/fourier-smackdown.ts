@@ -149,6 +149,49 @@ class Destination {
  * There are a lot of other ugly implementation details hidden in here, you don't want to know.
  */
 class Background {
+  static colorSummary(
+    imageData: ImageData | HTMLCanvasElement | CanvasRenderingContext2D
+  ) {
+    if (imageData instanceof HTMLCanvasElement) {
+      imageData = imageData.getContext("2d")!;
+    }
+    if (imageData instanceof CanvasRenderingContext2D) {
+      const { height, width } = imageData.canvas;
+      imageData = imageData.getImageData(0, 0, width, height);
+    }
+    class Accumulator {
+      #count = 0;
+      #sum = 0;
+      #min = Infinity;
+      #max = -Infinity;
+      get min() {
+        return this.#min;
+      }
+      get max() {
+        return this.#max;
+      }
+      get average() {
+        return this.#sum / this.#count;
+      }
+      add(byte: number) {
+        this.#count++;
+        this.#sum += byte;
+        this.#max = Math.max(this.#max, byte);
+        this.#min = Math.min(this.#min, byte);
+      }
+      get() {
+        return { min: this.min, max: this.max, average: this.average };
+      }
+    }
+    const channels = initializedArray(4, () => new Accumulator());
+    imageData.data.forEach((byte, index) => channels[index % 4].add(byte));
+    return {
+      red: channels[0].get(),
+      green: channels[1].get(),
+      blue: channels[2].get(),
+      alpha: channels[3].get(),
+    };
+  }
   readonly #canvas = getById("backgroundCanvas", HTMLCanvasElement);
   readonly #baselineNoise: HTMLCanvasElement;
   constructor(seed: number) {
@@ -159,7 +202,6 @@ class Background {
   );
   #precomputeNoise(seed: number) {
     selectorQuery("feTurbulence", SVGFETurbulenceElement).seed.baseVal = seed;
-    // TODO change the seed.
     const noiseCanvas = document.createElement("canvas");
     noiseCanvas.width = 3840;
     noiseCanvas.height = 2160;
@@ -794,7 +836,7 @@ class Progress {
  *   We trace the colors from the beginning, based on the t parameter, but they only make sense at the end.
  *   In one version the two colors will initially be all grouped together.
  *   In another version the two colors will initially alternate as much as possible.
- *   And more version.
+ *   And more versions.
  *
  * And at least one version with 7 points and all of the lines in there.
  *   And three colors for the three types of lines.

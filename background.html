@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🫣 Background Test</title>
+    <script type="module" src="/src/background.ts"></script>
+  </head>
+  <body>
+    <svg
+      id="main"
+      viewBox="0 0 16 9"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMaxYMin meet"
+    >
+      <defs>
+        <filter
+          id="noiseFilter"
+          filterUnits="userSpaceOnUse"
+          x="0"
+          y="0"
+          width="16"
+          height="9"
+        >
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.4"
+            numOctaves="2"
+            stitchTiles="stitch"
+            result="noise"
+            seed="7"
+          />
+          <feColorMatrix
+            type="matrix"
+            result="coloredNoise"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1"
+          />
+          <feComposite
+            in="coloredNoise"
+            in2="SourceAlpha"
+            operator="in"
+            result="composite"
+          />
+        </filter>
+      </defs>
+      <rect data-test-stripe x="0" y="1" width="9" height="2" fill="red"></rect>
+      <rect
+        data-test-stripe
+        x="0"
+        y="4"
+        width="9"
+        height="2"
+        fill="white"
+      ></rect>
+      <rect
+        data-test-stripe
+        x="0"
+        y="7"
+        width="9"
+        height="2"
+        fill="blue"
+      ></rect>
+      <rect
+        id="background"
+        x="1"
+        y="0"
+        width="4"
+        height="9"
+        filter="url(#noiseFilter)"
+      ></rect>
+      <rect
+        id="background1"
+        x="6"
+        y="0"
+        width="4"
+        height="9"
+        filter="url(#noiseFilter)"
+        data-animate-opacity
+      >
+      </rect>
+      <rect
+        id="background2"
+        x="11"
+        y="0"
+        width="4"
+        height="9"
+        filter="url(#noiseFilter)"
+      ></rect>
+      <line x1="0" y1="0" x2="9" y2="9" data-animate-opacity>
+      </line>
+    </svg>
+  </body>
+</html>

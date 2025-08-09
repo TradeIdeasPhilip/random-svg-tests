@@ -1,4 +1,9 @@
-import { AnimationLoop, getById, selectorQuery } from "phil-lib/client-misc";
+import {
+  AnimationLoop,
+  getById,
+  selectorQuery,
+  selectorQueryAll,
+} from "phil-lib/client-misc";
 import {
   groupTerms,
   hasFixedContribution,
@@ -52,6 +57,14 @@ const numberOfFourierSamples = 1024;
 const scaleG = getById("scaled", SVGGElement);
 const referencePath = selectorQuery("[data-reference]", SVGPathElement);
 const livePath = selectorQuery("[data-live]", SVGPathElement);
+
+const frequencyBlocks = selectorQueryAll("g.frequency", SVGGElement).map(
+  (top) => ({
+    top,
+    spinner: selectorQuery(".spinner", SVGPolygonElement, top),
+    text: selectorQuery("text", SVGTextElement, top),
+  })
+);
 
 type Options = {
   backgroundSeed: number;
@@ -227,7 +240,7 @@ class Background {
     -1,
     /* min value */ 0.333,
     1,
-    /* max value */ 0.667
+    /* max value */ 0.555
   );
   #lastDebugRow = 0;
   addDebugText(text: string) {
@@ -314,15 +327,15 @@ class FourierAnimation {
     // Create terms
     const terms = samplesToFourier(samples);
     const script = groupTerms({
-      addTime: 4800,
-      pauseTime: 200,
+      addTime: 6250,
+      pauseTime: 750,
       maxGroupsToDisplay: options.maxGroupsToDisplay,
       terms,
     });
     this.endTime = script.at(-1)!.endTime;
   }
 }
-FourierAnimation; // TODO actually use this!
+//FourierAnimation; // TODO actually use this!
 
 //TODO I'm in the process of moving this stuff into the FourierAnimation class.
 // I want to make multiple instances of the animation.
@@ -545,11 +558,11 @@ function initialize(options: Options) {
     // TODO the comments say seconds but the variable name says ms.
     // Tests suggests that "seconds" is accurate.
     background.draw(timeInMs);
-    background.addDebugText(
-      `frame #${Math.round((timeInMs / 1000) * 60)} @${(
-        timeInMs / 1000
-      ).toFixed(3)} seconds`
-    );
+    // background.addDebugText(
+    //   `frame #${Math.round((timeInMs / 1000) * 60)} @${(
+    //     timeInMs / 1000
+    //   ).toFixed(3)} seconds`
+    // );
     // Which section of the script applies at this time?
     //const scriptEndTime = script.at(-1)!.endTime;
     //timeInMs %= scriptEndTime;
@@ -571,6 +584,20 @@ function initialize(options: Options) {
     // Draw the path
     const pathString = timeToPath[index](timeInMs);
     livePath.setAttribute("d", pathString);
+
+    // Update the frequency spinners
+    const { usingCircles, addingCircles, startTime,endTime } = script[index];
+    const t =(addingCircles > 0)? (timeInMs - startTime) / (endTime - startTime) * FULL_CIRCLE:0;
+    frequencyBlocks.forEach((frequencyBlock, index) => {
+      if (index >= usingCircles + addingCircles) {
+        frequencyBlock.top.style.display = "none";
+      } else {
+        frequencyBlock.top.style.display = "";
+        const term = terms[index];
+        frequencyBlock.text.innerHTML = term.frequency.toString();
+        frequencyBlock.spinner.style.transform = `rotate(${t * term.frequency + term.phase + FULL_CIRCLE/4}rad)`
+      }
+    });
   };
 }
 
@@ -987,14 +1014,20 @@ function test() {
 test();
 
 {
-  const points = initializedArray(5, (n) => {
+  const points5 = initializedArray(5, (n) => {
     const angle = (FULL_CIRCLE * n) / 5 + FULL_CIRCLE / 4;
     const x = Math.cos(angle);
     const y = Math.sin(angle);
     return { x, y };
   });
+  const points = initializedArray(6, (n) => {
+    const angle = (FULL_CIRCLE * n) / 6 + FULL_CIRCLE / 4;
+    const x = Math.cos(angle);
+    const y = Math.sin(angle);
+    return { x, y };
+  });
 
-  const allPaths = [...Progress.getUnique(Progress.getSamples().pentagram)];
+  const allPaths = [...Progress.getUnique(Progress.getSamples().dodecahedron)];
 
   const colorPairs = [
     { light: "var(--pastel-blue)", dark: "var(--darker-blue)" },
@@ -1034,18 +1067,18 @@ test();
     } else {
       const { x, y } = points[vertex];
       const previousVertex = path[index - 1];
-      const stepsForward = positiveModulo(vertex - previousVertex, 5);
+      const stepsForward = positiveModulo(vertex - previousVertex, 6);
       switch (stepsForward) {
         case 1: {
           pathBuilder.arc(0, 0, x, y, "cw");
           break;
         }
         case 2:
-        case 3: {
+        case 4: {
           pathBuilder.L(x, y);
           break;
         }
-        case 4: {
+        case 5: {
           pathBuilder.arc(0, 0, x, y, "ccw");
           break;
         }
@@ -1059,7 +1092,7 @@ test();
   const pathString = pathBuilder.pathShape.rawPath;
   console.log(pathString);
   initialize({
-    maxGroupsToDisplay: 12,
+    maxGroupsToDisplay: 12,  // need to cut off the last 2
     pathString: pathString,
     destination: Destination.right,
     liveColor: colors.light,

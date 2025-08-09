@@ -1,4 +1,4 @@
-import { FULL_CIRCLE } from "phil-lib/misc";
+import { FULL_CIRCLE, makeLinear } from "phil-lib/misc";
 import "./background.css";
 import {
   AnimationLoop,
@@ -39,8 +39,8 @@ import {
 
 const filter = selectorQuery("filter", SVGFilterElement);
 const turbulence = selectorQuery("feTurbulence", SVGFETurbulenceElement);
-const backgroundRect = getById("background", SVGRectElement);
-const colorMatrix = selectorQuery("feColorMatrix", SVGFEColorMatrixElement);
+const backgroundNoiseRect = getById("background-noise", SVGRectElement);
+const backgroundMultiplyRect = getById("background-multiply", SVGRectElement);
 
 let nextInt = 1000;
 /**
@@ -58,87 +58,36 @@ function incrementSeed() {
   const newId = gensym();
   turbulence.seed.baseVal = next;
   filter.id = newId;
-  backgroundRect.setAttribute("filter", `url(#${newId})`);
+  backgroundNoiseRect.setAttribute("filter", `url(#${newId})`);
 }
 (window as any).incrementSeed = incrementSeed;
-
-let counter = 212342;
-const duration = 15000; // 15s
-const keyframes = [
-  [1.1, 0], // 0%: red out = 1.1 * red in
-  [0.55, 0.2], // 25%: red out = 0.55 * red in + 0.2 * alpha in
-  [0, 0], // 50%: red out = 0
-  [0.55, 0.2], // 75%: red out = 0.55 * red in + 0.2 * alpha in
-  [1.1, 0], // 100%: red out = 1.1 * red in
-];
-
-// This was the first thing that worked!
-// This got me animated SVGs without a canvas.
-/*
-function interpolate(t: number): string {
-  const keyTime = (t % duration) / duration; // 0 to 1
-  const index = Math.floor(keyTime * 4); // 0 to 3
-  const nextIndex = (index + 1) % 4;
-  const frac = (keyTime * 4) % 1; // 0 to 1 within keyframe
-  const [fromRed1, fromAlpha1] = keyframes[index];
-  const [fromRed2, fromAlpha2] = keyframes[nextIndex];
-  const fromRed = fromRed1 + (fromRed2 - fromRed1) * frac;
-  const fromAlpha = fromAlpha1 + (fromAlpha2 - fromAlpha1) * frac;
-  return `${fromRed} 0 0 ${fromAlpha} 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1`;
-}
-  */
-function interpolate(t: number): string {
-  t = (t / 60000) * FULL_CIRCLE;
-  let result = "";
-  for (let channel = 0; channel < 3; channel++) {
-    const phase = (channel * FULL_CIRCLE) / 3;
-    /**
-     * This is a simple sine wave like I use in a lot of places.
-     * Range 0.3 to 1.1
-     */
-    const fromBase = Math.sin(t + phase) * 0.4 + 0.7;
-    /**
-     * This is a way to get a little more noise in there.
-     * I'm adding in some of the alpha channel noise, that would otherwise have been abandoned.
-     * 
-     * I'm not sure if this helps or not.
-     * I need a side by side comparison.
-     */
-    const fromAlpha =  Math.sin(7 * t + phase) * 0.02 + 0.02;
-    for (let i = 0; i < channel; i++) {
-      result += "0 ";
-    }
-    result += `${fromBase} `;
-    for (let i = channel + 1; i < 3; i++) {
-      result += "0 ";
-    }
-    result += `${fromAlpha} 0  `;
-  }
-  // And peg the alpha channel to 1.
-  result += "0 0 0 0 1";
-  return result;
-}
-(window as any).interpolate = interpolate;
-
-/*
-function update() {
-  const newId = `gensym-${counter++}`;
-  //filter.id = newId;
-  colorMatrix.setAttribute("values", interpolate(performance.now()));
-  //rect.setAttribute("filter", `url(#${newId})`);
-  requestAnimationFrame(update);
-}
-
-requestAnimationFrame(update);
-*/
 
 const opacityAnimations = selectorQueryAll(
   "[data-animate-opacity]",
   SVGElement
 );
 
+  const brightnessRange = makeLinear(
+    -1,
+    /* min value */ 0.2,
+    1,
+    /* max value */ 0.5
+  );
+
 function showFrame(timeInMs: number) {
-  colorMatrix.setAttribute("values", interpolate(timeInMs));
+  {
+        const phases = [0, FULL_CIRCLE / 3, FULL_CIRCLE * (2 / 3)];
+    const period = 30000;
+    /**
+     * Normalize to [0, 2π]
+     */
+    const t = ((timeInMs % period) / period) * FULL_CIRCLE; 
+    const [r, g, b] = phases.map((phase) =>
+      brightnessRange(Math.sin(t + phase))
+    );
+    const controlColor = `rgb(${r * 255}, ${g * 255}, ${b * 255})`;
+    backgroundMultiplyRect.style.fill = controlColor;
+  }
   const opacity = (
     Math.sin((timeInMs / 10000) * FULL_CIRCLE) / 2 +
     0.5
@@ -180,7 +129,7 @@ function initScreenCapture(script: unknown) {
   return {
     source: "background.ts",
     script,
-    seconds: 75,
+    seconds: 35,
     devicePixelRatio,
   };
 }

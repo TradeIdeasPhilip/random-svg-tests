@@ -54,22 +54,101 @@ line#for-scale {
   stroke-width: var(--base-stroke-width);
 }
 
+g.frequencies {
+    transform: scale(0.5) translate(1.25px);
+}
+
+g.frequency:nth-child(1) {
+  transform: translate(0, -0.5px);
+}
+
+g.frequency:nth-child(2) {
+  transform: translate(0, 2px);
+}
+
+g.frequency:nth-child(3) {
+  transform: translate(0, 4.5px);
+}
+
+g.frequency:nth-child(4) {
+  transform: translate(0, 7px);
+}
+
+g.frequency:nth-child(5) {
+  transform: translate(0, 9.5px);
+}
+
+g.frequency:nth-child(6) {
+  transform: translate(0, 12px);
+}
+
+g.frequency:nth-child(7) {
+  transform: translate(0, 14.5px);
+}
+
+g.frequency:nth-child(8) {
+  transform: translate(7px, -0.5px);
+}
+
+g.frequency:nth-child(9) {
+  transform: translate(7px, 2px);
+}
+
+g.frequency:nth-child(10) {
+  transform: translate(7px, 4.5px);
+}
+
+g.frequency:nth-child(11) {
+  transform: translate(7px, 7px);
+}
+
+g.frequency:nth-child(12) {
+  transform: translate(7px, 9.5px);
+}
+
+g.frequency:nth-child(13) {
+  transform: translate(7px, 12px);
+}
+
+g.frequency:nth-child(14) {
+  transform: translate(7px, 14.5px);
+}
+
+.frequency {
+  font-size:1px;
+}
+
+.frequency text {
+  transform: translate(4px, 2.5px);
+  fill :#888;
+  mix-blend-mode: color-dodge;
+}
+
+.spinner {
+  fill :#555;
+  mix-blend-mode: color-dodge;
+  transform-origin: 2px 2px;
+}
+
 path[data-reference] {
-  fill: none;
-  stroke: var(--darker-coral);
+  fill: #333;
+  stroke: none !important;
+  fill-rule: evenodd;
+  mix-blend-mode: color-dodge;
 
   /* It seems like vector-effect: non-scaling-stroke would do this automatically, but I never got it to work. */
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 4);
+  stroke-width: 0;
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: url(#dropShadow);
 }
 
 path[data-live] {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1.5);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 3.5);
+  stroke :#888 !important;
+  mix-blend-mode: color-dodge;
 }
 
 #table-container {

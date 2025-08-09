@@ -24,32 +24,39 @@
         >
           <feTurbulence
             type="fractalNoise"
-            baseFrequency="0.4"
+            baseFrequency="0.36"
             numOctaves="2"
             stitchTiles="stitch"
             result="noise"
-            seed="7"
+            seed="27"
           />
-          <feColorMatrix
-            type="matrix"
-            result="coloredNoise"
-            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1"
-          />
-          <feComposite
-            in="coloredNoise"
-            in2="SourceAlpha"
-            operator="in"
-            result="composite"
-          />
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="0" intercept="1" />
+          </feComponentTransfer>
         </filter>
       </defs>
-      <rect data-test-stripe x="0" y="1" width="9" height="2" fill="red"></rect>
+      <rect
+        id="background-noise"
+        x="0"
+        y="0"
+        width="16"
+        height="9"
+        filter="url(#noiseFilter)"
+      ></rect>
+      <rect
+        id="background-multiply"
+        width="16"
+        height="9"
+        fill="#FF0055"
+        style="mix-blend-mode: multiply"
+      ></rect>
+      <rect data-test-stripe x="0" y="1" width="9" height="1" fill="red"></rect>
       <rect
         data-test-stripe
         x="0"
         y="4"
         width="9"
-        height="2"
+        height="1"
         fill="white"
       ></rect>
       <rect
@@ -57,37 +64,31 @@
         x="0"
         y="7"
         width="9"
-        height="2"
+        height="1"
         fill="blue"
       ></rect>
-      <rect
-        id="background"
-        x="1"
-        y="0"
-        width="4"
-        height="9"
-        filter="url(#noiseFilter)"
-      ></rect>
-      <rect
-        id="background1"
-        x="6"
-        y="0"
-        width="4"
-        height="9"
-        filter="url(#noiseFilter)"
-        data-animate-opacity
-      >
-      </rect>
-      <rect
-        id="background2"
-        x="11"
-        y="0"
-        width="4"
-        height="9"
-        filter="url(#noiseFilter)"
-      ></rect>
-      <line x1="0" y1="0" x2="9" y2="9" data-animate-opacity>
-      </line>
+      <circle
+        cx="10.5"
+        cy="1.5"
+        r="1"
+        fill="red"
+        style="xxmix-blend-mode: hue"
+      ></circle>
+      <circle
+        data-animate-opacity=""
+        cx="12.5"
+        cy="4.5"
+        r="1"
+        fill="white"
+      ></circle>
+      <circle
+        cx="14.5"
+        cy="7.5"
+        r="1"
+        fill="blue"
+        style="xxmix-blend-mode: color"
+      ></circle>
+      <line x1="0" y1="0" x2="9" y2="9" data-animate-opacity></line>
     </svg>
   </body>
 </html>

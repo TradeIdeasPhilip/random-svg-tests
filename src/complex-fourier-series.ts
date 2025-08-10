@@ -613,6 +613,7 @@ class AnimateRequestedVsReconstructed {
       addTime: 500,
       maxGroupsToDisplay: support.maxKeyframes,
       terms: terms,
+      skipCountAtEnd: 0
     });
     const smallEffectOffset = 50 / script.at(-1)!.startTime;
 

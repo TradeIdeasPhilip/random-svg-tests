@@ -98,6 +98,7 @@ function initialize(options: Options) {
     pauseTime: 200,
     maxGroupsToDisplay: options.maxGroupsToDisplay,
     terms,
+    skipCountAtEnd: 0,
   });
   scriptEndTime = script.at(-1)!.endTime;
   const getMaxFrequency = (numberOfTerms: number) => {

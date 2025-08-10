@@ -70,6 +70,7 @@ type Options = {
   backgroundSeed: number;
   pathString: string;
   maxGroupsToDisplay: number;
+  skipCountAtEnd?: number;
   destination: Destination;
   referenceColor: string;
   liveColor: string;
@@ -257,7 +258,7 @@ class Background {
     // Scale with solid color using multiply
     const phases = [0, FULL_CIRCLE / 3, FULL_CIRCLE * (2 / 3)]; // 0°, 120°, 240°
     const period = 60000;
-    const t = ((timeInMs % period) / period) * FULL_CIRCLE; // Normalize to [0, 2π]
+    const t = (((timeInMs + 20000) % period) / period) * FULL_CIRCLE; // Normalize to [0, 2π]
     const [r, g, b] = phases.map((phase) =>
       this.#brightnessRange(Math.sin(t + phase))
     );
@@ -327,15 +328,16 @@ class FourierAnimation {
     // Create terms
     const terms = samplesToFourier(samples);
     const script = groupTerms({
-      addTime: 6250,
+      addTime: 5250,
       pauseTime: 750,
       maxGroupsToDisplay: options.maxGroupsToDisplay,
+      skipCountAtEnd: options.skipCountAtEnd ?? 0,
       terms,
     });
     this.endTime = script.at(-1)!.endTime;
   }
 }
-//FourierAnimation; // TODO actually use this!
+FourierAnimation; // TODO actually use this!
 
 //TODO I'm in the process of moving this stuff into the FourierAnimation class.
 // I want to make multiple instances of the animation.
@@ -367,11 +369,11 @@ function initialize(options: Options) {
     console.log(parametricToPath);
     referencePath.setAttribute("d", parametricToPath.pathShape.rawPath);
   };
-  console.log("Try debugPath(2);");
   const script = groupTerms({
-    addTime: 4800,
-    pauseTime: 200,
+    addTime: 6250,
+    pauseTime: 750,
     maxGroupsToDisplay: options.maxGroupsToDisplay,
+    skipCountAtEnd: options.skipCountAtEnd ?? 0,
     terms,
   });
   //scriptEndTime = script.at(-1)!.endTime;
@@ -586,8 +588,11 @@ function initialize(options: Options) {
     livePath.setAttribute("d", pathString);
 
     // Update the frequency spinners
-    const { usingCircles, addingCircles, startTime,endTime } = script[index];
-    const t =(addingCircles > 0)? (timeInMs - startTime) / (endTime - startTime) * FULL_CIRCLE:0;
+    const { usingCircles, addingCircles, startTime, endTime } = script[index];
+    const t =
+      addingCircles > 0
+        ? ((timeInMs - startTime) / (endTime - startTime)) * FULL_CIRCLE
+        : 0;
     frequencyBlocks.forEach((frequencyBlock, index) => {
       if (index >= usingCircles + addingCircles) {
         frequencyBlock.top.style.display = "none";
@@ -595,7 +600,9 @@ function initialize(options: Options) {
         frequencyBlock.top.style.display = "";
         const term = terms[index];
         frequencyBlock.text.innerHTML = term.frequency.toString();
-        frequencyBlock.spinner.style.transform = `rotate(${t * term.frequency + term.phase + FULL_CIRCLE/4}rad)`
+        frequencyBlock.spinner.style.transform = `rotate(${
+          t * term.frequency + term.phase + FULL_CIRCLE / 4
+        }rad)`;
       }
     });
   };
@@ -632,7 +639,7 @@ function initScreenCapture(script: unknown) {
   return {
     source: "fourier-smackdown.ts",
     script,
-    seconds: 60,
+    seconds: 120, // Current runt time 84 seconds.  Leave some extra that I can cut in editing depending how long I talk.
     devicePixelRatio,
   };
 }
@@ -1020,6 +1027,9 @@ test();
     const y = Math.sin(angle);
     return { x, y };
   });
+  points5; // TODO save the the 5 and 7 pointed starts in some sensible way.
+  // Notice additional code below that hade to change with this.
+  // switch (stepsForward) {
   const points = initializedArray(6, (n) => {
     const angle = (FULL_CIRCLE * n) / 6 + FULL_CIRCLE / 4;
     const x = Math.cos(angle);
@@ -1050,6 +1060,11 @@ test();
     new URLSearchParams(window.location.search).get("index")
   );
   const index = requestedIndex ?? (Math.random() * allPaths.length) | 0;
+
+  {
+    const chapterText = getById("chapter", SVGTextElement);
+    chapterText.innerHTML = `#${index} of ${allPaths.length}`;
+  }
 
   const path = allPaths[index];
   const colors = colorsByIndex[index];
@@ -1092,7 +1107,8 @@ test();
   const pathString = pathBuilder.pathShape.rawPath;
   console.log(pathString);
   initialize({
-    maxGroupsToDisplay: 12,  // need to cut off the last 2
+    maxGroupsToDisplay: 15,
+    skipCountAtEnd: 1,
     pathString: pathString,
     destination: Destination.right,
     liveColor: colors.light,

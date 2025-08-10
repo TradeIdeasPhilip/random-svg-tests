@@ -54,8 +54,15 @@ line#for-scale {
   stroke-width: var(--base-stroke-width);
 }
 
+text#chapter {
+  font-size: 0.5px;
+  text-anchor: end;
+  fill: #555;
+  mix-blend-mode: color-dodge;
+}
+
 g.frequencies {
-    transform: scale(0.5) translate(1.25px);
+  transform: scale(0.5) translate(1.25px);
 }
 
 g.frequency:nth-child(1) {
@@ -115,17 +122,17 @@ g.frequency:nth-child(14) {
 }
 
 .frequency {
-  font-size:1px;
+  font-size: 1px;
 }
 
 .frequency text {
   transform: translate(4px, 2.5px);
-  fill :#888;
+  fill: #888;
   mix-blend-mode: color-dodge;
 }
 
 .spinner {
-  fill :#555;
+  fill: #555;
   mix-blend-mode: color-dodge;
   transform-origin: 2px 2px;
 }
@@ -147,7 +154,7 @@ path[data-live] {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 3.5);
-  stroke :#888 !important;
+  stroke: #888 !important;
   mix-blend-mode: color-dodge;
 }
 

@@ -361,6 +361,7 @@ export function groupTerms(inputs: {
   readonly pauseTime: number;
   readonly addTime: number;
   readonly maxGroupsToDisplay: number;
+  readonly skipCountAtEnd: number;
   readonly terms: readonly FourierTerm[];
 }) {
   const amplitudes = getAmplitudes(inputs.terms);
@@ -368,7 +369,8 @@ export function groupTerms(inputs: {
   let usingCircles = 0;
   for (
     let remainingGroupsToDisplay = inputs.maxGroupsToDisplay - 1;
-    remainingGroupsToDisplay >= 0 && usingCircles < amplitudes.length;
+    remainingGroupsToDisplay >= inputs.skipCountAtEnd &&
+    usingCircles < amplitudes.length;
     remainingGroupsToDisplay--
   ) {
     let addingAmplitude = 0;

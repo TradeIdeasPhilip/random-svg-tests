@@ -5,6 +5,7 @@ import {
   selectorQueryAll,
 } from "phil-lib/client-misc";
 import {
+  FourierTerm,
   groupTerms,
   hasFixedContribution,
   samplesFromPath,
@@ -13,12 +14,7 @@ import {
 } from "./fourier-shared";
 import "./fourier-smackdown.css";
 import { panAndZoom } from "./transforms";
-import {
-  ParametricToPath,
-  PathBuilder,
-  PathCaliper,
-  PathShape,
-} from "./path-shape";
+import { PathBuilder, PathCaliper, PathShape } from "./path-shape";
 import {
   assertNonNullable,
   FULL_CIRCLE,
@@ -54,17 +50,47 @@ import { ease, getMod } from "./utility";
 
 const numberOfFourierSamples = 1024;
 
-const scaleG = getById("scaled", SVGGElement);
-const referencePath = selectorQuery("[data-reference]", SVGPathElement);
-const livePath = selectorQuery("[data-live]", SVGPathElement);
-
-const frequencyBlocks = selectorQueryAll("g.frequency", SVGGElement).map(
-  (top) => ({
-    top,
-    spinner: selectorQuery(".spinner", SVGPolygonElement, top),
-    text: selectorQuery("text", SVGTextElement, top),
-  })
-);
+class FrequencySpinners {
+  readonly #spinners: readonly {
+    readonly top: SVGGElement;
+    readonly spinner: SVGPolygonElement;
+    readonly text: SVGTextElement;
+  }[];
+  constructor(
+    parent: string | SVGGElement,
+    readonly terms: readonly FourierTerm[]
+  ) {
+    if (!(parent instanceof SVGGElement)) {
+      parent = selectorQuery(parent, SVGGElement);
+    }
+    this.#spinners = selectorQueryAll(
+      "g.frequency",
+      SVGGElement,
+      0,
+      Infinity,
+      parent
+    ).map((top) => ({
+      top,
+      spinner: selectorQuery(".spinner", SVGPolygonElement, top),
+      text: selectorQuery("text", SVGTextElement, top),
+    }));
+  }
+  show(usingCount: number, addingCount: number, progressInRadians: number) {
+    // …
+    this.#spinners.forEach((spinner, index) => {
+      if (index >= usingCount + addingCount) {
+        spinner.top.style.display = "none";
+      } else {
+        spinner.top.style.display = "";
+        const term = this.terms[index];
+        spinner.text.innerHTML = term.frequency.toString();
+        spinner.spinner.style.transform = `rotate(${
+          progressInRadians * term.frequency + term.phase + FULL_CIRCLE / 4
+        }rad)`;
+      }
+    });
+  }
+}
 
 type Options = {
   backgroundSeed: number;
@@ -98,7 +124,6 @@ function makeEasing(x1: number, x2: number) {
 let showFrame: (timeInMs: number) => void = () => {};
 
 (window as any).showFrame = (timeInMs: number) => {
-  //const timeInMs = (frameNumber / 60) * 1000;
   showFrame(timeInMs);
 };
 
@@ -241,7 +266,7 @@ class Background {
     -1,
     /* min value */ 0.333,
     1,
-    /* max value */ 0.555
+    /* max value */ 0.5
   );
   #lastDebugRow = 0;
   addDebugText(text: string) {
@@ -304,10 +329,12 @@ class FourierAnimation {
   hide() {
     this.#destination.hide();
   }
-  show(_t: number) {
+  readonly #showPath: (timeInMs: number) => void;
+  show(timeInMs: number) {
     this.#destination.show(this.#referenceColor, this.#liveColor);
     this.#destination.setReferencePath(this.#pathString);
     this.#destination.setTransform(this.#transform);
+    this.#showPath(timeInMs);
   }
   readonly endTime: number;
   readonly #pathString: string;
@@ -316,7 +343,7 @@ class FourierAnimation {
   readonly #liveColor: string;
   readonly #transform: DOMMatrix;
   //  readonly #timeToPath!: readonly ((time: number) => string)[];
-  constructor(options: Options) {
+  constructor(options: Options, spinnersGElement: SVGGElement) {
     this.#pathString = options.pathString;
     this.#destination = options.destination;
     this.#referenceColor = options.referenceColor;
@@ -335,276 +362,226 @@ class FourierAnimation {
       terms,
     });
     this.endTime = script.at(-1)!.endTime;
-  }
-}
-FourierAnimation; // TODO actually use this!
-
-//TODO I'm in the process of moving this stuff into the FourierAnimation class.
-// I want to make multiple instances of the animation.
-// Multiple on the screen at the same time, each configured slightly differently.
-// Currently this function is still in use, not FourierAnimation.
-function initialize(options: Options) {
-  // Reference path.
-  referencePath.setAttribute("d", options.pathString);
-  const transform = panAndZoom(
-    // TODO this needs to depend on the Destination.
-    referencePath.getBBox(),
-    //mainSvg.viewBox.baseVal,
-    { x: 1, y: 1, width: 14, height: 7 },
-    "srcRect fits completely into destRect",
-    1
-  );
-  const scale = transform.a;
-  scaleG.style.transform = transform.toString();
-  scaleG.style.setProperty("--path-scale", scale.toString());
-  // Take the samples.
-  const samples = samplesFromPath(options.pathString, numberOfFourierSamples);
-  // Create terms
-  const terms = samplesToFourier(samples);
-  (window as any).debugPath = (termCount: number) => {
-    const parametricFunction = termsToParametricFunction(terms, termCount);
-    const parametricToPath = new ParametricToPath(parametricFunction);
-    parametricToPath.go(5000);
-    parametricToPath.dump();
-    console.log(parametricToPath);
-    referencePath.setAttribute("d", parametricToPath.pathShape.rawPath);
-  };
-  const script = groupTerms({
-    addTime: 6250,
-    pauseTime: 750,
-    maxGroupsToDisplay: options.maxGroupsToDisplay,
-    skipCountAtEnd: options.skipCountAtEnd ?? 0,
-    terms,
-  });
-  //scriptEndTime = script.at(-1)!.endTime;
-  // Moved!
-  const getMaxFrequency = (numberOfTerms: number) => {
-    const maxFrequency = Math.max(
-      ...terms.slice(0, numberOfTerms).map((term) => Math.abs(term.frequency))
-    );
-    return maxFrequency;
-  };
-  const recommendedNumberOfSegments = (numberOfTerms: number) => {
-    const maxFrequency = getMaxFrequency(numberOfTerms);
-    return 8 * maxFrequency + 7;
-  };
-  const timeToPath: ((time: number) => string)[] = script.map((scriptEntry) => {
-    if (scriptEntry.addingCircles == 0) {
-      const parametricFunction = termsToParametricFunction(
-        terms,
-        scriptEntry.usingCircles
+    const getMaxFrequency = (numberOfTerms: number) => {
+      const maxFrequency = Math.max(
+        ...terms.slice(0, numberOfTerms).map((term) => Math.abs(term.frequency))
       );
-      const numberOfDisplaySegments = recommendedNumberOfSegments(
-        scriptEntry.usingCircles
-      );
-      const path = PathShape.glitchFreeParametric(
-        parametricFunction,
-        numberOfDisplaySegments
-      );
-      return () => path.rawPath;
-    } else if (
-      scriptEntry.usingCircles == 0 &&
-      scriptEntry.addingCircles == 1 &&
-      terms[0].frequency == 0
-    ) {
-      /**
-       * Special case:  A dot is moving.
-       *    Going from 0 terms to 1 term with frequency = zero.
-       *    Don't even think about the animation that we do in other places.
-       *    This script is completely unique.
-       *    Draw a single line for the path.
-       *    Both ends start at the first point.
-       *    Use makeEasing() to move the points smoothly.
-       */
-      const { startTime, endTime } = scriptEntry;
-      const duration = endTime - startTime;
-      const getLeadingProgress = makeEasing(
-        startTime,
-        startTime + duration / 2
-      );
-      const getTrailingProgress = makeEasing(startTime, endTime);
-      const goal = hasFixedContribution(terms[0])!;
-      /**
-       * @param t A value between 0 and 1.
-       * @returns The coordinates as a string.
-       */
-      function location(t: number) {
-        return `${goal.x * t},${goal.y * t}`;
-      }
-      return (t: number) => {
-        const trailingProgress = getTrailingProgress(t);
-        const from = location(trailingProgress);
-        const leadingProgress = getLeadingProgress(t);
-        const to = location(leadingProgress);
-        const pathString = `M ${from} L ${to}`;
-        // console.log({ t, trailingProgress, leadingProgress, pathString });
-        return pathString;
-      };
-    } else {
-      const maxFrequency = getMaxFrequency(
-        scriptEntry.usingCircles + scriptEntry.addingCircles
-      );
-      const r = 0.2 / maxFrequency;
-      /**
-       * This creates a function which takes a time in milliseconds,
-       * 0 at the beginning of the script.
-       * The output is scaled to the range 0 - 1,
-       * for use with PathShape.parametric().
-       * The output might be outside of that range.
-       * I.e. the input and output are both numbers but they are interpreted on different scales.
-       */
-      const timeToCenter = makeBoundedLinear(
-        scriptEntry.startTime,
-        -r,
-        scriptEntry.endTime,
-        1 + r
-      );
-      const usingFunction = termsToParametricFunction(
-        terms,
-        scriptEntry.usingCircles
-      );
-      const addingFunction = termsToParametricFunction(
-        terms,
-        scriptEntry.addingCircles,
-        scriptEntry.usingCircles
-      );
-      let numberOfDisplaySegments = recommendedNumberOfSegments(
-        scriptEntry.usingCircles + scriptEntry.addingCircles
-      );
-      if (
-        scriptEntry.usingCircles == 0 ||
-        (scriptEntry.usingCircles == 1 && hasFixedContribution(terms[0]))
-      ) {
-        // We are converting from a dot to something else.
-        const startingPoint = hasFixedContribution(terms[0]) ?? { x: 0, y: 0 };
-        return (timeInMs: number): string => {
-          const centerOfChange = timeToCenter(timeInMs);
-          const startOfChange = centerOfChange - r;
-          const endOfChange = centerOfChange + r;
-          const getFraction = makeEasing(startOfChange, endOfChange);
-          /**
-           * 0 to `safePartEnds`, inclusive are safe inputs to `parametricFunction()`.
-           */
-          const safePartEnds = Math.min(1, endOfChange);
-          if (safePartEnds <= 0) {
-            // There is no safe part!
-            return `M${startingPoint.x},${startingPoint.y} L${startingPoint.x},${startingPoint.y}`;
-          } else {
-            const frugalSegmentCount = Math.ceil(
-              // TODO that 150 is crude.  The transition might require
-              // more detail than the before or the after.
-              // Or it might require less, not that we are glitch-free.
-              Math.max(numberOfDisplaySegments, 150) * safePartEnds
-            );
-            function parametricFunction(t: number) {
-              t = t * safePartEnds;
-              const base = usingFunction(t);
-              const fraction = 1 - getFraction(t);
-              if (fraction == 0) {
-                return base;
-              } else {
-                const adding = addingFunction(t);
-                return {
-                  x: base.x + fraction * adding.x,
-                  y: base.y + fraction * adding.y,
-                };
-              }
-            }
-            const path = PathShape.glitchFreeParametric(
-              parametricFunction,
-              frugalSegmentCount
-            );
-            return path.rawPath;
-          }
-        };
-      } else {
-        // Common case:  Converting from one normal shape into another.
-        return (timeInMs: number): string => {
-          const centerOfChange = timeToCenter(timeInMs);
-          const getFraction = makeEasing(
-            centerOfChange - r,
-            centerOfChange + r
+      return maxFrequency;
+    };
+    const recommendedNumberOfSegments = (numberOfTerms: number) => {
+      const maxFrequency = getMaxFrequency(numberOfTerms);
+      return 8 * maxFrequency + 7;
+    };
+    const timeToPath: ((time: number) => string)[] = script.map(
+      (scriptEntry) => {
+        if (scriptEntry.addingCircles == 0) {
+          const parametricFunction = termsToParametricFunction(
+            terms,
+            scriptEntry.usingCircles
           );
-          function parametricFunction(t: number) {
-            const base = usingFunction(t);
-            const fraction = 1 - getFraction(t);
-            if (fraction == 0) {
-              return base;
-            } else {
-              const adding = addingFunction(t);
-              return {
-                x: base.x + fraction * adding.x,
-                y: base.y + fraction * adding.y,
-              };
-            }
-          }
+          const numberOfDisplaySegments = recommendedNumberOfSegments(
+            scriptEntry.usingCircles
+          );
           const path = PathShape.glitchFreeParametric(
             parametricFunction,
             numberOfDisplaySegments
           );
-          return path.rawPath;
-        };
+          return () => path.rawPath;
+        } else if (
+          scriptEntry.usingCircles == 0 &&
+          scriptEntry.addingCircles == 1 &&
+          terms[0].frequency == 0
+        ) {
+          /**
+           * Special case:  A dot is moving.
+           *    Going from 0 terms to 1 term with frequency = zero.
+           *    Don't even think about the animation that we do in other places.
+           *    This script is completely unique.
+           *    Draw a single line for the path.
+           *    Both ends start at the first point.
+           *    Use makeEasing() to move the points smoothly.
+           */
+          const { startTime, endTime } = scriptEntry;
+          const duration = endTime - startTime;
+          const getLeadingProgress = makeEasing(
+            startTime,
+            startTime + duration / 2
+          );
+          const getTrailingProgress = makeEasing(startTime, endTime);
+          const goal = hasFixedContribution(terms[0])!;
+          /**
+           * @param t A value between 0 and 1.
+           * @returns The coordinates as a string.
+           */
+          function location(t: number) {
+            return `${goal.x * t},${goal.y * t}`;
+          }
+          return (t: number) => {
+            const trailingProgress = getTrailingProgress(t);
+            const from = location(trailingProgress);
+            const leadingProgress = getLeadingProgress(t);
+            const to = location(leadingProgress);
+            const pathString = `M ${from} L ${to}`;
+            // console.log({ t, trailingProgress, leadingProgress, pathString });
+            return pathString;
+          };
+        } else {
+          const maxFrequency = getMaxFrequency(
+            scriptEntry.usingCircles + scriptEntry.addingCircles
+          );
+          const r = 0.2 / maxFrequency;
+          /**
+           * This creates a function which takes a time in milliseconds,
+           * 0 at the beginning of the script.
+           * The output is scaled to the range 0 - 1,
+           * for use with PathShape.parametric().
+           * The output might be outside of that range.
+           * I.e. the input and output are both numbers but they are interpreted on different scales.
+           */
+          const timeToCenter = makeBoundedLinear(
+            scriptEntry.startTime,
+            -r,
+            scriptEntry.endTime,
+            1 + r
+          );
+          const usingFunction = termsToParametricFunction(
+            terms,
+            scriptEntry.usingCircles
+          );
+          const addingFunction = termsToParametricFunction(
+            terms,
+            scriptEntry.addingCircles,
+            scriptEntry.usingCircles
+          );
+          let numberOfDisplaySegments = recommendedNumberOfSegments(
+            scriptEntry.usingCircles + scriptEntry.addingCircles
+          );
+          if (
+            scriptEntry.usingCircles == 0 ||
+            (scriptEntry.usingCircles == 1 && hasFixedContribution(terms[0]))
+          ) {
+            // We are converting from a dot to something else.
+            const startingPoint = hasFixedContribution(terms[0]) ?? {
+              x: 0,
+              y: 0,
+            };
+            return (timeInMs: number): string => {
+              const centerOfChange = timeToCenter(timeInMs);
+              const startOfChange = centerOfChange - r;
+              const endOfChange = centerOfChange + r;
+              const getFraction = makeEasing(startOfChange, endOfChange);
+              /**
+               * 0 to `safePartEnds`, inclusive are safe inputs to `parametricFunction()`.
+               */
+              const safePartEnds = Math.min(1, endOfChange);
+              if (safePartEnds <= 0) {
+                // There is no safe part!
+                return `M${startingPoint.x},${startingPoint.y} L${startingPoint.x},${startingPoint.y}`;
+              } else {
+                const frugalSegmentCount = Math.ceil(
+                  // TODO that 150 is crude.  The transition might require
+                  // more detail than the before or the after.
+                  // Or it might require less, not that we are glitch-free.
+                  Math.max(numberOfDisplaySegments, 150) * safePartEnds
+                );
+                function parametricFunction(t: number) {
+                  t = t * safePartEnds;
+                  const base = usingFunction(t);
+                  const fraction = 1 - getFraction(t);
+                  if (fraction == 0) {
+                    return base;
+                  } else {
+                    const adding = addingFunction(t);
+                    return {
+                      x: base.x + fraction * adding.x,
+                      y: base.y + fraction * adding.y,
+                    };
+                  }
+                }
+                const path = PathShape.glitchFreeParametric(
+                  parametricFunction,
+                  frugalSegmentCount
+                );
+                return path.rawPath;
+              }
+            };
+          } else {
+            // Common case:  Converting from one normal shape into another.
+            return (timeInMs: number): string => {
+              const centerOfChange = timeToCenter(timeInMs);
+              const getFraction = makeEasing(
+                centerOfChange - r,
+                centerOfChange + r
+              );
+              function parametricFunction(t: number) {
+                const base = usingFunction(t);
+                const fraction = 1 - getFraction(t);
+                if (fraction == 0) {
+                  return base;
+                } else {
+                  const adding = addingFunction(t);
+                  return {
+                    x: base.x + fraction * adding.x,
+                    y: base.y + fraction * adding.y,
+                  };
+                }
+              }
+              const path = PathShape.glitchFreeParametric(
+                parametricFunction,
+                numberOfDisplaySegments
+              );
+              return path.rawPath;
+            };
+          }
+        }
       }
-    }
-  });
+    );
+    const frequencySpinners = new FrequencySpinners(spinnersGElement, terms);
+    this.#showPath = (timeInMs: number) => {
+      function getIndex() {
+        // Should this be a binary search?
+        /**
+         * The first script item that hasn't ended yet.
+         */
+        const index = script.findIndex(({ endTime }) => timeInMs < endTime);
+        if (index == -1) {
+          // Past the end.  Use the last script item.
+          return script.length - 1;
+        } else {
+          return index;
+        }
+      }
+      const index = getIndex();
+
+      // Draw the path
+      const pathString = timeToPath[index](timeInMs);
+      this.#destination.setLivePath(pathString);
+
+      // Update the frequency spinners
+      const { usingCircles, addingCircles, startTime, endTime } = script[index];
+      const t =
+        addingCircles > 0
+          ? ((timeInMs - startTime) / (endTime - startTime)) * FULL_CIRCLE
+          : 0;
+      frequencySpinners.show(usingCircles, addingCircles, t);
+    };
+  }
+}
+
+function initialize(options: Options) {
+  const frequenciesG = selectorQuery("g.frequencies", SVGGElement);
+  frequenciesG.style.fill = options.referenceColor;
+
+  const fourierAnimation = new FourierAnimation(options, frequenciesG);
 
   const background = new Background(options.backgroundSeed);
   (window as any).customBackground = background;
 
-  /**
-   *
-   * @param time In seconds
-   * @param noiseCanvas
-   */
   showFrame = (timeInMs: number) => {
     // TODO the comments say seconds but the variable name says ms.
     // Tests suggests that "seconds" is accurate.
     background.draw(timeInMs);
-    // background.addDebugText(
-    //   `frame #${Math.round((timeInMs / 1000) * 60)} @${(
-    //     timeInMs / 1000
-    //   ).toFixed(3)} seconds`
-    // );
-    // Which section of the script applies at this time?
-    //const scriptEndTime = script.at(-1)!.endTime;
-    //timeInMs %= scriptEndTime;
-    function getIndex() {
-      // Should this be a binary search?
-      /**
-       * The first script item that hasn't ended yet.
-       */
-      const index = script.findIndex(({ endTime }) => timeInMs < endTime);
-      if (index == -1) {
-        // Past the end.  Use the last script item.
-        return script.length - 1;
-      } else {
-        return index;
-      }
-    }
-    const index = getIndex();
-
-    // Draw the path
-    const pathString = timeToPath[index](timeInMs);
-    livePath.setAttribute("d", pathString);
-
-    // Update the frequency spinners
-    const { usingCircles, addingCircles, startTime, endTime } = script[index];
-    const t =
-      addingCircles > 0
-        ? ((timeInMs - startTime) / (endTime - startTime)) * FULL_CIRCLE
-        : 0;
-    frequencyBlocks.forEach((frequencyBlock, index) => {
-      if (index >= usingCircles + addingCircles) {
-        frequencyBlock.top.style.display = "none";
-      } else {
-        frequencyBlock.top.style.display = "";
-        const term = terms[index];
-        frequencyBlock.text.innerHTML = term.frequency.toString();
-        frequencyBlock.spinner.style.transform = `rotate(${
-          t * term.frequency + term.phase + FULL_CIRCLE / 4
-        }rad)`;
-      }
-    });
+    fourierAnimation.show(timeInMs);
   };
 }
 
@@ -899,14 +876,14 @@ class Progress {
  *     Lower quality, but slightly easier to see:  https://www.daviddarling.info/encyclopedia/T/tesseract.html#google_vignette
  *
  *
- * Dodecahedron vs star.
+ * Dodecahedron vs star. ✶ ✶ ✶
  *   Inscribed jewish star.
  *   Start from two pictures of the dodecahedron.
  *   One morphs smoothly into the star.
  *   Same exact graph.
  *   The picture is distorted slightly, but as little as possible.
  *
- * Dodecahedron vs dodecahedron
+ * Dodecahedron vs dodecahedron ✶ ✶ ✶
  *   I had some simple and repetitive ones.
  *   It would be interesting to start with two of those.
  *   There are so many to choose from.
@@ -1061,17 +1038,16 @@ test();
   );
   const index = requestedIndex ?? (Math.random() * allPaths.length) | 0;
 
-  {
-    const chapterText = getById("chapter", SVGTextElement);
-    chapterText.innerHTML = `#${index} of ${allPaths.length}`;
-  }
-
   const path = allPaths[index];
   const colors = colorsByIndex[index];
   console.log({ requestedIndex, index, path, ...colors });
   console.log(allPaths);
-  livePath.style.stroke = colors.light;
-  referencePath.style.stroke = colors.dark;
+
+  {
+    const chapterText = getById("chapter", SVGTextElement);
+    chapterText.innerHTML = `#${index} of ${allPaths.length}`;
+    chapterText.style.fill = colors.dark;
+  }
 
   const pathBuilder = PathBuilder.M(points[0].x, points[0].y);
   path.forEach((vertex, index) => {

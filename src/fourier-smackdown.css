@@ -57,10 +57,7 @@ line#for-scale {
 text#chapter {
   font-size: 0.5px;
   text-anchor: end;
-  fill: #888;
-  /* mix-blend-mode: color-dodge; */
   fill: #ccc;
-  mix-blend-mode: difference;
 }
 
 g.frequencies {
@@ -129,28 +126,15 @@ g.frequency:nth-child(14) {
 
 .frequency text {
   transform: translate(4px, 2.5px);
-  fill: #888;
-  /* mix-blend-mode: color-dodge; */
 }
 
 .spinner {
-  fill: #555;
-  /*  mix-blend-mode: color-dodge; */
-  fill: #ccc;
-  mix-blend-mode: difference;
   transform-origin: 2px 2px;
 }
 
 path[data-reference] {
-  fill: #ccc;
-  stroke: none !important;
-  fill-rule: evenodd;
-  mix-blend-mode: difference;
-  filter: url(#hueRotate);
-  filter: none;
-
-  /* It seems like vector-effect: non-scaling-stroke would do this automatically, but I never got it to work. */
-  stroke-width: 0;
+  fill: none;
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.5);
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -159,9 +143,7 @@ path[data-live] {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 3.5);
-  stroke: #ccc !important;
-  /*   mix-blend-mode: color-dodge;*/
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
 }
 
 #table-container {

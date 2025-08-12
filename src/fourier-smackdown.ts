@@ -21,7 +21,6 @@ import {
   initializedArray,
   makeBoundedLinear,
   makeLinear,
-  parseIntX,
   positiveModulo,
   Random,
   ReadOnlyRect,
@@ -93,7 +92,6 @@ class FrequencySpinners {
 }
 
 type Options = {
-  backgroundSeed: number;
   pathString: string;
   maxGroupsToDisplay: number;
   skipCountAtEnd?: number;
@@ -171,7 +169,7 @@ class Destination {
     this.#gElement.style.transform = transform.toString();
     this.#gElement.style.setProperty("--path-scale", scale.toString());
   }
-  static right = new Destination("#scaled", (content: ReadOnlyRect) =>
+  static right = new Destination("#right", (content: ReadOnlyRect) =>
     panAndZoom(
       content,
       { x: 1, y: 1, width: 14, height: 7 },
@@ -322,6 +320,7 @@ class Background {
     return promise;
   }
 }
+Background;
 
 const pathCaliper = new PathCaliper();
 
@@ -568,20 +567,14 @@ class FourierAnimation {
   }
 }
 
-function initialize(options: Options) {
-  const frequenciesG = selectorQuery("g.frequencies", SVGGElement);
-  frequenciesG.style.fill = options.referenceColor;
-
-  const fourierAnimation = new FourierAnimation(options, frequenciesG);
-
-  const background = new Background(options.backgroundSeed);
-  (window as any).customBackground = background;
-
+function initialize(...animations: FourierAnimation[]) {
+  //const background = new Background(options.backgroundSeed);
+  //(window as any).customBackground = background;
   showFrame = (timeInMs: number) => {
     // TODO the comments say seconds but the variable name says ms.
     // Tests suggests that "seconds" is accurate.
-    background.draw(timeInMs);
-    fourierAnimation.show(timeInMs);
+    //background.draw(timeInMs);
+    animations.forEach((fourierAnimation) => fourierAnimation.show(timeInMs));
   };
 }
 
@@ -998,23 +991,78 @@ function test() {
 test();
 
 {
-  const points5 = initializedArray(5, (n) => {
-    const angle = (FULL_CIRCLE * n) / 5 + FULL_CIRCLE / 4;
-    const x = Math.cos(angle);
-    const y = Math.sin(angle);
-    return { x, y };
-  });
-  points5; // TODO save the the 5 and 7 pointed starts in some sensible way.
-  // Notice additional code below that hade to change with this.
-  // switch (stepsForward) {
-  const points = initializedArray(6, (n) => {
-    const angle = (FULL_CIRCLE * n) / 6 + FULL_CIRCLE / 4;
-    const x = Math.cos(angle);
-    const y = Math.sin(angle);
-    return { x, y };
-  });
+  class ShapeMaker5 {
+    private constructor(_: never) {
+      throw new Error("wtf");
+    }
+    static readonly points: readonly {
+      readonly x: number;
+      readonly y: number;
+    }[] = initializedArray(5, (n) => {
+      const angle = (FULL_CIRCLE * n) / 5 + FULL_CIRCLE / 4;
+      const x = Math.cos(angle);
+      const y = Math.sin(angle);
+      return { x, y };
+    });
+    static readonly allPaths: readonly Path[] = [
+      ...Progress.getUnique(Progress.getSamples().pentagram),
+    ];
+  }
+  ShapeMaker5;
+  class ShapeMaker6 {
+    private constructor(_: never) {
+      throw new Error("wtf");
+    }
+    static readonly points: readonly {
+      readonly x: number;
+      readonly y: number;
+    }[] = initializedArray(6, (n) => {
+      const angle = (FULL_CIRCLE * n) / 6 + FULL_CIRCLE / 4;
+      const x = Math.cos(angle);
+      const y = Math.sin(angle);
+      return { x, y };
+    });
+    static readonly allPaths: readonly Path[] = [
+      ...Progress.getUnique(Progress.getSamples().dodecahedron),
+    ];
+    static makePathShape(index: number) {
+      const path = this.allPaths[index];
+      const pathBuilder = PathBuilder.M(points[0].x, points[0].y);
+      path.forEach((vertex, index) => {
+        if (index == 0) {
+          if (vertex != 0) {
+            throw new Error("wtf");
+          }
+        } else {
+          const { x, y } = points[vertex];
+          const previousVertex = path[index - 1];
+          const stepsForward = positiveModulo(vertex - previousVertex, 6);
+          switch (stepsForward) {
+            case 1: {
+              pathBuilder.arc(0, 0, x, y, "cw");
+              break;
+            }
+            case 2:
+            case 4: {
+              pathBuilder.L(x, y);
+              break;
+            }
+            case 5: {
+              pathBuilder.arc(0, 0, x, y, "ccw");
+              break;
+            }
+            default: {
+              throw new Error("wtf");
+            }
+          }
+        }
+      });
+      return pathBuilder.pathShape;
+    }
+  }
+  const points = ShapeMaker6.points;
 
-  const allPaths = [...Progress.getUnique(Progress.getSamples().dodecahedron)];
+  const allPaths = ShapeMaker6.allPaths;
 
   const colorPairs = [
     { light: "var(--pastel-blue)", dark: "var(--darker-blue)" },
@@ -1032,64 +1080,59 @@ test();
     colorPairs.push(thisTime);
     return thisTime;
   });
+  colorsByIndex;
 
-  const requestedIndex = parseIntX(
-    new URLSearchParams(window.location.search).get("index")
-  );
-  const index = requestedIndex ?? (Math.random() * allPaths.length) | 0;
+  // const requestedIndex = parseIntX(
+  //   new URLSearchParams(window.location.search).get("index")
+  // );
+  // const index = requestedIndex ?? (Math.random() * allPaths.length) | 0;
 
-  const path = allPaths[index];
-  colorsByIndex[index];
-  const colors = { light: "var(--pastel-pink)", dark: "var(--darker-pink)" };
-  console.log({ requestedIndex, index, path, ...colors });
-  console.log(allPaths);
+  // colorsByIndex[index];
+  // const colors = { light: "var(--pastel-pink)", dark: "var(--darker-pink)" };
+  // console.log({ requestedIndex, index, path, ...colors });
+  // console.log(allPaths);
 
+  const animations = new Array<FourierAnimation>();
   {
-    const chapterText = getById("chapter", SVGTextElement);
-    chapterText.innerHTML = `#${index} of ${allPaths.length}`;
-    chapterText.style.fill = colors.dark;
-  }
+    function pushOne(
+      color: string,
+      destRect: ReadOnlyRect,
+      index: number,
+      colorName = color
+    ) {
+      const frequenciesG = selectorQuery(
+        `g.frequencies[data-frequencies="${colorName}"]`,
+        SVGGElement
+      );
+      const destination = new Destination(
+        `[data-fourier-top="${colorName}"]`,
+        (content: ReadOnlyRect) =>
+          panAndZoom(content, destRect, "srcRect fits completely into destRect")
+      );
+      frequenciesG.style.fill = color;
+      const pathString = ShapeMaker6.makePathShape(index).rawPath;
+      const options = {
+        maxGroupsToDisplay: 15,
+        skipCountAtEnd: 1,
+        pathString: pathString,
+        destination: destination,
+        liveColor: color,
+        referenceColor: color,
+      };
+      const fourierAnimation = new FourierAnimation(options, frequenciesG);
 
-  const pathBuilder = PathBuilder.M(points[0].x, points[0].y);
-  path.forEach((vertex, index) => {
-    if (index == 0) {
-      if (vertex != 0) {
-        throw new Error("wtf");
-      }
-    } else {
-      const { x, y } = points[vertex];
-      const previousVertex = path[index - 1];
-      const stepsForward = positiveModulo(vertex - previousVertex, 6);
-      switch (stepsForward) {
-        case 1: {
-          pathBuilder.arc(0, 0, x, y, "cw");
-          break;
-        }
-        case 2:
-        case 4: {
-          pathBuilder.L(x, y);
-          break;
-        }
-        case 5: {
-          pathBuilder.arc(0, 0, x, y, "ccw");
-          break;
-        }
-        default: {
-          throw new Error("wtf");
-        }
-      }
+      animations.push(fourierAnimation);
+
+      const chapterText = selectorQuery(
+        `text.chapter[data-chapter="${colorName}"]`,
+        SVGTextElement
+      );
+      chapterText.innerHTML = `#${index}`;
+      chapterText.style.fill = color;
     }
-  });
-
-  const pathString = pathBuilder.pathShape.rawPath;
-  console.log(pathString);
-  initialize({
-    maxGroupsToDisplay: 15,
-    skipCountAtEnd: 1,
-    pathString: pathString,
-    destination: Destination.right,
-    liveColor: colors.light,
-    referenceColor: colors.dark,
-    backgroundSeed: index,
-  });
+    pushOne("red", { x: 0.5, y: 0.5, width: 5, height: 5 }, 3);
+    pushOne("white", { x: 5.5, y: 3.5, width: 5, height: 5 }, 4);
+    pushOne("var(--blue)", { x: 10.5, y: 0.5, width: 5, height: 5 }, 5, "blue");
+  }
+  initialize(...animations);
 }

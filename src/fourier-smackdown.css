@@ -25,6 +25,8 @@ body {
   --pastel-coral: hsl(15, 50%, 70%);
   --darker-coral: hsl(15, 60%, 50%);
 
+  --blue: hwb(204.42deg 0% 0%);
+
   overflow: hidden;
 }
 
@@ -54,14 +56,21 @@ line#for-scale {
   stroke-width: var(--base-stroke-width);
 }
 
-text#chapter {
+text.chapter {
   font-size: 0.5px;
   text-anchor: end;
-  fill: #ccc;
 }
 
-g.frequencies {
-  transform: scale(0.5) translate(1.25px);
+g.frequencies[data-frequencies="red"] {
+  transform: translate(0.25px, 5.65px) scale(0.25);
+}
+
+g.frequencies[data-frequencies="white"] {
+  transform: translate(5.5px, 0.1px) scale(0.25);
+}
+
+g.frequencies[data-frequencies="blue"] {
+  transform: translate(10.75px, 5.65px) scale(0.25);
 }
 
 g.frequency:nth-child(1) {
@@ -85,39 +94,43 @@ g.frequency:nth-child(5) {
 }
 
 g.frequency:nth-child(6) {
-  transform: translate(0, 12px);
-}
-
-g.frequency:nth-child(7) {
-  transform: translate(0, 14.5px);
-}
-
-g.frequency:nth-child(8) {
   transform: translate(7px, -0.5px);
 }
 
-g.frequency:nth-child(9) {
+g.frequency:nth-child(7) {
   transform: translate(7px, 2px);
 }
 
-g.frequency:nth-child(10) {
+g.frequency:nth-child(8) {
   transform: translate(7px, 4.5px);
 }
 
-g.frequency:nth-child(11) {
+g.frequency:nth-child(9) {
   transform: translate(7px, 7px);
 }
 
-g.frequency:nth-child(12) {
+g.frequency:nth-child(10) {
   transform: translate(7px, 9.5px);
 }
 
+g.frequency:nth-child(11) {
+  transform: translate(14px, -0.5px);
+}
+
+g.frequency:nth-child(12) {
+  transform: translate(14px, 2px);
+}
+
 g.frequency:nth-child(13) {
-  transform: translate(7px, 12px);
+  transform: translate(14px, 4.5px);
 }
 
 g.frequency:nth-child(14) {
-  transform: translate(7px, 14.5px);
+  transform: translate(14px, 7px);
+}
+
+g.frequency:nth-child(15) {
+  transform: translate(14px, 9.5px);
 }
 
 .frequency {
@@ -134,7 +147,7 @@ g.frequency:nth-child(14) {
 
 path[data-reference] {
   fill: none;
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.5);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.25);
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -144,39 +157,4 @@ path[data-live] {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
-}
-
-#table-container {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  display: none;
-  align-items: center;
-}
-
-#progress td {
-  padding: 0 0.5em;
-  color: white;
-}
-#progress th {
-  padding: 0 0.5em;
-  font-weight: bolder;
-}
-
-#progress tr th:first-child {
-  text-align: right;
-  color: red;
-}
-
-#progress tr:first-child th {
-  text-align: left;
-  color: var(--blue);
-}
-
-/* When an image appears under the table we use a black outline
-   to make sure the table's text is readable.  */
-td,
-th {
-  filter: url(#black-outline);
 }

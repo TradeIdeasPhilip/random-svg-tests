@@ -1039,7 +1039,8 @@ test();
   const index = requestedIndex ?? (Math.random() * allPaths.length) | 0;
 
   const path = allPaths[index];
-  const colors = colorsByIndex[index];
+  colorsByIndex[index];
+  const colors = { light: "var(--pastel-pink)", dark: "var(--darker-pink)" };
   console.log({ requestedIndex, index, path, ...colors });
   console.log(allPaths);
 

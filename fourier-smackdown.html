@@ -15,6 +15,90 @@
       preserveAspectRatio="xMaxYMin meet"
     >
       <defs>
+        <!-- source: https://yoksel.github.io/svg-filters/#/presets/watercolor -->
+        <filter
+          id="watercolor"
+          color-interpolation-filters="sRGB"
+          filterUnits="objectBoundingBox"
+          primitiveUnits="userSpaceOnUse"
+        >
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.05 0.05"
+            numOctaves="5"
+            seed="1"
+            stitchTiles="stitch"
+            result="turbulence"
+          />
+          <feDiffuseLighting
+            surfaceScale="0.5"
+            diffuseConstant="3.2"
+            lighting-color="#ffffff"
+            in="turbulence"
+            result="diffuseLighting"
+          >
+            <feDistantLight azimuth="150" elevation="16" />
+          </feDiffuseLighting>
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.011 0.004"
+            numOctaves="2"
+            seed="7"
+            stitchTiles="noStitch"
+            result="turbulence1"
+          />
+          <feColorMatrix
+            type="saturate"
+            values="3"
+            in="turbulence1"
+            result="colormatrix"
+          />
+          <feColorMatrix
+            type="matrix"
+            values="2 0 0 0 0
+0 1.5 0 0 0
+0 0 2 0 0
+0 0 0 2 0"
+            in="colormatrix"
+            result="colormatrix1"
+          />
+          <feBlend
+            mode="multiply"
+            in="diffuseLighting"
+            in2="colormatrix1"
+            result="blend"
+          />
+          <feComposite
+            in="blend"
+            in2="SourceAlpha"
+            operator="in"
+            result="composite1"
+          />
+        </filter>
+        <filter id="new-shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow
+            dx="0.05"
+            dy="0.025"
+            stdDeviation="0.05"
+            flood-color="black"
+          />
+        </filter>
+        <filter id="small-shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow
+            dx="0.1"
+            dy="0.05"
+            stdDeviation="0.03"
+            flood-color="black"
+          />
+        </filter>
+        <filter id="medium-shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow
+            dx="0.05"
+            dy="0.05"
+            stdDeviation="0.03"
+            flood-color="black"
+          />
+        </filter>
         <filter
           id="noiseFilter"
           filterUnits="userSpaceOnUse"
@@ -36,7 +120,11 @@
           </feComponentTransfer>
         </filter>
       </defs>
-      <rect width="16" height="9"></rect>
+      <rect
+        style="filter: url(#watercolor); transform: scale(0.03)"
+        width="534"
+        height="300"
+      ></rect>
       <line id="for-scale" x1="1" y1="1" x2="15" y2="8"></line>
       <g id="topText"></g>
       <g id="right">
@@ -58,7 +146,7 @@
       <g data-frequencies="red" class="frequencies">
         <g class="frequency">
           <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
+          <text id="gensym1">-3</text>
         </g>
         <g class="frequency">
           <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
@@ -79,42 +167,6 @@
         <g class="frequency">
           <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
           <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
         </g>
       </g>
       <g data-frequencies="white" class="frequencies">
@@ -142,42 +194,6 @@
           <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
           <text>-3</text>
         </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
-        </g>
       </g>
       <g data-frequencies="blue" class="frequencies">
         <g class="frequency">
@@ -204,44 +220,8 @@
           <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
           <text>-3</text>
         </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-3</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
-        </g>
-        <g class="frequency">
-          <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-          <text>-7</text>
-        </g>
       </g>
-      <text data-chapter="red" class="chapter" x="0.85" y="0.75">q#5</text>
+      <text data-chapter="red" class="chapter" x="1.2" y="0.75">q#5</text>
       <text data-chapter="white" class="chapter" x="10.5" y="8.75">q#5</text>
       <text data-chapter="blue" class="chapter" x="15.5" y="0.75">q#5</text>
     </svg>

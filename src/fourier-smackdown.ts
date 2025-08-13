@@ -54,6 +54,7 @@ class FrequencySpinners {
     readonly top: SVGGElement;
     readonly spinner: SVGPolygonElement;
     readonly text: SVGTextElement;
+    readonly background: SVGTextElement;
   }[];
   constructor(
     parent: string | SVGGElement,
@@ -68,11 +69,21 @@ class FrequencySpinners {
       0,
       Infinity,
       parent
-    ).map((top) => ({
-      top,
-      spinner: selectorQuery(".spinner", SVGPolygonElement, top),
-      text: selectorQuery("text", SVGTextElement, top),
-    }));
+    ).map((top) => {
+      const text = selectorQuery("text", SVGTextElement, top);
+      const background = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "text"
+      );
+      background.classList.add("background");
+      top.insertBefore(background, text);
+      return {
+        top,
+        spinner: selectorQuery(".spinner", SVGPolygonElement, top),
+        text,
+        background,
+      };
+    });
   }
   show(usingCount: number, addingCount: number, progressInRadians: number) {
     // …
@@ -82,7 +93,8 @@ class FrequencySpinners {
       } else {
         spinner.top.style.display = "";
         const term = this.terms[index];
-        spinner.text.innerHTML = term.frequency.toString();
+        spinner.background.innerHTML = spinner.text.innerHTML =
+          term.frequency.toString();
         spinner.spinner.style.transform = `rotate(${
           progressInRadians * term.frequency + term.phase + FULL_CIRCLE / 4
         }rad)`;
@@ -609,7 +621,7 @@ function initScreenCapture(script: unknown) {
   return {
     source: "fourier-smackdown.ts",
     script,
-    seconds: 120, // Current runt time 84 seconds.  Leave some extra that I can cut in editing depending how long I talk.
+    seconds: 60 + 47, // Current runt time 84 seconds.  Leave some extra that I can cut in editing depending how long I talk.
     devicePixelRatio,
   };
 }
@@ -1130,9 +1142,9 @@ test();
       chapterText.innerHTML = `#${index}`;
       chapterText.style.fill = color;
     }
-    pushOne("red", { x: 0.5, y: 0.5, width: 5, height: 5 }, 3);
-    pushOne("white", { x: 5.5, y: 3.5, width: 5, height: 5 }, 4);
-    pushOne("var(--blue)", { x: 10.5, y: 0.5, width: 5, height: 5 }, 5, "blue");
+    pushOne("red", { x: 0.5, y: 0.5, width: 5, height: 5 }, 6);
+    pushOne("white", { x: 5.5, y: 3.5, width: 5, height: 5 }, 7);
+    pushOne("var(--blue)", { x: 10.5, y: 0.5, width: 5, height: 5 }, 8, "blue");
   }
   initialize(...animations);
 }

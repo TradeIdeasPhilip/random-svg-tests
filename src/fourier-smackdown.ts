@@ -59,12 +59,20 @@ function onlyBackground() {
   backgroundElement.parentElement?.append(backgroundElement);
 }
 
+/**
+ * `$_GET`, in PHP parlance.
+ */
 const urlParameters = new URLSearchParams(window.location.search);
 if (urlParameters.get("hide_background") == "1") {
   hideBackground();
 } else if (urlParameters.get("only_background") == "1") {
   onlyBackground();
-}
+} else if (urlParameters.get("thumbnail") == "1") {
+  const foregroundG = selectorQuery("g#foreground",SVGGElement);
+  foregroundG.style.display = "none";
+  const thumbnailG = selectorQuery("g#thumbnail-foreground",SVGGElement);
+  thumbnailG.style.display = "";
+} 
 
 {
   const canvas = selectorQuery("canvas#cache", HTMLCanvasElement);

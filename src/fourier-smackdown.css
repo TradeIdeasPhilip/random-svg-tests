@@ -28,6 +28,9 @@ body {
   --blue: hwb(204.42deg 0% 0%);
 
   overflow: hidden;
+
+  --big-shadow: url(#new-shadow);
+  --small-shadow: url(#small-shadow);
 }
 
 svg#main {
@@ -36,7 +39,7 @@ svg#main {
   --base-stroke-width: 0.05px;
 }
 
-#backgroundCanvas {
+.backgroundCanvas {
   width: calc(min(100vw, 177.77777778vh));
   position: absolute;
   top: 0;
@@ -99,7 +102,7 @@ g.frequency:nth-child(6) {
 }
 
 .frequency {
-  filter: url(#small-shadow);
+  filter: var(--small-shadow);
 }
 
 .frequency text {
@@ -132,5 +135,5 @@ path[data-live] {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
-  filter: url(#new-shadow);
+  filter: var(--big-shadow);
 }

@@ -47,6 +47,34 @@ import { ease, getMod } from "./utility";
  * I had to add an interesting background because pastels on a solid background don't look good.
  */
 
+function hideBackground() {
+  document.body.style.backgroundColor = "transparent";
+  selectorQueryAll("[data-hide-background]", SVGElement).forEach(
+    (element) => (element.style.display = "none")
+  );
+}
+
+function onlyBackground() {
+  const backgroundElement = selectorQuery("[data-hide-background]", SVGElement);
+  backgroundElement.parentElement?.append(backgroundElement);
+}
+
+const urlParameters = new URLSearchParams(window.location.search);
+if (urlParameters.get("hide_background") == "1") {
+  hideBackground();
+} else if (urlParameters.get("only_background") == "1") {
+  onlyBackground();
+}
+
+{
+  const canvas = selectorQuery("canvas#cache", HTMLCanvasElement);
+  const context = canvas.getContext("2d")!;
+  context.filter = "url(#watercolor)";
+  const scale = 1;
+  context.scale(scale, scale);
+  //  context.fillRect(0, 0, canvas.width / scale, canvas.height / scale);
+}
+
 const numberOfFourierSamples = 1024;
 
 class FrequencySpinners {
@@ -579,7 +607,9 @@ class FourierAnimation {
   }
 }
 
-function initialize(...animations: FourierAnimation[]) {
+type Showable = { show(timeInMs: number): void };
+
+function initialize(...animations: Showable[]) {
   //const background = new Background(options.backgroundSeed);
   //(window as any).customBackground = background;
   showFrame = (timeInMs: number) => {
@@ -621,7 +651,7 @@ function initScreenCapture(script: unknown) {
   return {
     source: "fourier-smackdown.ts",
     script,
-    seconds: 60 + 47, // Current runt time 84 seconds.  Leave some extra that I can cut in editing depending how long I talk.
+    seconds: 60 + 43, // Current runt time 84 seconds.  Leave some extra that I can cut in editing depending how long I talk.
     devicePixelRatio,
   };
 }
@@ -1104,7 +1134,7 @@ test();
   // console.log({ requestedIndex, index, path, ...colors });
   // console.log(allPaths);
 
-  const animations = new Array<FourierAnimation>();
+  const animations = new Array<Showable>();
   {
     function pushOne(
       color: string,
@@ -1142,9 +1172,114 @@ test();
       chapterText.innerHTML = `#${index}`;
       chapterText.style.fill = color;
     }
-    pushOne("red", { x: 0.5, y: 0.5, width: 5, height: 5 }, 6);
-    pushOne("white", { x: 5.5, y: 3.5, width: 5, height: 5 }, 7);
-    pushOne("var(--blue)", { x: 10.5, y: 0.5, width: 5, height: 5 }, 8, "blue");
+    pushOne("red", { x: 0.5, y: 0.5, width: 5, height: 5 }, 9);
+    pushOne("white", { x: 5.5, y: 3.5, width: 5, height: 5 }, 10);
+    pushOne(
+      "var(--blue)",
+      { x: 10.5, y: 0.5, width: 5, height: 5 },
+      11,
+      "blue"
+    );
   }
+
+  {
+    const mainSvgElement = getById("main", SVGSVGElement);
+    const smallDropShadowElement = selectorQuery(
+      "#small-shadow > feDropShadow",
+      SVGFEDropShadowElement
+    );
+    const NORMAL_BLUR = 0.03;
+    const BIG_BLUR = 1.0;
+    const blurAnimationStart = 23000;
+    const blurAnimationEnd = 28000;
+    const blurVsTime = makeLinear(
+      blurAnimationStart,
+      BIG_BLUR,
+      blurAnimationEnd,
+      NORMAL_BLUR
+    );
+
+    animations.push({
+      show(timeInMs: number): void {
+        {
+          // Big:
+          // 4.5 - 8 seconds, flash a few times.
+          // 14 seconds - 16.6 seconds, hide.
+          // 46.5 - 54 show drop-shadow(0px 0px 0.03px black)
+          // 54-57    drop-shadow(0px 1px 0.03px black)
+          // 57- 60.6     drop-shadow(1px 1px 0.03px black)
+          // 60.6 - 69.6.  move to a few more integer positions.
+          let big: string | undefined;
+          if (timeInMs >= 4500 && timeInMs <= 8000) {
+            if (timeInMs % 1000 >= 500) {
+              big = "none";
+            }
+          } else if (timeInMs > 14000 && timeInMs <= 16600) {
+            big = "none";
+          }
+          if (timeInMs >= 46500) {
+            if (timeInMs <= 54000) {
+              big = "drop-shadow(0px 0px 0.03px black)";
+            } else if (timeInMs < 57000) {
+              big = "drop-shadow(0px 1px 0.03px black)";
+            } else if (timeInMs < 60600) {
+              big = "drop-shadow(1px 1px 0.03px black)";
+            } else if (timeInMs < 69600) {
+              const options = [
+                "drop-shadow(2px 1px 0.03px black)",
+                "drop-shadow(2px 0px 0.03px black)",
+                "drop-shadow(1px 0px 0.03px black)",
+                "drop-shadow(1px -1px 0.03px black)",
+              ];
+              const duration = 69600 - 60600;
+              const phase = Math.floor(
+                ((timeInMs - 60600) / duration) * options.length
+              );
+              big = options[phase];
+            }
+          }
+          const BIG = "--big-shadow";
+          if (big === undefined) {
+            mainSvgElement.style.removeProperty(BIG);
+          } else {
+            mainSvgElement.style.setProperty(BIG, big);
+          }
+        }
+        {
+          // Words:
+          // 17.75 - 22 flash a couple of times
+          let small: string | undefined;
+          const flashFirst = 17750;
+          const flashLast = 22000;
+          if (timeInMs >= flashFirst && timeInMs <= flashLast) {
+            const flashDuration = flashLast - flashFirst;
+            const flashPhase = Math.floor(
+              ((timeInMs - flashFirst) / flashDuration) * 5
+            );
+            if (flashPhase % 2 == 0) {
+              small = "none";
+            }
+          }
+          const SMALL = "--small-shadow";
+          if (small === undefined) {
+            mainSvgElement.style.removeProperty(SMALL);
+          } else {
+            mainSvgElement.style.setProperty(SMALL, small);
+          }
+        }
+        {
+          // Words:
+          // 23 - 28 Shadow starts a lot blurrier then slowly returns to normal.
+          const blur =
+            timeInMs < blurAnimationStart || timeInMs > blurAnimationEnd
+              ? NORMAL_BLUR
+              : blurVsTime(timeInMs);
+          smallDropShadowElement.stdDeviationX.baseVal = blur;
+          smallDropShadowElement.stdDeviationY.baseVal = blur;
+        }
+      },
+    });
+  }
+
   initialize(...animations);
 }

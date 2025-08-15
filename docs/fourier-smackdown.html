@@ -4,17 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>👋 fourier-smackdown</title>
-    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತನಾಲ್-DI8hxKxC.js"></script>
+    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತನಾಲ್-BLNwf7DC.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-BHUyxQfl.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-B8CxQsfg.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-CZZKMsju.js">
     <link rel="modulepreload" crossorigin href="./assets/fourier-shared-BdjzRlL0.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-Dgy6CMn3.js">
-    <link rel="stylesheet" crossorigin href="./assets/ಇರ್ವತ್ತನಾಲ್-Blx8m-Ro.css">
+    <link rel="stylesheet" crossorigin href="./assets/ಇರ್ವತ್ತನಾಲ್-B-eUetgx.css">
   </head>
   <body>
-    <canvas id="backgroundCanvas" width="3840" height="2160"></canvas>
+    <canvas
+      id="backgroundCanvas"
+      class="backgroundCanvas"
+      width="3840"
+      height="2160"
+    ></canvas>
+    <canvas
+      id="cache"
+      class="backgroundCanvas"
+      height="2160"
+      width="3840"
+    ></canvas>
     <svg
       id="main"
       viewBox="0 0 16 9"
@@ -22,6 +33,37 @@
       preserveAspectRatio="xMaxYMin meet"
     >
       <defs>
+        <!-- source: https://yoksel.github.io/svg-filters/#/presets/paper -->
+        <filter
+          id="paper-background"
+          color-interpolation-filters="sRGB"
+          filterUnits="objectBoundingBox"
+          primitiveUnits="userSpaceOnUse"
+        >
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.05 0.05"
+            numOctaves="5"
+            seed="1"
+            stitchTiles="stitch"
+            result="turbulence"
+          />
+          <feDiffuseLighting
+            surfaceScale="0.3"
+            diffuseConstant="3.1"
+            lighting-color="#ffffff"
+            in="turbulence"
+            result="diffuseLighting"
+          >
+            <feDistantLight azimuth="100" elevation="17" />
+          </feDiffuseLighting>
+          <feComposite
+            in="diffuseLighting"
+            in2="SourceAlpha"
+            operator="in"
+            result="composite"
+          />
+        </filter>
         <!-- source: https://yoksel.github.io/svg-filters/#/presets/watercolor -->
         <filter
           id="watercolor"
@@ -128,7 +170,11 @@
         </filter>
       </defs>
       <rect
-        style="filter: url(#watercolor); transform: scale(0.03)"
+        data-hide-background
+        style="
+          filter: url(#watercolor);
+          transform: scale(0.03);
+        "
         width="534"
         height="300"
       ></rect>

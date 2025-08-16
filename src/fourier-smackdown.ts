@@ -24,6 +24,7 @@ import {
   positiveModulo,
   Random,
   ReadOnlyRect,
+  zip,
 } from "phil-lib/misc";
 import { ease, getMod } from "./utility";
 
@@ -375,7 +376,7 @@ class FourierBase {
   constructor(readonly pathString: string) {
     this.samples = samplesFromPath(pathString, numberOfFourierSamples);
     this.terms = samplesToFourier(this.samples);
-    this.keyframes = initializedArray(16, (n) => n);
+    this.keyframes = initializedArray(21, (n) => n);
   }
   keyframes: number[];
   get stepCount() {
@@ -660,7 +661,7 @@ function initScreenCapture(script: unknown) {
   return {
     source: "fourier-smackdown.ts",
     script,
-    seconds: 60 + 43, // Current runt time 84 seconds.  Leave some extra that I can cut in editing depending how long I talk.
+    seconds: 120,
     devicePixelRatio,
   };
 }
@@ -1143,50 +1144,97 @@ test();
   // console.log({ requestedIndex, index, path, ...colors });
   // console.log(allPaths);
 
-  const animations = new Array<Showable>();
+  const baseInfo: {
+    color: string;
+    destRect: ReadOnlyRect;
+    index: number;
+    colorName?: string;
+  }[] = [
+    {
+      color: "red",
+      destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
+      index: 12,
+    },
+    {
+      color: "white",
+      destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
+      index: 13,
+    },
+    {
+      color: "var(--blue)",
+      destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
+      index: 14,
+      colorName: "blue",
+    },
+  ];
+
+  const fourierInfo = baseInfo.map(({ index }) => {
+    const pathString = ShapeMaker6.makePathShape(index).rawPath;
+    return new FourierBase(pathString);
+  });
+
   {
-    function pushOne(
-      color: string,
-      destRect: ReadOnlyRect,
-      index: number,
-      colorName = color
-    ) {
-      const frequenciesG = selectorQuery(
-        `g.frequencies[data-frequencies="${colorName}"]`,
-        SVGGElement
-      );
-      const destination = new Destination(
-        `[data-fourier-top="${colorName}"]`,
-        (content: ReadOnlyRect) =>
-          panAndZoom(content, destRect, "srcRect fits completely into destRect")
-      );
-      frequenciesG.style.fill = color;
-      const pathString = ShapeMaker6.makePathShape(index).rawPath;
-      const options = {
-        base: new FourierBase(pathString),
-        destination: destination,
-        liveColor: color,
-        referenceColor: color,
-      };
-      const fourierAnimation = new FourierAnimation(options, frequenciesG);
-
-      animations.push(fourierAnimation);
-
-      const chapterText = selectorQuery(
-        `text.chapter[data-chapter="${colorName}"]`,
-        SVGTextElement
-      );
-      chapterText.innerHTML = `#${index}`;
-      chapterText.style.fill = color;
-    }
-    pushOne("red", { x: 0.5, y: 0.5, width: 5, height: 5 }, 12);
-    pushOne("white", { x: 5.5, y: 3.5, width: 5, height: 5 }, 13);
-    pushOne(
-      "var(--blue)",
-      { x: 10.5, y: 0.5, width: 5, height: 5 },
-      14,
-      "blue"
+    const amplitudes = new Map<number, number>();
+    fourierInfo.forEach((base) =>
+      base.terms.forEach(({ frequency, amplitude }) => {
+        const previousAmplitude = amplitudes.get(frequency) ?? 0;
+        const newAmplitude = previousAmplitude + amplitude;
+        amplitudes.set(frequency, newAmplitude);
+      })
     );
+    const amplitudes1 = Array.from(
+      amplitudes.entries(),
+      ([frequency, amplitude]) => ({ frequency, amplitude })
+    );
+    amplitudes1.sort((a, b) => b.amplitude - a.amplitude);
+    amplitudes1.splice(10, numberOfFourierSamples);
+    console.log(amplitudes1);
+    fourierInfo.forEach(({ terms }) => {
+      amplitudes1.forEach(({ frequency }, desiredIndex) => {
+        const initialIndex = terms.findIndex(
+          (term) => term.frequency == frequency
+        );
+        let term: FourierTerm;
+        if (initialIndex == -1) {
+          term = { amplitude: 0, phase: 0, frequency };
+        } else {
+          [term] = terms.splice(initialIndex, 1);
+        }
+        terms.splice(desiredIndex, 0, term);
+      });
+    });
+  }
+
+  const animations = new Array<Showable>();
+  for (const [base, fourier] of zip(baseInfo, fourierInfo)) {
+    const { color, destRect, index } = base;
+    const colorName = base.colorName ?? base.color;
+    const frequenciesG = selectorQuery(
+      `g.frequencies[data-frequencies="${colorName}"]`,
+      SVGGElement
+    );
+    const destination = new Destination(
+      `[data-fourier-top="${colorName}"]`,
+      (content: ReadOnlyRect) =>
+        panAndZoom(content, destRect, "srcRect fits completely into destRect")
+    );
+    frequenciesG.style.fill = color;
+    const options = {
+      base: fourier,
+      destination: destination,
+      liveColor: color,
+      referenceColor: color,
+    };
+    const fourierAnimation = new FourierAnimation(options, frequenciesG);
+
+    animations.push(fourierAnimation);
+
+    const chapterText = selectorQuery(
+      `text.chapter[data-chapter="${colorName}"]`,
+      SVGTextElement
+    );
+    chapterText.innerHTML = `#${index}`;
+    chapterText.style.fill = color;
   }
 
   initialize(...animations);

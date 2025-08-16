@@ -1,6 +1,6 @@
 import { AnimationLoop, getById, selectorQuery } from "phil-lib/client-misc";
 import {
-  groupTerms,
+  createScript,
   hasFixedContribution,
   makePolygon,
   recenter,
@@ -93,7 +93,7 @@ function initialize(options: Options) {
     referencePath.setAttribute("d", parametricToPath.pathShape.rawPath);
   };
   console.log("Try debugPath(2);");
-  const script = groupTerms({
+  const script = createScript({
     addTime: 4800,
     pauseTime: 200,
     maxGroupsToDisplay: options.maxGroupsToDisplay,

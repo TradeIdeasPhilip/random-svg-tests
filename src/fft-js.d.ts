@@ -1,3 +1,3 @@
 declare module "fft-js" {
-  export function fft(signal: [number, number][]): [number, number][];
+  export function fft(signal: readonly [number, number][]): [number, number][];
 }

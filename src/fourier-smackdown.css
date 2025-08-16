@@ -22,7 +22,6 @@ tspan:nth-child(3n) {
   font-size: 3px;
   font-family: "Ranchers", fantasy;
   font-weight: 400;
-  filter: url(#thumbnail-shadow);
 }
 
 #thumbnail-foreground text:nth-child(2) {
@@ -60,9 +59,6 @@ body {
   --blue: hwb(204.42deg 0% 0%);
 
   overflow: hidden;
-
-  --big-shadow: url(#new-shadow);
-  --small-shadow: url(#small-shadow);
 }
 
 svg#main {
@@ -94,19 +90,18 @@ line#for-scale {
 text.chapter {
   font-size: 0.75px;
   text-anchor: end;
-  filter: url(#medium-shadow);
 }
 
 g.frequencies[data-frequencies="red"] {
-  transform: translate(0.25px, 5.65px) scale(0.4);
+  transform: translate(0.25px, 5.65px) scale(0.25);
 }
 
 g.frequencies[data-frequencies="white"] {
-  transform: translate(5.5px, 0.1px) scale(0.4);
+  transform: translate(5.5px, 0.1px) scale(0.25);
 }
 
 g.frequencies[data-frequencies="blue"] {
-  transform: translate(10.75px, 5.65px) scale(0.4);
+  transform: translate(10.75px, 5.65px) scale(0.25);
 }
 
 g.frequency:nth-child(1) {
@@ -122,23 +117,58 @@ g.frequency:nth-child(3) {
 }
 
 g.frequency:nth-child(4) {
-  transform: translate(6.5px, -0.5px);
+  transform: translate(0, 7px);
 }
 
 g.frequency:nth-child(5) {
-  transform: translate(6.5px, 2px);
+  transform: translate(0, 9.5px);
 }
 
 g.frequency:nth-child(6) {
-  transform: translate(6.5px, 4.5px);
+  transform: translate(7px, -0.5px);
+}
+
+g.frequency:nth-child(7) {
+  transform: translate(7px, 2px);
+}
+
+g.frequency:nth-child(8) {
+  transform: translate(7px, 4.5px);
+}
+
+g.frequency:nth-child(9) {
+  transform: translate(7px, 7px);
+}
+
+g.frequency:nth-child(10) {
+  transform: translate(7px, 9.5px);
+}
+
+g.frequency:nth-child(11) {
+  transform: translate(14px, -0.5px);
+}
+
+g.frequency:nth-child(12) {
+  transform: translate(14px, 2px);
+}
+
+g.frequency:nth-child(13) {
+  transform: translate(14px, 4.5px);
+}
+
+g.frequency:nth-child(14) {
+  transform: translate(14px, 7px);
+}
+
+g.frequency:nth-child(15) {
+  transform: translate(14px, 9.5px);
 }
 
 .frequency {
-  filter: var(--small-shadow);
+  font-size: 1px;
 }
 
 .frequency text {
-  fill: white;
   font-size: 1.5px;
   transform: translate(4px, 2.5px);
 }
@@ -155,7 +185,6 @@ text.background {
 }
 
 path[data-reference] {
-  stroke: black !important;
   fill: none;
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.25);
   stroke-linecap: round;
@@ -167,5 +196,4 @@ path[data-live] {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
-  filter: var(--big-shadow);
 }

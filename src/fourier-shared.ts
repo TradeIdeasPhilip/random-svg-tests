@@ -109,7 +109,7 @@ function keepNonZeroTerms(terms: readonly FourierTerm[]): FourierTerm[] {
   return result;
 }
 
-export function samplesToFourier(samples: Complex[]): FourierTerm[] {
+export function samplesToFourier(samples: readonly Complex[]): FourierTerm[] {
   const numSamples = samples.length;
   if (Math.log2(numSamples) % 1 !== 0) {
     throw new Error("numSamples must be a power of 2");
@@ -357,7 +357,7 @@ export type ScriptEntry = {
   availableAmplitude: number;
   availableCircles: number;
 };
-export function groupTerms(inputs: {
+export function createScript(inputs: {
   readonly pauseTime: number;
   readonly addTime: number;
   readonly maxGroupsToDisplay: number;

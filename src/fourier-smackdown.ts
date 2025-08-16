@@ -5,8 +5,8 @@ import {
   selectorQueryAll,
 } from "phil-lib/client-misc";
 import {
+  Complex,
   FourierTerm,
-  groupTerms,
   hasFixedContribution,
   samplesFromPath,
   samplesToFourier,
@@ -68,11 +68,11 @@ if (urlParameters.get("hide_background") == "1") {
 } else if (urlParameters.get("only_background") == "1") {
   onlyBackground();
 } else if (urlParameters.get("thumbnail") == "1") {
-  const foregroundG = selectorQuery("g#foreground",SVGGElement);
+  const foregroundG = selectorQuery("g#foreground", SVGGElement);
   foregroundG.style.display = "none";
-  const thumbnailG = selectorQuery("g#thumbnail-foreground",SVGGElement);
+  const thumbnailG = selectorQuery("g#thumbnail-foreground", SVGGElement);
   thumbnailG.style.display = "";
-} 
+}
 
 {
   const canvas = selectorQuery("canvas#cache", HTMLCanvasElement);
@@ -121,10 +121,9 @@ class FrequencySpinners {
       };
     });
   }
-  show(usingCount: number, addingCount: number, progressInRadians: number) {
-    // …
+  show(count: number, progressInRadians: number) {
     this.#spinners.forEach((spinner, index) => {
-      if (index >= usingCount + addingCount) {
+      if (index >= count) {
         spinner.top.style.display = "none";
       } else {
         spinner.top.style.display = "";
@@ -140,9 +139,7 @@ class FrequencySpinners {
 }
 
 type Options = {
-  pathString: string;
-  maxGroupsToDisplay: number;
-  skipCountAtEnd?: number;
+  base: FourierBase;
   destination: Destination;
   referenceColor: string;
   liveColor: string;
@@ -372,6 +369,205 @@ Background;
 
 const pathCaliper = new PathCaliper();
 
+class FourierBase {
+  readonly samples: readonly Complex[];
+  readonly terms: FourierTerm[];
+  constructor(readonly pathString: string) {
+    this.samples = samplesFromPath(pathString, numberOfFourierSamples);
+    this.terms = samplesToFourier(this.samples);
+    this.keyframes = initializedArray(16, (n) => n);
+  }
+  keyframes: number[];
+  get stepCount() {
+    return this.keyframes.length - 1;
+  }
+  makeGetPath1(
+    period: number,
+    startTime = 0,
+    endTime = period - startTime
+  ): (timeInMs: number) => { pathString: string; index: number; t: number } {
+    const getPath2 = this.makeGetPath2();
+    const remainderToT = makeBoundedLinear(startTime, 0, endTime, 1);
+    const stepCount = this.stepCount;
+    function getPath1(timeInMs: number) {
+      let index = Math.floor(timeInMs / period);
+      let remainder: number;
+      if (index < 0) {
+        index = 0;
+        remainder = 0;
+      } else if (index >= stepCount) {
+        index = stepCount - 1;
+        remainder = period;
+      } else {
+        remainder = timeInMs % period;
+      }
+      const t = remainderToT(remainder);
+      const pathString = getPath2(index, t);
+      return { pathString, index, t };
+    }
+    return getPath1;
+  }
+  makeGetPath2(): (index: number, t: number) => string {
+    const terms = [...this.terms];
+    const toShow = [...this.keyframes];
+    const stepCount = this.stepCount;
+    /**
+     * Special case:  A dot is moving.
+     *    Going from 0 terms to 1 term with frequency = zero.
+     *    Don't even think about the animation that we do in other places.
+     *    This script is completely unique.
+     *    Draw a single line for the path.
+     *    Both ends start at the first point.
+     *    Use makeEasing() to move the points smoothly.
+     */
+    const getMaxFrequency = (numberOfTerms: number) => {
+      const maxFrequency = Math.max(
+        ...terms.slice(0, numberOfTerms).map((term) => Math.abs(term.frequency))
+      );
+      return maxFrequency;
+    };
+    const recommendedNumberOfSegments = (numberOfTerms: number) => {
+      const maxFrequency = getMaxFrequency(numberOfTerms);
+      return 8 * maxFrequency + 7;
+    };
+    const segmentInfo = initializedArray(stepCount, (index) => {
+      const startingTermCount = toShow[index];
+      const endingTermCount = toShow[index + 1];
+      if (
+        startingTermCount == 0 &&
+        endingTermCount == 1 &&
+        terms[0].frequency == 0
+      ) {
+        // Moving a dot.
+        const goal = assertNonNullable(hasFixedContribution(terms[0]));
+        /**
+         * @param t A value between 0 and 1.
+         * @returns The coordinates as a string.
+         */
+        function location(t: number) {
+          return `${goal.x * t},${goal.y * t}`;
+        }
+        const getLeadingProgress = makeEasing(0, 0.5);
+        const getTrailingProgress = makeEasing(0, 1);
+        return (t: number) => {
+          const trailingProgress = getTrailingProgress(t);
+          const from = location(trailingProgress);
+          const leadingProgress = getLeadingProgress(t);
+          const to = location(leadingProgress);
+          const pathString = `M ${from} L ${to}`;
+          // console.log({ t, trailingProgress, leadingProgress, pathString });
+          return pathString;
+        };
+      } else {
+        const maxFrequency = getMaxFrequency(endingTermCount);
+        const r = 0.2 / maxFrequency;
+        /**
+         * This creates a function which takes a time in milliseconds,
+         * 0 at the beginning of the script.
+         * The output is scaled to the range 0 - 1,
+         * for use with PathShape.parametric().
+         * The output might be outside of that range.
+         * I.e. the input and output are both numbers but they are interpreted on different scales.
+         */
+        const tToCenter = makeBoundedLinear(0, -r, 1, 1 + r);
+        const startingFunction = termsToParametricFunction(
+          terms,
+          startingTermCount
+        );
+        const addingFunction = termsToParametricFunction(
+          terms,
+          endingTermCount - startingTermCount,
+          startingTermCount
+        );
+        const numberOfDisplaySegments =
+          recommendedNumberOfSegments(endingTermCount);
+        if (
+          startingTermCount == 0 ||
+          (startingTermCount == 1 && hasFixedContribution(terms[0]))
+        ) {
+          // We are converting from a dot to something else.
+          const startingPoint = hasFixedContribution(terms[0]) ?? {
+            x: 0,
+            y: 0,
+          };
+          return (timeInMs: number): string => {
+            const centerOfChange = tToCenter(timeInMs);
+            const startOfChange = centerOfChange - r;
+            const endOfChange = centerOfChange + r;
+            const getFraction = makeEasing(startOfChange, endOfChange);
+            /**
+             * 0 to `safePartEnds`, inclusive are safe inputs to `parametricFunction()`.
+             */
+            const safePartEnds = Math.min(1, endOfChange);
+            if (safePartEnds <= 0) {
+              // There is no safe part!
+              return `M${startingPoint.x},${startingPoint.y} L${startingPoint.x},${startingPoint.y}`;
+            } else {
+              const frugalSegmentCount = Math.ceil(
+                // TODO that 150 is crude.  The transition might require
+                // more detail than the before or the after.
+                // Or it might require less, not that we are glitch-free.
+                Math.max(numberOfDisplaySegments, 150) * safePartEnds
+              );
+              function parametricFunction(t: number) {
+                t = t * safePartEnds;
+                const base = startingFunction(t);
+                const fraction = 1 - getFraction(t);
+                if (fraction == 0) {
+                  return base;
+                } else {
+                  const adding = addingFunction(t);
+                  return {
+                    x: base.x + fraction * adding.x,
+                    y: base.y + fraction * adding.y,
+                  };
+                }
+              }
+              const path = PathShape.glitchFreeParametric(
+                parametricFunction,
+                frugalSegmentCount
+              );
+              return path.rawPath;
+            }
+          };
+        } else {
+          // Common case:  Converting from one normal shape into another.
+          return (timeInMs: number): string => {
+            const centerOfChange = tToCenter(timeInMs);
+            const getFraction = makeEasing(
+              centerOfChange - r,
+              centerOfChange + r
+            );
+            function parametricFunction(t: number) {
+              const base = startingFunction(t);
+              const fraction = 1 - getFraction(t);
+              if (fraction == 0) {
+                return base;
+              } else {
+                const adding = addingFunction(t);
+                return {
+                  x: base.x + fraction * adding.x,
+                  y: base.y + fraction * adding.y,
+                };
+              }
+            }
+            const path = PathShape.glitchFreeParametric(
+              parametricFunction,
+              numberOfDisplaySegments
+            );
+            return path.rawPath;
+          };
+        }
+      }
+    });
+    function getPath2(index: number, t: number) {
+      const info = segmentInfo[index];
+      return info(t);
+    }
+    return getPath2;
+  }
+}
+
 class FourierAnimation {
   hide() {
     this.#destination.hide();
@@ -391,226 +587,31 @@ class FourierAnimation {
   readonly #transform: DOMMatrix;
   //  readonly #timeToPath!: readonly ((time: number) => string)[];
   constructor(options: Options, spinnersGElement: SVGGElement) {
-    this.#pathString = options.pathString;
+    this.#pathString = options.base.pathString;
     this.#destination = options.destination;
     this.#referenceColor = options.referenceColor;
     this.#liveColor = options.liveColor;
     pathCaliper.d = this.#pathString;
     this.#transform = this.#destination.getTransform(pathCaliper.getBBox());
-    // Take the samples.
-    const samples = samplesFromPath(options.pathString, numberOfFourierSamples);
-    // Create terms
-    const terms = samplesToFourier(samples);
-    const script = groupTerms({
-      addTime: 5250,
-      pauseTime: 750,
-      maxGroupsToDisplay: options.maxGroupsToDisplay,
-      skipCountAtEnd: options.skipCountAtEnd ?? 0,
-      terms,
-    });
-    this.endTime = script.at(-1)!.endTime;
-    const getMaxFrequency = (numberOfTerms: number) => {
-      const maxFrequency = Math.max(
-        ...terms.slice(0, numberOfTerms).map((term) => Math.abs(term.frequency))
-      );
-      return maxFrequency;
-    };
-    const recommendedNumberOfSegments = (numberOfTerms: number) => {
-      const maxFrequency = getMaxFrequency(numberOfTerms);
-      return 8 * maxFrequency + 7;
-    };
-    const timeToPath: ((time: number) => string)[] = script.map(
-      (scriptEntry) => {
-        if (scriptEntry.addingCircles == 0) {
-          const parametricFunction = termsToParametricFunction(
-            terms,
-            scriptEntry.usingCircles
-          );
-          const numberOfDisplaySegments = recommendedNumberOfSegments(
-            scriptEntry.usingCircles
-          );
-          const path = PathShape.glitchFreeParametric(
-            parametricFunction,
-            numberOfDisplaySegments
-          );
-          return () => path.rawPath;
-        } else if (
-          scriptEntry.usingCircles == 0 &&
-          scriptEntry.addingCircles == 1 &&
-          terms[0].frequency == 0
-        ) {
-          /**
-           * Special case:  A dot is moving.
-           *    Going from 0 terms to 1 term with frequency = zero.
-           *    Don't even think about the animation that we do in other places.
-           *    This script is completely unique.
-           *    Draw a single line for the path.
-           *    Both ends start at the first point.
-           *    Use makeEasing() to move the points smoothly.
-           */
-          const { startTime, endTime } = scriptEntry;
-          const duration = endTime - startTime;
-          const getLeadingProgress = makeEasing(
-            startTime,
-            startTime + duration / 2
-          );
-          const getTrailingProgress = makeEasing(startTime, endTime);
-          const goal = hasFixedContribution(terms[0])!;
-          /**
-           * @param t A value between 0 and 1.
-           * @returns The coordinates as a string.
-           */
-          function location(t: number) {
-            return `${goal.x * t},${goal.y * t}`;
-          }
-          return (t: number) => {
-            const trailingProgress = getTrailingProgress(t);
-            const from = location(trailingProgress);
-            const leadingProgress = getLeadingProgress(t);
-            const to = location(leadingProgress);
-            const pathString = `M ${from} L ${to}`;
-            // console.log({ t, trailingProgress, leadingProgress, pathString });
-            return pathString;
-          };
-        } else {
-          const maxFrequency = getMaxFrequency(
-            scriptEntry.usingCircles + scriptEntry.addingCircles
-          );
-          const r = 0.2 / maxFrequency;
-          /**
-           * This creates a function which takes a time in milliseconds,
-           * 0 at the beginning of the script.
-           * The output is scaled to the range 0 - 1,
-           * for use with PathShape.parametric().
-           * The output might be outside of that range.
-           * I.e. the input and output are both numbers but they are interpreted on different scales.
-           */
-          const timeToCenter = makeBoundedLinear(
-            scriptEntry.startTime,
-            -r,
-            scriptEntry.endTime,
-            1 + r
-          );
-          const usingFunction = termsToParametricFunction(
-            terms,
-            scriptEntry.usingCircles
-          );
-          const addingFunction = termsToParametricFunction(
-            terms,
-            scriptEntry.addingCircles,
-            scriptEntry.usingCircles
-          );
-          let numberOfDisplaySegments = recommendedNumberOfSegments(
-            scriptEntry.usingCircles + scriptEntry.addingCircles
-          );
-          if (
-            scriptEntry.usingCircles == 0 ||
-            (scriptEntry.usingCircles == 1 && hasFixedContribution(terms[0]))
-          ) {
-            // We are converting from a dot to something else.
-            const startingPoint = hasFixedContribution(terms[0]) ?? {
-              x: 0,
-              y: 0,
-            };
-            return (timeInMs: number): string => {
-              const centerOfChange = timeToCenter(timeInMs);
-              const startOfChange = centerOfChange - r;
-              const endOfChange = centerOfChange + r;
-              const getFraction = makeEasing(startOfChange, endOfChange);
-              /**
-               * 0 to `safePartEnds`, inclusive are safe inputs to `parametricFunction()`.
-               */
-              const safePartEnds = Math.min(1, endOfChange);
-              if (safePartEnds <= 0) {
-                // There is no safe part!
-                return `M${startingPoint.x},${startingPoint.y} L${startingPoint.x},${startingPoint.y}`;
-              } else {
-                const frugalSegmentCount = Math.ceil(
-                  // TODO that 150 is crude.  The transition might require
-                  // more detail than the before or the after.
-                  // Or it might require less, not that we are glitch-free.
-                  Math.max(numberOfDisplaySegments, 150) * safePartEnds
-                );
-                function parametricFunction(t: number) {
-                  t = t * safePartEnds;
-                  const base = usingFunction(t);
-                  const fraction = 1 - getFraction(t);
-                  if (fraction == 0) {
-                    return base;
-                  } else {
-                    const adding = addingFunction(t);
-                    return {
-                      x: base.x + fraction * adding.x,
-                      y: base.y + fraction * adding.y,
-                    };
-                  }
-                }
-                const path = PathShape.glitchFreeParametric(
-                  parametricFunction,
-                  frugalSegmentCount
-                );
-                return path.rawPath;
-              }
-            };
-          } else {
-            // Common case:  Converting from one normal shape into another.
-            return (timeInMs: number): string => {
-              const centerOfChange = timeToCenter(timeInMs);
-              const getFraction = makeEasing(
-                centerOfChange - r,
-                centerOfChange + r
-              );
-              function parametricFunction(t: number) {
-                const base = usingFunction(t);
-                const fraction = 1 - getFraction(t);
-                if (fraction == 0) {
-                  return base;
-                } else {
-                  const adding = addingFunction(t);
-                  return {
-                    x: base.x + fraction * adding.x,
-                    y: base.y + fraction * adding.y,
-                  };
-                }
-              }
-              const path = PathShape.glitchFreeParametric(
-                parametricFunction,
-                numberOfDisplaySegments
-              );
-              return path.rawPath;
-            };
-          }
-        }
-      }
+    const period = 6000;
+    const pause = 750;
+    this.endTime = period * options.base.stepCount;
+    const getPath = options.base.makeGetPath1(period, 0, period - pause);
+    const frequencySpinners = new FrequencySpinners(
+      spinnersGElement,
+      options.base.terms
     );
-    const frequencySpinners = new FrequencySpinners(spinnersGElement, terms);
     this.#showPath = (timeInMs: number) => {
-      function getIndex() {
-        // Should this be a binary search?
-        /**
-         * The first script item that hasn't ended yet.
-         */
-        const index = script.findIndex(({ endTime }) => timeInMs < endTime);
-        if (index == -1) {
-          // Past the end.  Use the last script item.
-          return script.length - 1;
-        } else {
-          return index;
-        }
-      }
-      const index = getIndex();
+      const { pathString, index, t } = getPath(timeInMs);
 
       // Draw the path
-      const pathString = timeToPath[index](timeInMs);
       this.#destination.setLivePath(pathString);
 
       // Update the frequency spinners
-      const { usingCircles, addingCircles, startTime, endTime } = script[index];
-      const t =
-        addingCircles > 0
-          ? ((timeInMs - startTime) / (endTime - startTime)) * FULL_CIRCLE
-          : 0;
-      frequencySpinners.show(usingCircles, addingCircles, t);
+      frequencySpinners.show(
+        options.base.keyframes[index + 1],
+        t * FULL_CIRCLE
+      );
     };
   }
 }
@@ -1162,9 +1163,7 @@ test();
       frequenciesG.style.fill = color;
       const pathString = ShapeMaker6.makePathShape(index).rawPath;
       const options = {
-        maxGroupsToDisplay: 15,
-        skipCountAtEnd: 1,
-        pathString: pathString,
+        base: new FourierBase(pathString),
         destination: destination,
         liveColor: color,
         referenceColor: color,
@@ -1180,113 +1179,14 @@ test();
       chapterText.innerHTML = `#${index}`;
       chapterText.style.fill = color;
     }
-    pushOne("red", { x: 0.5, y: 0.5, width: 5, height: 5 }, 9);
-    pushOne("white", { x: 5.5, y: 3.5, width: 5, height: 5 }, 10);
+    pushOne("red", { x: 0.5, y: 0.5, width: 5, height: 5 }, 12);
+    pushOne("white", { x: 5.5, y: 3.5, width: 5, height: 5 }, 13);
     pushOne(
       "var(--blue)",
       { x: 10.5, y: 0.5, width: 5, height: 5 },
-      11,
+      14,
       "blue"
     );
-  }
-
-  {
-    const mainSvgElement = getById("main", SVGSVGElement);
-    const smallDropShadowElement = selectorQuery(
-      "#small-shadow > feDropShadow",
-      SVGFEDropShadowElement
-    );
-    const NORMAL_BLUR = 0.03;
-    const BIG_BLUR = 1.0;
-    const blurAnimationStart = 23000;
-    const blurAnimationEnd = 28000;
-    const blurVsTime = makeLinear(
-      blurAnimationStart,
-      BIG_BLUR,
-      blurAnimationEnd,
-      NORMAL_BLUR
-    );
-
-    animations.push({
-      show(timeInMs: number): void {
-        {
-          // Big:
-          // 4.5 - 8 seconds, flash a few times.
-          // 14 seconds - 16.6 seconds, hide.
-          // 46.5 - 54 show drop-shadow(0px 0px 0.03px black)
-          // 54-57    drop-shadow(0px 1px 0.03px black)
-          // 57- 60.6     drop-shadow(1px 1px 0.03px black)
-          // 60.6 - 69.6.  move to a few more integer positions.
-          let big: string | undefined;
-          if (timeInMs >= 4500 && timeInMs <= 8000) {
-            if (timeInMs % 1000 >= 500) {
-              big = "none";
-            }
-          } else if (timeInMs > 14000 && timeInMs <= 16600) {
-            big = "none";
-          }
-          if (timeInMs >= 46500) {
-            if (timeInMs <= 54000) {
-              big = "drop-shadow(0px 0px 0.03px black)";
-            } else if (timeInMs < 57000) {
-              big = "drop-shadow(0px 1px 0.03px black)";
-            } else if (timeInMs < 60600) {
-              big = "drop-shadow(1px 1px 0.03px black)";
-            } else if (timeInMs < 69600) {
-              const options = [
-                "drop-shadow(2px 1px 0.03px black)",
-                "drop-shadow(2px 0px 0.03px black)",
-                "drop-shadow(1px 0px 0.03px black)",
-                "drop-shadow(1px -1px 0.03px black)",
-              ];
-              const duration = 69600 - 60600;
-              const phase = Math.floor(
-                ((timeInMs - 60600) / duration) * options.length
-              );
-              big = options[phase];
-            }
-          }
-          const BIG = "--big-shadow";
-          if (big === undefined) {
-            mainSvgElement.style.removeProperty(BIG);
-          } else {
-            mainSvgElement.style.setProperty(BIG, big);
-          }
-        }
-        {
-          // Words:
-          // 17.75 - 22 flash a couple of times
-          let small: string | undefined;
-          const flashFirst = 17750;
-          const flashLast = 22000;
-          if (timeInMs >= flashFirst && timeInMs <= flashLast) {
-            const flashDuration = flashLast - flashFirst;
-            const flashPhase = Math.floor(
-              ((timeInMs - flashFirst) / flashDuration) * 5
-            );
-            if (flashPhase % 2 == 0) {
-              small = "none";
-            }
-          }
-          const SMALL = "--small-shadow";
-          if (small === undefined) {
-            mainSvgElement.style.removeProperty(SMALL);
-          } else {
-            mainSvgElement.style.setProperty(SMALL, small);
-          }
-        }
-        {
-          // Words:
-          // 23 - 28 Shadow starts a lot blurrier then slowly returns to normal.
-          const blur =
-            timeInMs < blurAnimationStart || timeInMs > blurAnimationEnd
-              ? NORMAL_BLUR
-              : blurVsTime(timeInMs);
-          smallDropShadowElement.stdDeviationX.baseVal = blur;
-          smallDropShadowElement.stdDeviationY.baseVal = blur;
-        }
-      },
-    });
   }
 
   initialize(...animations);

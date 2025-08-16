@@ -24,7 +24,7 @@ import {
 import { lerpPoints } from "./math-to-path";
 import { cursiveLetters, futuraLLetters } from "./hershey-fonts/hershey-fonts";
 import {
-  groupTerms,
+  createScript,
   samplesFromParametric,
   samplesToFourier,
   ScriptEntry,
@@ -608,12 +608,12 @@ class AnimateRequestedVsReconstructed {
     this.#requestedPath.setAttribute("d", referencePath);
     panAndZoom(this.#requestedPath, this.#svgElement);
     const terms = samplesToFourier(samplesFromParametric(f));
-    const script = groupTerms({
+    const script = createScript({
       pauseTime: 750,
       addTime: 500,
       maxGroupsToDisplay: support.maxKeyframes,
       terms: terms,
-      skipCountAtEnd: 0
+      skipCountAtEnd: 0,
     });
     const smallEffectOffset = 50 / script.at(-1)!.startTime;
 

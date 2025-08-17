@@ -1144,6 +1144,8 @@ test();
   // console.log({ requestedIndex, index, path, ...colors });
   // console.log(allPaths);
 
+  let colorIndex = 4;
+
   const baseInfo: {
     color: string;
     destRect: ReadOnlyRect;
@@ -1151,19 +1153,21 @@ test();
     colorName?: string;
   }[] = [
     {
-      color: "red",
+      color: colorsByIndex[colorIndex++].light,
       destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
-      index: 12,
+      index: 15,
+      colorName: "red",
     },
     {
-      color: "white",
+      color: colorsByIndex[colorIndex++].light,
       destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
-      index: 13,
+      index: 16,
+      colorName: "white",
     },
     {
-      color: "var(--blue)",
+      color: colorsByIndex[colorIndex++].light,
       destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
-      index: 14,
+      index: 17,
       colorName: "blue",
     },
   ];
@@ -1174,6 +1178,10 @@ test();
   });
 
   {
+    /**
+     * For each frequency, total the amplitudes of that frequency used by all three curves.
+     * So we can make make decisions for all three curves at once.
+     */
     const amplitudes = new Map<number, number>();
     fourierInfo.forEach((base) =>
       base.terms.forEach(({ frequency, amplitude }) => {
@@ -1182,15 +1190,78 @@ test();
         amplitudes.set(frequency, newAmplitude);
       })
     );
+    /**
+     * Now sort the records so we can see which frequencies have the most total amplitude.
+     * We usually like to display the highest amplitude changes first.
+     */
     const amplitudes1 = Array.from(
       amplitudes.entries(),
       ([frequency, amplitude]) => ({ frequency, amplitude })
     );
     amplitudes1.sort((a, b) => b.amplitude - a.amplitude);
-    amplitudes1.splice(10, numberOfFourierSamples);
-    console.log(amplitudes1);
+    // This first attempt just kept the 10 highest values
+    // before letting each curve go off on it's own.
+    // It worked well even when we stopped here.
+    //amplitudes1.splice(10, numberOfFourierSamples);
+    /**
+     * The first phase continues until I can't find any more terms with enough amplitude
+     * to care about.  I (arbitrarily) set the cutoff at 1/20 of the highest amplitude.
+     */
+    const amplitudeCutoff = amplitudes1[0].amplitude * 0.05;
+    /**
+     * Focus on patterns that you could rotate by 90° without changing them.
+     */
+    const desiredFrequency = 4;
+    /**
+     * These are the frequencies that we want to start with.
+     * First display all of these, in order.
+     * Then each curve can return to its own list.
+     */
+    const amplitudes2 = amplitudes1.filter(
+      ({ amplitude, frequency }) =>
+        amplitude > amplitudeCutoff && (frequency + 1) % desiredFrequency == 0
+    );
+    console.log(amplitudes2);
+    /**
+     * This was a hand made list of frequencies that would cause 3 way symmetry.
+     *
+     * It is obsolete.
+     * Look at how we initialize `amplitudes2`.
+     */
+    const s3 = [
+      { frequency: -1 },
+      { frequency: 2 },
+      { frequency: 5 },
+      { frequency: -4 },
+      { frequency: 8 },
+      { frequency: -7 },
+      { frequency: 11 },
+      { frequency: -10 },
+    ];
+    /**
+     * This was a hand made list of frequencies that would cause 4 way symmetry.
+     *
+     * It is obsolete.
+     * Look at how we initialize `amplitudes2`.
+     */
+    const s4 = [
+      { frequency: -1 },
+      { frequency: 3 },
+      { frequency: 7 },
+      { frequency: -5 },
+      { frequency: 11 },
+      { frequency: -9 },
+      { frequency: 15 },
+      { frequency: -13 },
+    ];
+    [s3, s4];
+
+    /**
+     * Go through each animation.
+     * Reorder the terms to match the list that we created above.
+     */
     fourierInfo.forEach(({ terms }) => {
-      amplitudes1.forEach(({ frequency }, desiredIndex) => {
+      amplitudes2.forEach(({ frequency }, desiredIndex) => {
         const initialIndex = terms.findIndex(
           (term) => term.frequency == frequency
         );

@@ -26,6 +26,16 @@
       preserveAspectRatio="xMaxYMin meet"
     >
       <defs>
+        <linearGradient
+          id="backgroundGradient"
+          x2="0.3"
+          y2=".6"
+          gradientUnits="userSpaceOnUse"
+          spreadMethod="repeat"
+        >
+          <stop offset="5%" stop-color="#333333" />
+          <stop offset="95%" stop-color="#000" />
+        </linearGradient>
         <!-- source: https://yoksel.github.io/svg-filters/#/presets/paper -->
         <filter
           id="paper-background"
@@ -142,6 +152,7 @@
         data-hide-background
         width="16"
         height="9"
+        fill="url(#backgroundGradient)"
       ></rect>
       <g id="thumbnail-foreground" style="display: none">
         <text x="1" y="3.75" letter-spacing="0.2">

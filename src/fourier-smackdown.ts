@@ -16,6 +16,7 @@ import "./fourier-smackdown.css";
 import { panAndZoom } from "./transforms";
 import { PathBuilder, PathCaliper, PathShape } from "./path-shape";
 import {
+  assertClass,
   assertNonNullable,
   FULL_CIRCLE,
   initializedArray,
@@ -64,15 +65,11 @@ function onlyBackground() {
  * `$_GET`, in PHP parlance.
  */
 const urlParameters = new URLSearchParams(window.location.search);
+let disableAnimationLoop = false;
 if (urlParameters.get("hide_background") == "1") {
   hideBackground();
 } else if (urlParameters.get("only_background") == "1") {
   onlyBackground();
-} else if (urlParameters.get("thumbnail") == "1") {
-  const foregroundG = selectorQuery("g#foreground", SVGGElement);
-  foregroundG.style.display = "none";
-  const thumbnailG = selectorQuery("g#thumbnail-foreground", SVGGElement);
-  thumbnailG.style.display = "";
 }
 
 {
@@ -637,6 +634,9 @@ let animationLoop: AnimationLoop;
 // would happen right after the first frame and after our clock
 // starts.
 setTimeout(() => {
+  if (disableAnimationLoop) {
+    return;
+  }
   let timeOffset = NaN;
   animationLoop = new AnimationLoop((now) => {
     if (isNaN(timeOffset)) {
@@ -657,7 +657,7 @@ function initScreenCapture(script: unknown) {
       }
       element.style.display = "none";
     });
-  animationLoop.cancel();
+  animationLoop?.cancel();
   return {
     source: "fourier-smackdown.ts",
     script,
@@ -1326,4 +1326,43 @@ test();
   }
 
   initialize(...animations);
+
+  if (urlParameters.get("thumbnail") == "1") {
+    const foregroundG = selectorQuery("g#foreground", SVGGElement);
+    //foregroundG.style.display = "none";
+    //const thumbnailG = selectorQuery("g#thumbnail-foreground", SVGGElement);
+    //thumbnailG.style.display = "";
+    disableAnimationLoop = true;
+    const paths = new Array<SVGElement>();
+    Array.from(foregroundG.children).forEach((e) => {
+      const element = assertClass(e, SVGElement);
+      if (element.dataset["live"] === undefined) {
+        element.style.display = "none";
+      } else {
+        console.log("live", element.dataset["live"]);
+        paths.push(element);
+      }
+    });
+    const rectangles = selectorQueryAll("#starfield rect", SVGRectElement);
+    rectangles[0].parentElement!.style.transform = "scale(3)";
+    rectangles.forEach((rectangle) => {
+      rectangle.style.transformOrigin = `${50 / 3}% ${22}%`;
+    });
+    rectangles[1].style.transform = "rotate(1.2deg)";
+    rectangles[2].style.transform = "rotate(-0.7deg)";
+    const showPeriod = 6000;
+    animations[0].show(showPeriod * 5 - 20);
+    animations[1].show(showPeriod * 7 - 20);
+    animations[2].show(showPeriod * 4 - 20);
+    selectorQueryAll("[data-reference]", SVGPathElement).forEach(
+      (path) => (path.style.display = "none")
+    );
+    const live = selectorQueryAll("[data-live]", SVGPathElement);
+    live.forEach((element) => {
+      element.style.transform = "scale(1.5)";
+    });
+    (window as any).showFrame = (timeInMs: number) => {
+      console.info("ignoring showFrame()", timeInMs);
+    };
+  }
 }

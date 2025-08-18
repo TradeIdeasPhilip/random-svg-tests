@@ -1144,7 +1144,7 @@ test();
   // console.log({ requestedIndex, index, path, ...colors });
   // console.log(allPaths);
 
-  let colorIndex = 4;
+  let colorIndex = 7;
 
   const baseInfo: {
     color: string;
@@ -1155,19 +1155,19 @@ test();
     {
       color: colorsByIndex[colorIndex++].light,
       destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
-      index: 15,
+      index: 18,
       colorName: "red",
     },
     {
       color: colorsByIndex[colorIndex++].light,
       destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
-      index: 16,
+      index: 19,
       colorName: "white",
     },
     {
       color: colorsByIndex[colorIndex++].light,
       destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
-      index: 17,
+      index: 20,
       colorName: "blue",
     },
   ];
@@ -1211,7 +1211,7 @@ test();
     /**
      * Focus on patterns that you could rotate by 90° without changing them.
      */
-    const desiredFrequency = 4;
+    const desiredFrequency = 3;
     /**
      * These are the frequencies that we want to start with.
      * First display all of these, in order.
@@ -1222,39 +1222,6 @@ test();
         amplitude > amplitudeCutoff && (frequency + 1) % desiredFrequency == 0
     );
     console.log(amplitudes2);
-    /**
-     * This was a hand made list of frequencies that would cause 3 way symmetry.
-     *
-     * It is obsolete.
-     * Look at how we initialize `amplitudes2`.
-     */
-    const s3 = [
-      { frequency: -1 },
-      { frequency: 2 },
-      { frequency: 5 },
-      { frequency: -4 },
-      { frequency: 8 },
-      { frequency: -7 },
-      { frequency: 11 },
-      { frequency: -10 },
-    ];
-    /**
-     * This was a hand made list of frequencies that would cause 4 way symmetry.
-     *
-     * It is obsolete.
-     * Look at how we initialize `amplitudes2`.
-     */
-    const s4 = [
-      { frequency: -1 },
-      { frequency: 3 },
-      { frequency: 7 },
-      { frequency: -5 },
-      { frequency: 11 },
-      { frequency: -9 },
-      { frequency: 15 },
-      { frequency: -13 },
-    ];
-    [s3, s4];
 
     /**
      * Go through each animation.
@@ -1306,6 +1273,56 @@ test();
     );
     chapterText.innerHTML = `#${index}`;
     chapterText.style.fill = color;
+  }
+
+  {
+    const [_fixed, ...others] = selectorQueryAll(
+      "#starfield rect",
+      SVGRectElement
+    );
+    /**
+     *
+     * @param progress 0.0 - 1.1
+     */
+    function setTransformOrigin(progress: number) {
+      const x = progress * 50;
+      const y = progress * 60;
+      const transformOrigin = `${x}% ${y}%`;
+      others.forEach(
+        (element) => (element.style.transformOrigin = transformOrigin)
+      );
+    }
+    const transformTimer = makeBoundedLinear(0, 0, 60000, 1);
+    function makeOscillator(
+      extreme1: number,
+      extreme2: number,
+      period: number
+    ) {
+      const center = (extreme1 + extreme2) / 2;
+      const amplitude = extreme1 - center;
+      const ratio = FULL_CIRCLE / period;
+      function oscillator(timeInMS: number) {
+        return Math.sin(timeInMS * ratio) * amplitude + center;
+      }
+      return oscillator;
+    }
+    const rotations = [
+      { element: others[0], oscillator: makeOscillator(0.5, 1.5, 15000) },
+      { element: others[1], oscillator: makeOscillator(-0.5, -1.5, 13081) },
+    ];
+    if (rotations.length != others.length) {
+      throw new Error("wtf");
+    }
+    function show(timeInMS: number) {
+      const progress = transformTimer(timeInMS);
+      //const progress = (timeInMS % 30000)/30000;
+      setTransformOrigin(progress);
+      rotations.forEach(({ element, oscillator }) => {
+        const degrees = oscillator(timeInMS);
+        element.style.transform = `rotate(${degrees}deg)`;
+      });
+    }
+    animations.push({ show });
   }
 
   initialize(...animations);

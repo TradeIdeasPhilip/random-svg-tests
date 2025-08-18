@@ -197,3 +197,55 @@ path[data-live] {
   stroke-linejoin: round;
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
 }
+/*
+#top-rect {
+  animation: rotate 15000ms linear 0s infinite reverse;
+}
+
+@keyframes rotate {
+  0%,
+  100% {
+    transform: rotate(0.5deg);
+  }
+  50% {
+    transform: rotate(1.5deg);
+  }
+}
+
+#top-rect2 {
+  animation: rotate2 13081ms linear 0s infinite reverse;
+}
+
+@keyframes rotate {
+  0%,
+  100% {
+    transform: rotate(0.5deg);
+  }
+  50% {
+    transform: rotate(1.5deg);
+  }
+}
+
+@keyframes rotate2 {
+  0%,
+  100% {
+    transform: rotate(-0.5deg);
+  }
+  50% {
+    transform: rotate(-1.5deg);
+  }
+}
+
+#starfield {
+  animation: transformOrigin 60s linear 0s 2;
+}
+
+@keyframes transformOrigin {
+  0% {
+    transform-origin: top left !important;
+  }
+  100% {
+    transform-origin: 50% 60% !important;
+  }
+}
+*/

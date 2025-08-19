@@ -1348,8 +1348,8 @@ test();
     rectangles.forEach((rectangle) => {
       rectangle.style.transformOrigin = `${50 / 3}% ${22}%`;
     });
-    rectangles[1].style.transform = "rotate(1.2deg)";
-    rectangles[2].style.transform = "rotate(-0.7deg)";
+    rectangles[1].style.transform = "rotate(1.75deg)";
+    rectangles[2].style.transform = "rotate(-1.5deg)";
     const showPeriod = 6000;
     animations[0].show(showPeriod * 5 - 20);
     animations[1].show(showPeriod * 7 - 20);

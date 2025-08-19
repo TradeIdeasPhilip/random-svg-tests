@@ -197,3 +197,8 @@ path[data-live] {
   stroke-linejoin: round;
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
 }
+
+#top-rect,
+#top-rect2 {
+  will-change: transform;
+}

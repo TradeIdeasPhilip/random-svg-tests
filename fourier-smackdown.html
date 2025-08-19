@@ -27,6 +27,114 @@
     >
       <defs>
         <filter
+          id="lava-lamp"
+          color-interpolation-filters="linearRGB"
+          filterUnits="objectBoundingBox"
+          primitiveUnits="userSpaceOnUse"
+        >
+          <!-- Ignore the input image.  Start with pure noise. -->
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.3 1"
+            numOctaves="1"
+            seed="3"
+            stitchTiles="stitch"
+            x="0%"
+            y="0%"
+            width="100%"
+            height="100%"
+          />
+          <!-- Combine three of the channels of noise into a single channel.
+
+               For a static image this didn't make an interesting difference.
+               More precisely, the images were different, but I couldn't reliably 
+               tell you which image came from from just one chanel and which came
+               from a combination of channels.  That's very promising for my
+               intended purpose.  I plan to smoothly animate these values over time!
+               
+               I tweaked these values so I'd get some of the brightest and some of the
+               darkest color on the screen.  This seems robust over a number of
+               different choices for the random seed.  I did not ignore the alpha
+               channel's noise for any good reason; I just forgot it existed.
+               
+               I pegged the output alpha to 1.
+
+               I'm *currently* ignoring the blue and green output channels.
+               All of the interesting data is in the red channel.
+               -->
+          <feColorMatrix
+            type="matrix"
+            values="1.2 0.3 -0.3 0 -0.105
+0 0 0 0 0
+0 0 0 0 0
+0 0 0 0 1"
+            x="0%"
+            y="0%"
+            width="100%"
+            height="100%"
+          />
+          <!-- This step could easily be handled by the TypeScript code.
+               Adding an extra matrix was helpful when I was creating the SVG by hand.
+               Copy the red input channel to be the output of red, of green, and of blue.
+               Alpha stays pegged at 1.
+               
+               The output of this stage is a completely opaque, grayscale noise. -->
+          <feColorMatrix
+            type="matrix"
+            values="1 0 0 0 0
+1 0 0 0 0
+1 0 0 0 0
+0 0 0 0 1"
+            x="0%"
+            y="0%"
+            width="100%"
+            height="100%"
+          />
+          <!-- Remove most of those odd artifacts I get when I zoom in too close to noise.
+
+               I fixed that in the past by using the canvas in display-p3 mode, but I was unable
+               to repeat that trick here, and I'm not sure why.
+
+               This works very well.  It was easy to select a value for stdDeviation.
+          -->
+          <feGaussianBlur stdDeviation="0.05" />
+          <!-- 
+          // This was my fist attempt at cleaning up the artifacts.  This uses a 2 x 2 kernel
+          // because I thought the problem was limited to single pixels.  But as I started
+          // tweaking other things, the artifacts grew and this solution was insufficient.
+          // The <feGaussianBlur /> solution is much. more robust.
+     <feConvolveMatrix
+          order="2"
+          kernelMatrix="0.25 0.25 0.25 0.25"
+          divisor="1"
+          bias="0"
+          targetX="0"
+          targetY="0"
+          edgeMode="duplicate"
+          preserveAlpha="true"
+        />
+         -->
+          <!-- This is where I convert from a smooth gradient to discrete levels.
+               And this is where I set the color for each level.
+               
+               The number of table values should be the same for each channel.
+               I've been focused on groups of 7, but any number could work.
+
+               The first entry in the tableValues is the amount of red, green or
+               blue in the first color, the color that will replace the darkest shades
+               of gray in the input.  The values range from 0 to 1.
+
+               This hand made example creates red, green, blue, magenta, yellow, 
+               cyan and white, in that order.  Replace these with any colors you like.
+               -->
+          <feComponentTransfer x="0%" y="0%" width="100%" height="100%">
+            <feFuncR type="discrete" tableValues="1 0 0 1 1 0 1" />
+            <feFuncG type="discrete" tableValues="0 1 0 0 1 1 1" />
+            <feFuncB type="discrete" tableValues="0 0 1 1 0 1 1" />
+            <feFuncA type="identity" />
+          </feComponentTransfer>
+        </filter>
+        <filter
           id="dalmatian"
           color-interpolation-filters="linearRGB"
           filterUnits="objectBoundingBox"
@@ -287,7 +395,13 @@
           </feComponentTransfer>
         </filter>
       </defs>
-      <rect data-hide-background width="16" height="9" fill="black"></rect>
+      <rect
+        data-hide-background
+        width="16"
+        height="9"
+        fill="black"
+        filter="url(#lava-lamp)"
+      ></rect>
       <g id="starfield">
         <rect
           data-hide-background

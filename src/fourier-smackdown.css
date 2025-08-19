@@ -198,6 +198,9 @@ path[data-live] {
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
 }
 
+#starfield {
+  display: none;
+}
 #top-rect,
 #top-rect2 {
   will-change: transform;

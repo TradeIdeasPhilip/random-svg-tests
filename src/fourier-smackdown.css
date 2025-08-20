@@ -39,9 +39,9 @@ tspan:nth-child(3n) {
 }
 
 body {
-  font-family: sans-serif;
+  font-family: "Life Savers";
   font-optical-sizing: auto;
-  font-weight: 500;
+  font-weight: bold;
   padding: 0;
   margin: 0;
   background-color: blueviolet;
@@ -186,7 +186,7 @@ text.background {
 
 path[data-reference] {
   fill: none;
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.25);
+  stroke-width: calc(0 * var(--base-stroke-width) / var(--path-scale) * 0.25);
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -195,10 +195,18 @@ path[data-live] {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 5);
 }
 
-#starfield {
+path[data-live]:nth-of-type(3) {
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
+}
+path[data-live]:nth-of-type(4) {
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1);
+}
+
+#starfield,
+[data-frequencies] {
   display: none;
 }
 #top-rect,

@@ -176,7 +176,7 @@ let showFrame: (timeInMs: number) => void = () => {};
 class Destination {
   readonly #gElement: SVGGElement;
   readonly #referencePath: SVGPathElement;
-  readonly #livePath: SVGPathElement;
+  readonly #livePath: readonly SVGPathElement[];
   constructor(
     queryString: string,
     readonly getTransform: (content: ReadOnlyRect) => DOMMatrix
@@ -187,25 +187,27 @@ class Destination {
       SVGPathElement,
       this.#gElement
     );
-    this.#livePath = selectorQuery(
+    this.#livePath = selectorQueryAll(
       "[data-live]",
       SVGPathElement,
+      1,
+      Infinity,
       this.#gElement
     );
   }
   hide() {
     this.#gElement.style.display = "none";
   }
-  show(referenceColor: string, liveColor: string) {
+  show(referenceColor: string, _liveColor: string) {
     this.#gElement.style.display = "";
     this.#referencePath.style.stroke = referenceColor;
-    this.#livePath.style.stroke = liveColor;
+    //this.#livePath.style.stroke = liveColor;
   }
   setReferencePath(d: string) {
     this.#referencePath.setAttribute("d", d);
   }
   setLivePath(d: string) {
-    this.#livePath.setAttribute("d", d);
+    this.#livePath.forEach((path) => path.setAttribute("d", d));
   }
   setTransform(transform: DOMMatrix) {
     const scale = transform.a;
@@ -1144,7 +1146,7 @@ test();
   // console.log({ requestedIndex, index, path, ...colors });
   // console.log(allPaths);
 
-  let colorIndex = 7;
+  //let colorIndex = 7;
 
   const baseInfo: {
     color: string;
@@ -1152,25 +1154,38 @@ test();
     index: number;
     colorName?: string;
   }[] = [
+    /*
     {
-      color: colorsByIndex[colorIndex++].light,
+      color: "#2F4F4F",
       destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
       index: 18,
       colorName: "red",
     },
     {
-      color: colorsByIndex[colorIndex++].light,
+      color: "black",
       destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
       index: 19,
       colorName: "white",
-    },
+    },*/
     {
-      color: colorsByIndex[colorIndex++].light,
-      destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
-      index: 20,
+      color: "black",
+      destRect: { x: 1, y: 0.25, width: 8.5, height: 8.5 },
+      index: 21,
       colorName: "blue",
     },
   ];
+
+  function showIndex(
+    index: number,
+    where: SVGTextElement | string = ".chapter"
+  ) {
+    if (typeof where === "string") {
+      where = selectorQuery(where, SVGTextElement);
+    }
+    where.innerHTML = `#${index} of ${ShapeMaker6.allPaths.length}`;
+  }
+
+  showIndex(21);
 
   const fourierInfo = baseInfo.map(({ index }) => {
     const pathString = ShapeMaker6.makePathShape(index).rawPath;
@@ -1219,7 +1234,7 @@ test();
      */
     const amplitudes2 = amplitudes1.filter(
       ({ amplitude, frequency }) =>
-        amplitude > amplitudeCutoff && (frequency + 1) % desiredFrequency == 0
+        amplitude > amplitudeCutoff && (frequency - 1) % desiredFrequency == 0
     );
     console.log(amplitudes2);
 
@@ -1245,7 +1260,7 @@ test();
 
   const animations = new Array<Showable>();
   for (const [base, fourier] of zip(baseInfo, fourierInfo)) {
-    const { color, destRect, index } = base;
+    const { color, destRect } = base;
     const colorName = base.colorName ?? base.color;
     const frequenciesG = selectorQuery(
       `g.frequencies[data-frequencies="${colorName}"]`,
@@ -1266,61 +1281,122 @@ test();
     const fourierAnimation = new FourierAnimation(options, frequenciesG);
 
     animations.push(fourierAnimation);
-
-    const chapterText = selectorQuery(
-      `text.chapter[data-chapter="${colorName}"]`,
-      SVGTextElement
-    );
-    chapterText.innerHTML = `#${index}`;
-    chapterText.style.fill = color;
+    console.log(fourierAnimation);
   }
 
   {
-    const [_fixed, ...others] = selectorQueryAll(
-      "#starfield rect",
-      SVGRectElement
+    const randomnessElement = selectorQuery(
+      "#lava-lamp feColorMatrix:first-of-type",
+      SVGFEColorMatrixElement
     );
-    /**
-     *
-     * @param progress 0.0 - 1.1
-     */
-    function setTransformOrigin(progress: number) {
-      const x = progress * 50;
-      const y = progress * 60;
-      const transformOrigin = `${x}% ${y}%`;
-      others.forEach(
-        (element) => (element.style.transformOrigin = transformOrigin)
-      );
-    }
-    const transformTimer = makeBoundedLinear(0, 0, 60000, 1);
-    function makeOscillator(
-      extreme1: number,
-      extreme2: number,
-      period: number
-    ) {
-      const center = (extreme1 + extreme2) / 2;
-      const amplitude = extreme1 - center;
-      const ratio = FULL_CIRCLE / period;
-      function oscillator(timeInMS: number) {
-        return Math.sin(timeInMS * ratio) * amplitude + center;
-      }
-      return oscillator;
-    }
-    const rotations = [
-      { element: others[0], oscillator: makeOscillator(0.5, 1.5, 15000) },
-      { element: others[1], oscillator: makeOscillator(-0.5, -1.5, 13081) },
+    const colorElements = [
+      selectorQuery('#lava-lamp feFuncR[type="discrete"]', SVGFEFuncRElement),
+      selectorQuery('#lava-lamp feFuncG[type="discrete"]', SVGFEFuncGElement),
+      selectorQuery('#lava-lamp feFuncB[type="discrete"]', SVGFEFuncBElement),
     ];
-    if (rotations.length != others.length) {
-      throw new Error("wtf");
+    /**
+     * Palette Idea 3: Sunset Mirage
+     * Warm, sunset-inspired hues with a touch of cool for a relaxing, flowing aesthetic.Background Colors:Deep Plum: (75, 0, 130) #4B0082
+     * Twilight Blue: (65, 105, 225) #4169E1
+     * Burnt Orange: (204, 85, 0) #CC5500
+     * Peach Glow: (255, 160, 122) #FFA07A
+     * Soft Pink: (255, 182, 193) #FFB6C1
+     * Lemon Yellow: (255, 245, 157) #FFF59D
+     * Cool Aqua: (175, 238, 238) #AFEEEE
+     *
+     * Foreground Colors:Text: Creamy White: (255, 245, 238) #FFF5EE (bright, readable)
+     * Lines/Arrows: Dark Slate: (47, 79, 79) #2F4F4F (bold, distinct)
+     */
+    const backgroundColors = [
+      [65, 105, 225],
+      [204, 85, 0],
+      [255, 160, 122],
+      [255, 182, 193],
+      [255, 245, 157],
+      [175, 238, 238],
+    ];
+    const backgroundBrightness = makeLinear(0, 0.25, 255, 1);
+    backgroundColors.forEach((color) =>
+      color.forEach(
+        (original, index, array) =>
+          (array[index] = backgroundBrightness(original))
+      )
+    );
+    const adjustment1 = makeLinear(-1, -0.05, 1, 0.8);
+    const adjustment2 = makeLinear(1, 0, -1, -0.4);
+    function updateValues(randomnessAngle: number, fixedAngle: number) {
+      const channelAngles = [
+        randomnessAngle,
+        randomnessAngle + FULL_CIRCLE / 3,
+        randomnessAngle - FULL_CIRCLE / 3,
+      ];
+      const whiteRow = channelAngles.map((angle) =>
+        adjustment1(Math.sin(angle))
+      );
+      whiteRow.push(0);
+      whiteRow.push(adjustment2(Math.cos(fixedAngle)));
+      const whiteRowString = whiteRow.join(" ");
+      const alphaRow = "0 0 0 0 1";
+      const matrix = [
+        whiteRowString,
+        whiteRowString,
+        whiteRowString,
+        alphaRow,
+      ].join("\n");
+      randomnessElement.setAttribute("values", matrix);
     }
-    function show(timeInMS: number) {
-      const progress = transformTimer(timeInMS);
-      //const progress = (timeInMS % 30000)/30000;
-      setTransformOrigin(progress);
-      rotations.forEach(({ element, oscillator }) => {
-        const degrees = oscillator(timeInMS);
-        element.style.transform = `rotate(${degrees}deg)`;
+    (window as any).updateValues = updateValues;
+    function updateColors(newColors: number[][]) {
+      const colorChannels: number[][] = colorElements.map((_) => []);
+      newColors.forEach((color) => {
+        if (color.length != colorElements.length) {
+          throw new Error("wtf");
+        }
+        color.forEach((channel, channelIndex) => {
+          colorChannels[channelIndex].push(channel);
+        });
       });
+      for (const [element, components] of zip(colorElements, colorChannels)) {
+        element.setAttribute("tableValues", components.join(" "));
+      }
+    }
+    updateColors(backgroundColors);
+    function show(timeInMS: number) {
+      const randomPart = (timeInMS / 120000) * FULL_CIRCLE;
+      const constantPart = ((timeInMS / 120000) * FULL_CIRCLE) / 2;
+      updateValues(randomPart, constantPart);
+    }
+    animations.push({ show });
+  }
+  {
+    const fgColorTargets = selectorQueryAll("[data-fg-color]", SVGElement).map(
+      (element) => ({
+        element,
+        attributeName: assertNonNullable(element.dataset.fgColor),
+      })
+    );
+    function setFgColor(color: string) {
+      fgColorTargets.forEach(({ element, attributeName }) => {
+        element.setAttribute(attributeName, color);
+      });
+    }
+    (window as any).setFgColor = setFgColor;
+    const colors = [
+      "red",
+      "yellow",
+      "magenta",
+      "lime",
+      "hwb(204.42deg 0% 0%)",
+      "white",
+      "cyan",
+      "#CC5500",
+      "hsl(270, 55%, 55%)",
+    ];
+
+    function show(timeInMs: number) {
+      const index = Math.floor(timeInMs / 1500) % colors.length;
+      const color = colors[index];
+      setFgColor(color);
     }
     animations.push({ show });
   }

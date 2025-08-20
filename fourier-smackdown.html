@@ -27,8 +27,27 @@
     >
       <defs>
         <filter
+          id="big-shadow"
+          color-interpolation-filters="sRGB"
+          filterUnits="userSpaceOnUse"
+          primitiveUnits="userSpaceOnUse"
+          x="-1.5"
+          y="-1.5"
+          width="3"
+          height="3"
+        >
+          <feDropShadow
+            dx="0.0"
+            dy="0.0"
+            data-fg-color="flood-color"
+            flood-color="lime"
+            flood-opacity="1"
+            stdDeviation="0.02"
+          ></feDropShadow>
+        </filter>
+        <filter
           id="lava-lamp"
-          color-interpolation-filters="linearRGB"
+          color-interpolation-filters="sRGB"
           filterUnits="objectBoundingBox"
           primitiveUnits="userSpaceOnUse"
         >
@@ -131,7 +150,7 @@
             <feFuncR type="discrete" tableValues="1 0 0 1 1 0 1" />
             <feFuncG type="discrete" tableValues="0 1 0 0 1 1 1" />
             <feFuncB type="discrete" tableValues="0 0 1 1 0 1 1" />
-            <feFuncA type="identity" />
+            <feFuncA type="linear" slope="0" intercept="1" />
           </feComponentTransfer>
         </filter>
         <filter
@@ -459,7 +478,13 @@
         </g>
         <g data-fourier-top="blue">
           <path data-reference></path>
-          <path data-live></path>
+          <path
+            data-live
+            style="stroke: black"
+            filter="url(#big-shadow)"
+          ></path>
+          <path data-live data-fg-color="stroke" stroke="lime"></path>
+          <path data-live style="stroke: black"></path>
         </g>
         <g data-frequencies="red" class="frequencies">
           <g class="frequency">
@@ -647,9 +672,7 @@
             <text>-3</text>
           </g>
         </g>
-        <text data-chapter="red" class="chapter" x="1.4" y="0.75">q#5</text>
-        <text data-chapter="white" class="chapter" x="10.5" y="8.75">q#5</text>
-        <text data-chapter="blue" class="chapter" x="15.7" y="0.75">q#5</text>
+        <text class="chapter" x="15.7" y="0.75">q#5</text>
       </g>
     </svg>
   </body>

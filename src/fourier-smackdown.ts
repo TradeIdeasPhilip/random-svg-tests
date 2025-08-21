@@ -1170,7 +1170,7 @@ test();
     {
       color: "black",
       destRect: { x: 1, y: 0.25, width: 8.5, height: 8.5 },
-      index: 21,
+      index: 22,
       colorName: "blue",
     },
   ];
@@ -1185,14 +1185,14 @@ test();
     where.innerHTML = `#${index} of ${ShapeMaker6.allPaths.length}`;
   }
 
-  showIndex(21);
+  showIndex(22);
 
   const fourierInfo = baseInfo.map(({ index }) => {
     const pathString = ShapeMaker6.makePathShape(index).rawPath;
     return new FourierBase(pathString);
   });
 
-  {
+  if (false) {
     /**
      * For each frequency, total the amplitudes of that frequency used by all three curves.
      * So we can make make decisions for all three curves at once.
@@ -1258,6 +1258,44 @@ test();
     });
   }
 
+  //  fourierInfo[0].keyframes.splice(1,1);
+  //  fourierInfo[0].keyframes.forEach((_, index, array) => { array[index] *= 2; });
+  console.log(fourierInfo);
+  function moveSmallOnesToTheFront(fourierBase: FourierBase) {
+    const bins: FourierTerm[][] = [];
+    const terms = fourierBase.terms;
+    const numberOfTerms = terms.length;
+    bins.push(terms.splice(0, 2));
+    for (let i = 0; i < 19; i++) {
+      const big = assertNonNullable(terms.shift());
+      bins.push([big]);
+    }
+    /*
+    for (let i = 1; i < bins.length; i++) {
+      const binsRemaining = bins.length - i - 1;
+      const itemsRemaining = terms.length;
+      const itemsThisTime = Math.round(itemsRemaining / binsRemaining);
+      bins[i].push(...terms.splice(0, itemsThisTime));
+    }
+    */
+    bins[10].push(...terms);
+    terms.length = 0;
+    if (terms.length != 0) {
+      throw new Error("wtf");
+    }
+    const keyframes = fourierBase.keyframes;
+    keyframes.length = 0;
+    keyframes.push(0);
+    bins.forEach((bin) => {
+      terms.push(...bin);
+      keyframes.push(terms.length);
+    });
+    if (terms.length != numberOfTerms) {
+      throw new Error("wtf");
+    }
+  }
+  moveSmallOnesToTheFront(fourierInfo[0]);
+
   const animations = new Array<Showable>();
   for (const [base, fourier] of zip(baseInfo, fourierInfo)) {
     const { color, destRect } = base;
@@ -1295,6 +1333,31 @@ test();
       selectorQuery('#lava-lamp feFuncB[type="discrete"]', SVGFEFuncBElement),
     ];
     /**
+     * Palette Idea 2: Cosmic Serenity
+     * Cool, spacey tones with pops of vibrant color for a modern, calming, trippy vibe.
+     * Background Colors:
+     * Midnight Blue: (25, 25, 112) #191970
+     * Slate Blue: (70, 130, 180) #4682B4
+     * Lavender Mist: (147, 112, 219) #9370DB
+     * Seafoam Green: (60, 179, 113) #3CB371
+     * Soft Magenta: (199, 21, 133) #C71585
+     * Electric Cyan: (0, 206, 209) #00CED1
+     * Pale Lilac: (216, 191, 216) #D8BFD8
+     *
+     * Foreground Colors:Text: Soft White: (240, 248, 255) #F0F8FF (crisp, readable)
+     * Lines/Arrows: Rich Black: (18, 18, 18) #121212 (strong contrast
+     */
+    const backgroundColors2 = [
+      [25, 25, 112],
+      [70, 130, 180],
+      [147, 112, 219],
+      [60, 179, 113],
+      [199, 21, 133],
+      [0, 206, 209],
+      [216, 191, 216],
+    ];
+
+    /**
      * Palette Idea 3: Sunset Mirage
      * Warm, sunset-inspired hues with a touch of cool for a relaxing, flowing aesthetic.Background Colors:Deep Plum: (75, 0, 130) #4B0082
      * Twilight Blue: (65, 105, 225) #4169E1
@@ -1307,7 +1370,7 @@ test();
      * Foreground Colors:Text: Creamy White: (255, 245, 238) #FFF5EE (bright, readable)
      * Lines/Arrows: Dark Slate: (47, 79, 79) #2F4F4F (bold, distinct)
      */
-    const backgroundColors = [
+    const backgroundColors3 = [
       [65, 105, 225],
       [204, 85, 0],
       [255, 160, 122],
@@ -1315,7 +1378,8 @@ test();
       [255, 245, 157],
       [175, 238, 238],
     ];
-    const backgroundBrightness = makeLinear(0, 0.25, 255, 1);
+    const backgroundColors = true ? backgroundColors2 : backgroundColors3;
+    const backgroundBrightness = makeLinear(0, 0.0, 255, 1);
     backgroundColors.forEach((color) =>
       color.forEach(
         (original, index, array) =>

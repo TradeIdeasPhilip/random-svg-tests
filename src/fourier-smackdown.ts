@@ -1464,7 +1464,7 @@ test();
     }
     animations.push({ show });
   }
-
+  console.log(animations);
   initialize(...animations);
 
   if (urlParameters.get("thumbnail") == "1") {
@@ -1490,17 +1490,21 @@ test();
     });
     rectangles[1].style.transform = "rotate(1.75deg)";
     rectangles[2].style.transform = "rotate(-1.5deg)";
-    const showPeriod = 6000;
-    animations[0].show(showPeriod * 5 - 20);
-    animations[1].show(showPeriod * 7 - 20);
-    animations[2].show(showPeriod * 4 - 20);
+    //const showPeriod = 6000;
+    animations[0].show(5500); // A 5 pointed star
+    animations[1].show(60000 + 21005);
+    animations[2].show(56000); // Yellow foreground
     selectorQueryAll("[data-reference]", SVGPathElement).forEach(
       (path) => (path.style.display = "none")
     );
     const live = selectorQueryAll("[data-live]", SVGPathElement);
     live.forEach((element) => {
-      element.style.transform = "scale(1.5)";
+      element.style.transform = "scale(1.15) rotate(22deg)";
     });
+    console.log(live[2].style.strokeWidth);
+    live[5].style.strokeWidth = "0";
+    //      "calc(var(--base-stroke-width) / var(--path-scale) * 0.33)"; // 1/3 of what it was.
+    console.log(live[5].style.strokeWidth, live[5], live);
     (window as any).showFrame = (timeInMs: number) => {
       console.info("ignoring showFrame()", timeInMs);
     };

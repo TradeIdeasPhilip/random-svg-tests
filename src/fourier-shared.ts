@@ -128,13 +128,39 @@ export function samplesToFourier(samples: readonly Complex[]): FourierTerm[] {
   return keepNonZeroTerms(terms);
 }
 
+const cacheHealth = { miss: 0, hit: 0 };
+(window as any).cacheHealth = cacheHealth;
+
+/**
+ * Create a parametric function based on the output of a prior call to an FFT.
+ *
+ * This lets you select which terms you want to use.
+ * The original purpose was to animate the process of adding more terms.
+ * @param terms The output of a fast Fourier transform after minor massaging.
+ * @param numTerms How many of the terms do you wish to compute and sum?
+ * @param start The first term to include.
+ * I.e. Skip the first `start` terms and start with `terms[start]`
+ * @returns A new function to compute the value of all the selected terms at a given t.
+ * The input the function, `t`, varies from 0 to 1, inclusive.
+ * Each function will share the same underlying array of `terms` for efficiency.
+ *
+ * The returned function will be cached for performance.
+ * Each call to this function will create a new cache.
+ */
 export function termsToParametricFunction(
   terms: readonly FourierTerm[],
   numTerms: number,
   start = 0
 ): ParametricFunction {
   const end = Math.min(start + numTerms, terms.length);
-  return (t: number): Point => {
+  /**
+   * The main event!
+   *
+   * Compute each of the terms and add the results.
+   * @param t A value from 0 to 1, inclusive.
+   * @returns A sum of all of the terms computed at `t`.
+   */
+  function sumOfFourierTerms(t: number): Point {
     let x = 0,
       y = 0;
     for (let k = start; k < end; k++) {
@@ -144,7 +170,24 @@ export function termsToParametricFunction(
       y += amplitude * Math.sin(angle);
     }
     return { x, y };
-  };
+  }
+  /**
+   * This gets used a lot.
+   * It helps a lot.
+   */
+  const cache = new Map<number, Point>();
+  function cachedSumOfFourierTerms(t: number): Point {
+    const cached = cache.get(t);
+    if (cached) {
+      cacheHealth.hit++;
+      return cached;
+    }
+    cacheHealth.miss++;
+    const result = sumOfFourierTerms(t);
+    cache.set(t, result);
+    return result;
+  }
+  return cachedSumOfFourierTerms;
 }
 
 /**

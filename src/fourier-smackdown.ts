@@ -593,7 +593,7 @@ class FourierAnimation {
     this.#liveColor = options.liveColor;
     pathCaliper.d = this.#pathString;
     this.#transform = this.#destination.getTransform(pathCaliper.getBBox());
-    const period = 6000;
+    const period = 7000;
     const pause = 750;
     this.endTime = period * options.base.stepCount;
     const getPath = options.base.makeGetPath1(period, 0, period - pause);
@@ -1169,8 +1169,8 @@ test();
     },*/
     {
       color: "black",
-      destRect: { x: 1, y: 0.25, width: 8.5, height: 8.5 },
-      index: 22,
+      destRect: { x: 2, y: 0.5, width: 8, height: 8 },
+      index: 23,
       colorName: "blue",
     },
   ];
@@ -1185,7 +1185,7 @@ test();
     where.innerHTML = `#${index} of ${ShapeMaker6.allPaths.length}`;
   }
 
-  showIndex(22);
+  showIndex(23);
 
   const fourierInfo = baseInfo.map(({ index }) => {
     const pathString = ShapeMaker6.makePathShape(index).rawPath;
@@ -1265,10 +1265,17 @@ test();
     const bins: FourierTerm[][] = [];
     const terms = fourierBase.terms;
     const numberOfTerms = terms.length;
-    bins.push(terms.splice(0, 2));
-    for (let i = 0; i < 19; i++) {
+    bins.push();
+    for (let i = 0; i < 5; i++) {
       const big = assertNonNullable(terms.shift());
       bins.push([big]);
+    }
+    for (let i = 0; i < 10; i++) {
+      const big = terms.splice(0, 2);
+      if (big.length != 2) {
+        throw new Error("wtf");
+      }
+      bins.push(big);
     }
     /*
     for (let i = 1; i < bins.length; i++) {
@@ -1278,7 +1285,10 @@ test();
       bins[i].push(...terms.splice(0, itemsThisTime));
     }
     */
-    bins[10].push(...terms);
+    console.log({ bins, terms });
+    bins.splice(1, 0, [...terms]);
+    console.log(bins);
+    //bins[10].push(...terms);
     terms.length = 0;
     if (terms.length != 0) {
       throw new Error("wtf");
@@ -1317,7 +1327,7 @@ test();
       referenceColor: color,
     };
     const fourierAnimation = new FourierAnimation(options, frequenciesG);
-
+    //fourierAnimation.show(10000)
     animations.push(fourierAnimation);
     console.log(fourierAnimation);
   }
@@ -1378,7 +1388,35 @@ test();
       [255, 245, 157],
       [175, 238, 238],
     ];
-    const backgroundColors = true ? backgroundColors2 : backgroundColors3;
+
+    /**
+     * Palette Idea 3: Dusky Purples (Warm, Mid-Tone Monochromatic)A range of mid-tone purples for a mystical, lava-lamp-like background.Background Colors (in order, from darkest to lightest):Deep Plum: (60, 20, 80) #3C1450
+     * Dark Lavender: (80, 40, 100) #502864
+     * Twilight Purple: (100, 60, 120) #643C78
+     * Muted Lilac: (120, 80, 140) #78508C
+     * Soft Mauve: (140, 100, 160) #8C64A0
+     * Pale Amethyst: (160, 120, 180) #A078B4
+     * Light Violet: (180, 140, 200) #B48CC8
+     *
+     * Foreground Colors:Text: Warm White: (255, 240, 230) #FFF0E6 (bright, readable)
+     * Lines/Arrows: Golden Orange: (255, 165, 0) #FFA500 (vibrant, bold)
+     *
+     * Why it works: The purple tones create a cohesive, trippy, and calming background that feels like a glowing dusk. The warm white and golden orange foregrounds contrast vividly with all purple shades, ensuring your text and lines stand out.
+     */
+    const backgroundColors3a = [
+      [80, 40, 100],
+      [100, 60, 120],
+      [120, 80, 140],
+      [140, 100, 160],
+      [160, 120, 180],
+      [180, 140, 200],
+    ];
+
+    const backgroundColors = true
+      ? backgroundColors3a
+      : true
+      ? backgroundColors2
+      : backgroundColors3;
     const backgroundBrightness = makeLinear(0, 0.0, 255, 1);
     backgroundColors.forEach((color) =>
       color.forEach(
@@ -1426,8 +1464,8 @@ test();
     }
     updateColors(backgroundColors);
     function show(timeInMS: number) {
-      const randomPart = (timeInMS / 120000) * FULL_CIRCLE;
-      const constantPart = ((timeInMS / 120000) * FULL_CIRCLE) / 2;
+      const randomPart = (timeInMS / 180000) * FULL_CIRCLE;
+      const constantPart = ((timeInMS / 240000) * FULL_CIRCLE) / 2;
       updateValues(randomPart, constantPart);
     }
     animations.push({ show });
@@ -1445,21 +1483,69 @@ test();
       });
     }
     (window as any).setFgColor = setFgColor;
-    const colors = [
-      "red",
-      "yellow",
-      "magenta",
-      "lime",
-      "hwb(204.42deg 0% 0%)",
-      "white",
-      "cyan",
-      "#CC5500",
-      "hsl(270, 55%, 55%)",
-    ];
+
+    // Precompute flicker opacities for 120 seconds at 60fps (7200 frames)
+    const maxFrames = 120 * 60; // 7200 frames for 120 seconds
+    const random = Random.fromString("Flicker");
+    const opacities = new Array<number>();
+
+    function normalAlpha() {
+      return 0.65 + random() * 0.15;
+    }
+    function brighterAlpha() {
+      return 0.8 + random() * 0.1;
+    }
+    function darkerAlpha() {
+      return 0.2 + random() * 0.3;
+    }
+    function integerInRange(min: number, max: number) {
+      return min + Math.floor(random() * (max - min + 1));
+    }
+    function add(f: () => number, minCount: number, maxCount: number) {
+      const count = integerInRange(minCount, maxCount);
+      for (let i = 0; i < count; i++) {
+        opacities.push(f());
+      }
+    }
+
+    // Generate flicker pattern
+    function generateFlickerPattern() {
+      while (opacities.length < maxFrames) {
+        add(normalAlpha, 60, 90);
+        if (random() < 0.15) {
+          // Darker
+          let trainCount = integerInRange(2, 3);
+          while (true) {
+            add(darkerAlpha, 2, 3);
+            trainCount--;
+            if (trainCount <= 0) {
+              break;
+            }
+            add(normalAlpha, 3, 5);
+          }
+        } else {
+          // Lighter
+          let trainCount = integerInRange(3, 5);
+          while (true) {
+            add(brighterAlpha, 2, 5);
+            trainCount--;
+            if (trainCount <= 0) {
+              break;
+            }
+            add(normalAlpha, 3, 5);
+          }
+        }
+      }
+    }
+    generateFlickerPattern();
 
     function show(timeInMs: number) {
-      const index = Math.floor(timeInMs / 1500) % colors.length;
-      const color = colors[index];
+      // Update it at 30 fps.  Every 2 frames are the same.
+      // That made it look better, flickering a little less.
+      const frame = Math.floor((timeInMs / 1000) * 30) % opacities.length;
+      const opacity = opacities[frame];
+      // Convert Warm White #FFF0E6 to rgba with opacity
+      const color = `rgba(255, 240, 230, ${opacity})`;
       setFgColor(color);
     }
     animations.push({ show });

@@ -593,7 +593,7 @@ class FourierAnimation {
     this.#liveColor = options.liveColor;
     pathCaliper.d = this.#pathString;
     this.#transform = this.#destination.getTransform(pathCaliper.getBBox());
-    const period = 7000;
+    const period = 6000;
     const pause = 750;
     this.endTime = period * options.base.stepCount;
     const getPath = options.base.makeGetPath1(period, 0, period - pause);
@@ -1154,23 +1154,22 @@ test();
     index: number;
     colorName?: string;
   }[] = [
-    /*
     {
-      color: "#2F4F4F",
+      color: "#black",
       destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
-      index: 18,
+      index: 24,
       colorName: "red",
     },
     {
       color: "black",
       destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
-      index: 19,
+      index: 24,
       colorName: "white",
-    },*/
+    },
     {
       color: "black",
-      destRect: { x: 2, y: 0.5, width: 8, height: 8 },
-      index: 23,
+      destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
+      index: 24,
       colorName: "blue",
     },
   ];
@@ -1185,7 +1184,7 @@ test();
     where.innerHTML = `#${index} of ${ShapeMaker6.allPaths.length}`;
   }
 
-  showIndex(23);
+  showIndex(24);
 
   const fourierInfo = baseInfo.map(({ index }) => {
     const pathString = ShapeMaker6.makePathShape(index).rawPath;
@@ -1234,8 +1233,9 @@ test();
      */
     const amplitudes2 = amplitudes1.filter(
       ({ amplitude, frequency }) =>
-        amplitude > amplitudeCutoff && (frequency - 1) % desiredFrequency == 0
-    );
+        amplitude > amplitudeCutoff && (frequency + 1) % desiredFrequency == 0
+    ); // 3 - 1 was good and long.  3 +1 was better but shorter.  4+1 good but short, 4-1 very interesting.  5+ draws a shape similar to 3 and 4, 6- is interesting
+    // 5+, 4+, 3-
     console.log(amplitudes2);
 
     /**
@@ -1257,6 +1257,36 @@ test();
       });
     });
   }
+
+  function reorderForSymmetry(
+    terms: FourierTerm[],
+    desiredFrequency: number,
+    direction: 1 | -1
+  ) {
+    terms.sort((a, b) => b.amplitude - a.amplitude);
+    const front = new Array<FourierTerm>();
+    const back = new Array<FourierTerm>();
+    let amplitudeCutoff: undefined | number;
+    terms.forEach((term) => {
+      if (amplitudeCutoff !== undefined && term.amplitude < amplitudeCutoff) {
+        back.push(term);
+      } else if ((term.frequency + direction) % desiredFrequency == 0) {
+        front.push(term);
+        if (amplitudeCutoff === undefined) {
+          amplitudeCutoff = term.amplitude * 0.05;
+        }
+      } else {
+        back.push(term);
+      }
+    });
+    terms.length = 0;
+    terms.push(...front, ...back);
+    console.log(front, back, terms);
+    return { frontLength: front.length };
+  }
+  reorderForSymmetry(fourierInfo[0].terms, 3, +1);
+  reorderForSymmetry(fourierInfo[1].terms, 4, -1);
+  reorderForSymmetry(fourierInfo[2].terms, 5, -1);
 
   //  fourierInfo[0].keyframes.splice(1,1);
   //  fourierInfo[0].keyframes.forEach((_, index, array) => { array[index] *= 2; });
@@ -1304,7 +1334,8 @@ test();
       throw new Error("wtf");
     }
   }
-  moveSmallOnesToTheFront(fourierInfo[0]);
+  moveSmallOnesToTheFront;
+  //moveSmallOnesToTheFront(fourierInfo[0]);
 
   const animations = new Array<Showable>();
   for (const [base, fourier] of zip(baseInfo, fourierInfo)) {
@@ -1464,53 +1495,36 @@ test();
     }
     updateColors(backgroundColors);
     function show(timeInMS: number) {
-      const randomPart = (timeInMS / 180000) * FULL_CIRCLE;
+      const randomPart = ((timeInMS + 240000) / 180000) * FULL_CIRCLE;
       const constantPart = ((timeInMS / 240000) * FULL_CIRCLE) / 2;
       updateValues(randomPart, constantPart);
     }
     animations.push({ show });
   }
   {
-    const fgColorTargets = selectorQueryAll("[data-fg-color]", SVGElement).map(
-      (element) => ({
-        element,
-        attributeName: assertNonNullable(element.dataset.fgColor),
-      })
-    );
-    function setFgColor(color: string) {
-      fgColorTargets.forEach(({ element, attributeName }) => {
-        element.setAttribute(attributeName, color);
-      });
-    }
-    (window as any).setFgColor = setFgColor;
-
-    // Precompute flicker opacities for 120 seconds at 60fps (7200 frames)
-    const maxFrames = 120 * 60; // 7200 frames for 120 seconds
-    const random = Random.fromString("Flicker");
-    const opacities = new Array<number>();
-
-    function normalAlpha() {
-      return 0.65 + random() * 0.15;
-    }
-    function brighterAlpha() {
-      return 0.8 + random() * 0.1;
-    }
-    function darkerAlpha() {
-      return 0.2 + random() * 0.3;
-    }
-    function integerInRange(min: number, max: number) {
-      return min + Math.floor(random() * (max - min + 1));
-    }
-    function add(f: () => number, minCount: number, maxCount: number) {
-      const count = integerInRange(minCount, maxCount);
-      for (let i = 0; i < count; i++) {
-        opacities.push(f());
+    function generateFlickerPattern(randomSeed: string) {
+      const random = Random.fromString(randomSeed);
+      const maxFrames = 120 * 60; // 7200 frames for 120 seconds
+      function normalAlpha() {
+        return 0.65 + random() * 0.15;
       }
-    }
-
-    // Generate flicker pattern
-    function generateFlickerPattern() {
-      while (opacities.length < maxFrames) {
+      function brighterAlpha() {
+        return 0.8 + random() * 0.1;
+      }
+      function darkerAlpha() {
+        return 0.2 + random() * 0.3;
+      }
+      function integerInRange(min: number, max: number) {
+        return min + Math.floor(random() * (max - min + 1));
+      }
+      const result = new Array<number>();
+      function add(f: () => number, minCount: number, maxCount: number) {
+        const count = integerInRange(minCount, maxCount);
+        for (let i = 0; i < count; i++) {
+          result.push(f());
+        }
+      }
+      while (result.length < maxFrames) {
         add(normalAlpha, 60, 90);
         if (random() < 0.15) {
           // Darker
@@ -1536,19 +1550,40 @@ test();
           }
         }
       }
+      return result;
     }
-    generateFlickerPattern();
-
-    function show(timeInMs: number) {
-      // Update it at 30 fps.  Every 2 frames are the same.
-      // That made it look better, flickering a little less.
-      const frame = Math.floor((timeInMs / 1000) * 30) % opacities.length;
-      const opacity = opacities[frame];
-      // Convert Warm White #FFF0E6 to rgba with opacity
-      const color = `rgba(255, 240, 230, ${opacity})`;
-      setFgColor(color);
+    function pushFlickerAnimator(
+      filterId: string,
+      colorName: string,
+      randomSeed = colorName
+    ) {
+      const dropShadowElement = selectorQuery(
+        `#${filterId} feDropShadow`,
+        SVGFEDropShadowElement
+      );
+      const pathElement = selectorQuery(
+        `[data-fourier-top="${colorName}"] [data-live]:not([filter])`,
+        SVGPathElement
+      );
+      function setFgColor(color: string) {
+        dropShadowElement.setAttribute("flood-color", color);
+        pathElement.style.stroke = color;
+      }
+      const opacities = generateFlickerPattern(randomSeed);
+      function show(timeInMs: number) {
+        // Update it at 30 fps.  Every 2 frames are the same.
+        // That made it look better, flickering a little less.
+        const frame = Math.floor((timeInMs / 1000) * 30) % opacities.length;
+        const opacity = opacities[frame];
+        // Convert Warm White #FFF0E6 to rgba with opacity
+        const color = `rgba(255, 240, 230, ${opacity})`;
+        setFgColor(color);
+      }
+      animations.push({ show });
     }
-    animations.push({ show });
+    pushFlickerAnimator("big-shadow0", "red");
+    pushFlickerAnimator("big-shadow1", "white");
+    pushFlickerAnimator("big-shadow2", "blue");
   }
   console.log(animations);
   initialize(...animations);
@@ -1577,20 +1612,32 @@ test();
     rectangles[1].style.transform = "rotate(1.75deg)";
     rectangles[2].style.transform = "rotate(-1.5deg)";
     //const showPeriod = 6000;
-    animations[0].show(5500); // A 5 pointed star
-    animations[1].show(60000 + 21005);
-    animations[2].show(56000); // Yellow foreground
+    //animations[0].show(21000);
+    //animations[1].show(80000);
+    //animations[2].show(0); // Yellow foreground
+    showFrame(30000);
     selectorQueryAll("[data-reference]", SVGPathElement).forEach(
       (path) => (path.style.display = "none")
     );
+    /*
     const live = selectorQueryAll("[data-live]", SVGPathElement);
-    live.forEach((element) => {
-      element.style.transform = "scale(1.15) rotate(22deg)";
+    //live.forEach((element) => {
+    // element.style.transform = "scale(1.15) rotate(22deg)";
+    //});
+    console.log(live[3], live[4]);
+    [live[3], live[4]].forEach((path) => {
+      const width = getComputedStyle(path).strokeWidth;
+      path.style.strokeWidth = `calc(3 * ${width})`;
     });
-    console.log(live[2].style.strokeWidth);
-    live[5].style.strokeWidth = "0";
+    //live[5].style.strokeWidth = "0";
     //      "calc(var(--base-stroke-width) / var(--path-scale) * 0.33)"; // 1/3 of what it was.
-    console.log(live[5].style.strokeWidth, live[5], live);
+    //console.log(live[5].style.strokeWidth, live[5], live);
+    */
+    const toGrow = selectorQuery('[data-fourier-top="red"]', SVGGElement);
+    const initialTransform = getComputedStyle(toGrow).transform;
+    toGrow.style.transform =
+      initialTransform + " scale(2) translate(0px, 0.2px)";
+
     (window as any).showFrame = (timeInMs: number) => {
       console.info("ignoring showFrame()", timeInMs);
     };

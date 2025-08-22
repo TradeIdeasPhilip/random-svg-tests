@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>👋 fourier-smackdown</title>
-    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತನಾಲ್-CjOO3O5n.js"></script>
+    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತನಾಲ್-Cq0owGUI.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-BHUyxQfl.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-B8CxQsfg.js">
@@ -34,7 +34,7 @@
     >
       <defs>
         <filter
-          id="big-shadow"
+          id="big-shadow0"
           color-interpolation-filters="sRGB"
           filterUnits="userSpaceOnUse"
           primitiveUnits="userSpaceOnUse"
@@ -46,7 +46,42 @@
           <feDropShadow
             dx="0.0"
             dy="0.0"
-            data-fg-color="flood-color"
+            flood-color="lime"
+            flood-opacity="1"
+            stdDeviation="0.02"
+          ></feDropShadow>
+        </filter>
+        <filter
+          id="big-shadow1"
+          color-interpolation-filters="sRGB"
+          filterUnits="userSpaceOnUse"
+          primitiveUnits="userSpaceOnUse"
+          x="-1.5"
+          y="-1.5"
+          width="3"
+          height="3"
+        >
+          <feDropShadow
+            dx="0.0"
+            dy="0.0"
+            flood-color="lime"
+            flood-opacity="1"
+            stdDeviation="0.02"
+          ></feDropShadow>
+        </filter>
+        <filter
+          id="big-shadow2"
+          color-interpolation-filters="sRGB"
+          filterUnits="userSpaceOnUse"
+          primitiveUnits="userSpaceOnUse"
+          x="-1.5"
+          y="-1.5"
+          width="3"
+          height="3"
+        >
+          <feDropShadow
+            dx="0.0"
+            dy="0.0"
             flood-color="lime"
             flood-opacity="1"
             stdDeviation="0.02"
@@ -477,20 +512,30 @@
         </g>
         <g data-fourier-top="red">
           <path data-reference></path>
-          <path data-live></path>
+          <path
+            data-live
+            style="stroke: limegreen"
+            filter="url(#big-shadow0)"
+          ></path>
+          <path data-live stroke="#FFF0E6"></path>
         </g>
         <g data-fourier-top="white">
           <path data-reference></path>
-          <path data-live></path>
+          <path
+            data-live
+            style="stroke: #ffa500"
+            filter="url(#big-shadow1)"
+          ></path>
+          <path data-live stroke="#FFF0E6"></path>
         </g>
         <g data-fourier-top="blue">
           <path data-reference></path>
           <path
             data-live
-            style="stroke: #FFA500"
-            filter="url(#big-shadow)"
+            style="stroke: deeppink"
+            filter="url(#big-shadow2)"
           ></path>
-          <path data-live data-fg-color="stroke" stroke="#FFF0E6"></path>
+          <path data-live stroke="#FFF0E6"></path>
         </g>
         <g data-frequencies="red" class="frequencies">
           <g class="frequency">
@@ -678,7 +723,7 @@
             <text>-3</text>
           </g>
         </g>
-        <text class="chapter" x="15.7" y="0.75">q#5</text>
+        <text class="chapter" x="15.7" y="8.75">chapter</text>
       </g>
     </svg>
   </body>

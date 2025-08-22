@@ -1157,19 +1157,19 @@ test();
     {
       color: "#black",
       destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
-      index: 24,
+      index: 25,
       colorName: "red",
     },
     {
       color: "black",
       destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
-      index: 24,
+      index: 25,
       colorName: "white",
     },
     {
       color: "black",
       destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
-      index: 24,
+      index: 25,
       colorName: "blue",
     },
   ];
@@ -1184,7 +1184,7 @@ test();
     where.innerHTML = `#${index} of ${ShapeMaker6.allPaths.length}`;
   }
 
-  showIndex(24);
+  showIndex(25);
 
   const fourierInfo = baseInfo.map(({ index }) => {
     const pathString = ShapeMaker6.makePathShape(index).rawPath;
@@ -1284,9 +1284,11 @@ test();
     console.log(front, back, terms);
     return { frontLength: front.length };
   }
-  reorderForSymmetry(fourierInfo[0].terms, 3, +1);
-  reorderForSymmetry(fourierInfo[1].terms, 4, -1);
-  reorderForSymmetry(fourierInfo[2].terms, 5, -1);
+  if (false) {
+    reorderForSymmetry(fourierInfo[0].terms, 3, +1);
+    reorderForSymmetry(fourierInfo[1].terms, 4, -1);
+    reorderForSymmetry(fourierInfo[2].terms, 5, -1);
+  }
 
   //  fourierInfo[0].keyframes.splice(1,1);
   //  fourierInfo[0].keyframes.forEach((_, index, array) => { array[index] *= 2; });

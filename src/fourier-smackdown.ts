@@ -428,7 +428,7 @@ class FourierBase {
     };
     const recommendedNumberOfSegments = (numberOfTerms: number) => {
       const maxFrequency = getMaxFrequency(numberOfTerms);
-      return 8 * maxFrequency + 7;
+      return 8 * Math.min(maxFrequency, 50) + 7;
     };
     const segmentInfo = initializedArray(stepCount, (index) => {
       const startingTermCount = toShow[index];
@@ -593,7 +593,7 @@ class FourierAnimation {
     this.#liveColor = options.liveColor;
     pathCaliper.d = this.#pathString;
     this.#transform = this.#destination.getTransform(pathCaliper.getBBox());
-    const period = 6000;
+    const period = 7500;
     const pause = 750;
     this.endTime = period * options.base.stepCount;
     const getPath = options.base.makeGetPath1(period, 0, period - pause);
@@ -1157,19 +1157,19 @@ test();
     {
       color: "#black",
       destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
-      index: 25,
+      index: 26,
       colorName: "red",
     },
     {
       color: "black",
       destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
-      index: 25,
+      index: 27,
       colorName: "white",
     },
     {
       color: "black",
       destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
-      index: 25,
+      index: 28,
       colorName: "blue",
     },
   ];
@@ -1183,8 +1183,7 @@ test();
     }
     where.innerHTML = `#${index} of ${ShapeMaker6.allPaths.length}`;
   }
-
-  showIndex(25);
+  showIndex;
 
   const fourierInfo = baseInfo.map(({ index }) => {
     const pathString = ShapeMaker6.makePathShape(index).rawPath;
@@ -1293,7 +1292,10 @@ test();
   //  fourierInfo[0].keyframes.splice(1,1);
   //  fourierInfo[0].keyframes.forEach((_, index, array) => { array[index] *= 2; });
   console.log(fourierInfo);
-  function moveSmallOnesToTheFront(fourierBase: FourierBase) {
+  function moveSmallOnesToTheFront(
+    fourierBase: FourierBase,
+    smallTermsBinIndex = 8
+  ) {
     const bins: FourierTerm[][] = [];
     const terms = fourierBase.terms;
     const numberOfTerms = terms.length;
@@ -1318,7 +1320,7 @@ test();
     }
     */
     console.log({ bins, terms });
-    bins.splice(1, 0, [...terms]);
+    bins.splice(smallTermsBinIndex, 0, [...terms]);
     console.log(bins);
     //bins[10].push(...terms);
     terms.length = 0;
@@ -1337,7 +1339,9 @@ test();
     }
   }
   moveSmallOnesToTheFront;
-  //moveSmallOnesToTheFront(fourierInfo[0]);
+  moveSmallOnesToTheFront(fourierInfo[0], 12);
+  moveSmallOnesToTheFront(fourierInfo[1], 10);
+  moveSmallOnesToTheFront(fourierInfo[2], 8);
 
   const animations = new Array<Showable>();
   for (const [base, fourier] of zip(baseInfo, fourierInfo)) {
@@ -1503,90 +1507,7 @@ test();
     }
     animations.push({ show });
   }
-  {
-    function generateFlickerPattern(randomSeed: string) {
-      const random = Random.fromString(randomSeed);
-      const maxFrames = 120 * 60; // 7200 frames for 120 seconds
-      function normalAlpha() {
-        return 0.65 + random() * 0.15;
-      }
-      function brighterAlpha() {
-        return 0.8 + random() * 0.1;
-      }
-      function darkerAlpha() {
-        return 0.2 + random() * 0.3;
-      }
-      function integerInRange(min: number, max: number) {
-        return min + Math.floor(random() * (max - min + 1));
-      }
-      const result = new Array<number>();
-      function add(f: () => number, minCount: number, maxCount: number) {
-        const count = integerInRange(minCount, maxCount);
-        for (let i = 0; i < count; i++) {
-          result.push(f());
-        }
-      }
-      while (result.length < maxFrames) {
-        add(normalAlpha, 60, 90);
-        if (random() < 0.15) {
-          // Darker
-          let trainCount = integerInRange(2, 3);
-          while (true) {
-            add(darkerAlpha, 2, 3);
-            trainCount--;
-            if (trainCount <= 0) {
-              break;
-            }
-            add(normalAlpha, 3, 5);
-          }
-        } else {
-          // Lighter
-          let trainCount = integerInRange(3, 5);
-          while (true) {
-            add(brighterAlpha, 2, 5);
-            trainCount--;
-            if (trainCount <= 0) {
-              break;
-            }
-            add(normalAlpha, 3, 5);
-          }
-        }
-      }
-      return result;
-    }
-    function pushFlickerAnimator(
-      filterId: string,
-      colorName: string,
-      randomSeed = colorName
-    ) {
-      const dropShadowElement = selectorQuery(
-        `#${filterId} feDropShadow`,
-        SVGFEDropShadowElement
-      );
-      const pathElement = selectorQuery(
-        `[data-fourier-top="${colorName}"] [data-live]:not([filter])`,
-        SVGPathElement
-      );
-      function setFgColor(color: string) {
-        dropShadowElement.setAttribute("flood-color", color);
-        pathElement.style.stroke = color;
-      }
-      const opacities = generateFlickerPattern(randomSeed);
-      function show(timeInMs: number) {
-        // Update it at 30 fps.  Every 2 frames are the same.
-        // That made it look better, flickering a little less.
-        const frame = Math.floor((timeInMs / 1000) * 30) % opacities.length;
-        const opacity = opacities[frame];
-        // Convert Warm White #FFF0E6 to rgba with opacity
-        const color = `rgba(255, 240, 230, ${opacity})`;
-        setFgColor(color);
-      }
-      animations.push({ show });
-    }
-    pushFlickerAnimator("big-shadow0", "red");
-    pushFlickerAnimator("big-shadow1", "white");
-    pushFlickerAnimator("big-shadow2", "blue");
-  }
+
   console.log(animations);
   initialize(...animations);
 

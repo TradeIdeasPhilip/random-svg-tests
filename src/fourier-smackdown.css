@@ -87,11 +87,6 @@ line#for-scale {
   stroke-width: var(--base-stroke-width);
 }
 
-text.chapter {
-  font-size: 0.5px;
-  text-anchor: end;
-}
-
 g.frequencies[data-frequencies="red"] {
   transform: translate(0.25px, 5.65px) scale(0.25);
 }
@@ -198,8 +193,14 @@ path[data-live] {
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 3);
 }
 
+/* 3rd path, but the 2nd pata[data-live] 🤮 */
 path[data-live]:nth-of-type(3) {
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.5);
+  --angle: 60deg;
+  transform: translate(
+    calc(var(--base-stroke-width) / var(--path-scale) * cos(var(--angle))),
+    calc(var(--base-stroke-width) / var(--path-scale) * sin(var(--angle)))
+  );
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale));
 }
 path[data-live]:nth-of-type(4) {
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1);
@@ -212,4 +213,9 @@ path[data-live]:nth-of-type(4) {
 #top-rect,
 #top-rect2 {
   will-change: transform;
+}
+
+text.chapter {
+  font-size: 0.75px;
+  filter: drop-shadow(0px 0px 0.4px rgb(255, 240, 230));
 }

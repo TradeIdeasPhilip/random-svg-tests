@@ -25,7 +25,6 @@ import {
   positiveModulo,
   Random,
   ReadOnlyRect,
-  RealSvgRect,
   zip,
 } from "phil-lib/misc";
 import { ease, getMod } from "./utility";
@@ -596,7 +595,7 @@ class FourierAnimation {
     this.#liveColor = options.liveColor;
     pathCaliper.d = this.#pathString;
     this.#transform = this.#destination.getTransform(pathCaliper.getBBox());
-    const period = 7500;
+    const period = 6000;
     const pause = 750;
     this.endTime = period * options.base.stepCount;
     const getPath = options.base.makeGetPath1(period, 0, period - pause);
@@ -1160,19 +1159,19 @@ test();
     {
       color: "#black",
       destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
-      index: 29,
+      index: 30,
       colorName: "red",
     },
     {
       color: "black",
       destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
-      index: 29,
+      index: 31,
       colorName: "white",
     },
     {
       color: "black",
       destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
-      index: 29,
+      index: 32,
       colorName: "blue",
     },
   ];
@@ -1194,6 +1193,7 @@ test();
   });
 
   if (false) {
+    fourierInfo[1].terms.forEach(term => term.frequency = -term.frequency)
     /**
      * For each frequency, total the amplitudes of that frequency used by all three curves.
      * So we can make make decisions for all three curves at once.
@@ -1225,19 +1225,13 @@ test();
      */
     const amplitudeCutoff = amplitudes1[0].amplitude * 0.05;
     /**
-     * Focus on patterns that you could rotate by 90° without changing them.
-     */
-    const desiredFrequency = 3;
-    /**
      * These are the frequencies that we want to start with.
      * First display all of these, in order.
      * Then each curve can return to its own list.
      */
     const amplitudes2 = amplitudes1.filter(
-      ({ amplitude, frequency }) =>
-        amplitude > amplitudeCutoff && (frequency + 1) % desiredFrequency == 0
-    ); // 3 - 1 was good and long.  3 +1 was better but shorter.  4+1 good but short, 4-1 very interesting.  5+ draws a shape similar to 3 and 4, 6- is interesting
-    // 5+, 4+, 3-
+      ({ amplitude }) => amplitude > amplitudeCutoff
+    );
     console.log(amplitudes2);
 
     /**
@@ -1286,10 +1280,10 @@ test();
     console.log(front, back, terms);
     return { frontLength: front.length };
   }
-  if (false) {
-    reorderForSymmetry(fourierInfo[0].terms, 3, +1);
-    reorderForSymmetry(fourierInfo[1].terms, 4, -1);
-    reorderForSymmetry(fourierInfo[2].terms, 5, -1);
+  if (true) {
+    reorderForSymmetry(fourierInfo[0].terms, 4, -1);  // 4,-1
+    reorderForSymmetry(fourierInfo[1].terms, 4, -1);  //3,-1. better 4,+1 or 4,-1
+    reorderForSymmetry(fourierInfo[2].terms, 5,-1);  //2,+1. better 3,+1 or 5,-1
   }
 
   //  fourierInfo[0].keyframes.splice(1,1);
@@ -1303,11 +1297,11 @@ test();
     const terms = fourierBase.terms;
     const numberOfTerms = terms.length;
     bins.push();
-    for (let i = 0; i < 5; i++) {
+    while (bins.length < smallTermsBinIndex) {
       const big = assertNonNullable(terms.shift());
       bins.push([big]);
     }
-    for (let i = 0; i < 10; i++) {
+    while (bins.length < 19) {
       const big = terms.splice(0, 2);
       if (big.length != 2) {
         throw new Error("wtf");
@@ -1342,8 +1336,8 @@ test();
     }
   }
   moveSmallOnesToTheFront;
-  moveSmallOnesToTheFront(fourierInfo[0], 6);
-  moveSmallOnesToTheFront(fourierInfo[1], 6);
+  moveSmallOnesToTheFront(fourierInfo[0], 7);
+  moveSmallOnesToTheFront(fourierInfo[1], 8);
   moveSmallOnesToTheFront(fourierInfo[2], 6);
 
   const animations = new Array<Showable>();
@@ -1526,169 +1520,9 @@ test();
     }
     updateColors(backgroundColors);
     function show(timeInMS: number) {
-      const randomPart = ((timeInMS + 240000) / 180000) * FULL_CIRCLE;
+      const randomPart = (timeInMS/ 240000) * FULL_CIRCLE*2;
       const constantPart = ((timeInMS / 240000) * FULL_CIRCLE) / 2;
       updateValues(randomPart, constantPart);
-    }
-    animations.push({ show });
-  }
-
-  {
-    const textGroup = getById("lava-lamp-text", SVGGElement);
-    const textBackground = getById("lava-lamp-rect", SVGRectElement);
-    function setLavaLampText(text: string) {
-      textGroup.innerHTML = "";
-      if (text != "") {
-        const lines = text.split("\n");
-        lines.forEach((line, index) => {
-          const element = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "text"
-          );
-          textGroup.append(element);
-          element.style.setProperty("--index", index.toString());
-          element.textContent = line;
-        });
-        const bBox: RealSvgRect = textGroup.getBBox();
-        const right = bBox.x + bBox.width;
-        const bottom = bBox.y + bBox.height;
-        const margin = 0.1;
-        const left = 16 - right - margin;
-        const top = 9 - bottom - margin;
-        textGroup.style.transform = `translate(${left}px, ${top}px)`;
-        textBackground.x.baseVal.value = left - margin * 2;
-        textBackground.y.baseVal.value = top - margin * 4;
-      } else {
-        textBackground.x.baseVal.value = 17;
-        textBackground.y.baseVal.value = 10;
-      }
-    }
-    (window as any).setLavaLampText = setLavaLampText;
-    setLavaLampText("Hello\nworld!");
-    const code = [
-      "",
-      `<filter
-  id="lava-lamp"
-  color-interpolation-filters="sRGB"
-  filterUnits="objectBoundingBox"
-  x="0"
-  y="0"
-  width="1"
-  height="1"
-  primitiveUnits="userSpaceOnUse"
->
-`,
-      `<feTurbulence
-  type="fractalNoise"
-  baseFrequency="0.3 0.75"
-  numOctaves="1"
-  seed="1971"
-  stitchTiles="stitch"
-  x="0%"
-  y="0%"
-  width="100%"
-  height="100%"
-/>
-`,
-      `<feColorMatrix
-  type="matrix"
-  values="1.2 0.3 -0.3 0 -0.105
-          0.  0.   0.  0  0
-          0.  0.   0.  0  0
-          0.  0.   0.  0  1"
-  x="0%"
-  y="0%"
-  width="100%"
-  height="100%"
-/>
-`,
-      `<feColorMatrix
-  type="matrix"
-  values="1 0 0 0 0
-          1 0 0 0 0
-          1 0 0 0 0
-          0 0 0 0 1"
-  x="0%"
-  y="0%"
-  width="100%"
-  height="100%"
-/>
-`,
-      `<feGaussianBlur stdDeviation="0.05" />
-`,
-      `<feComponentTransfer x="0%" y="0%" width="100%" height="100%">
-  <feFuncR type="discrete" tableValues="1 0 0 1 1 0 1" />
-  <feFuncG type="discrete" tableValues="0 1 0 0 1 1 1" />
-  <feFuncB type="discrete" tableValues="0 0 1 1 0 1 1" />
-  <feFuncA type="linear" slope="0" intercept="1" />
-</feComponentTransfer>
-`,
-      `</filter>
-`,
-    ];
-
-    const original = getById("lava-lamp", SVGFilterElement);
-    const master = assertClass(original.cloneNode(true), SVGFilterElement);
-    master.id = "";
-    let nextId = 1;
-    function duplicate(id?: string) {
-      const filter = assertClass(master.cloneNode(true), SVGFilterElement);
-      id ??= `lava-lamp-${nextId++}`;
-      filter.id = id;
-      original.parentElement?.appendChild(filter);
-      //selectorQuery("feFuncR",SVGFEFuncRElement,filter).setAttribute("tableValues","1 0 0 1 1 0 1");
-      //selectorQuery("feFuncG",SVGFEFuncGElement,filter).setAttribute("tableValues","1 0 0 1 1 0 1");
-      //selectorQuery("feFuncB",SVGFEFuncBElement,filter).setAttribute("tableValues","1 0 0 1 1 0 1");
-      return { filter, id };
-    }
-    const filterElementCount = master.childElementCount;
-    console.log({ filterElementCount, master, duplicate });
-    for (let i = 0; i < filterElementCount; i++) {
-      const newFilter = duplicate();
-      Array.from(newFilter.filter.children)
-        .slice(i + 1)
-        .forEach((element) => {
-          element.remove();
-        });
-    }
-    const withoutBlur = duplicate("lava-lamp-without");
-    const outgoingFilter = assertClass(
-      withoutBlur.filter.children[filterElementCount - 2],
-      SVGFEGaussianBlurElement
-    );
-    outgoingFilter.remove();
-    // const EndTime = assertClass(animations[0], FourierAnimation).endTime;
-    const rectangles = selectorQueryAll("#lava-lamp-pieces *", SVGRectElement);
-    const numberOfStages = rectangles.length + 2;
-    if (numberOfStages != code.length) {
-      throw new Error("wtf");
-    }
-    function show(timeInMS: number) {
-      let stage: number;
-      if (timeInMS < 8500) {
-        stage = 0;
-      } else if (timeInMS < 16000) {
-        stage = 1;
-      } else if (timeInMS < 34750) {
-        stage = 2;
-      } else if (timeInMS < 50000) {
-        stage = 3;
-      } else if (timeInMS < 58500) {
-        stage = 4;
-      } else if (timeInMS < 75000) {
-        stage = 5;
-      } else if (timeInMS < 106000) {
-        stage = 6;
-      } else {
-        stage = 7;
-      }
-      rectangles.forEach((element, index) => {
-        // show nothing for stages 0 and 1.
-        // show (stage-1) rectangles at all other times.
-        const hide = index >= stage - 1;
-        element.style.display = hide ? "none" : "";
-      });
-      setLavaLampText(code[stage]);
     }
     animations.push({ show });
   }

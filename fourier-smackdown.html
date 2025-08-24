@@ -39,9 +39,9 @@
           <!-- Ignore the input image.  Start with pure noise. -->
           <feTurbulence
             type="fractalNoise"
-            baseFrequency="0.3 0.75"
+            baseFrequency="0.3 0.4"
             numOctaves="1"
-            seed="1971"
+            seed="1972"
             stitchTiles="stitch"
             x="0%"
             y="0%"
@@ -406,75 +406,6 @@
         fill="url(#backgroundGradient)"
         filter="url(#lava-lamp)"
       ></rect>
-      <g id="lava-lamp-pieces">
-        <rect
-          x="0.25"
-          y="4"
-          width="5"
-          height="5"
-          filter="url(#lava-lamp-1)"
-        ></rect>
-        <rect
-          x="0.25"
-          y="5"
-          width="4.5"
-          height="4"
-          filter="url(#lava-lamp-2)"
-        ></rect>
-        <rect
-          x="0.25"
-          y="6"
-          width="4"
-          height="3"
-          filter="url(#lava-lamp-3)"
-        ></rect>
-        <rect
-          x="0.25"
-          y="7"
-          width="3.5"
-          height="2"
-          filter="url(#lava-lamp-4)"
-        ></rect>
-        <rect
-          x="0.25"
-          y="8"
-          width="3"
-          height="1"
-          filter="url(#lava-lamp-5)"
-        ></rect>
-        <rect
-          x="0.25"
-          y="8"
-          width="1.5"
-          height="1"
-          filter="url(#lava-lamp-without)"
-        ></rect>
-      </g>
-      <g id="starfield">
-        <rect
-          data-hide-background
-          width="16"
-          height="9"
-          fill="url(#backgroundGradient)"
-          filter="url(#dalmatian)"
-        ></rect>
-        <rect
-          id="top-rect"
-          data-hide-background
-          width="16"
-          height="9"
-          fill="url(#backgroundGradient)"
-          filter="url(#dalmatian)"
-        ></rect>
-        <rect
-          id="top-rect2"
-          data-hide-background
-          width="16"
-          height="9"
-          fill="url(#backgroundGradient)"
-          filter="url(#dalmatian)"
-        ></rect>
-      </g>
       <g id="thumbnail-foreground" style="display: none">
         <text x="1" y="3.75" letter-spacing="0.2">
           <tspan>Abc</tspan>
@@ -710,7 +641,7 @@
           y="8.25"
           style="text-anchor: start; fill: orange"
         >
-          #29
+          #30
         </text>
         <text
           class="chapter"
@@ -718,7 +649,7 @@
           y="1.25"
           style="text-anchor: middle; fill: purple"
         >
-          #29
+          #31
         </text>
         <text
           class="chapter"
@@ -726,15 +657,8 @@
           y="8.25"
           style="text-anchor: end; fill: blue"
         >
-          #29 of 66
+          #32 of 66
         </text>
-        <rect
-          id="lava-lamp-rect"
-          filter="url(#lava-lamp-2)"
-          width="16"
-          height="9"
-        ></rect>
-        <g id="lava-lamp-text"></g>
       </g>
       <text class="thumbnail-bottom" y="8.5" x="8">Animations</text>
     </svg>

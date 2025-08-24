@@ -208,7 +208,6 @@ path[data-live]:nth-of-type(4) {
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1);
 }
 
-#starfield,
 [data-frequencies] {
   display: none;
 }
@@ -235,4 +234,5 @@ text.chapter {
 .thumbnail-bottom {
   font-size: 2px;
   text-anchor: middle;
+  display: none;
 }

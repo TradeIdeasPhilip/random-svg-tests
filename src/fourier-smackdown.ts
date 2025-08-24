@@ -29,6 +29,8 @@ import {
   zip,
 } from "phil-lib/misc";
 import { ease, getMod } from "./utility";
+import { roundFuturaLFont } from "./hershey-fonts/hershey-fonts";
+import { resizeFont } from "./letters-base";
 
 /**
  * Color Scheme:
@@ -1710,21 +1712,31 @@ test();
         paths.push(element);
       }
     });
-    const rectangles = selectorQueryAll("#starfield rect", SVGRectElement);
-    rectangles[0].parentElement!.style.transform = "scale(3)";
-    rectangles.forEach((rectangle) => {
-      rectangle.style.transformOrigin = `${50 / 3}% ${22}%`;
-    });
-    rectangles[1].style.transform = "rotate(1.75deg)";
-    rectangles[2].style.transform = "rotate(-1.5deg)";
-    //const showPeriod = 6000;
-    //animations[0].show(21000);
-    //animations[1].show(80000);
-    //animations[2].show(0); // Yellow foreground
-    showFrame(30000);
+    showFrame(0);
     selectorQueryAll("[data-reference]", SVGPathElement).forEach(
       (path) => (path.style.display = "none")
     );
+    const font = resizeFont(roundFuturaLFont, 0.5);
+    [
+      { name: "red", letter: "S" },
+      { name: "white", letter: "V" },
+      { name: "blue", letter: "G" },
+    ].forEach(({ name, letter }) => {
+      const description = font.get(letter)!;
+      const pathString = description.shape.translate(
+        description.advance / 2,
+        0
+      ).rawPath;
+      const paths = selectorQueryAll(
+        `[data-fourier-top="${name}"] [data-live]`,
+        SVGPathElement,
+        2,
+        2
+      );
+      paths.forEach((path) => {
+        path.setAttribute("d", pathString);
+      });
+    });
     /*
     const live = selectorQueryAll("[data-live]", SVGPathElement);
     //live.forEach((element) => {
@@ -1739,11 +1751,17 @@ test();
     //      "calc(var(--base-stroke-width) / var(--path-scale) * 0.33)"; // 1/3 of what it was.
     //console.log(live[5].style.strokeWidth, live[5], live);
     */
-    const toGrow = selectorQuery('[data-fourier-top="red"]', SVGGElement);
-    const initialTransform = getComputedStyle(toGrow).transform;
-    toGrow.style.transform =
-      initialTransform + " scale(2) translate(0px, 0.2px)";
-
+    selectorQueryAll("[data-fourier-top]", SVGGElement, 3, 3).forEach(
+      (toGrow, index) => {
+        const initialTransform = getComputedStyle(toGrow).transform;
+        const translate = [
+          "-0.5px, -0.13px",
+          "-0.43px,-0.35px",
+          "-0.5px, -.13px",
+        ];
+        toGrow.style.transform = `${initialTransform} scale(4) translate(${translate[index]})`;
+      }
+    );
     (window as any).showFrame = (timeInMs: number) => {
       console.info("ignoring showFrame()", timeInMs);
     };

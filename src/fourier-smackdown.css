@@ -231,3 +231,8 @@ text.chapter {
   transform: translate(0px, calc(1lh * var(--index)));
   fill: white;
 }
+
+.thumbnail-bottom {
+  font-size: 2px;
+  text-anchor: middle;
+}

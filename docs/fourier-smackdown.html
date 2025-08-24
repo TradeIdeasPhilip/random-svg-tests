@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>👋 fourier-smackdown</title>
-    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತನಾಲ್-ZNi0NoyV.js"></script>
+    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತನಾಲ್-58UrH01l.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-BHUyxQfl.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-B8CxQsfg.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-CZZKMsju.js">
     <link rel="modulepreload" crossorigin href="./assets/fourier-shared-DpvWsPe-.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-Dgy6CMn3.js">
-    <link rel="stylesheet" crossorigin href="./assets/ಇರ್ವತ್ತನಾಲ್-DhrOlPXl.css">
+    <link rel="stylesheet" crossorigin href="./assets/ಇರ್ವತ್ತನಾಲ್-UnT4wolX.css">
   </head>
   <body>
     <canvas
@@ -37,14 +37,18 @@
           id="lava-lamp"
           color-interpolation-filters="sRGB"
           filterUnits="objectBoundingBox"
+          x="0"
+          y="0"
+          width="1"
+          height="1"
           primitiveUnits="userSpaceOnUse"
         >
           <!-- Ignore the input image.  Start with pure noise. -->
           <feTurbulence
             type="fractalNoise"
-            baseFrequency="0.3 1"
+            baseFrequency="0.3 0.75"
             numOctaves="1"
-            seed="1970"
+            seed="1971"
             stitchTiles="stitch"
             x="0%"
             y="0%"
@@ -407,8 +411,52 @@
         width="16"
         height="9"
         fill="url(#backgroundGradient)"
-        filter="none"
+        filter="url(#lava-lamp)"
       ></rect>
+      <g id="lava-lamp-pieces">
+        <rect
+          x="0.25"
+          y="4"
+          width="5"
+          height="5"
+          filter="url(#lava-lamp-1)"
+        ></rect>
+        <rect
+          x="0.25"
+          y="5"
+          width="4.5"
+          height="4"
+          filter="url(#lava-lamp-2)"
+        ></rect>
+        <rect
+          x="0.25"
+          y="6"
+          width="4"
+          height="3"
+          filter="url(#lava-lamp-3)"
+        ></rect>
+        <rect
+          x="0.25"
+          y="7"
+          width="3.5"
+          height="2"
+          filter="url(#lava-lamp-4)"
+        ></rect>
+        <rect
+          x="0.25"
+          y="8"
+          width="3"
+          height="1"
+          filter="url(#lava-lamp-5)"
+        ></rect>
+        <rect
+          x="0.25"
+          y="8"
+          width="1.5"
+          height="1"
+          filter="url(#lava-lamp-without)"
+        ></rect>
+      </g>
       <g id="starfield">
         <rect
           data-hide-background
@@ -459,21 +507,21 @@
         <g data-fourier-top="red">
           <g data-inner-transform style="/*transform: scaleX(-1)*/">
             <path data-reference></path>
-            <path data-live style="stroke: limegreen"></path>
+            <path data-live style="stroke: orange"></path>
             <path data-live stroke="#FFF0E6"></path>
           </g>
         </g>
         <g data-fourier-top="white">
           <g data-inner-transform style="/*transform: rotate(30deg)*/">
             <path data-reference></path>
-            <path data-live style="stroke: #ffa500"></path>
+            <path data-live style="stroke: purple"></path>
             <path data-live stroke="#FFF0E6"></path>
           </g>
         </g>
         <g data-fourier-top="blue">
           <g data-inner-transform>
             <path data-reference></path>
-            <path data-live style="stroke: deeppink"></path>
+            <path data-live style="stroke: blue"></path>
             <path data-live stroke="#FFF0E6"></path>
           </g>
         </g>
@@ -667,26 +715,33 @@
           class="chapter"
           x="0.7"
           y="8.25"
-          style="text-anchor: start; fill: limegreen"
+          style="text-anchor: start; fill: orange"
         >
-          #26
+          #29
         </text>
         <text
           class="chapter"
           x="8"
           y="1.25"
-          style="text-anchor: middle; fill: #ffa500"
+          style="text-anchor: middle; fill: purple"
         >
-          #27
+          #29
         </text>
         <text
           class="chapter"
           x="15.3"
           y="8.25"
-          style="text-anchor: end; fill: deeppink"
+          style="text-anchor: end; fill: blue"
         >
-          #28 of 66
+          #29 of 66
         </text>
+        <rect
+          id="lava-lamp-rect"
+          filter="url(#lava-lamp-2)"
+          width="16"
+          height="9"
+        ></rect>
+        <g id="lava-lamp-text"></g>
       </g>
     </svg>
   </body>

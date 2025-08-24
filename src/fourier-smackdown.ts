@@ -25,6 +25,7 @@ import {
   positiveModulo,
   Random,
   ReadOnlyRect,
+  RealSvgRect,
   zip,
 } from "phil-lib/misc";
 import { ease, getMod } from "./utility";
@@ -1157,19 +1158,19 @@ test();
     {
       color: "#black",
       destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
-      index: 26,
+      index: 29,
       colorName: "red",
     },
     {
       color: "black",
       destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
-      index: 27,
+      index: 29,
       colorName: "white",
     },
     {
       color: "black",
       destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
-      index: 28,
+      index: 29,
       colorName: "blue",
     },
   ];
@@ -1339,9 +1340,9 @@ test();
     }
   }
   moveSmallOnesToTheFront;
-  moveSmallOnesToTheFront(fourierInfo[0], 12);
-  moveSmallOnesToTheFront(fourierInfo[1], 10);
-  moveSmallOnesToTheFront(fourierInfo[2], 8);
+  moveSmallOnesToTheFront(fourierInfo[0], 6);
+  moveSmallOnesToTheFront(fourierInfo[1], 6);
+  moveSmallOnesToTheFront(fourierInfo[2], 6);
 
   const animations = new Array<Showable>();
   for (const [base, fourier] of zip(baseInfo, fourierInfo)) {
@@ -1449,11 +1450,33 @@ test();
       [180, 140, 200],
     ];
 
-    const backgroundColors = true
-      ? backgroundColors3a
-      : true
-      ? backgroundColors2
-      : backgroundColors3;
+    /**
+     * Palette Idea 2: Muted Sage Greens (Soft, Light Monochromatic)Light, earthy green tones for a calming, natural feel, with bold foregrounds.Background Colors (in order, from darkest to lightest):Deep Sage: (50, 80, 60) #32503C
+     * Forest Mist: (70, 100, 80) #466450
+     * Olive Haze: (90, 120, 100) #5A7864
+     * Sage Green: (110, 140, 120) #6E8C78
+     * Mint Glow: (130, 160, 140) #82A08C
+     * Pale Celadon: (150, 180, 160) #96B4A0
+     * Light Seafoam: (170, 200, 180) #AAC8B4
+     *
+     * Foreground Colors:Text: Soft Ivory: (240, 235, 210) #F0EBD2 (crisp, readable)
+     * Lines/Arrows: Deep Crimson: (139, 0, 0) #8B0000 (striking contrast)
+     */
+    const backgroundColors2a = [
+      [70, 100, 80],
+      [90, 120, 100],
+      [110, 140, 120],
+      [130, 160, 140],
+      [150, 180, 160],
+      [170, 200, 180],
+    ];
+
+    const backgroundColors = [
+      backgroundColors2,
+      backgroundColors3,
+      backgroundColors3a,
+      backgroundColors2a,
+    ].at(-1)!;
     const backgroundBrightness = makeLinear(0, 0.0, 255, 1);
     backgroundColors.forEach((color) =>
       color.forEach(
@@ -1504,6 +1527,166 @@ test();
       const randomPart = ((timeInMS + 240000) / 180000) * FULL_CIRCLE;
       const constantPart = ((timeInMS / 240000) * FULL_CIRCLE) / 2;
       updateValues(randomPart, constantPart);
+    }
+    animations.push({ show });
+  }
+
+  {
+    const textGroup = getById("lava-lamp-text", SVGGElement);
+    const textBackground = getById("lava-lamp-rect", SVGRectElement);
+    function setLavaLampText(text: string) {
+      textGroup.innerHTML = "";
+      if (text != "") {
+        const lines = text.split("\n");
+        lines.forEach((line, index) => {
+          const element = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+          );
+          textGroup.append(element);
+          element.style.setProperty("--index", index.toString());
+          element.textContent = line;
+        });
+        const bBox: RealSvgRect = textGroup.getBBox();
+        const right = bBox.x + bBox.width;
+        const bottom = bBox.y + bBox.height;
+        const margin = 0.1;
+        const left = 16 - right - margin;
+        const top = 9 - bottom - margin;
+        textGroup.style.transform = `translate(${left}px, ${top}px)`;
+        textBackground.x.baseVal.value = left - margin * 2;
+        textBackground.y.baseVal.value = top - margin * 4;
+      } else {
+        textBackground.x.baseVal.value = 17;
+        textBackground.y.baseVal.value = 10;
+      }
+    }
+    (window as any).setLavaLampText = setLavaLampText;
+    setLavaLampText("Hello\nworld!");
+    const code = [
+      "",
+      `<filter
+  id="lava-lamp"
+  color-interpolation-filters="sRGB"
+  filterUnits="objectBoundingBox"
+  x="0"
+  y="0"
+  width="1"
+  height="1"
+  primitiveUnits="userSpaceOnUse"
+>
+`,
+      `<feTurbulence
+  type="fractalNoise"
+  baseFrequency="0.3 0.75"
+  numOctaves="1"
+  seed="1971"
+  stitchTiles="stitch"
+  x="0%"
+  y="0%"
+  width="100%"
+  height="100%"
+/>
+`,
+      `<feColorMatrix
+  type="matrix"
+  values="1.2 0.3 -0.3 0 -0.105
+          0.  0.   0.  0  0
+          0.  0.   0.  0  0
+          0.  0.   0.  0  1"
+  x="0%"
+  y="0%"
+  width="100%"
+  height="100%"
+/>
+`,
+      `<feColorMatrix
+  type="matrix"
+  values="1 0 0 0 0
+          1 0 0 0 0
+          1 0 0 0 0
+          0 0 0 0 1"
+  x="0%"
+  y="0%"
+  width="100%"
+  height="100%"
+/>
+`,
+      `<feGaussianBlur stdDeviation="0.05" />
+`,
+      `<feComponentTransfer x="0%" y="0%" width="100%" height="100%">
+  <feFuncR type="discrete" tableValues="1 0 0 1 1 0 1" />
+  <feFuncG type="discrete" tableValues="0 1 0 0 1 1 1" />
+  <feFuncB type="discrete" tableValues="0 0 1 1 0 1 1" />
+  <feFuncA type="linear" slope="0" intercept="1" />
+</feComponentTransfer>
+`,
+      `</filter>
+`,
+    ];
+
+    const original = getById("lava-lamp", SVGFilterElement);
+    const master = assertClass(original.cloneNode(true), SVGFilterElement);
+    master.id = "";
+    let nextId = 1;
+    function duplicate(id?: string) {
+      const filter = assertClass(master.cloneNode(true), SVGFilterElement);
+      id ??= `lava-lamp-${nextId++}`;
+      filter.id = id;
+      original.parentElement?.appendChild(filter);
+      //selectorQuery("feFuncR",SVGFEFuncRElement,filter).setAttribute("tableValues","1 0 0 1 1 0 1");
+      //selectorQuery("feFuncG",SVGFEFuncGElement,filter).setAttribute("tableValues","1 0 0 1 1 0 1");
+      //selectorQuery("feFuncB",SVGFEFuncBElement,filter).setAttribute("tableValues","1 0 0 1 1 0 1");
+      return { filter, id };
+    }
+    const filterElementCount = master.childElementCount;
+    console.log({ filterElementCount, master, duplicate });
+    for (let i = 0; i < filterElementCount; i++) {
+      const newFilter = duplicate();
+      Array.from(newFilter.filter.children)
+        .slice(i + 1)
+        .forEach((element) => {
+          element.remove();
+        });
+    }
+    const withoutBlur = duplicate("lava-lamp-without");
+    const outgoingFilter = assertClass(
+      withoutBlur.filter.children[filterElementCount - 2],
+      SVGFEGaussianBlurElement
+    );
+    outgoingFilter.remove();
+    // const EndTime = assertClass(animations[0], FourierAnimation).endTime;
+    const rectangles = selectorQueryAll("#lava-lamp-pieces *", SVGRectElement);
+    const numberOfStages = rectangles.length + 2;
+    if (numberOfStages != code.length) {
+      throw new Error("wtf");
+    }
+    function show(timeInMS: number) {
+      let stage: number;
+      if (timeInMS < 8500) {
+        stage = 0;
+      } else if (timeInMS < 16000) {
+        stage = 1;
+      } else if (timeInMS < 34750) {
+        stage = 2;
+      } else if (timeInMS < 50000) {
+        stage = 3;
+      } else if (timeInMS < 58500) {
+        stage = 4;
+      } else if (timeInMS < 75000) {
+        stage = 5;
+      } else if (timeInMS < 106000) {
+        stage = 6;
+      } else {
+        stage = 7;
+      }
+      rectangles.forEach((element, index) => {
+        // show nothing for stages 0 and 1.
+        // show (stage-1) rectangles at all other times.
+        const hide = index >= stage - 1;
+        element.style.display = hide ? "none" : "";
+      });
+      setLavaLampText(code[stage]);
     }
     animations.push({ show });
   }

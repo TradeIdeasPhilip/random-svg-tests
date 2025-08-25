@@ -327,7 +327,7 @@ class Background {
     context.drawImage(this.#baselineNoise, 0, 0);
     // Scale with solid color using multiply
     const phases = [0, FULL_CIRCLE / 3, FULL_CIRCLE * (2 / 3)]; // 0°, 120°, 240°
-    const period = 60000;
+    const period = 7000;
     const t = (((timeInMs + 20000) % period) / period) * FULL_CIRCLE; // Normalize to [0, 2π]
     const [r, g, b] = phases.map((phase) =>
       this.#brightnessRange(Math.sin(t + phase))
@@ -461,8 +461,11 @@ class FourierBase {
           return pathString;
         };
       } else {
-        const maxFrequency = getMaxFrequency(endingTermCount);
-        const r = 0.2 / maxFrequency;
+        // TODO this should probably be the largest from the group that we are adding.
+        const firstInterestingFrequency = Math.abs(
+          terms[startingTermCount].frequency
+        );
+        const r = 0.2 / firstInterestingFrequency;
         /**
          * This creates a function which takes a time in milliseconds,
          * 0 at the beginning of the script.
@@ -595,7 +598,7 @@ class FourierAnimation {
     this.#liveColor = options.liveColor;
     pathCaliper.d = this.#pathString;
     this.#transform = this.#destination.getTransform(pathCaliper.getBBox());
-    const period = 6000;
+    const period = 7500;
     const pause = 750;
     this.endTime = period * options.base.stepCount;
     const getPath = options.base.makeGetPath1(period, 0, period - pause);
@@ -1159,19 +1162,19 @@ test();
     {
       color: "#black",
       destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
-      index: 30,
+      index: 33,
       colorName: "red",
     },
     {
       color: "black",
       destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
-      index: 31,
+      index: 33,
       colorName: "white",
     },
     {
       color: "black",
       destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
-      index: 32,
+      index: 33,
       colorName: "blue",
     },
   ];
@@ -1193,7 +1196,7 @@ test();
   });
 
   if (false) {
-    fourierInfo[1].terms.forEach(term => term.frequency = -term.frequency)
+    fourierInfo[1].terms.forEach((term) => (term.frequency = -term.frequency));
     /**
      * For each frequency, total the amplitudes of that frequency used by all three curves.
      * So we can make make decisions for all three curves at once.
@@ -1280,30 +1283,33 @@ test();
     console.log(front, back, terms);
     return { frontLength: front.length };
   }
-  if (true) {
-    reorderForSymmetry(fourierInfo[0].terms, 4, -1);  // 4,-1
-    reorderForSymmetry(fourierInfo[1].terms, 4, -1);  //3,-1. better 4,+1 or 4,-1
-    reorderForSymmetry(fourierInfo[2].terms, 5,-1);  //2,+1. better 3,+1 or 5,-1
+  if (false) {
+    reorderForSymmetry(fourierInfo[0].terms, 4, -1); // 4,-1
+    reorderForSymmetry(fourierInfo[1].terms, 4, -1); //3,-1. better 4,+1 or 4,-1
+    reorderForSymmetry(fourierInfo[2].terms, 5, -1); //2,+1. better 3,+1 or 5,-1
   }
 
-  //  fourierInfo[0].keyframes.splice(1,1);
-  //  fourierInfo[0].keyframes.forEach((_, index, array) => { array[index] *= 2; });
   console.log(fourierInfo);
-  function moveSmallOnesToTheFront(
-    fourierBase: FourierBase,
-    smallTermsBinIndex = 8
-  ) {
+  function moveSmallOnesToTheFront(fourierBase: FourierBase, which = 0) {
     const bins: FourierTerm[][] = [];
     const terms = fourierBase.terms;
     const numberOfTerms = terms.length;
-    bins.push();
-    while (bins.length < smallTermsBinIndex) {
-      const big = assertNonNullable(terms.shift());
-      bins.push([big]);
-    }
-    while (bins.length < 19) {
-      const big = terms.splice(0, 2);
-      if (big.length != 2) {
+    const smallTermsBinIndex = 7;
+    const desiredBinCount = 10;
+    const firstBin = terms.splice(1, 3);
+    const lastBin = firstBin.splice(which, 1);
+    bins.push(firstBin);
+    while (bins.length < desiredBinCount - 2) {
+      let binSize: number;
+      if (bins.length < 6) {
+        binSize = 1;
+      } else if (bins.length < 9) {
+        binSize = 2;
+      } else {
+        binSize = 2;
+      }
+      const big = terms.splice(0, binSize);
+      if (big.length != binSize) {
         throw new Error("wtf");
       }
       bins.push(big);
@@ -1316,10 +1322,12 @@ test();
       bins[i].push(...terms.splice(0, itemsThisTime));
     }
     */
-    console.log({ bins, terms });
     bins.splice(smallTermsBinIndex, 0, [...terms]);
+    bins.push(lastBin);
     console.log(bins);
-    //bins[10].push(...terms);
+    if (bins.length != desiredBinCount) {
+      throw new Error("wtf");
+    }
     terms.length = 0;
     if (terms.length != 0) {
       throw new Error("wtf");
@@ -1336,9 +1344,14 @@ test();
     }
   }
   moveSmallOnesToTheFront;
-  moveSmallOnesToTheFront(fourierInfo[0], 7);
-  moveSmallOnesToTheFront(fourierInfo[1], 8);
-  moveSmallOnesToTheFront(fourierInfo[2], 6);
+  function moveOneToBottom(bins: FourierTerm[][], which: number) {
+    const toDemote = bins.splice(which, 1);
+    bins.push(...toDemote);
+  }
+  moveOneToBottom; // TODO delete me
+  moveSmallOnesToTheFront(fourierInfo[0], 0);
+  moveSmallOnesToTheFront(fourierInfo[1], 1);
+  moveSmallOnesToTheFront(fourierInfo[2], 2);
 
   const animations = new Array<Showable>();
   for (const [base, fourier] of zip(baseInfo, fourierInfo)) {
@@ -1520,7 +1533,7 @@ test();
     }
     updateColors(backgroundColors);
     function show(timeInMS: number) {
-      const randomPart = (timeInMS/ 240000) * FULL_CIRCLE*2;
+      const randomPart = (timeInMS / 240000) * FULL_CIRCLE * 2;
       const constantPart = ((timeInMS / 240000) * FULL_CIRCLE) / 2;
       updateValues(randomPart, constantPart);
     }

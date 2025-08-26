@@ -666,7 +666,9 @@ function initScreenCapture(script: unknown) {
   return {
     source: "fourier-smackdown.ts",
     script,
-    seconds: 75,
+    seconds:
+      75 +
+      20 /* Add 20 seconds past the main action for my YouTube end screen */,
     devicePixelRatio,
   };
 }
@@ -1160,19 +1162,19 @@ test();
     {
       color: "#black",
       destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
-      index: 34,
+      index: 35,
       colorName: "red",
     },
     {
       color: "black",
       destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
-      index: 34,
+      index: 35,
       colorName: "white",
     },
     {
       color: "black",
       destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
-      index: 34,
+      index: 35,
       colorName: "blue",
     },
   ];
@@ -1602,5 +1604,18 @@ test();
     (window as any).showFrame = (timeInMs: number) => {
       console.info("ignoring showFrame()", timeInMs);
     };
+  }
+}
+
+{
+  const random = Random.fromString("Starry Night");
+  const original = selectorQuery("[data-favorite]", SVGCircleElement);
+  const getR = makeLinear(0, 0.025, 2, 0.1);
+  for (let i = 0; i < 100; i++) {
+    const copy = assertClass(original.cloneNode(true), SVGCircleElement);
+    copy.cx.baseVal.value = random() * 16;
+    copy.cy.baseVal.value = random() * 9;
+    copy.r.baseVal.value = getR(random() + random());
+    original.parentElement!.append(copy);
   }
 }

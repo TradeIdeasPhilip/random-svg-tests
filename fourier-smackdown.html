@@ -398,14 +398,42 @@
             <feFuncA type="linear" slope="0" intercept="1" />
           </feComponentTransfer>
         </filter>
+        <radialGradient id="stellarGradient">
+          <stop offset="10%" stop-color="white" />
+          <stop offset="25%" stop-color="#404040" />
+          <stop offset="100%" stop-color="#000000" />
+        </radialGradient>
+        <mask id="stellarMask" maskUnits="objectBoundingBox">
+          <radialGradient id="stellarMaskGradient">
+            <stop offset="10%" stop-color="white" stop-opacity="1" />
+            <stop offset="25%" stop-color="white" stop-opacity="0.4" />
+            <stop offset="100%" stop-color="white" stop-opacity="0" />
+          </radialGradient>
+          <rect
+            x="0"
+            y="0"
+            width="1"
+            height="1"
+            fill="url(#stellarMaskGradient)"
+          />
+        </mask>
       </defs>
       <rect
         data-hide-background
         width="16"
         height="9"
-        fill="url(#backgroundGradient)"
-        filter="url(#lava-lamp)"
+        fill="black"
+        filter="none"
       ></rect>
+      <g id="new-starfield">
+        <circle
+          data-favorite
+          cx="2"
+          cy="7"
+          r="0.1"
+          fill="url(#stellarGradient)"
+        ></circle>
+      </g>
       <g id="thumbnail-foreground" style="display: none">
         <text x="1" y="3.75" letter-spacing="0.2">
           <tspan>Abc</tspan>
@@ -431,22 +459,34 @@
         <g data-fourier-top="red">
           <g data-inner-transform style="/*transform: scaleX(-1)*/">
             <path data-reference></path>
-            <path data-live style="stroke: orange"></path>
-            <path data-live stroke="#FFF0E6"></path>
+            <path
+              data-live
+              style="stroke: rgb(255, 162, 0)"
+              filter="drop-shadow(0 0 0.1px rgb(255, 162, 0))"
+            ></path>
+            <path data-live stroke="white"></path>
           </g>
         </g>
         <g data-fourier-top="white">
           <g data-inner-transform style="/*transform: rotate(30deg)*/">
             <path data-reference></path>
-            <path data-live style="stroke: purple"></path>
-            <path data-live stroke="#FFF0E6"></path>
+            <path
+              data-live
+              style="stroke: rgb(255, 0, 255)"
+              filter="drop-shadow(0 0 0.1px rgb(255, 0, 255))"
+            ></path>
+            <path data-live stroke="white"></path>
           </g>
         </g>
         <g data-fourier-top="blue">
           <g data-inner-transform>
             <path data-reference></path>
-            <path data-live style="stroke: blue"></path>
-            <path data-live stroke="#FFF0E6"></path>
+            <path
+              data-live
+              style="stroke: lime"
+              filter="drop-shadow(0 0 0.1px lime)"
+            ></path>
+            <path data-live stroke="white"></path>
           </g>
         </g>
         <g data-frequencies="red" class="frequencies">
@@ -655,9 +695,9 @@
           class="chapter"
           x="15.3"
           y="8.25"
-          style="text-anchor: end; fill: lime"
+          style="text-anchor: end; fill: yellow"
         >
-          #33 of 66
+          #34 of 66
         </text>
       </g>
       <text class="thumbnail-bottom" y="8.5" x="8">Animations</text>

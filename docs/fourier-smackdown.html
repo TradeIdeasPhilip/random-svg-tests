@@ -4,16 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>👋 fourier-smackdown</title>
-    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತನಾಲ್-BVhQoFmv.js"></script>
+    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತನಾಲ್-DzhOQ4n7.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-BHUyxQfl.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-B8CxQsfg.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-CZZKMsju.js">
-    <link rel="modulepreload" crossorigin href="./assets/fourier-shared-DpvWsPe-.js">
+    <link rel="modulepreload" crossorigin href="./assets/fourier-shared-D_q1jb1g.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-Dgy6CMn3.js">
-    <link rel="modulepreload" crossorigin href="./assets/letters-base-CTGJGQGt.js">
-    <link rel="modulepreload" crossorigin href="./assets/hershey-fonts-Cv6hiE5v.js">
-    <link rel="stylesheet" crossorigin href="./assets/ಇರ್ವತ್ತನಾಲ್-BAWxZN1M.css">
+    <link rel="stylesheet" crossorigin href="./assets/ಇರ್ವತ್ತನಾಲ್-JWTV-KOj.css">
   </head>
   <body>
     <canvas
@@ -407,14 +405,42 @@
             <feFuncA type="linear" slope="0" intercept="1" />
           </feComponentTransfer>
         </filter>
+        <radialGradient id="stellarGradient">
+          <stop offset="10%" stop-color="white" />
+          <stop offset="25%" stop-color="#404040" />
+          <stop offset="100%" stop-color="#000000" />
+        </radialGradient>
+        <mask id="stellarMask" maskUnits="objectBoundingBox">
+          <radialGradient id="stellarMaskGradient">
+            <stop offset="10%" stop-color="white" stop-opacity="1" />
+            <stop offset="25%" stop-color="white" stop-opacity="0.4" />
+            <stop offset="100%" stop-color="white" stop-opacity="0" />
+          </radialGradient>
+          <rect
+            x="0"
+            y="0"
+            width="1"
+            height="1"
+            fill="url(#stellarMaskGradient)"
+          />
+        </mask>
       </defs>
       <rect
         data-hide-background
         width="16"
         height="9"
-        fill="url(#backgroundGradient)"
-        filter="url(#lava-lamp)"
+        fill="black"
+        filter="none"
       ></rect>
+      <g id="new-starfield">
+        <circle
+          data-favorite
+          cx="2"
+          cy="7"
+          r="0.1"
+          fill="url(#stellarGradient)"
+        ></circle>
+      </g>
       <g id="thumbnail-foreground" style="display: none">
         <text x="1" y="3.75" letter-spacing="0.2">
           <tspan>Abc</tspan>
@@ -440,22 +466,34 @@
         <g data-fourier-top="red">
           <g data-inner-transform style="/*transform: scaleX(-1)*/">
             <path data-reference></path>
-            <path data-live style="stroke: orange"></path>
-            <path data-live stroke="#FFF0E6"></path>
+            <path
+              data-live
+              style="stroke: rgb(255, 162, 0)"
+              filter="drop-shadow(0 0 0.1px rgb(255, 162, 0))"
+            ></path>
+            <path data-live stroke="white"></path>
           </g>
         </g>
         <g data-fourier-top="white">
           <g data-inner-transform style="/*transform: rotate(30deg)*/">
             <path data-reference></path>
-            <path data-live style="stroke: purple"></path>
-            <path data-live stroke="#FFF0E6"></path>
+            <path
+              data-live
+              style="stroke: rgb(255, 0, 255)"
+              filter="drop-shadow(0 0 0.1px rgb(255, 0, 255))"
+            ></path>
+            <path data-live stroke="white"></path>
           </g>
         </g>
         <g data-fourier-top="blue">
           <g data-inner-transform>
             <path data-reference></path>
-            <path data-live style="stroke: blue"></path>
-            <path data-live stroke="#FFF0E6"></path>
+            <path
+              data-live
+              style="stroke: lime"
+              filter="drop-shadow(0 0 0.1px lime)"
+            ></path>
+            <path data-live stroke="white"></path>
           </g>
         </g>
         <g data-frequencies="red" class="frequencies">
@@ -664,9 +702,9 @@
           class="chapter"
           x="15.3"
           y="8.25"
-          style="text-anchor: end; fill: lime"
+          style="text-anchor: end; fill: yellow"
         >
-          #33 of 66
+          #34 of 66
         </text>
       </g>
       <text class="thumbnail-bottom" y="8.5" x="8">Animations</text>

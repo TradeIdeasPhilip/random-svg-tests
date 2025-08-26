@@ -28,8 +28,6 @@ import {
   zip,
 } from "phil-lib/misc";
 import { ease, getMod } from "./utility";
-import { roundFuturaLFont } from "./hershey-fonts/hershey-fonts";
-import { resizeFont } from "./letters-base";
 
 /**
  * Color Scheme:
@@ -668,7 +666,7 @@ function initScreenCapture(script: unknown) {
   return {
     source: "fourier-smackdown.ts",
     script,
-    seconds: 120,
+    seconds: 75,
     devicePixelRatio,
   };
 }
@@ -1162,19 +1160,19 @@ test();
     {
       color: "#black",
       destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
-      index: 33,
+      index: 34,
       colorName: "red",
     },
     {
       color: "black",
       destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
-      index: 33,
+      index: 34,
       colorName: "white",
     },
     {
       color: "black",
       destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
-      index: 33,
+      index: 34,
       colorName: "blue",
     },
   ];
@@ -1296,7 +1294,7 @@ test();
     const numberOfTerms = terms.length;
     const smallTermsBinIndex = 7;
     const desiredBinCount = 10;
-    const firstBin = terms.splice(1, 3);
+    const firstBin = terms.splice(5, 3);
     const lastBin = firstBin.splice(which, 1);
     bins.push(firstBin);
     while (bins.length < desiredBinCount - 2) {
@@ -1343,12 +1341,6 @@ test();
       throw new Error("wtf");
     }
   }
-  moveSmallOnesToTheFront;
-  function moveOneToBottom(bins: FourierTerm[][], which: number) {
-    const toDemote = bins.splice(which, 1);
-    bins.push(...toDemote);
-  }
-  moveOneToBottom; // TODO delete me
   moveSmallOnesToTheFront(fourierInfo[0], 0);
   moveSmallOnesToTheFront(fourierInfo[1], 1);
   moveSmallOnesToTheFront(fourierInfo[2], 2);
@@ -1559,31 +1551,32 @@ test();
         paths.push(element);
       }
     });
-    showFrame(0);
+    showFrame(15000 - 50);
+    animations[0].show(7500 - 50);
     selectorQueryAll("[data-reference]", SVGPathElement).forEach(
       (path) => (path.style.display = "none")
     );
-    const font = resizeFont(roundFuturaLFont, 0.5);
-    [
-      { name: "red", letter: "S" },
-      { name: "white", letter: "V" },
-      { name: "blue", letter: "G" },
-    ].forEach(({ name, letter }) => {
-      const description = font.get(letter)!;
-      const pathString = description.shape.translate(
-        description.advance / 2,
-        0
-      ).rawPath;
-      const paths = selectorQueryAll(
-        `[data-fourier-top="${name}"] [data-live]`,
-        SVGPathElement,
-        2,
-        2
-      );
-      paths.forEach((path) => {
-        path.setAttribute("d", pathString);
-      });
-    });
+    // const font = resizeFont(roundFuturaLFont, 0.5);
+    // [
+    //   { name: "red", letter: "S" },
+    //   { name: "white", letter: "V" },
+    //   { name: "blue", letter: "G" },
+    // ].forEach(({ name, letter }) => {
+    //   const description = font.get(letter)!;
+    //   const pathString = description.shape.translate(
+    //     description.advance / 2,
+    //     0
+    //   ).rawPath;
+    //   const paths = selectorQueryAll(
+    //     `[data-fourier-top="${name}"] [data-live]`,
+    //     SVGPathElement,
+    //     2,
+    //     2
+    //   );
+    //   paths.forEach((path) => {
+    //     path.setAttribute("d", pathString);
+    //   });
+    // });
     /*
     const live = selectorQueryAll("[data-live]", SVGPathElement);
     //live.forEach((element) => {
@@ -1601,12 +1594,9 @@ test();
     selectorQueryAll("[data-fourier-top]", SVGGElement, 3, 3).forEach(
       (toGrow, index) => {
         const initialTransform = getComputedStyle(toGrow).transform;
-        const translate = [
-          "-0.5px, -0.13px",
-          "-0.43px,-0.35px",
-          "-0.5px, -.13px",
-        ];
-        toGrow.style.transform = `${initialTransform} scale(4) translate(${translate[index]})`;
+        const translate = ["-0.05px, -0.05px", "-0.3px, 0px", "-0.1px, 0px"];
+        const scale = [3, 1.5, 1.5][index];
+        toGrow.style.transform = `${initialTransform} scale(${scale}) translate(${translate[index]})`;
       }
     );
     (window as any).showFrame = (timeInMs: number) => {

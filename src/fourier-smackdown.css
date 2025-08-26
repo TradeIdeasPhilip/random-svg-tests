@@ -202,10 +202,8 @@ path[data-live]:nth-of-type(3) {
     calc(var(--base-stroke-width) / var(--path-scale) * cos(var(--angle))),
     calc(var(--base-stroke-width) / var(--path-scale) * sin(var(--angle)))
   );
+  transform: none;
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale));
-}
-path[data-live]:nth-of-type(4) {
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1);
 }
 
 [data-frequencies] {

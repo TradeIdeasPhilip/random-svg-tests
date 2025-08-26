@@ -7,7 +7,14 @@ import {
   PathCaliper,
   Point,
 } from "./path-shape";
-import { initializedArray, lerp, Random, sum } from "phil-lib/misc";
+import {
+  assertClass,
+  initializedArray,
+  lerp,
+  Random,
+  sum,
+} from "phil-lib/misc";
+import { selectorQuery } from "phil-lib/client-misc";
 
 const sharedCaliper = new PathCaliper();
 
@@ -480,4 +487,15 @@ export function createScript(inputs: {
   const final = { ...last, startTime, offset: 1 };
   script.push(final);
   return script;
+}
+
+{
+  const random = Random.fromString("Starry Night");
+  const original = selectorQuery("[data-favorite]", SVGCircleElement);
+  for (let i = 0; i < 100; i++) {
+    const copy = assertClass(original.cloneNode(true), SVGCircleElement);
+    copy.cx.baseVal.value = random() * 16;
+    copy.cy.baseVal.value = random() * 9;
+    original.parentElement!.append(copy);
+  }
 }

@@ -1553,8 +1553,8 @@ test();
         paths.push(element);
       }
     });
-    showFrame(15000 - 50);
-    animations[0].show(7500 - 50);
+    showFrame(20000);
+    //animations[1].show(5500);
     selectorQueryAll("[data-reference]", SVGPathElement).forEach(
       (path) => (path.style.display = "none")
     );
@@ -1593,6 +1593,7 @@ test();
     //      "calc(var(--base-stroke-width) / var(--path-scale) * 0.33)"; // 1/3 of what it was.
     //console.log(live[5].style.strokeWidth, live[5], live);
     */
+    /*
     selectorQueryAll("[data-fourier-top]", SVGGElement, 3, 3).forEach(
       (toGrow, index) => {
         const initialTransform = getComputedStyle(toGrow).transform;
@@ -1601,6 +1602,7 @@ test();
         toGrow.style.transform = `${initialTransform} scale(${scale}) translate(${translate[index]})`;
       }
     );
+    */
     (window as any).showFrame = (timeInMs: number) => {
       console.info("ignoring showFrame()", timeInMs);
     };

@@ -1162,19 +1162,19 @@ test();
     {
       color: "#black",
       destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
-      index: 35,
+      index: 36,
       colorName: "red",
     },
     {
       color: "black",
       destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
-      index: 35,
+      index: 36,
       colorName: "white",
     },
     {
       color: "black",
       destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
-      index: 35,
+      index: 36,
       colorName: "blue",
     },
   ];
@@ -1610,7 +1610,7 @@ test();
 }
 
 {
-  const random = Random.fromString("Starry Night");
+  const random = Random.fromString("Starry, Starry Night 🌌");
   const original = selectorQuery("[data-favorite]", SVGCircleElement);
   const getR = makeLinear(0, 0.025, 2, 0.1);
   for (let i = 0; i < 100; i++) {

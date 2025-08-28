@@ -206,7 +206,8 @@ path[data-live]:nth-of-type(3) {
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale));
 }
 
-[data-frequencies] {
+[data-frequencies],
+#new-starfield {
   display: none;
 }
 #top-rect,
@@ -216,7 +217,7 @@ path[data-live]:nth-of-type(3) {
 
 text.chapter {
   font-size: 0.75px;
-  filter: drop-shadow(0px 0px 0.4px rgb(255, 240, 230));
+  filter: drop-shadow(0px 0px 0.15px black);
 }
 
 #lava-lamp-text text {

@@ -1534,6 +1534,71 @@ test();
     animations.push({ show });
   }
 
+  {
+    const [_fixed, ...others] = selectorQueryAll(
+      "#starfield rect",
+      SVGRectElement
+    );
+    const midpoint = 0.5;
+    // Start from 0%,0%
+    // Move to the center of the third circle.
+    // { x: 10.5, y: 0.5, width: 5, height: 5 }
+    // cx = 13, cy = 3
+    const getX1 = makeLinear(0, 0, midpoint, (13 / 16) * 100);
+    const getY1 = makeLinear(0, 0, midpoint, (3 / 9) * 100);
+    const getX2 = makeBoundedLinear(midpoint, (13 / 16) * 100, 1, 8);
+    const getY2 = makeBoundedLinear(midpoint, (3 / 9) * 100, 1, 61);
+    /**
+     *
+     * @param progress 0.0 - 1.0
+     */
+    function setTransformOrigin(progress: number) {
+      let x: number;
+      let y: number;
+      if (progress < midpoint) {
+        x = getX1(progress);
+        y = getY1(progress);
+      } else {
+        x = getX2(progress);
+        y = getY2(progress);
+      }
+      const transformOrigin = `${x}% ${y}%`;
+      others.forEach(
+        (element) => (element.style.transformOrigin = transformOrigin)
+      );
+    }
+    const endTime = assertClass(animations[0], FourierAnimation).endTime;
+    const transformTimer = makeBoundedLinear(0, 0, endTime, 1);
+    function makeOscillator(
+      extreme1: number,
+      extreme2: number,
+      period: number
+    ) {
+      const center = (extreme1 + extreme2) / 2;
+      const amplitude = extreme1 - center;
+      const ratio = FULL_CIRCLE / period;
+      function oscillator(timeInMS: number) {
+        return Math.sin(timeInMS * ratio) * amplitude + center;
+      }
+      return oscillator;
+    }
+    const rotations = [
+      { element: others[0], oscillator: makeOscillator(0.5, 1.5, 15000) },
+      { element: others[1], oscillator: makeOscillator(-0.5, -1.5, 13081) },
+    ];
+    if (rotations.length != others.length) {
+      throw new Error("wtf");
+    }
+    function show(timeInMS: number) {
+      const progress = transformTimer(timeInMS);
+      setTransformOrigin(progress);
+      rotations.forEach(({ element, oscillator }) => {
+        const degrees = oscillator(timeInMS);
+        element.style.transform = `rotate(${degrees}deg)`;
+      });
+    }
+    animations.push({ show });
+  }
   console.log(animations);
   initialize(...animations);
 
@@ -1558,6 +1623,15 @@ test();
     selectorQueryAll("[data-reference]", SVGPathElement).forEach(
       (path) => (path.style.display = "none")
     );
+
+    const rectangles = selectorQueryAll("#starfield rect", SVGRectElement);
+    rectangles[0].parentElement!.style.transform = "scale(3)";
+    rectangles.forEach((rectangle) => {
+      rectangle.style.transformOrigin = `${50 / 3}% ${9}%`;
+    });
+    rectangles[1].style.transform = "rotate(1.75deg)";
+    rectangles[2].style.transform = "rotate(-2deg)";
+
     // const font = resizeFont(roundFuturaLFont, 0.5);
     // [
     //   { name: "red", letter: "S" },

@@ -178,10 +178,10 @@ class Destination {
   readonly #referencePath: SVGPathElement;
   readonly #livePath: readonly SVGPathElement[];
   constructor(
-    queryString: string,
+    top: SVGGElement,
     readonly getTransform: (content: ReadOnlyRect) => DOMMatrix
   ) {
-    this.#gElement = selectorQuery(queryString, SVGGElement);
+    this.#gElement = top;
     this.#referencePath = selectorQuery(
       "[data-reference]",
       SVGPathElement,
@@ -214,13 +214,15 @@ class Destination {
     this.#gElement.style.transform = transform.toString();
     this.#gElement.style.setProperty("--path-scale", scale.toString());
   }
-  static right = new Destination("#right", (content: ReadOnlyRect) =>
-    panAndZoom(
-      content,
-      { x: 1, y: 1, width: 14, height: 7 },
-      "srcRect fits completely into destRect",
-      1
-    )
+  static right = new Destination(
+    getById("right", SVGGElement),
+    (content: ReadOnlyRect) =>
+      panAndZoom(
+        content,
+        { x: 1, y: 1, width: 14, height: 7 },
+        "srcRect fits completely into destRect",
+        1
+      )
   );
 }
 
@@ -427,8 +429,12 @@ class FourierBase {
       return maxFrequency;
     };
     const recommendedNumberOfSegments = (numberOfTerms: number) => {
-      const maxFrequency = getMaxFrequency(numberOfTerms);
-      return 8 * Math.min(maxFrequency, 50) + 7;
+      if (numberOfTerms == 0) {
+        return 8;
+      } else {
+        const maxFrequency = getMaxFrequency(numberOfTerms);
+        return 8 * Math.min(maxFrequency, 50) + 7;
+      }
     };
     const segmentInfo = initializedArray(stepCount, (index) => {
       const startingTermCount = toShow[index];
@@ -457,6 +463,21 @@ class FourierBase {
           const pathString = `M ${from} L ${to}`;
           // console.log({ t, trailingProgress, leadingProgress, pathString });
           return pathString;
+        };
+      } else if (startingTermCount == endingTermCount) {
+        const parametricFunction = termsToParametricFunction(
+          terms,
+          startingTermCount
+        );
+        const numberOfDisplaySegments =
+          recommendedNumberOfSegments(endingTermCount);
+        const path = PathShape.glitchFreeParametric(
+          parametricFunction,
+          numberOfDisplaySegments
+        );
+        const result = path.rawPath;
+        return (_timeInMs: number): string => {
+          return result;
         };
       } else {
         // TODO this should probably be the largest from the group that we are adding.
@@ -667,7 +688,7 @@ function initScreenCapture(script: unknown) {
     source: "fourier-smackdown.ts",
     script,
     seconds:
-      75 +
+      105 +
       20 /* Add 20 seconds past the main action for my YouTube end screen */,
     devicePixelRatio,
   };
@@ -1157,25 +1178,55 @@ test();
     color: string;
     destRect: ReadOnlyRect;
     index: number;
-    colorName?: string;
+    search?: string;
   }[] = [
     {
-      color: "#black",
-      destRect: { x: 0.5, y: 0.5, width: 5, height: 5 },
-      index: 36,
-      colorName: "red",
+      color: "yellow",
+      destRect: { x: 0.5, y: 0.5, width: 3, height: 3 },
+      index: 37,
+      // search: "red",
     },
     {
-      color: "black",
-      destRect: { x: 5.5, y: 3.5, width: 5, height: 5 },
-      index: 36,
-      colorName: "white",
+      color: "red",
+      destRect: { x: 0.5, y: 4.5, width: 3, height: 3 },
+      index: 37,
+      //search: "white",
     },
     {
-      color: "black",
-      destRect: { x: 10.5, y: 0.5, width: 5, height: 5 },
-      index: 36,
-      colorName: "blue",
+      color: "var(--blue)",
+      destRect: { x: 4.5, y: 1.5, width: 3, height: 3 },
+      index: 37,
+      //search: "blue",
+    },
+    {
+      color: "lime",
+      destRect: { x: 4.5, y: 5.5, width: 3, height: 3 },
+      index: 37,
+      //search: "blue",
+    },
+    {
+      color: "pink",
+      destRect: { x: 8.5, y: 0.5, width: 3, height: 3 },
+      index: 37,
+      // search: "red",
+    },
+    {
+      color: "magenta",
+      destRect: { x: 8.5, y: 4.5, width: 3, height: 3 },
+      index: 37,
+      //search: "white",
+    },
+    {
+      color: "orange",
+      destRect: { x: 12.5, y: 1.5, width: 3, height: 3 },
+      index: 37,
+      // search: "red",
+    },
+    {
+      color: "#e2e2e2", // Half way between silver and white.
+      destRect: { x: 12.5, y: 5.5, width: 3, height: 3 },
+      index: 37,
+      //search: "white",
     },
   ];
 
@@ -1295,11 +1346,20 @@ test();
     const terms = fourierBase.terms;
     const numberOfTerms = terms.length;
     const smallTermsBinIndex = 7;
-    const desiredBinCount = 10;
-    const firstBin = terms.splice(5, 3);
-    const lastBin = firstBin.splice(which, 1);
-    bins.push(firstBin);
-    while (bins.length < desiredBinCount - 2) {
+    const desiredBinCount = 14;
+    const special = terms.splice(5, 3);
+    const finalBins: typeof bins = [];
+    special.forEach((term, index) => {
+      const present = (which & (2 ** index)) > 0;
+      if (present) {
+        bins.push([term]);
+        finalBins.push([]);
+      } else {
+        bins.push([]);
+        finalBins.push([term]);
+      }
+    });
+    while (bins.length < desiredBinCount - 1 - finalBins.length) {
       let binSize: number;
       if (bins.length < 6) {
         binSize = 1;
@@ -1323,7 +1383,7 @@ test();
     }
     */
     bins.splice(smallTermsBinIndex, 0, [...terms]);
-    bins.push(lastBin);
+    bins.push(...finalBins);
     console.log(bins);
     if (bins.length != desiredBinCount) {
       throw new Error("wtf");
@@ -1343,22 +1403,35 @@ test();
       throw new Error("wtf");
     }
   }
-  moveSmallOnesToTheFront(fourierInfo[0], 0);
-  moveSmallOnesToTheFront(fourierInfo[1], 1);
-  moveSmallOnesToTheFront(fourierInfo[2], 2);
+  fourierInfo.forEach((f, index) => {
+    moveSmallOnesToTheFront(f, index);
+  });
 
   const animations = new Array<Showable>();
+  const foregroundG = selectorQuery("g#foreground", SVGGElement);
   for (const [base, fourier] of zip(baseInfo, fourierInfo)) {
-    const { color, destRect } = base;
-    const colorName = base.colorName ?? base.color;
-    const frequenciesG = selectorQuery(
-      `g.frequencies[data-frequencies="${colorName}"]`,
-      SVGGElement
-    );
-    const destination = new Destination(
-      `[data-fourier-top="${colorName}"]`,
-      (content: ReadOnlyRect) =>
-        panAndZoom(content, destRect, "srcRect fits completely into destRect")
+    const { color, destRect, search } = base;
+    const frequenciesG =
+      search === undefined
+        ? document.createElementNS("http://www.w3.org/2000/svg", "g")
+        : selectorQuery(
+            `g.frequencies[data-frequencies="${search}"]`,
+            SVGGElement
+          );
+    const top =
+      search === undefined
+        ? foregroundG.appendChild(
+            assertClass(
+              selectorQuery("defs g[data-fourier-top]", SVGGElement).cloneNode(
+                true
+              ),
+              SVGGElement
+            )
+          )
+        : selectorQuery(`[data-fourier-top="${search}"]`, SVGGElement);
+    top.style.setProperty("--color", color);
+    const destination = new Destination(top, (content: ReadOnlyRect) =>
+      panAndZoom(content, destRect, "srcRect fits completely into destRect")
     );
     frequenciesG.style.fill = color;
     const options = {
@@ -1534,76 +1607,10 @@ test();
     animations.push({ show });
   }
 
-  {
-    const [_fixed, ...others] = selectorQueryAll(
-      "#starfield rect",
-      SVGRectElement
-    );
-    const midpoint = 0.5;
-    // Start from 0%,0%
-    // Move to the center of the third circle.
-    // { x: 10.5, y: 0.5, width: 5, height: 5 }
-    // cx = 13, cy = 3
-    const getX1 = makeLinear(0, 0, midpoint, (13 / 16) * 100);
-    const getY1 = makeLinear(0, 0, midpoint, (3 / 9) * 100);
-    const getX2 = makeBoundedLinear(midpoint, (13 / 16) * 100, 1, 8);
-    const getY2 = makeBoundedLinear(midpoint, (3 / 9) * 100, 1, 61);
-    /**
-     *
-     * @param progress 0.0 - 1.0
-     */
-    function setTransformOrigin(progress: number) {
-      let x: number;
-      let y: number;
-      if (progress < midpoint) {
-        x = getX1(progress);
-        y = getY1(progress);
-      } else {
-        x = getX2(progress);
-        y = getY2(progress);
-      }
-      const transformOrigin = `${x}% ${y}%`;
-      others.forEach(
-        (element) => (element.style.transformOrigin = transformOrigin)
-      );
-    }
-    const endTime = assertClass(animations[0], FourierAnimation).endTime;
-    const transformTimer = makeBoundedLinear(0, 0, endTime, 1);
-    function makeOscillator(
-      extreme1: number,
-      extreme2: number,
-      period: number
-    ) {
-      const center = (extreme1 + extreme2) / 2;
-      const amplitude = extreme1 - center;
-      const ratio = FULL_CIRCLE / period;
-      function oscillator(timeInMS: number) {
-        return Math.sin(timeInMS * ratio) * amplitude + center;
-      }
-      return oscillator;
-    }
-    const rotations = [
-      { element: others[0], oscillator: makeOscillator(0.5, 1.5, 15000) },
-      { element: others[1], oscillator: makeOscillator(-0.5, -1.5, 13081) },
-    ];
-    if (rotations.length != others.length) {
-      throw new Error("wtf");
-    }
-    function show(timeInMS: number) {
-      const progress = transformTimer(timeInMS);
-      setTransformOrigin(progress);
-      rotations.forEach(({ element, oscillator }) => {
-        const degrees = oscillator(timeInMS);
-        element.style.transform = `rotate(${degrees}deg)`;
-      });
-    }
-    animations.push({ show });
-  }
   console.log(animations);
   initialize(...animations);
 
   if (urlParameters.get("thumbnail") == "1") {
-    const foregroundG = selectorQuery("g#foreground", SVGGElement);
     //foregroundG.style.display = "none";
     //const thumbnailG = selectorQuery("g#thumbnail-foreground", SVGGElement);
     //thumbnailG.style.display = "";
@@ -1684,10 +1691,11 @@ test();
 }
 
 {
-  const random = Random.fromString("Starry, Starry Night 🌌");
+  // Background full of stars
+  const random = Random.fromString("Good Night 🌛");
   const original = selectorQuery("[data-favorite]", SVGCircleElement);
-  const getR = makeLinear(0, 0.025, 2, 0.1);
-  for (let i = 0; i < 100; i++) {
+  const getR = makeLinear(0, 0.025, 2, 0.15);
+  for (let i = 0; i < 150; i++) {
     const copy = assertClass(original.cloneNode(true), SVGCircleElement);
     copy.cx.baseVal.value = random() * 16;
     copy.cy.baseVal.value = random() * 9;

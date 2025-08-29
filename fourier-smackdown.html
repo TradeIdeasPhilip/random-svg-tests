@@ -400,23 +400,20 @@
         </filter>
         <radialGradient id="stellarGradient">
           <stop offset="10%" stop-color="white" />
-          <stop offset="25%" stop-color="#404040" />
-          <stop offset="100%" stop-color="#000000" />
+          <stop offset="25%" stop-color="#FFFFFF40" />
+          <stop offset="100%" stop-color="#FFFFFF00" />
         </radialGradient>
-        <mask id="stellarMask" maskUnits="objectBoundingBox">
-          <radialGradient id="stellarMaskGradient">
-            <stop offset="10%" stop-color="white" stop-opacity="1" />
-            <stop offset="25%" stop-color="white" stop-opacity="0.4" />
-            <stop offset="100%" stop-color="white" stop-opacity="0" />
-          </radialGradient>
-          <rect
-            x="0"
-            y="0"
-            width="1"
-            height="1"
-            fill="url(#stellarMaskGradient)"
-          />
-        </mask>
+        <g data-fourier-top>
+          <g data-inner-transform>
+            <path data-reference></path>
+            <path
+              data-live
+              style="stroke: var(--color)"
+              filter="drop-shadow(0 0 0.1px var(--color))"
+            ></path>
+            <path data-live stroke="white"></path>
+          </g>
+        </g>
       </defs>
       <rect
         data-hide-background
@@ -433,31 +430,6 @@
           r="0.1"
           fill="url(#stellarGradient)"
         ></circle>
-      </g>
-      <g id="starfield">
-        <rect
-          data-hide-background
-          width="16"
-          height="9"
-          fill="url(#backgroundGradient)"
-          filter="url(#dalmatian)"
-        ></rect>
-        <rect
-          id="top-rect"
-          data-hide-background
-          width="16"
-          height="9"
-          fill="url(#backgroundGradient)"
-          filter="url(#dalmatian)"
-        ></rect>
-        <rect
-          id="top-rect2"
-          data-hide-background
-          width="16"
-          height="9"
-          fill="url(#backgroundGradient)"
-          filter="url(#dalmatian)"
-        ></rect>
       </g>
       <g id="thumbnail-foreground" style="display: none">
         <text x="1" y="3.75" letter-spacing="0.2">
@@ -718,11 +690,11 @@
         </text>
         <text
           class="chapter"
-          x="15.3"
-          y="8.25"
-          style="text-anchor: end; fill: var(--blue)"
+          x="0.35"
+          y="8.6"
+          style="text-anchor: start; fill: cyan"
         >
-          #36 of 66
+          #37 of 66
         </text>
       </g>
       <text class="thumbnail-bottom" y="8.5" x="8">Animations</text>

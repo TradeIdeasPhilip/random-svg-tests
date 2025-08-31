@@ -20,6 +20,7 @@ import {
   assertNonNullable,
   FULL_CIRCLE,
   initializedArray,
+  LinearFunction,
   makeBoundedLinear,
   makeLinear,
   positiveModulo,
@@ -90,10 +91,7 @@ class FrequencySpinners {
     readonly text: SVGTextElement;
     readonly background: SVGTextElement;
   }[];
-  constructor(
-    parent: string | SVGGElement,
-    readonly terms: readonly FourierTerm[]
-  ) {
+  constructor(parent: string | SVGGElement) {
     if (!(parent instanceof SVGGElement)) {
       parent = selectorQuery(parent, SVGGElement);
     }
@@ -119,15 +117,22 @@ class FrequencySpinners {
       };
     });
   }
-  show(count: number, progressInRadians: number) {
-    this.#spinners.forEach((spinner, index) => {
-      if (index >= count) {
+  show(terms: readonly FourierTerm[], progressInRadians: number) {
+    this.#spinners.forEach((spinner, index, array) => {
+      if (index >= terms.length) {
         spinner.top.style.display = "none";
       } else {
         spinner.top.style.display = "";
-        const term = this.terms[index];
-        spinner.background.innerHTML = spinner.text.innerHTML =
-          term.frequency.toString();
+        const term = terms[index];
+        let text = term.frequency.toString();
+        if (index == array.length - 1 && array.length < terms.length) {
+          // This is the last one that we can display,
+          // because we are out of room,
+          // but there are more terms to display.
+          text += ", …";
+        }
+        spinner.background.innerHTML = spinner.text.innerHTML = text;
+
         spinner.spinner.style.transform = `rotate(${
           progressInRadians * term.frequency + term.phase + FULL_CIRCLE / 4
         }rad)`;
@@ -371,6 +376,35 @@ Background;
 
 const pathCaliper = new PathCaliper();
 
+class Timer {
+  #remainderToT: LinearFunction;
+  readonly endTime: number;
+  constructor(
+    private readonly stepCount: number,
+    private readonly period: number,
+    startTime = 0,
+    endTime = period - startTime
+  ) {
+    this.#remainderToT = makeBoundedLinear(startTime, 0, endTime, 1);
+    this.endTime = period * stepCount;
+  }
+  get(timeInMs: number) {
+    let index = Math.floor(timeInMs / this.period);
+    let remainder: number;
+    if (index < 0) {
+      index = 0;
+      remainder = 0;
+    } else if (index >= this.stepCount) {
+      index = this.stepCount - 1;
+      remainder = this.period;
+    } else {
+      remainder = timeInMs % this.period;
+    }
+    const t = this.#remainderToT(remainder);
+    return { index, t };
+  }
+}
+
 class FourierBase {
   readonly samples: readonly Complex[];
   readonly terms: FourierTerm[];
@@ -383,29 +417,12 @@ class FourierBase {
   get stepCount() {
     return this.keyframes.length - 1;
   }
-  makeGetPath1(
-    period: number,
-    startTime = 0,
-    endTime = period - startTime
-  ): (timeInMs: number) => { pathString: string; index: number; t: number } {
+  makeGetPath1(timer: Timer): (timeInMs: number) => string {
     const getPath2 = this.makeGetPath2();
-    const remainderToT = makeBoundedLinear(startTime, 0, endTime, 1);
-    const stepCount = this.stepCount;
     function getPath1(timeInMs: number) {
-      let index = Math.floor(timeInMs / period);
-      let remainder: number;
-      if (index < 0) {
-        index = 0;
-        remainder = 0;
-      } else if (index >= stepCount) {
-        index = stepCount - 1;
-        remainder = period;
-      } else {
-        remainder = timeInMs % period;
-      }
-      const t = remainderToT(remainder);
+      const { index, t } = timer.get(timeInMs);
       const pathString = getPath2(index, t);
-      return { pathString, index, t };
+      return pathString;
     }
     return getPath1;
   }
@@ -603,39 +620,28 @@ class FourierAnimation {
     this.#destination.setTransform(this.#transform);
     this.#showPath(timeInMs);
   }
-  readonly endTime: number;
+  readonly timer: Timer;
   readonly #pathString: string;
   readonly #destination: Destination;
   readonly #referenceColor: string;
   readonly #liveColor: string;
   readonly #transform: DOMMatrix;
-  //  readonly #timeToPath!: readonly ((time: number) => string)[];
-  constructor(options: Options, spinnersGElement: SVGGElement) {
+  readonly base: FourierBase;
+  constructor(options: Options) {
+    this.base = options.base;
     this.#pathString = options.base.pathString;
     this.#destination = options.destination;
     this.#referenceColor = options.referenceColor;
     this.#liveColor = options.liveColor;
     pathCaliper.d = this.#pathString;
     this.#transform = this.#destination.getTransform(pathCaliper.getBBox());
-    const period = 7500;
+    const period = 7000;
     const pause = 750;
-    this.endTime = period * options.base.stepCount;
-    const getPath = options.base.makeGetPath1(period, 0, period - pause);
-    const frequencySpinners = new FrequencySpinners(
-      spinnersGElement,
-      options.base.terms
-    );
+    this.timer = new Timer(options.base.stepCount, period, pause);
+    const getPath = options.base.makeGetPath1(this.timer);
     this.#showPath = (timeInMs: number) => {
-      const { pathString, index, t } = getPath(timeInMs);
-
-      // Draw the path
+      const pathString = getPath(timeInMs);
       this.#destination.setLivePath(pathString);
-
-      // Update the frequency spinners
-      frequencySpinners.show(
-        options.base.keyframes[index + 1],
-        t * FULL_CIRCLE
-      );
     };
   }
 }
@@ -688,7 +694,7 @@ function initScreenCapture(script: unknown) {
     source: "fourier-smackdown.ts",
     script,
     seconds:
-      105 +
+      7 * 14 +
       20 /* Add 20 seconds past the main action for my YouTube end screen */,
     devicePixelRatio,
   };
@@ -1174,6 +1180,10 @@ test();
 
   //let colorIndex = 7;
 
+  const todaysIndex = 39;
+
+  // MARK: Locations
+
   const baseInfo: {
     color: string;
     destRect: ReadOnlyRect;
@@ -1181,52 +1191,39 @@ test();
     search?: string;
   }[] = [
     {
-      color: "yellow",
-      destRect: { x: 0.5, y: 0.5, width: 3, height: 3 },
-      index: 37,
-      // search: "red",
-    },
-    {
       color: "red",
       destRect: { x: 0.5, y: 4.5, width: 3, height: 3 },
-      index: 37,
-      //search: "white",
+      index: todaysIndex,
     },
     {
       color: "var(--blue)",
       destRect: { x: 4.5, y: 1.5, width: 3, height: 3 },
-      index: 37,
-      //search: "blue",
+      index: todaysIndex,
     },
     {
       color: "lime",
       destRect: { x: 4.5, y: 5.5, width: 3, height: 3 },
-      index: 37,
-      //search: "blue",
+      index: todaysIndex,
     },
     {
-      color: "pink",
+      color: "yellow",
       destRect: { x: 8.5, y: 0.5, width: 3, height: 3 },
-      index: 37,
-      // search: "red",
+      index: todaysIndex,
     },
     {
       color: "magenta",
       destRect: { x: 8.5, y: 4.5, width: 3, height: 3 },
-      index: 37,
-      //search: "white",
+      index: todaysIndex,
     },
     {
       color: "orange",
       destRect: { x: 12.5, y: 1.5, width: 3, height: 3 },
-      index: 37,
-      // search: "red",
+      index: todaysIndex,
     },
     {
       color: "#e2e2e2", // Half way between silver and white.
       destRect: { x: 12.5, y: 5.5, width: 3, height: 3 },
-      index: 37,
-      //search: "white",
+      index: todaysIndex,
     },
   ];
 
@@ -1246,6 +1243,7 @@ test();
     return new FourierBase(pathString);
   });
 
+  // MARK: Group multiple different ones
   if (false) {
     fourierInfo[1].terms.forEach((term) => (term.frequency = -term.frequency));
     /**
@@ -1308,6 +1306,7 @@ test();
     });
   }
 
+  // MARK: reorderForSymmetry()
   function reorderForSymmetry(
     terms: FourierTerm[],
     desiredFrequency: number,
@@ -1340,14 +1339,18 @@ test();
     reorderForSymmetry(fourierInfo[2].terms, 5, -1); //2,+1. better 3,+1 or 5,-1
   }
 
+  // MARK: moveSmallOnesToTheFront()
   console.log(fourierInfo);
   function moveSmallOnesToTheFront(fourierBase: FourierBase, which = 0) {
+    if (which == 0) {
+      console.table(fourierBase.terms.slice(0, 20));
+    }
     const bins: FourierTerm[][] = [];
     const terms = fourierBase.terms;
     const numberOfTerms = terms.length;
     const smallTermsBinIndex = 7;
     const desiredBinCount = 14;
-    const special = terms.splice(5, 3);
+    const special = terms.splice(3, 3);
     const finalBins: typeof bins = [];
     special.forEach((term, index) => {
       const present = (which & (2 ** index)) > 0;
@@ -1363,10 +1366,10 @@ test();
       let binSize: number;
       if (bins.length < 6) {
         binSize = 1;
-      } else if (bins.length < 9) {
+      } else if (bins.length < 8) {
         binSize = 2;
       } else {
-        binSize = 2;
+        binSize = 3;
       }
       const big = terms.splice(0, binSize);
       if (big.length != binSize) {
@@ -1374,6 +1377,9 @@ test();
       }
       bins.push(big);
     }
+    // Move a big term, one of the first first terms to the front, right before the separation.
+    const bigTerm = bins.splice(5, 1)[0];
+    bins.splice(0, 0, bigTerm);
     /*
     for (let i = 1; i < bins.length; i++) {
       const binsRemaining = bins.length - i - 1;
@@ -1404,7 +1410,7 @@ test();
     }
   }
   fourierInfo.forEach((f, index) => {
-    moveSmallOnesToTheFront(f, index);
+    moveSmallOnesToTheFront(f, index + 1);
   });
 
   const animations = new Array<Showable>();
@@ -1440,10 +1446,55 @@ test();
       liveColor: color,
       referenceColor: color,
     };
-    const fourierAnimation = new FourierAnimation(options, frequenciesG);
+    const fourierAnimation = new FourierAnimation(options);
     //fourierAnimation.show(10000)
     animations.push(fourierAnimation);
     console.log(fourierAnimation);
+  }
+
+  {
+    // TODO clock object
+    //   Each FourierAnimation has one.
+    //   Other people can read that or create their own.
+    //   Basically a map to the phase and the time within that phase.
+    //   The former being an integer starting from 0 and the latter a number between 0 and 1.
+    //   Maybe endtime is part of this?
+    //   getPath() should not have to return index and t
+    // TODO bins class.
+    //   Extract it from moveSmallOnesToTheFront().
+    const frequencySpinners = new FrequencySpinners('[data-frequencies="red"]');
+    /**
+     * This is full because at the beginning we add all three of the optional terms.
+     * That means, at the end we add none of the optional terms.
+     */
+    const fullAnimation = assertClass(animations.at(-1), FourierAnimation);
+    const timer = fullAnimation.timer;
+
+    const bins = new Array<FourierTerm[]>();
+    const { keyframes, terms } = fullAnimation.base;
+    keyframes.forEach((termEndIndex, binEndIndex) => {
+      const binStartIndex = binEndIndex - 1;
+      if (binStartIndex >= 0) {
+        const termStartIndex = keyframes[binStartIndex];
+        const bin = terms.slice(termStartIndex, termEndIndex);
+        bins.push(bin);
+      }
+    });
+    const empties = bins.splice(bins.length - 3, 3, ...bins.slice(1, 4));
+    if (empties.length != 3) {
+      throw new Error("wtf");
+    }
+    empties.forEach((empty) => {
+      if (empty.length != 0) {
+        throw new Error("wtf");
+      }
+    });
+    console.log(bins);
+    function show(timeInMS: number) {
+      const { index, t } = timer.get(timeInMS);
+      frequencySpinners.show(bins[index], t * FULL_CIRCLE);
+    }
+    animations.push({ show });
   }
 
   {
@@ -1610,6 +1661,7 @@ test();
   console.log(animations);
   initialize(...animations);
 
+  // MARK:  thumbnail
   if (urlParameters.get("thumbnail") == "1") {
     //foregroundG.style.display = "none";
     //const thumbnailG = selectorQuery("g#thumbnail-foreground", SVGGElement);

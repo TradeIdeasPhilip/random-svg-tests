@@ -62,6 +62,20 @@ function onlyBackground() {
   backgroundElement.parentElement?.append(backgroundElement);
 }
 
+{
+  // Background full of stars
+  const random = Random.fromString("Good Night 🌛");
+  const original = selectorQuery("[data-favorite]", SVGCircleElement);
+  const getR = makeLinear(0, 0.025, 2, 0.15);
+  for (let i = 0; i < 150; i++) {
+    const copy = assertClass(original.cloneNode(true), SVGCircleElement);
+    copy.cx.baseVal.value = random() * 16;
+    copy.cy.baseVal.value = random() * 9;
+    copy.r.baseVal.value = getR(random() + random());
+    original.parentElement!.append(copy);
+  }
+}
+
 /**
  * `$_GET`, in PHP parlance.
  */
@@ -1180,7 +1194,7 @@ test();
 
   //let colorIndex = 7;
 
-  const todaysIndex = 39;
+  const todaysIndex = 40;
 
   // MARK: Locations
 
@@ -1196,7 +1210,7 @@ test();
       index: todaysIndex,
     },
     {
-      color: "var(--blue)",
+      color: "yellow",
       destRect: { x: 4.5, y: 1.5, width: 3, height: 3 },
       index: todaysIndex,
     },
@@ -1206,22 +1220,22 @@ test();
       index: todaysIndex,
     },
     {
-      color: "yellow",
+      color: "cyan",
       destRect: { x: 8.5, y: 0.5, width: 3, height: 3 },
       index: todaysIndex,
     },
     {
-      color: "magenta",
+      color: "white",
       destRect: { x: 8.5, y: 4.5, width: 3, height: 3 },
       index: todaysIndex,
     },
     {
-      color: "orange",
+      color: "blue",
       destRect: { x: 12.5, y: 1.5, width: 3, height: 3 },
       index: todaysIndex,
     },
     {
-      color: "#e2e2e2", // Half way between silver and white.
+      color: "magenta",
       destRect: { x: 12.5, y: 5.5, width: 3, height: 3 },
       index: todaysIndex,
     },
@@ -1677,19 +1691,26 @@ test();
         paths.push(element);
       }
     });
-    showFrame(20000);
+    showFrame(7000 * 4.15);
     //animations[1].show(5500);
     selectorQueryAll("[data-reference]", SVGPathElement).forEach(
       (path) => (path.style.display = "none")
     );
 
-    const rectangles = selectorQueryAll("#starfield rect", SVGRectElement);
-    rectangles[0].parentElement!.style.transform = "scale(3)";
-    rectangles.forEach((rectangle) => {
-      rectangle.style.transformOrigin = `${50 / 3}% ${9}%`;
-    });
-    rectangles[1].style.transform = "rotate(1.75deg)";
-    rectangles[2].style.transform = "rotate(-2deg)";
+    selectorQueryAll("#new-starfield circle", SVGCircleElement).forEach(
+      (starElement) => {
+        starElement.style.transform = "scale(3)";
+        starElement.style.transformOrigin = `${starElement.cx.baseVal.value}px ${starElement.cy.baseVal.value}px`;
+      }
+    );
+
+    // const rectangles = selectorQueryAll("#starfield rect", SVGRectElement);
+    // rectangles[0].parentElement!.style.transform = "scale(3)";
+    // rectangles.forEach((rectangle) => {
+    //   rectangle.style.transformOrigin = `${50 / 3}% ${9}%`;
+    // });
+    // rectangles[1].style.transform = "rotate(1.75deg)";
+    // rectangles[2].style.transform = "rotate(-2deg)";
 
     // const font = resizeFont(roundFuturaLFont, 0.5);
     // [
@@ -1739,19 +1760,5 @@ test();
     (window as any).showFrame = (timeInMs: number) => {
       console.info("ignoring showFrame()", timeInMs);
     };
-  }
-}
-
-{
-  // Background full of stars
-  const random = Random.fromString("Good Night 🌛");
-  const original = selectorQuery("[data-favorite]", SVGCircleElement);
-  const getR = makeLinear(0, 0.025, 2, 0.15);
-  for (let i = 0; i < 150; i++) {
-    const copy = assertClass(original.cloneNode(true), SVGCircleElement);
-    copy.cx.baseVal.value = random() * 16;
-    copy.cy.baseVal.value = random() * 9;
-    copy.r.baseVal.value = getR(random() + random());
-    original.parentElement!.append(copy);
   }
 }

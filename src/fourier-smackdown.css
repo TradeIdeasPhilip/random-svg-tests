@@ -245,18 +245,25 @@ path[data-live] {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 3);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
+  stroke: var(--color);
 }
 
-/* 3rd path, but the 2nd pata[data-live] 🤮 */
-path[data-live]:nth-of-type(3) {
-  --angle: 60deg;
+path[data-live].highlight {
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.2);
+  stroke: black;
+}
+
+path[data-live].offset-blur {
+  --angle: 40deg;
+  --offset: calc(var(--base-stroke-width) / var(--path-scale) * 8);
   transform: translate(
-    calc(var(--base-stroke-width) / var(--path-scale) * cos(var(--angle))),
-    calc(var(--base-stroke-width) / var(--path-scale) * sin(var(--angle)))
+    calc(var(--offset) * cos(var(--angle))),
+    calc(var(--offset) * sin(var(--angle)))
   );
-  transform: none;
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale));
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 3);
+  stroke: var(--color);
+  filter: blur(calc(var(--base-stroke-width) / var(--path-scale) * 4));
 }
 
 text.chapter {

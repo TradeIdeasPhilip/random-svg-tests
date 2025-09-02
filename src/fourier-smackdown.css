@@ -42,7 +42,7 @@ tspan:nth-child(3n) {
 body {
   font-family: "Life Savers";
   font-optical-sizing: auto;
-  font-weight: bold;
+  font-weight: 800;
   padding: 0;
   margin: 0;
   background-color: blueviolet;
@@ -90,8 +90,8 @@ line#for-scale {
 }
 
 g.frequencies[data-frequencies="red"] {
-  transform: translate(0.25px, 0.25px) scale(0.3333333);
-  fill: white;
+  transform: translate(0.25px, 0.5px) scale(0.2);
+  fill: var(--pastel-pink);
 }
 
 g.frequency:nth-child(1) {
@@ -103,115 +103,15 @@ g.frequency:nth-child(2) {
 }
 
 g.frequency:nth-child(3) {
-  transform: translate(0, 2.4px) scale(0.5);
+  transform: translate(14px, -0.5px);
 }
 
 g.frequency:nth-child(4) {
-  transform: translate(3.5px, 2.4px) scale(0.5);
+  transform: translate(21px, -0.5px);
 }
 
 g.frequency:nth-child(5) {
-  transform: translate(7px, 2.4px) scale(0.5);
-}
-
-g.frequency:nth-child(6) {
-  transform: translate(10.5px, 2.4px) scale(0.5);
-}
-
-g.frequency:nth-child(7) {
-  transform: translate(0, 3.75px) scale(0.5);
-}
-
-g.frequency:nth-child(8) {
-  transform: translate(3.5px, 3.75px) scale(0.5);
-}
-
-g.frequency:nth-child(9) {
-  transform: translate(7px, 3.75px) scale(0.5);
-}
-
-g.frequency:nth-child(10) {
-  transform: translate(10.5px, 3.75px) scale(0.5);
-}
-
-g.frequency:nth-child(11) {
-  transform: translate(0, 5.15px) scale(0.4);
-}
-
-g.frequency:nth-child(12) {
-  transform: translate(2.8px, 5.15px) scale(0.4);
-}
-
-g.frequency:nth-child(13) {
-  transform: translate(5.6px, 5.15px) scale(0.4);
-}
-
-g.frequency:nth-child(14) {
-  transform: translate(8.4px, 5.15px) scale(0.4);
-}
-
-g.frequency:nth-child(15) {
-  transform: translate(0, 6.55px) scale(0.4);
-}
-
-g.frequency:nth-child(16) {
-  transform: translate(2.8px, 6.55px) scale(0.4);
-}
-
-g.frequency:nth-child(17) {
-  transform: translate(5.6px, 6.55px) scale(0.4);
-}
-
-g.frequency:nth-child(18) {
-  transform: translate(8.4px, 6.55px) scale(0.4);
-}
-
-g.frequency:nth-child(19) {
-  transform: translate(0, 7.95px) scale(0.4);
-}
-
-g.frequency:nth-child(20) {
-  transform: translate(2.8px, 7.95px) scale(0.4);
-}
-
-g.frequency:nth-child(21) {
-  transform: translate(5.6px, 7.95px) scale(0.4);
-}
-
-g.frequency:nth-child(22) {
-  transform: translate(8.4px, 7.95px) scale(0.4);
-}
-
-g.frequency:nth-child(23) {
-  transform: translate(0, 9.35px) scale(0.4);
-}
-
-g.frequency:nth-child(24) {
-  transform: translate(2.8px, 9.35px) scale(0.4);
-}
-
-g.frequency:nth-child(25) {
-  transform: translate(5.6px, 9.35px) scale(0.4);
-}
-
-g.frequency:nth-child(26) {
-  transform: translate(8.4px, 9.35px) scale(0.4);
-}
-
-g.frequency:nth-child(27) {
-  transform: translate(0, 10.75px) scale(0.4);
-}
-
-g.frequency:nth-child(28) {
-  transform: translate(2.8px, 10.75px) scale(0.4);
-}
-
-g.frequency:nth-child(29) {
-  transform: translate(5.6px, 10.75px) scale(0.4);
-}
-
-g.frequency:nth-child(30) {
-  transform: translate(8.4px, 10.75px) scale(0.4);
+  transform: translate(28px, -0.5px);
 }
 
 .frequency {
@@ -245,7 +145,7 @@ path[data-live] {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 2);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1);
   stroke: var(--color);
 }
 
@@ -261,8 +161,8 @@ path[data-live].offset-blur {
     calc(var(--offset) * cos(var(--angle))),
     calc(var(--offset) * sin(var(--angle)))
   );
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 3);
-  stroke: var(--color);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 4);
+  stroke: var(--blur-color);
   filter: blur(calc(var(--base-stroke-width) / var(--path-scale) * 4));
 }
 

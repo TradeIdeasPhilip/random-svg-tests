@@ -64,7 +64,7 @@ function onlyBackground() {
 
 {
   // Background full of stars
-  const random = Random.fromString("Good Night 🌛");
+  const random = Random.fromString("Pastel 41");
   const original = selectorQuery("[data-favorite]", SVGCircleElement);
   const getR = makeLinear(0, 0.025, 2, 0.15);
   for (let i = 0; i < 150; i++) {
@@ -1194,9 +1194,20 @@ test();
 
   //let colorIndex = 7;
 
-  const todaysIndex = 40;
+  const todaysIndex = 41;
 
   // MARK: Locations
+
+  function circle(r: number, cx: number, cy: number): ReadOnlyRect {
+    const x = cx - r;
+    const y = cy - r;
+    const width = 2 * r;
+    const height = 2 * r;
+    return { x, y, width, height };
+  }
+
+  const unit = 9 / 4;
+  const clientPortion = 0.8;
 
   const baseInfo: {
     color: string;
@@ -1206,37 +1217,27 @@ test();
   }[] = [
     {
       color: "red",
-      destRect: { x: 0.5, y: 4.5, width: 3, height: 3 },
+      destRect: circle(unit * clientPortion, 16 - unit, unit),
       index: todaysIndex,
     },
     {
       color: "yellow",
-      destRect: { x: 4.5, y: 1.5, width: 3, height: 3 },
+      destRect: circle(unit * clientPortion, 16 - 3 * unit, unit),
       index: todaysIndex,
     },
     {
       color: "lime",
-      destRect: { x: 4.5, y: 5.5, width: 3, height: 3 },
+      destRect: circle((7 / 2) * clientPortion, 7 / 2, 9 / 2),
       index: todaysIndex,
     },
     {
       color: "cyan",
-      destRect: { x: 8.5, y: 0.5, width: 3, height: 3 },
+      destRect: circle(unit * clientPortion, 16 - 3 * unit, 3 * unit),
       index: todaysIndex,
     },
     {
       color: "white",
-      destRect: { x: 8.5, y: 4.5, width: 3, height: 3 },
-      index: todaysIndex,
-    },
-    {
-      color: "blue",
-      destRect: { x: 12.5, y: 1.5, width: 3, height: 3 },
-      index: todaysIndex,
-    },
-    {
-      color: "magenta",
-      destRect: { x: 12.5, y: 5.5, width: 3, height: 3 },
+      destRect: circle(unit * clientPortion, 16 - unit, 3 * unit),
       index: todaysIndex,
     },
   ];
@@ -1353,9 +1354,29 @@ test();
     reorderForSymmetry(fourierInfo[2].terms, 5, -1); //2,+1. better 3,+1 or 5,-1
   }
 
-  // MARK: moveSmallOnesToTheFront()
   console.log(fourierInfo);
-  function moveSmallOnesToTheFront(fourierBase: FourierBase, which = 0) {
+
+  // MARK: holdBackThree()
+  /**
+   * This was a nice way to make 8 related animations from the same base.
+   *
+   * It reserves 3 terms that it can control.
+   * Half of the instances get the first term near the beginning, others will just sit and wait.
+   * Next, half of the instances get the second term, but half chosen a different way.
+   * Then the third half git the third term.
+   * Use binary so each of 8 terms can get a different subset of the original three terms.
+   * Near the end we revisit the first of these special terms.
+   * Instances that already included this term sit quietly while the other instances add this term.
+   * Then the second of the special terms.
+   * Then the same for the third.
+   *
+   * Other terms are grouped and arranged to make things look good.
+   * This was based on moveSmallOnesToTheFront().
+   * @param fourierBase This will be modified.
+   * @param which 0 through 7, inclusive.
+   * When I only had 7 instances I chose to skip 0 and use 1 though 7.
+   */
+  function holdBackThree(fourierBase: FourierBase, which = 0) {
     if (which == 0) {
       console.table(fourierBase.terms.slice(0, 20));
     }
@@ -1423,14 +1444,76 @@ test();
       throw new Error("wtf");
     }
   }
+  holdBackThree;
+
+  // MARK: moveSmallOnesToTheFront()
+  function moveSmallOnesToTheFront(fourierBase: FourierBase, which = 0) {
+    if (which == 0) {
+      console.table(fourierBase.terms.slice(0, 20));
+    }
+    const bins: FourierTerm[][] = [];
+    const terms = fourierBase.terms;
+    const numberOfTerms = terms.length;
+    const smallTermsBinIndex = 3 + 2 * which;
+    const desiredBinCount = 12;
+    while (bins.length < desiredBinCount - 1) {
+      let binSize: number;
+      if (bins.length < 6) {
+        binSize = 1;
+      } else if (bins.length < 8) {
+        binSize = 2;
+      } else {
+        binSize = 5;
+      }
+      const big = terms.splice(0, binSize);
+      if (big.length != binSize) {
+        throw new Error("wtf");
+      }
+      bins.push(big);
+    }
+    // Move a big term, one of the first first terms to the front, right before the separation.
+    //const bigTerm = bins.splice(5, 1)[0];
+    //bins.splice(0, 0, bigTerm);
+    /*
+    for (let i = 1; i < bins.length; i++) {
+      const binsRemaining = bins.length - i - 1;
+      const itemsRemaining = terms.length;
+      const itemsThisTime = Math.round(itemsRemaining / binsRemaining);
+      bins[i].push(...terms.splice(0, itemsThisTime));
+    }
+    */
+    bins.splice(smallTermsBinIndex, 0, [...terms]);
+    console.log(bins);
+    if (bins.length != desiredBinCount) {
+      throw new Error("wtf");
+    }
+    terms.length = 0;
+    if (terms.length != 0) {
+      throw new Error("wtf");
+    }
+    const keyframes = fourierBase.keyframes;
+    keyframes.length = 0;
+    keyframes.push(0);
+    bins.forEach((bin) => {
+      terms.push(...bin);
+      keyframes.push(terms.length);
+    });
+    if (terms.length != numberOfTerms) {
+      throw new Error("wtf");
+    }
+  }
   fourierInfo.forEach((f, index) => {
-    moveSmallOnesToTheFront(f, index + 1);
+    moveSmallOnesToTheFront(f, index);
   });
 
   const animations = new Array<Showable>();
   const foregroundG = selectorQuery("g#foreground", SVGGElement);
-  for (const [base, fourier] of zip(baseInfo, fourierInfo)) {
-    const { color, destRect, search } = base;
+  for (const [base, fourier, { light, dark }] of zip(
+    baseInfo,
+    fourierInfo,
+    colorPairs
+  )) {
+    const { destRect, search } = base;
     const frequenciesG =
       search === undefined
         ? document.createElementNS("http://www.w3.org/2000/svg", "g")
@@ -1449,16 +1532,17 @@ test();
             )
           )
         : selectorQuery(`[data-fourier-top="${search}"]`, SVGGElement);
-    top.style.setProperty("--color", color);
+    top.style.setProperty("--color", light);
+    top.style.setProperty("--blur-color", dark);
     const destination = new Destination(top, (content: ReadOnlyRect) =>
       panAndZoom(content, destRect, "srcRect fits completely into destRect")
     );
-    frequenciesG.style.fill = color;
+    frequenciesG.style.fill = dark;
     const options = {
       base: fourier,
       destination: destination,
-      liveColor: color,
-      referenceColor: color,
+      liveColor: dark,
+      referenceColor: light,
     };
     const fourierAnimation = new FourierAnimation(options);
     //fourierAnimation.show(10000)
@@ -1467,13 +1551,6 @@ test();
   }
 
   {
-    // TODO clock object
-    //   Each FourierAnimation has one.
-    //   Other people can read that or create their own.
-    //   Basically a map to the phase and the time within that phase.
-    //   The former being an integer starting from 0 and the latter a number between 0 and 1.
-    //   Maybe endtime is part of this?
-    //   getPath() should not have to return index and t
     // TODO bins class.
     //   Extract it from moveSmallOnesToTheFront().
     const frequencySpinners = new FrequencySpinners('[data-frequencies="red"]');
@@ -1481,7 +1558,7 @@ test();
      * This is full because at the beginning we add all three of the optional terms.
      * That means, at the end we add none of the optional terms.
      */
-    const fullAnimation = assertClass(animations.at(-1), FourierAnimation);
+    const fullAnimation = assertClass(animations.at(2), FourierAnimation);
     const timer = fullAnimation.timer;
 
     const bins = new Array<FourierTerm[]>();
@@ -1492,15 +1569,6 @@ test();
         const termStartIndex = keyframes[binStartIndex];
         const bin = terms.slice(termStartIndex, termEndIndex);
         bins.push(bin);
-      }
-    });
-    const empties = bins.splice(bins.length - 3, 3, ...bins.slice(1, 4));
-    if (empties.length != 3) {
-      throw new Error("wtf");
-    }
-    empties.forEach((empty) => {
-      if (empty.length != 0) {
-        throw new Error("wtf");
       }
     });
     console.log(bins);
@@ -1691,7 +1759,10 @@ test();
         paths.push(element);
       }
     });
-    showFrame(7000 * 4.15);
+    animations.forEach((animation, index) => {
+      animation.show(8500 + 950 * index);
+    });
+    //showFrame(7000 * 4.15);
     //animations[1].show(5500);
     selectorQueryAll("[data-reference]", SVGPathElement).forEach(
       (path) => (path.style.display = "none")
@@ -1757,8 +1828,5 @@ test();
       }
     );
     */
-    (window as any).showFrame = (timeInMs: number) => {
-      console.info("ignoring showFrame()", timeInMs);
-    };
   }
 }

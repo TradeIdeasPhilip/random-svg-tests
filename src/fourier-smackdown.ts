@@ -18,6 +18,7 @@ import { PathBuilder, PathCaliper, PathShape } from "./path-shape";
 import {
   assertClass,
   assertNonNullable,
+  count,
   FULL_CIRCLE,
   initializedArray,
   LinearFunction,
@@ -708,7 +709,7 @@ function initScreenCapture(script: unknown) {
     source: "fourier-smackdown.ts",
     script,
     seconds:
-      7 * 14 +
+      77 +
       20 /* Add 20 seconds past the main action for my YouTube end screen */,
     devicePixelRatio,
   };
@@ -1194,7 +1195,7 @@ test();
 
   //let colorIndex = 7;
 
-  const todaysIndex = 41;
+  let todaysIndex = 47;
 
   // MARK: Locations
 
@@ -1218,27 +1219,27 @@ test();
     {
       color: "red",
       destRect: circle(unit * clientPortion, 16 - unit, unit),
-      index: todaysIndex,
+      index: todaysIndex++,
     },
     {
       color: "yellow",
       destRect: circle(unit * clientPortion, 16 - 3 * unit, unit),
-      index: todaysIndex,
+      index: todaysIndex++,
     },
     {
       color: "lime",
       destRect: circle((7 / 2) * clientPortion, 7 / 2, 9 / 2),
-      index: todaysIndex,
+      index: todaysIndex++,
     },
     {
       color: "cyan",
       destRect: circle(unit * clientPortion, 16 - 3 * unit, 3 * unit),
-      index: todaysIndex,
+      index: todaysIndex++,
     },
     {
       color: "white",
       destRect: circle(unit * clientPortion, 16 - unit, 3 * unit),
-      index: todaysIndex,
+      index: todaysIndex++,
     },
   ];
 
@@ -1259,18 +1260,21 @@ test();
   });
 
   // MARK: Group multiple different ones
-  if (false) {
-    fourierInfo[1].terms.forEach((term) => (term.frequency = -term.frequency));
+  if (true) {
+    //fourierInfo[1].terms.forEach((term) => (term.frequency = -term.frequency));
     /**
-     * For each frequency, total the amplitudes of that frequency used by all three curves.
+     * For each frequency, list the amplitudes of that frequency used by all three curves.
      * So we can make make decisions for all three curves at once.
      */
-    const amplitudes = new Map<number, number>();
+    const amplitudes = new Map<number, number[]>();
     fourierInfo.forEach((base) =>
       base.terms.forEach(({ frequency, amplitude }) => {
-        const previousAmplitude = amplitudes.get(frequency) ?? 0;
-        const newAmplitude = previousAmplitude + amplitude;
-        amplitudes.set(frequency, newAmplitude);
+        let amplitudesForThisFrequency = amplitudes.get(frequency);
+        if (!amplitudesForThisFrequency) {
+          amplitudesForThisFrequency = new Array<number>();
+          amplitudes.set(frequency, amplitudesForThisFrequency);
+        }
+        amplitudesForThisFrequency.push(amplitude);
       })
     );
     /**
@@ -1279,7 +1283,10 @@ test();
      */
     const amplitudes1 = Array.from(
       amplitudes.entries(),
-      ([frequency, amplitude]) => ({ frequency, amplitude })
+      ([frequency, amplitudes]) => ({
+        frequency,
+        amplitude: amplitudes.sort((a, b) => a - b)[2] ?? 0,
+      })
     );
     amplitudes1.sort((a, b) => b.amplitude - a.amplitude);
     // This first attempt just kept the 10 highest values
@@ -1296,28 +1303,81 @@ test();
      * First display all of these, in order.
      * Then each curve can return to its own list.
      */
-    const amplitudes2 = amplitudes1.filter(
-      ({ amplitude }) => amplitude > amplitudeCutoff
-    );
+    const amplitudes2 = amplitudes1
+      .filter(({ amplitude }) => amplitude > amplitudeCutoff)
+      .slice(0, 6);
     console.log(amplitudes2);
 
     /**
      * Go through each animation.
      * Reorder the terms to match the list that we created above.
      */
-    fourierInfo.forEach(({ terms }) => {
-      amplitudes2.forEach(({ frequency }, desiredIndex) => {
+    fourierInfo.forEach(({ terms, keyframes }, index) => {
+      const bins: FourierTerm[][] = [];
+      // Move the common terms to the front.
+      amplitudes2.forEach(({ frequency }, _desiredIndex) => {
         const initialIndex = terms.findIndex(
           (term) => term.frequency == frequency
         );
-        let term: FourierTerm;
         if (initialIndex == -1) {
-          term = { amplitude: 0, phase: 0, frequency };
+          bins.push([{ amplitude: 0, phase: 0, frequency }]);
         } else {
-          [term] = terms.splice(initialIndex, 1);
+          bins.push(terms.splice(initialIndex, 1));
         }
-        terms.splice(desiredIndex, 0, term);
       });
+      // Group the remaining items into bins.
+      const desiredBinCount = 11;
+      while (bins.length < desiredBinCount - 1) {
+        let binSize: number;
+        if (bins.length < 6) {
+          binSize = 1;
+        } else if (bins.length < 9) {
+          binSize = 5;
+        } else {
+          binSize = 10;
+        }
+        const big = terms.splice(0, binSize);
+        if (big.length != binSize) {
+          throw new Error("wtf");
+        }
+        bins.push(big);
+      }
+      // Make one big group and add it right after the common part.
+      let bigGroupIndex: number;
+      switch (index) {
+        case 0:
+        case 4: {
+          bigGroupIndex = amplitudes2.length + 1;
+          break;
+        }
+        case 1:
+        case 3: {
+          bigGroupIndex = amplitudes2.length + 2;
+          break;
+        }
+        case 2: {
+          bigGroupIndex = amplitudes2.length + 3;
+          break;
+        }
+        default: {
+          throw new Error("wtf");
+        }
+      }
+      bins.splice(bigGroupIndex, 0, [...terms]);
+      console.log(bins);
+      if (bins.length != desiredBinCount) {
+        throw new Error("wtf");
+      }
+      terms.length = 0;
+      keyframes.length = 0;
+      keyframes.push(0);
+      bins.forEach((bin) => {
+        terms.push(...bin);
+        keyframes.push(terms.length);
+      });
+      // if (terms.length != originalNumberOfTerms) {
+      //   throw new Error("wtf");
+      // }
     });
   }
 
@@ -1502,17 +1562,41 @@ test();
       throw new Error("wtf");
     }
   }
-  fourierInfo.forEach((f, index) => {
-    moveSmallOnesToTheFront(f, index);
-  });
+  if (false) {
+    fourierInfo.forEach((f, index) => {
+      moveSmallOnesToTheFront(f, index);
+    });
+  }
 
   const animations = new Array<Showable>();
   const foregroundG = selectorQuery("g#foreground", SVGGElement);
-  for (const [base, fourier, { light, dark }] of zip(
+  const chapterList = getById("chapterList", SVGTextElement);
+  const lastIndex = baseInfo.length - 1;
+  for (const [base, fourier, { light, dark }, index] of zip(
     baseInfo,
     fourierInfo,
-    colorPairs
+    colorPairs,
+    count()
   )) {
+    {
+      let textContent = base.index.toString();
+      if (index == 0) {
+        textContent = "#" + textContent;
+        chapterList.innerHTML = "";
+      }
+      if (index == lastIndex) {
+        textContent = "and " + textContent + " of 66.";
+      } else {
+        textContent += ", ";
+      }
+      const element = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "tspan"
+      );
+      element.style.fill = light;
+      element.textContent = textContent;
+      chapterList.append(element);
+    }
     const { destRect, search } = base;
     const frequenciesG =
       search === undefined
@@ -1574,7 +1658,11 @@ test();
     console.log(bins);
     function show(timeInMS: number) {
       const { index, t } = timer.get(timeInMS);
-      frequencySpinners.show(bins[index], t * FULL_CIRCLE);
+      if (t >= 1) {
+        frequencySpinners.show([], 0);
+      } else {
+        frequencySpinners.show(bins[index], t * FULL_CIRCLE);
+      }
     }
     animations.push({ show });
   }

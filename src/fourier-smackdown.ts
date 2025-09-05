@@ -650,7 +650,7 @@ class FourierAnimation {
     this.#liveColor = options.liveColor;
     pathCaliper.d = this.#pathString;
     this.#transform = this.#destination.getTransform(pathCaliper.getBBox());
-    const period = 7000;
+    const period = 6000;
     const pause = 750;
     this.timer = new Timer(options.base.stepCount, period, pause);
     const getPath = options.base.makeGetPath1(this.timer);
@@ -709,7 +709,7 @@ function initScreenCapture(script: unknown) {
     source: "fourier-smackdown.ts",
     script,
     seconds:
-      77 +
+      90 +
       20 /* Add 20 seconds past the main action for my YouTube end screen */,
     devicePixelRatio,
   };
@@ -1195,7 +1195,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 52;
+  let todaysIndex = 53;
 
   // MARK: Locations
 
@@ -1217,28 +1217,28 @@ test();
     search?: string;
   }[] = [
     {
-      color: "red",
-      destRect: circle(unit * clientPortion, 16 - unit, unit),
+      color: "n/a",
+      destRect: circle(unit * clientPortion, unit, unit),
       index: todaysIndex,
     },
     {
-      color: "yellow",
-      destRect: circle(unit * clientPortion, 16 - 3 * unit, unit),
+      color: "n/a",
+      destRect: circle(unit * clientPortion, 3 * unit, unit),
       index: todaysIndex,
     },
     {
-      color: "lime",
-      destRect: circle((7 / 2) * clientPortion, 7 / 2, 9 / 2),
+      color: "n/a",
+      destRect: circle((7 / 2) * clientPortion, 16 - 7 / 2, 9 / 2),
       index: todaysIndex,
     },
     {
-      color: "cyan",
-      destRect: circle(unit * clientPortion, 16 - 3 * unit, 3 * unit),
+      color: "n/a",
+      destRect: circle(unit * clientPortion, 3 * unit, 3 * unit),
       index: todaysIndex,
     },
     {
-      color: "white",
-      destRect: circle(unit * clientPortion, 16 - unit, 3 * unit),
+      color: "n/a",
+      destRect: circle(unit * clientPortion, unit, 3 * unit),
       index: todaysIndex,
     },
   ];
@@ -1363,11 +1363,18 @@ test();
           throw new Error("wtf");
         }
       }
+      bigGroupIndex = amplitudes2.length + 2;
       bins.splice(bigGroupIndex, 0, [...terms]);
-      console.log(bins);
       if (bins.length != desiredBinCount) {
         throw new Error("wtf");
       }
+      bins.splice(0, 0, ...initializedArray(index, () => []));
+      bins.splice(
+        Number.MAX_SAFE_INTEGER,
+        0,
+        ...initializedArray(4 - index, () => [])
+      );
+      console.log(bins);
       terms.length = 0;
       keyframes.length = 0;
       keyframes.push(0);

@@ -90,7 +90,7 @@ line#for-scale {
 }
 
 g.frequencies[data-frequencies="red"] {
-  transform: translate(0.25px, 0.5px) scale(0.2);
+  transform: translate(9px, 0.5px) scale(0.2);
   fill: var(--pastel-pink);
 }
 
@@ -99,19 +99,19 @@ g.frequency:nth-child(1) {
 }
 
 g.frequency:nth-child(2) {
-  transform: translate(7px, -0.5px);
+  transform: translate(6.75px, -0.5px);
 }
 
 g.frequency:nth-child(3) {
-  transform: translate(14px, -0.5px);
+  transform: translate(13.5px, -0.5px);
 }
 
 g.frequency:nth-child(4) {
-  transform: translate(21px, -0.5px);
+  transform: translate(20.75px, -0.5px);
 }
 
 g.frequency:nth-child(5) {
-  transform: translate(28px, -0.5px);
+  transform: translate(27px, -0.5px);
 }
 
 .frequency {

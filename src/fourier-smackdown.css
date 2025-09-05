@@ -149,8 +149,12 @@ path[data-live] {
   stroke: var(--color);
 }
 
-path[data-live].highlight {
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 0.2);
+[data-live-index="2"] {
+  --base-stroke-width: 0.1px;
+}
+
+path[data-live].outline {
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1.5);
   stroke: black;
 }
 
@@ -161,9 +165,9 @@ path[data-live].offset-blur {
     calc(var(--offset) * cos(var(--angle))),
     calc(var(--offset) * sin(var(--angle)))
   );
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 4);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 5);
   stroke: var(--blur-color);
-  filter: blur(calc(var(--base-stroke-width) / var(--path-scale) * 4));
+  filter: blur(calc(var(--base-stroke-width) / var(--path-scale) * 2));
 }
 
 text.chapter {

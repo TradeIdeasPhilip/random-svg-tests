@@ -1195,7 +1195,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 47;
+  let todaysIndex = 52;
 
   // MARK: Locations
 
@@ -1219,27 +1219,27 @@ test();
     {
       color: "red",
       destRect: circle(unit * clientPortion, 16 - unit, unit),
-      index: todaysIndex++,
+      index: todaysIndex,
     },
     {
       color: "yellow",
       destRect: circle(unit * clientPortion, 16 - 3 * unit, unit),
-      index: todaysIndex++,
+      index: todaysIndex,
     },
     {
       color: "lime",
       destRect: circle((7 / 2) * clientPortion, 7 / 2, 9 / 2),
-      index: todaysIndex++,
+      index: todaysIndex,
     },
     {
       color: "cyan",
       destRect: circle(unit * clientPortion, 16 - 3 * unit, 3 * unit),
-      index: todaysIndex++,
+      index: todaysIndex,
     },
     {
       color: "white",
       destRect: circle(unit * clientPortion, 16 - unit, 3 * unit),
-      index: todaysIndex++,
+      index: todaysIndex,
     },
   ];
 
@@ -1332,7 +1332,7 @@ test();
         if (bins.length < 6) {
           binSize = 1;
         } else if (bins.length < 9) {
-          binSize = 5;
+          binSize = 3;
         } else {
           binSize = 10;
         }
@@ -1578,7 +1578,7 @@ test();
     colorPairs,
     count()
   )) {
-    {
+    if (false) {
       let textContent = base.index.toString();
       if (index == 0) {
         textContent = "#" + textContent;
@@ -1621,6 +1621,9 @@ test();
     const destination = new Destination(top, (content: ReadOnlyRect) =>
       panAndZoom(content, destRect, "srcRect fits completely into destRect")
     );
+    // This might be the easiest way to find an item later.
+    // i.e. [data-live-index="2"] as a css selector to find the third item.
+    top.dataset.liveIndex = index.toString();
     frequenciesG.style.fill = dark;
     const options = {
       base: fourier,
@@ -1635,6 +1638,7 @@ test();
   }
 
   {
+    // MARK: Frequency Spinners.
     // TODO bins class.
     //   Extract it from moveSmallOnesToTheFront().
     const frequencySpinners = new FrequencySpinners('[data-frequencies="red"]');
@@ -1668,6 +1672,7 @@ test();
   }
 
   {
+    // MARK: Lava Lamp Animation
     const randomnessElement = selectorQuery(
       "#lava-lamp feColorMatrix:first-of-type",
       SVGFEColorMatrixElement

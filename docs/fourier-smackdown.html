@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>👋 fourier-smackdown</title>
-    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತನಾಲ್-DAtjSswV.js"></script>
+    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತನಾಲ್-B971OYs9.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-BHUyxQfl.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-B8CxQsfg.js">
-    <link rel="modulepreload" crossorigin href="./assets/path-shape-CZZKMsju.js">
-    <link rel="modulepreload" crossorigin href="./assets/fourier-shared-DpvWsPe-.js">
+    <link rel="modulepreload" crossorigin href="./assets/path-shape-Cey3Rpwf.js">
+    <link rel="modulepreload" crossorigin href="./assets/fourier-shared-yVHHVzl_.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-Dgy6CMn3.js">
     <link rel="stylesheet" crossorigin href="./assets/ಇರ್ವತ್ತನಾಲ್-BlhGMF0-.css">
   </head>
@@ -337,26 +337,30 @@
         <filter
           id="paint-drops-2"
           color-interpolation-filters="linearRGB"
-          filterUnits="objectBoundingBox"
+          filterUnits="userSpaceOnUse"
           primitiveUnits="userSpaceOnUse"
+          x="0"
+          y="-1"
+          width="16"
+          height="11"
         >
           <feTurbulence
             type="turbulence"
-            baseFrequency="0.7"
+            baseFrequency="0.6"
             numOctaves="2"
-            seed="21"
+            seed="27"
             stitchTiles="stitch"
-            x="0%"
-            y="0%"
-            width="100%"
-            height="100%"
+            x="0"
+            y="-1"
+            width="16"
+            height="11"
             result="turbulence"
           />
           <feComponentTransfer
-            x="0%"
-            y="0%"
-            width="100%"
-            height="100%"
+            x="0"
+            y="-1"
+            width="16"
+            height="11"
             in="turbulence"
             result="componentTransfer"
           >
@@ -460,110 +464,111 @@
           </g>
         </g>
       </defs>
-      <rect
-        data-hide-background
-        width="16"
-        height="9"
-        fill="url(#night-sky)"
-        filter="url(#paint-drops-2)"
-      ></rect>
-      <g id="new-starfield" style="display: none">
-        <circle
-          data-favorite
-          cx="2"
-          cy="7"
-          r="0.1"
-          fill="url(#stellarGradient)"
-        ></circle>
-      </g>
-      <g id="thumbnail-foreground" style="display: none">
-        <text x="1" y="3.75" letter-spacing="0.2">
-          <tspan>Abc</tspan>
-          <tspan>123</tspan>
-          <tspan>:-)</tspan>
-        </text>
-        <text x="1" y="7.25">
-          <tspan>★</tspan>
-          <tspan>⧫</tspan>
-          <tspan>♠</tspan>
-          <tspan>♠</tspan>
-          <tspan>⧫</tspan>
-          <tspan>★</tspan>
-        </text>
-      </g>
-      <g id="foreground">
-        <line id="for-scale" x1="1" y1="1" x2="15" y2="8"></line>
-        <g id="topText"></g>
-        <g id="right">
-          <path data-reference></path>
-          <path data-live></path>
+      <g id="panAndZoomMe">
+        <rect
+          data-hide-background
+          width="16"
+          height="10"
+          fill="url(#night-sky)"
+          filter="url(#paint-drops-2)"
+        ></rect>
+        <g id="new-starfield" style="display: none">
+          <circle
+            data-favorite
+            cx="2"
+            cy="7"
+            r="0.1"
+            fill="url(#stellarGradient)"
+          ></circle>
         </g>
-        <g data-fourier-top="red">
-          <g data-inner-transform style="/*transform: scaleX(-1)*/">
+        <g id="thumbnail-foreground" style="display: none">
+          <text x="1" y="3.75" letter-spacing="0.2">
+            <tspan>Abc</tspan>
+            <tspan>123</tspan>
+            <tspan>:-)</tspan>
+          </text>
+          <text x="1" y="7.25">
+            <tspan>★</tspan>
+            <tspan>⧫</tspan>
+            <tspan>♠</tspan>
+            <tspan>♠</tspan>
+            <tspan>⧫</tspan>
+            <tspan>★</tspan>
+          </text>
+        </g>
+        <g id="foreground">
+          <line id="for-scale" x1="1" y1="1" x2="15" y2="8"></line>
+          <g id="topText"></g>
+          <g id="right">
             <path data-reference></path>
-            <path
-              data-live
-              style="stroke: silver"
-              filter="drop-shadow(0 0 0.1px silver)"
-            ></path>
-            <path data-live stroke="white"></path>
+            <path data-live></path>
           </g>
+          <g data-fourier-top="red">
+            <g data-inner-transform style="/*transform: scaleX(-1)*/">
+              <path data-reference></path>
+              <path
+                data-live
+                style="stroke: silver"
+                filter="drop-shadow(0 0 0.1px silver)"
+              ></path>
+              <path data-live stroke="white"></path>
+            </g>
+          </g>
+          <g data-fourier-top="white">
+            <g data-inner-transform style="/*transform: rotate(30deg)*/">
+              <path data-reference></path>
+              <path
+                data-live
+                style="stroke: yellow"
+                filter="drop-shadow(0 0 0.1px yellow)"
+              ></path>
+              <path data-live stroke="white"></path>
+            </g>
+          </g>
+          <g data-fourier-top="blue">
+            <g data-inner-transform>
+              <path data-reference></path>
+              <path
+                data-live
+                style="stroke: pink"
+                filter="drop-shadow(0 0 0.1px pink)"
+              ></path>
+              <path data-live stroke="white"></path>
+            </g>
+          </g>
+          <g data-frequencies="red" class="frequencies">
+            <g class="frequency">
+              <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
+              <text>-3</text>
+            </g>
+            <g class="frequency">
+              <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
+              <text>-3</text>
+            </g>
+            <g class="frequency">
+              <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
+              <text>-3</text>
+            </g>
+            <g class="frequency">
+              <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
+              <text>-3</text>
+            </g>
+            <g class="frequency">
+              <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
+              <text>-3</text>
+            </g>
+          </g>
+          <text
+            id="chapterList"
+            class="chapter"
+            x="15.65"
+            y="8.6"
+            style="text-anchor: end; fill: white"
+          >
+            #54 of 66
+          </text>
         </g>
-        <g data-fourier-top="white">
-          <g data-inner-transform style="/*transform: rotate(30deg)*/">
-            <path data-reference></path>
-            <path
-              data-live
-              style="stroke: yellow"
-              filter="drop-shadow(0 0 0.1px yellow)"
-            ></path>
-            <path data-live stroke="white"></path>
-          </g>
-        </g>
-        <g data-fourier-top="blue">
-          <g data-inner-transform>
-            <path data-reference></path>
-            <path
-              data-live
-              style="stroke: pink"
-              filter="drop-shadow(0 0 0.1px pink)"
-            ></path>
-            <path data-live stroke="white"></path>
-          </g>
-        </g>
-        <g data-frequencies="red" class="frequencies">
-          <g class="frequency">
-            <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-            <text>-3</text>
-          </g>
-          <g class="frequency">
-            <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-            <text>-3</text>
-          </g>
-          <g class="frequency">
-            <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-            <text>-3</text>
-          </g>
-          <g class="frequency">
-            <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-            <text>-3</text>
-          </g>
-          <g class="frequency">
-            <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-            <text>-3</text>
-          </g>
-        </g>
-        <text
-          id="chapterList"
-          class="chapter"
-          x="15.65"
-          y="8.6"
-          style="text-anchor: end; fill: white"
-        >
-          #53 of 66
-        </text>
       </g>
-      <text class="thumbnail-bottom" y="8.5" x="8">Animations</text>
     </svg>
   </body>
 </html>

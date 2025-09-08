@@ -55,23 +55,63 @@ export function panAndZoom(
   howFarRight = 0.5,
   howFarDown = 0.5
 ): DOMMatrix {
+  return new DOMMatrix(
+    panAndZoomString(srcRect, destRect, aspect, howFarRight, howFarDown)
+  );
+}
+
+/**
+ * This function creates a transform string mapping one rectangle to another.
+ * The matrix can only pan and zoom.  I.e. it can scale, but always the same amount in both dimensions.
+ * And it can translate.  If the two rectangles have different aspect ratios, the `aspect` parameter will provide further guidance.
+ * @param srcRect Often the result of `getBBox()` on an `SVGElement`.  This describes the input coordinate system.
+ * @param destRect Often the the size and shape of an `HTMLElement`, with the top left corner at (0,0).  This describes the output coordinate system.
+ * @param aspect What to do if the `destRect` has a different aspect ratio than `srcRect`.
+ * The terms `meet` and `slice` come from https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/preserveAspectRatio
+ * * `meet` — Everything in the `srcRect` will fit into the `destRect`.  There maybe be unused space in the `destRect`.
+ * * `slice` — Every part of the `destRect` will be filled with something from the `srcRect`.  Some parts of the `srcRect` might not be contained in the `destRect`.
+ * * `srcRect fits completely into destRect` — an alias for `meet`.
+ * * `srcRect completely covers destRect` — an alias for `slice`.
+ * @param howFarRight If there is extra space in the horizontal direction, how should it
+ * be distributed?
+ * * 0 means the content is all the way to the left.
+ * * 0.5, the default, means the content is centered.
+ * * 1 means that the content is all the way to the right.
+ * * etc.
+ * @param howFarDown If there is extra space in the vertical direction, how should it
+ * be distributed?
+ * * 0 means the content is at the very top.
+ * * 0.5, the default, means the content is centered.
+ * * 1 means that the content is all the way to the bottom.
+ * * etc.
+ * @returns A string, appropriate for the css `transform` property, mapping srcRect to destRect.
+ */
+export function panAndZoomString(
+  srcRect: ReadOnlyRect,
+  destRect: ReadOnlyRect,
+  aspect:
+    | "meet"
+    | "slice"
+    | "srcRect fits completely into destRect"
+    | "srcRect completely covers destRect",
+  howFarRight = 0.5,
+  howFarDown = 0.5
+): string {
   // Step 1: Compute the scaling factors to fit or fill the destination
   const srcAspect = srcRect.width / srcRect.height;
   const destAspect = destRect.width / destRect.height;
 
-  let scaleX: number, scaleY: number;
+  let scale: number;
   switch (aspect) {
     case "meet":
     case "srcRect fits completely into destRect": {
       // meet: Scale to fit entirely within destRect, preserving aspect ratio
       if (srcAspect > destAspect) {
         // Source is wider than destination: scale by width, letterbox height
-        scaleX = destRect.width / srcRect.width;
-        scaleY = scaleX;
+        scale = destRect.width / srcRect.width;
       } else {
         // Source is taller than destination: scale by height, letterbox width
-        scaleY = destRect.height / srcRect.height;
-        scaleX = scaleY;
+        scale = destRect.height / srcRect.height;
       }
       break;
     }
@@ -80,12 +120,10 @@ export function panAndZoom(
       // slice: Scale to fill destRect, preserving aspect ratio, may crop
       if (srcAspect > destAspect) {
         // Source is wider than destination: scale by height, crop width
-        scaleY = destRect.height / srcRect.height;
-        scaleX = scaleY;
+        scale = destRect.height / srcRect.height;
       } else {
         // Source is taller than destination: scale by width, crop height
-        scaleX = destRect.width / srcRect.width;
-        scaleY = scaleX;
+        scale = destRect.width / srcRect.width;
       }
       break;
     }
@@ -98,20 +136,16 @@ export function panAndZoom(
   // Translate the source rectangle's origin (srcRect.x, srcRect.y) to (0,0),
   // scale it, then translate to the center of the destination rectangle
   const translateX =
-    -srcRect.x * scaleX +
-    howFarRight * (destRect.width - srcRect.width * scaleX) +
+    -srcRect.x * scale +
+    howFarRight * (destRect.width - srcRect.width * scale) +
     destRect.x;
   const translateY =
-    -srcRect.y * scaleY +
-    howFarDown * (destRect.height - srcRect.height * scaleY) +
+    -srcRect.y * scale +
+    howFarDown * (destRect.height - srcRect.height * scale) +
     destRect.y;
 
   // Step 3: Create the DOMMatrix
-  const matrix = new DOMMatrix()
-    .translate(translateX, translateY)
-    .scale(scaleX, scaleY);
-
-  return matrix;
+  return `translate(${translateX}px, ${translateY}px) scale(${scale})`;
 }
 
 /**

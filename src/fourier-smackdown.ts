@@ -13,7 +13,7 @@ import {
   termsToParametricFunction,
 } from "./fourier-shared";
 import "./fourier-smackdown.css";
-import { panAndZoom } from "./transforms";
+import { panAndZoom, panAndZoomString } from "./transforms";
 import { PathBuilder, PathCaliper, PathShape } from "./path-shape";
 import {
   assertClass,
@@ -642,6 +642,8 @@ class FourierAnimation {
   readonly #liveColor: string;
   readonly #transform: DOMMatrix;
   readonly base: FourierBase;
+  static readonly PERIOD = 7000;
+  static readonly PAUSE = 1000;
   constructor(options: Options) {
     this.base = options.base;
     this.#pathString = options.base.pathString;
@@ -650,9 +652,11 @@ class FourierAnimation {
     this.#liveColor = options.liveColor;
     pathCaliper.d = this.#pathString;
     this.#transform = this.#destination.getTransform(pathCaliper.getBBox());
-    const period = 6000;
-    const pause = 750;
-    this.timer = new Timer(options.base.stepCount, period, pause);
+    this.timer = new Timer(
+      options.base.stepCount,
+      FourierAnimation.PERIOD,
+      FourierAnimation.PAUSE
+    );
     const getPath = options.base.makeGetPath1(this.timer);
     this.#showPath = (timeInMs: number) => {
       const pathString = getPath(timeInMs);
@@ -709,7 +713,7 @@ function initScreenCapture(script: unknown) {
     source: "fourier-smackdown.ts",
     script,
     seconds:
-      90 +
+      98 +
       20 /* Add 20 seconds past the main action for my YouTube end screen */,
     devicePixelRatio,
   };
@@ -1195,7 +1199,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 53;
+  let todaysIndex = 54;
 
   // MARK: Locations
 
@@ -1260,7 +1264,7 @@ test();
   });
 
   // MARK: Group multiple different ones
-  if (true) {
+  if (false) {
     //fourierInfo[1].terms.forEach((term) => (term.frequency = -term.frequency));
     /**
      * For each frequency, list the amplitudes of that frequency used by all three curves.
@@ -1331,7 +1335,7 @@ test();
         let binSize: number;
         if (bins.length < 6) {
           binSize = 1;
-        } else if (bins.length < 9) {
+        } else if (bins.length < 10) {
           binSize = 3;
         } else {
           binSize = 10;
@@ -1363,8 +1367,20 @@ test();
           throw new Error("wtf");
         }
       }
-      bigGroupIndex = amplitudes2.length + 2;
+      bigGroupIndex = bins.length - 1;
       bins.splice(bigGroupIndex, 0, [...terms]);
+      if (bins.length != desiredBinCount) {
+        throw new Error("wtf");
+      }
+      // Move two big-ish ones all the way to the end.
+      const newLastItems = bins.splice(2, 2);
+      bins.push(...newLastItems);
+      if (bins.length != desiredBinCount) {
+        throw new Error("wtf");
+      }
+      // Move a smallish one toward the front
+      const smallish = bins.splice(6, 1);
+      bins.splice(2, 0, ...smallish);
       if (bins.length != desiredBinCount) {
         throw new Error("wtf");
       }
@@ -1385,6 +1401,67 @@ test();
       // if (terms.length != originalNumberOfTerms) {
       //   throw new Error("wtf");
       // }
+    });
+  }
+
+  // MARK: Forward and back
+  if (true) {
+    /**
+     * Go through each animation.
+     * Reorder the terms to match the list that we created above.
+     */
+    fourierInfo.forEach(({ terms, keyframes }, index) => {
+      const originalNumberOfTerms = terms.length;
+      const normalBins: FourierTerm[][] = [];
+      // Move the common terms to the front.
+      const desiredBinCount = 10;
+      while (normalBins.length < desiredBinCount - 1) {
+        let binSize: number;
+        if (normalBins.length < 6) {
+          binSize = 1;
+        } else {
+          binSize = 2;
+        }
+        const newBin = terms.splice(0, binSize);
+        if (newBin.length != binSize) {
+          throw new Error("wtf");
+        }
+        normalBins.push(newBin);
+      }
+      // Rearrange all the normal bins.  The first two remain first, and the third one goes to the end.
+      // The fourth and fifth go right after the first and second and the sixth goes right before the third.
+      // Continue for all normal bins.
+      const beginning: FourierTerm[][] = [];
+      const end: FourierTerm[][] = [];
+      normalBins.forEach((bin, originalIndex) => {
+        if (originalIndex % 3 < 2) {
+          beginning.push(bin);
+        } else {
+          end.unshift(bin);
+        }
+      });
+      // Make one bin from the remaining terms and add it right between the beginning and end.
+      const bins: FourierTerm[][] = [...beginning, [...terms], ...end];
+      if (bins.length != desiredBinCount) {
+        throw new Error("wtf");
+      }
+      bins.splice(0, 0, ...initializedArray(index, () => []));
+      bins.splice(
+        Number.MAX_SAFE_INTEGER,
+        0,
+        ...initializedArray(4 - index, () => [])
+      );
+      console.log(bins);
+      terms.length = 0;
+      keyframes.length = 0;
+      keyframes.push(0);
+      bins.forEach((bin, _index, _array) => {
+        terms.push(...bin);
+        keyframes.push(terms.length);
+      });
+      if (terms.length != originalNumberOfTerms) {
+        throw new Error("wtf");
+      }
     });
   }
 
@@ -1674,6 +1751,109 @@ test();
       } else {
         frequencySpinners.show(bins[index], t * FULL_CIRCLE);
       }
+    }
+    animations.push({ show });
+  }
+
+  {
+    // MARK: Pan and zoom.
+    const mainSVG = getById("main", SVGSVGElement);
+    /**
+     * We want to display certain elements so they fill the entire screen.
+     */
+    const destRect: ReadOnlyRect = mainSVG.viewBox.baseVal;
+    /**
+     * Display everything on the screen.
+     * I.e. the identity transform.
+     * I created it this way so it will have the same form as the other two transforms.
+     * So I can do a simple animation interpolating between the two.
+     */
+    const middleTransform = panAndZoomString(
+      destRect,
+      destRect,
+      "srcRect fits completely into destRect"
+    );
+    const r0 = baseInfo[0].destRect;
+    const r1 = baseInfo[1].destRect;
+    const widthFor2 = r1.x + r1.width + r0.x;
+    /**
+     * Show the first two animations full screen.
+     */
+    const initialSrcRect: ReadOnlyRect = { ...r0, x: 0, width: widthFor2 };
+    /**
+     * Show the first two animations full screen.
+     */
+    const initialTransform = panAndZoomString(
+      initialSrcRect,
+      destRect,
+      "srcRect fits completely into destRect"
+    );
+    const r4 = baseInfo[4].destRect;
+    /**
+     * Show the last two animations full screen.
+     */
+    const finalSrcRect: ReadOnlyRect = { ...r4, x: 0, width: widthFor2 };
+    /**
+     * Show the last two animations full screen.
+     */
+    const finalTransform = panAndZoomString(
+      finalSrcRect,
+      destRect,
+      "srcRect fits completely into destRect"
+    );
+    const startPhase0 = 0;
+    const endPhase0 = 2 * FourierAnimation.PERIOD;
+    const startPhase1 = endPhase0 + FourierAnimation.PAUSE;
+    const firstAnimation = assertClass(animations[0], FourierAnimation);
+    const endPhase2 = firstAnimation.timer.endTime;
+    const startPhase2 = endPhase2 - 2 * FourierAnimation.PERIOD;
+    const endPhase1 = startPhase2 - FourierAnimation.PAUSE;
+    console.log({
+      initialTransform,
+      middleTransform,
+      finalTransform,
+      initialSrcRect,
+      finalSrcRect,
+    });
+    const panAndZoomG = getById("panAndZoomMe", SVGGElement);
+    const animation = panAndZoomG.animate(
+      [
+        {
+          offset: startPhase0 / endPhase2,
+          transform: initialTransform,
+          easing: "ease",
+        },
+        {
+          offset: endPhase0 / endPhase2,
+          transform: initialTransform,
+          easing: "ease",
+        },
+        {
+          offset: startPhase1 / endPhase2,
+          transform: middleTransform,
+          easing: "ease",
+        },
+        {
+          offset: endPhase1 / endPhase2,
+          transform: middleTransform,
+          easing: "ease",
+        },
+        {
+          offset: startPhase2 / endPhase2,
+          transform: finalTransform,
+          easing: "ease",
+        },
+        {
+          offset: endPhase2 / endPhase2,
+          transform: finalTransform,
+          easing: "ease",
+        },
+      ],
+      { duration: endPhase2, fill: "both" }
+    );
+    animation.pause();
+    function show(timeInMS: number) {
+      animation.currentTime = timeInMS;
     }
     animations.push({ show });
   }

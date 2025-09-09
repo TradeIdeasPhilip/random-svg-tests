@@ -1199,7 +1199,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 55;
+  let todaysIndex = 56;
 
   // MARK: Locations
 
@@ -1656,10 +1656,20 @@ test();
   const foregroundG = selectorQuery("g#foreground", SVGGElement);
   const chapterList = getById("chapterList", SVGTextElement);
   const lastIndex = baseInfo.length - 1;
+  const altColorPairs: {
+    light: string;
+    dark: string;
+  }[] = [
+    { light: "red", dark: "darkRed" },
+    { light: "orange", dark: "darkOrange" },
+    { light: "lime", dark: "green" },
+    { light: "var(--blue)", dark: "darkblue" },
+    { light: "Fuchsia ", dark: "purple" },
+  ];
   for (const [base, fourier, { light, dark }, index] of zip(
     baseInfo,
     fourierInfo,
-    colorPairs,
+    altColorPairs,
     count()
   )) {
     if (false) {
@@ -1755,7 +1765,7 @@ test();
     animations.push({ show });
   }
 
-  {
+  if (false) {
     // MARK: Pan and zoom.
     const mainSVG = getById("main", SVGSVGElement);
     /**
@@ -1858,7 +1868,7 @@ test();
     animations.push({ show });
   }
 
-  {
+  if (false) {
     // MARK: Lava Lamp Animation
     const randomnessElement = selectorQuery(
       "#lava-lamp feColorMatrix:first-of-type",

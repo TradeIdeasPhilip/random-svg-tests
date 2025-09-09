@@ -333,15 +333,15 @@
           filterUnits="userSpaceOnUse"
           primitiveUnits="userSpaceOnUse"
           x="0"
-          y="-1"
+          y="0"
           width="16"
-          height="11"
+          height="9"
         >
           <feTurbulence
             type="turbulence"
-            baseFrequency="0.6"
+            baseFrequency="0.55"
             numOctaves="2"
-            seed="27"
+            seed="29"
             stitchTiles="stitch"
             x="0"
             y="-1"
@@ -357,9 +357,9 @@
             in="turbulence"
             result="componentTransfer"
           >
-            <feFuncR type="discrete" tableValues="1  0.5 0.4" />
-            <feFuncG type="discrete" tableValues="1  0.5 0.4" />
-            <feFuncB type="discrete" tableValues="1  0.5 0.4" />
+            <feFuncR type="discrete" tableValues="1  0.6 0.4" />
+            <feFuncG type="discrete" tableValues="1  0.6 0.4" />
+            <feFuncB type="discrete" tableValues="1  0.6 0.4" />
             <feFuncA type="linear" slope="1" intercept="1" />
           </feComponentTransfer>
         </filter>
@@ -464,7 +464,6 @@
           height="10"
           fill="url(#night-sky)"
           filter="url(#paint-drops-2)"
-          style="will-change: transform;"
         ></rect>
         <g id="new-starfield" style="display: none">
           <circle
@@ -559,7 +558,7 @@
             y="8.6"
             style="text-anchor: end; fill: white"
           >
-            #55 of 66
+            #56 of 66
           </text>
         </g>
       </g>

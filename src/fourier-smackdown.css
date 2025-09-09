@@ -155,20 +155,20 @@ path[data-live] {
 }
 
 path[data-live].outline {
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1.5);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1.75);
   stroke: black;
 }
 
 path[data-live].offset-blur {
   --angle: 40deg;
-  --offset: calc(var(--base-stroke-width) / var(--path-scale) * 8);
+  --offset: calc(var(--base-stroke-width) / var(--path-scale) * 9);
   transform: translate(
     calc(var(--offset) * cos(var(--angle))),
     calc(var(--offset) * sin(var(--angle)))
   );
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 5);
   stroke: var(--blur-color);
-  filter: blur(calc(var(--base-stroke-width) / var(--path-scale) * 2));
+  filter: blur(calc(var(--base-stroke-width) / var(--path-scale) * 2.5));
 }
 
 text.chapter {

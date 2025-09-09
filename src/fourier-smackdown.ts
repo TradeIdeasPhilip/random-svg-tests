@@ -1199,7 +1199,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 54;
+  let todaysIndex = 55;
 
   // MARK: Locations
 
@@ -1826,7 +1826,7 @@ test();
         {
           offset: endPhase0 / endPhase2,
           transform: initialTransform,
-          easing: "ease",
+          easing: "ease-in",
         },
         {
           offset: startPhase1 / endPhase2,
@@ -1836,7 +1836,7 @@ test();
         {
           offset: endPhase1 / endPhase2,
           transform: middleTransform,
-          easing: "ease",
+          easing: "ease-in",
         },
         {
           offset: startPhase2 / endPhase2,

@@ -91,7 +91,8 @@ line#for-scale {
 
 g.frequencies[data-frequencies="red"] {
   transform: translate(9px, 0.5px) scale(0.2);
-  fill: var(--pastel-pink);
+  fill: var(--darker-pink);
+      filter: drop-shadow(0px 0px 0.3px white);
 }
 
 g.frequency:nth-child(1) {

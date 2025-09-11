@@ -90,9 +90,9 @@ line#for-scale {
 }
 
 g.frequencies[data-frequencies="red"] {
-  transform: translate(9px, 0.5px) scale(0.2);
-  fill: var(--darker-pink);
-      filter: drop-shadow(0px 0px 0.3px white);
+  transform: translate(0.45px, 0.5px) scale(0.32);
+  fill: black;
+  filter: drop-shadow(0px 0px 0.3px white);
 }
 
 g.frequency:nth-child(1) {
@@ -150,9 +150,11 @@ path[data-live] {
   stroke: var(--color);
 }
 
+/*
 [data-live-index="2"] {
   --base-stroke-width: 0.1px;
 }
+*/
 
 path[data-live].outline {
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1.75);
@@ -173,7 +175,7 @@ path[data-live].offset-blur {
 
 text.chapter {
   font-size: 0.5px;
-  filter: drop-shadow(0px 0px 0.3px black);
+  filter: drop-shadow(0px 0px 0.3px white);
 }
 
 #lava-lamp-text text {

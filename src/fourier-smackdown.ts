@@ -713,7 +713,7 @@ function initScreenCapture(script: unknown) {
     source: "fourier-smackdown.ts",
     script,
     seconds:
-      98 +
+      70 +
       20 /* Add 20 seconds past the main action for my YouTube end screen */,
     devicePixelRatio,
   };
@@ -1199,7 +1199,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 56;
+  let todaysIndex = 57;
 
   // MARK: Locations
 
@@ -1222,27 +1222,17 @@ test();
   }[] = [
     {
       color: "n/a",
-      destRect: circle(unit * clientPortion, unit, unit),
+      destRect: circle(unit * clientPortion, unit, 2.75 * unit),
       index: todaysIndex,
     },
     {
       color: "n/a",
-      destRect: circle(unit * clientPortion, 3 * unit, unit),
+      destRect: circle(unit * clientPortion, 16 / 2, 9 / 2),
       index: todaysIndex,
     },
     {
       color: "n/a",
-      destRect: circle((7 / 2) * clientPortion, 16 - 7 / 2, 9 / 2),
-      index: todaysIndex,
-    },
-    {
-      color: "n/a",
-      destRect: circle(unit * clientPortion, 3 * unit, 3 * unit),
-      index: todaysIndex,
-    },
-    {
-      color: "n/a",
-      destRect: circle(unit * clientPortion, unit, 3 * unit),
+      destRect: circle(unit * clientPortion, 16 - unit, 1.25 * unit),
       index: todaysIndex,
     },
   ];
@@ -1410,7 +1400,7 @@ test();
      * Go through each animation.
      * Reorder the terms to match the list that we created above.
      */
-    fourierInfo.forEach(({ terms, keyframes }, index) => {
+    fourierInfo.forEach(({ terms, keyframes }, _index) => {
       const originalNumberOfTerms = terms.length;
       const normalBins: FourierTerm[][] = [];
       // Move the common terms to the front.
@@ -1445,12 +1435,14 @@ test();
       if (bins.length != desiredBinCount) {
         throw new Error("wtf");
       }
+      /*
       bins.splice(0, 0, ...initializedArray(index, () => []));
       bins.splice(
         Number.MAX_SAFE_INTEGER,
         0,
         ...initializedArray(4 - index, () => [])
       );
+      */
       console.log(bins);
       terms.length = 0;
       keyframes.length = 0;
@@ -1661,9 +1653,9 @@ test();
     dark: string;
   }[] = [
     { light: "red", dark: "darkRed" },
-    { light: "orange", dark: "darkOrange" },
     { light: "lime", dark: "green" },
     { light: "var(--blue)", dark: "darkblue" },
+    { light: "orange", dark: "darkOrange" },
     { light: "Fuchsia ", dark: "purple" },
   ];
   for (const [base, fourier, { light, dark }, index] of zip(

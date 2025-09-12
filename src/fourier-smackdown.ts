@@ -2041,9 +2041,9 @@ test();
         paths.push(element);
       }
     });
-    animations.forEach((animation, index) => {
-      animation.show(8500 + 950 * index);
-    });
+    animations[0].show(14000);
+    animations[1].show(28000);
+    animations[2].show(42000);
     //showFrame(7000 * 4.15);
     //animations[1].show(5500);
     selectorQueryAll("[data-reference]", SVGPathElement).forEach(

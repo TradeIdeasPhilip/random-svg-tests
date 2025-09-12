@@ -1199,7 +1199,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 57;
+  let todaysIndex = 58;
 
   // MARK: Locations
 
@@ -1653,7 +1653,7 @@ test();
     dark: string;
   }[] = [
     { light: "red", dark: "darkRed" },
-    { light: "lime", dark: "green" },
+    { light: "white", dark: "black" },
     { light: "var(--blue)", dark: "darkblue" },
     { light: "orange", dark: "darkOrange" },
     { light: "Fuchsia ", dark: "purple" },

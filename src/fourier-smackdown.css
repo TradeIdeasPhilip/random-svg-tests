@@ -150,12 +150,6 @@ path[data-live] {
   stroke: var(--color);
 }
 
-/*
-[data-live-index="2"] {
-  --base-stroke-width: 0.1px;
-}
-*/
-
 path[data-live].outline {
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1.75);
   stroke: black;
@@ -163,16 +157,22 @@ path[data-live].outline {
 
 path[data-live].offset-blur {
   --angle: 40deg;
-  --offset: calc(var(--base-stroke-width) / var(--path-scale) * 9);
+  --offset: calc(
+    var(--base-stroke-width) / var(--path-scale) * 4
+  ); /* Reduced from 9 to a realistic offset */
   transform: translate(
-    calc(var(--offset) * cos(var(--angle))),
+    calc(var(--offsext) * cos(var(--angle))),
     calc(var(--offset) * sin(var(--angle)))
   );
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 5);
+  stroke-width: calc(
+    var(--base-stroke-width) / var(--path-scale) * 3
+  ); /* Slightly reduced for proportion */
   stroke: var(--blur-color);
-  filter: blur(calc(var(--base-stroke-width) / var(--path-scale) * 2.5));
+  filter: blur(
+    calc(var(--base-stroke-width) / var(--path-scale) * 1)
+  ); /* Moderate blur */
+  /*  mask: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.3) 100%); */ /* Natural fade */
 }
-
 text.chapter {
   font-size: 0.5px;
   filter: drop-shadow(0px 0px 0.3px white);

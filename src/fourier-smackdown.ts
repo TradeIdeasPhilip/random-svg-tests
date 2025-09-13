@@ -99,12 +99,56 @@ if (urlParameters.get("hide_background") == "1") {
 
 const numberOfFourierSamples = 1024;
 
+class MotionBlurSpinner {
+  constructor(
+    readonly element: HTMLDivElement,
+    options: {
+      radius: number;
+      centerX: number;
+      centerY: number;
+      color?: string;
+    } = { radius: 1, centerX: 2, centerY: 2 }
+  ) {
+    const style = element.style;
+    style.setProperty("--radius", options.radius.toString());
+    style.setProperty("--center-x", options.centerX.toString());
+    style.setProperty("--center-y", options.centerY.toString());
+    if (options.color) {
+      style.setProperty("--color", options.color);
+    }
+    this.hide();
+  }
+  /**
+   * TODO This breaks all of my rules.
+   * But it will be a pain to do it right.
+   * The rest of this is stateless.
+   * You can call showFrame(n) at any time and get the same result.
+   */
+  #previousMain: number | undefined;
+  showRadians(main: number) {
+    const blur = this.#previousMain ?? main;
+    this.#previousMain = main;
+    const style = this.element.style;
+    style.display = "";
+    style.setProperty("--main-angle", `${main}rad`);
+    style.setProperty("--blur-angle", `${blur}rad`);
+  }
+  hide() {
+    this.#previousMain = undefined;
+    this.element.style.display = "none";
+  }
+  static available = selectorQueryAll(
+    ".motion-blur-spinner",
+    HTMLDivElement
+  ).map((element) => new this(element));
+}
+
 class FrequencySpinners {
   readonly #spinners: readonly {
     readonly top: SVGGElement;
-    readonly spinner: SVGPolygonElement;
+    readonly oldSpinner: SVGPolygonElement;
+    readonly newSpinner: MotionBlurSpinner;
     readonly text: SVGTextElement;
-    readonly background: SVGTextElement;
   }[];
   constructor(parent: string | SVGGElement) {
     if (!(parent instanceof SVGGElement)) {
@@ -118,17 +162,11 @@ class FrequencySpinners {
       parent
     ).map((top) => {
       const text = selectorQuery("text", SVGTextElement, top);
-      const background = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "text"
-      );
-      background.classList.add("background");
-      top.insertBefore(background, text);
       return {
         top,
-        spinner: selectorQuery(".spinner", SVGPolygonElement, top),
+        oldSpinner: selectorQuery(".spinner", SVGPolygonElement, top),
+        newSpinner: assertNonNullable(MotionBlurSpinner.available.shift()),
         text,
-        background,
       };
     });
   }
@@ -136,6 +174,7 @@ class FrequencySpinners {
     this.#spinners.forEach((spinner, index, array) => {
       if (index >= terms.length) {
         spinner.top.style.display = "none";
+        spinner.newSpinner.hide();
       } else {
         spinner.top.style.display = "";
         const term = terms[index];
@@ -146,11 +185,11 @@ class FrequencySpinners {
           // but there are more terms to display.
           text += ", …";
         }
-        spinner.background.innerHTML = spinner.text.innerHTML = text;
-
-        spinner.spinner.style.transform = `rotate(${
-          progressInRadians * term.frequency + term.phase + FULL_CIRCLE / 4
+        const angleToDisplay = progressInRadians * term.frequency + term.phase;
+        spinner.oldSpinner.style.transform = `rotate(${
+          angleToDisplay + FULL_CIRCLE / 4
         }rad)`;
+        spinner.newSpinner.showRadians(angleToDisplay);
       }
     });
   }
@@ -1199,7 +1238,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 58;
+  let todaysIndex = 59;
 
   // MARK: Locations
 
@@ -2044,6 +2083,10 @@ test();
     animations[0].show(14000);
     animations[1].show(28000);
     animations[2].show(42000);
+    (window as any).showFrame = (timeInMs: number) => {
+      console.info(`ignoring showFrame(${timeInMs})`);
+    };
+
     //showFrame(7000 * 4.15);
     //animations[1].show(5500);
     selectorQueryAll("[data-reference]", SVGPathElement).forEach(

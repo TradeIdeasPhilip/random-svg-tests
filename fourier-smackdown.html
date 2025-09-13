@@ -23,7 +23,7 @@
       id="main"
       viewBox="0 0 16 9"
       xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMaxYMin meet"
+      preserveAspectRatio="xMinYMin meet"
     >
       <defs>
         <filter
@@ -341,7 +341,7 @@
             type="turbulence"
             baseFrequency="0.36666667"
             numOctaves="2"
-            seed="30"
+            seed="31"
             stitchTiles="stitch"
             x="0"
             y="-1"
@@ -532,23 +532,27 @@
           <g data-frequencies="red" class="frequencies">
             <g class="frequency">
               <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-              <text>-3</text>
+              <text x="3.75" y="1.75" style="fill: var(--darker-blue)">-3</text>
             </g>
             <g class="frequency">
               <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-              <text>-3</text>
+              <text x="3.75" y="3.5" style="fill: var(--darker-purple)">
+                -3
+              </text>
             </g>
             <g class="frequency">
               <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-              <text>-3</text>
+              <text x="5.5" y="1.75" style="fill: var(--darker-pink)">-3</text>
             </g>
             <g class="frequency">
               <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-              <text>-3</text>
+              <text x="7.75" y="1.75" style="fill: var(--darker-teal)">-3</text>
             </g>
             <g class="frequency">
               <polygon class="spinner" points="2,1 1.5,3 2.5,3"></polygon>
-              <text>-3</text>
+              <text x="9.25" y="1.75" style="fill: var(--darker-coral)">
+                -3
+              </text>
             </g>
           </g>
           <text
@@ -558,10 +562,32 @@
             y="8.6"
             style="text-anchor: end; fill: black"
           >
-            #58 of 66
+            #59 of 66
           </text>
         </g>
       </g>
     </svg>
+    <div data-motion-blur-spinners>
+      <div
+        class="motion-blur-spinner"
+        style="--color: var(--darker-blue)"
+      ></div>
+      <div
+        class="motion-blur-spinner"
+        style="--color: var(--darker-purple)"
+      ></div>
+      <div
+        class="motion-blur-spinner"
+        style="--color: var(--darker-pink)"
+      ></div>
+      <div
+        class="motion-blur-spinner"
+        style="--color: var(--darker-teal)"
+      ></div>
+      <div
+        class="motion-blur-spinner"
+        style="--color: var(--darker-coral)"
+      ></div>
+    </div>
   </body>
 </html>

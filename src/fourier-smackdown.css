@@ -90,38 +90,16 @@ line#for-scale {
 }
 
 g.frequencies[data-frequencies="red"] {
-  transform: translate(0.45px, 0.5px) scale(0.32);
   fill: black;
   filter: drop-shadow(0px 0px 0.3px white);
-}
-
-g.frequency:nth-child(1) {
-  transform: translate(0, -0.5px);
-}
-
-g.frequency:nth-child(2) {
-  transform: translate(6.75px, -0.5px);
-}
-
-g.frequency:nth-child(3) {
-  transform: translate(13.5px, -0.5px);
-}
-
-g.frequency:nth-child(4) {
-  transform: translate(20.75px, -0.5px);
-}
-
-g.frequency:nth-child(5) {
-  transform: translate(27px, -0.5px);
 }
 
 .frequency {
   font-size: 1px;
 }
 
-.frequency text {
-  font-size: 1.5px;
-  transform: translate(4px, 2.5px);
+.frequency polygon {
+  display: none;
 }
 
 text.background {
@@ -161,7 +139,7 @@ path[data-live].offset-blur {
     var(--base-stroke-width) / var(--path-scale) * 4
   ); /* Reduced from 9 to a realistic offset */
   transform: translate(
-    calc(var(--offsext) * cos(var(--angle))),
+    calc(var(--offset) * cos(var(--angle))),
     calc(var(--offset) * sin(var(--angle)))
   );
   stroke-width: calc(
@@ -192,4 +170,52 @@ text.chapter {
   font-size: 2px;
   text-anchor: middle;
   display: none;
+}
+
+body {
+  --unit: calc(min(100vw / 16, 100vh / 9));
+}
+
+/*
+ * You need to set all of these values for .motion-blur-spinner to work.
+ */
+.motion-blur-spinner-test {
+  --radius: 2;
+  --center-x: 4;
+  --center-y: 3;
+  --main-angle: 31.4159rad;
+  --blur-angle: 31.4159rad;
+  --color: black;
+}
+
+.motion-blur-spinner {
+  position: fixed;
+  --size: 20deg;
+  --blur-forward: calc(
+    clamp(
+      var(--size),
+      var(--blur-angle) - var(--main-angle) + var(--size),
+      1turn
+    )
+  );
+  --blur-back: calc(
+    clamp(var(--size), var(--blur-angle) - var(--main-angle) + 1turn, 1turn)
+  );
+  background: conic-gradient(
+    from calc(var(--main-angle) - var(--size) / 2 + 0.75turn),
+    var(--color) 0%,
+    var(--color) var(--size),
+    transparent var(--blur-forward),
+    transparent var(--blur-back),
+    var(--color) 1turn
+  );
+  top: calc((var(--center-y) - var(--radius)) * var(--unit));
+  left: calc((var(--center-x) - var(--radius)) * var(--unit));
+  width: calc(2 * var(--radius) * var(--unit));
+  height: calc(2 * var(--radius) * var(--unit));
+  border-radius: calc(var(--radius) * var(--unit));
+}
+
+[data-motion-blur-spinners] {
+  --color: darkBlue;
 }

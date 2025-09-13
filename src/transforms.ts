@@ -249,3 +249,35 @@ function runTests() {
 }
 // Run the tests
 runTests();
+
+export function makeTransformMatrix(
+  coordinatesComeFromHere: SVGGraphicsElement,
+  coordinatesWillBeUsedHere: SVGGraphicsElement
+): DOMMatrix {
+  // Ensure both elements are part of an SVG
+  if (
+    !coordinatesComeFromHere.ownerSVGElement ||
+    !coordinatesWillBeUsedHere.ownerSVGElement
+  ) {
+    throw new Error("One or both elements are not inside an SVG");
+  }
+
+  // Ensure both elements are in the same SVG
+  if (
+    coordinatesComeFromHere.ownerSVGElement !==
+    coordinatesWillBeUsedHere.ownerSVGElement
+  ) {
+    throw new Error("Elements must be in the same SVG");
+  }
+
+  // Get the CTMs for both elements
+  const sourceCTM = coordinatesComeFromHere.getCTM();
+  const targetCTM = coordinatesWillBeUsedHere.getCTM();
+
+  if (!sourceCTM || !targetCTM) {
+    throw new Error("Unable to compute CTM for one or both elements");
+  }
+
+  // Compute the transformation matrix: sourceCTM * targetCTM^-1
+  return sourceCTM.multiply(targetCTM.inverse());
+}

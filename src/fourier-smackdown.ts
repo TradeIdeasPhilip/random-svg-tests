@@ -185,6 +185,7 @@ class FrequencySpinners {
           // but there are more terms to display.
           text += ", …";
         }
+        spinner.text.innerHTML = spinner.text.innerHTML = text;
         const angleToDisplay = progressInRadians * term.frequency + term.phase;
         spinner.oldSpinner.style.transform = `rotate(${
           angleToDisplay + FULL_CIRCLE / 4

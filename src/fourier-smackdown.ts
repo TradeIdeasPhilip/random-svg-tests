@@ -100,8 +100,12 @@ if (urlParameters.get("hide_background") == "1") {
 const numberOfFourierSamples = 1024;
 
 class MotionBlurSpinner {
+  static readonly #parent = selectorQuery(
+    "[data-motion-blur-spinners]",
+    HTMLDivElement
+  );
+  #style: CSSStyleDeclaration;
   constructor(
-    readonly element: HTMLDivElement,
     options: {
       radius: number;
       centerX: number;
@@ -109,7 +113,10 @@ class MotionBlurSpinner {
       color?: string;
     } = { radius: 1, centerX: 2, centerY: 2 }
   ) {
-    const style = element.style;
+    const element: HTMLDivElement = document.createElement("div");
+    element.classList.add("motion-blur-spinner");
+    MotionBlurSpinner.#parent.append(element);
+    const style = (this.#style = element.style);
     style.setProperty("--radius", options.radius.toString());
     style.setProperty("--center-x", options.centerX.toString());
     style.setProperty("--center-y", options.centerY.toString());
@@ -128,19 +135,15 @@ class MotionBlurSpinner {
   showRadians(main: number) {
     const blur = this.#previousMain ?? main;
     this.#previousMain = main;
-    const style = this.element.style;
+    const style = this.#style;
     style.display = "";
     style.setProperty("--main-angle", `${main}rad`);
     style.setProperty("--blur-angle", `${blur}rad`);
   }
   hide() {
     this.#previousMain = undefined;
-    this.element.style.display = "none";
+    this.#style.display = "none";
   }
-  static available = selectorQueryAll(
-    ".motion-blur-spinner",
-    HTMLDivElement
-  ).map((element) => new this(element));
 }
 
 class FrequencySpinners {
@@ -165,7 +168,8 @@ class FrequencySpinners {
       return {
         top,
         oldSpinner: selectorQuery(".spinner", SVGPolygonElement, top),
-        newSpinner: assertNonNullable(MotionBlurSpinner.available.shift()),
+        newSpinner:
+          undefined! /*assertNonNullable(MotionBlurSpinner.available.shift())*/,
         text,
       };
     });
@@ -469,6 +473,18 @@ class FourierBase {
     this.keyframes = initializedArray(21, (n) => n);
   }
   keyframes: number[];
+  bins() {
+    const result = new Array<FourierTerm[]>();
+    this.keyframes.forEach((termEndIndex, binEndIndex, keyframes) => {
+      const binStartIndex = binEndIndex - 1;
+      if (binStartIndex >= 0) {
+        const termStartIndex = keyframes[binStartIndex];
+        const bin = this.terms.slice(termStartIndex, termEndIndex);
+        result.push(bin);
+      }
+    });
+    return result;
+  }
   get stepCount() {
     return this.keyframes.length - 1;
   }
@@ -752,9 +768,7 @@ function initScreenCapture(script: unknown) {
   return {
     source: "fourier-smackdown.ts",
     script,
-    seconds:
-      70 +
-      20 /* Add 20 seconds past the main action for my YouTube end screen */,
+    seconds: 70, //+20 /* Add 20 seconds past the main action for my YouTube end screen */,
     devicePixelRatio,
   };
 }
@@ -1239,7 +1253,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 60;
+  let todaysIndex = 61;
 
   // MARK: Locations
 
@@ -1263,16 +1277,6 @@ test();
     {
       color: "n/a",
       destRect: circle(unit * clientPortion, unit, 2.75 * unit),
-      index: todaysIndex,
-    },
-    {
-      color: "n/a",
-      destRect: circle(unit * clientPortion, 16 / 2, 9 / 2),
-      index: todaysIndex,
-    },
-    {
-      color: "n/a",
-      destRect: circle(unit * clientPortion, 16 - unit, 1.25 * unit),
       index: todaysIndex,
     },
   ];
@@ -1692,11 +1696,13 @@ test();
     light: string;
     dark: string;
   }[] = [
+    { light: "orange", dark: "darkOrange" },
+    { light: "Fuchsia ", dark: "purple" },
+    { light: "var(--pastel-coral)", dark: "var(--darker-coral)" },
+    { light: "var(--pastel-pink)", dark: "var(--darker-pink)" },
     { light: "red", dark: "darkRed" },
     { light: "white", dark: "black" },
     { light: "var(--blue)", dark: "darkblue" },
-    { light: "orange", dark: "darkOrange" },
-    { light: "Fuchsia ", dark: "purple" },
   ];
   for (const [base, fourier, { light, dark }, index] of zip(
     baseInfo,
@@ -1763,7 +1769,124 @@ test();
     console.log(fourierAnimation);
   }
 
-  {
+  if (true) {
+    // MARK: New Frequency Spinners.
+    function make5(options: {
+      centerX: number;
+      centerY: number;
+      radius: number;
+    }) {
+      return colorPairs
+        .map(({ dark }) => new MotionBlurSpinner({ ...options, color: dark }))
+        .reverse();
+    }
+    const fullAnimation = assertClass(animations[0], FourierAnimation);
+    const timer = fullAnimation.timer;
+    const bins = fullAnimation.base.bins();
+    type Info = { term: FourierTerm; startIndex: number };
+    const smallGroupInfo = new Array<Info>();
+    const largeGroupInfo = new Array<Info>();
+    bins.forEach((terms, startIndex) => {
+      const target = terms.length < 7 ? smallGroupInfo : largeGroupInfo;
+      terms.forEach((term) => {
+        target.push({ term, startIndex });
+      });
+    });
+    [smallGroupInfo, largeGroupInfo].forEach((infoList) => {
+      infoList.sort(
+        (a, b) => Math.abs(a.term.frequency) - Math.abs(b.term.frequency)
+      );
+    });
+    console.log({ smallGroupInfo, largeGroupInfo });
+    // Expecting about 21 terms in smallGroupInfo
+    // and 1003 terms in largeGroupInfo
+    const smallGroupSpinners = [
+      { centerX: 2, centerY: 2, radius: 1 },
+      { centerX: 5, centerY: 2, radius: 1 },
+      { centerX: 8, centerY: 2, radius: 1 },
+      { centerX: 11, centerY: 2, radius: 1 },
+      { centerX: 14, centerY: 2, radius: 1 },
+    ].map((options) => make5(options));
+    const largeGroupSpinners: typeof smallGroupSpinners = [];
+    {
+      const left = 6;
+      const right = 16;
+      const across = 10;
+      const xIncrement = (right - left) / across;
+      const top = 4;
+      const bottom = 9;
+      const down = 5;
+      const yIncrement = (bottom - top) / down;
+      for (let y = 0; y < down; y++) {
+        for (let x = 0; x < across; x++) {
+          const centerX = left + x * xIncrement;
+          const centerY = top + y * yIncrement;
+          const radius = 1 / 3;
+          const options = { centerX, centerY, radius };
+          const spinners = make5(options);
+          largeGroupSpinners.push(spinners);
+        }
+      }
+    }
+    function spinnersInOrder(
+      asGroups: MotionBlurSpinner[][]
+    ): MotionBlurSpinner[] {
+      const result = new Array<MotionBlurSpinner>();
+      while (true) {
+        const donarGroup = asGroups.shift();
+        if (!donarGroup) {
+          break;
+        }
+        const nextSpinner = donarGroup.shift();
+        if (nextSpinner) {
+          result.push(nextSpinner);
+          asGroups.push(donarGroup);
+        }
+      }
+      return result;
+    }
+    const runnable = new Array<{
+      term: FourierTerm;
+      spinner: MotionBlurSpinner;
+      startIndex: number;
+    }>();
+    for (const [{ term, startIndex }, spinner] of zip(
+      smallGroupInfo,
+      spinnersInOrder(smallGroupSpinners)
+    )) {
+      runnable.push({ term, spinner, startIndex });
+    }
+    for (const [{ term, startIndex }, spinner] of zip(
+      largeGroupInfo,
+      spinnersInOrder(largeGroupSpinners)
+    )) {
+      runnable.push({ term, spinner, startIndex });
+    }
+
+    if (false) {
+      //test it
+      runnable.forEach(({ term, spinner }) => {
+        spinner.showRadians(term.phase);
+      });
+    }
+    function show(timeInMS: number) {
+      const { index, t } = timer.get(timeInMS);
+      const cutoff = t >= 1 ? -1 : index;
+      const progressInRadians = t * FULL_CIRCLE;
+      runnable.forEach(({ term, spinner, startIndex }) => {
+        if (startIndex > cutoff) {
+          spinner.hide();
+        } else {
+          const angleToDisplay =
+            progressInRadians * term.frequency + term.phase;
+          spinner.showRadians(angleToDisplay);
+        }
+      });
+    }
+    animations.push({ show });
+  }
+
+  if (false) {
     // MARK: Frequency Spinners.
     // TODO bins class.
     //   Extract it from moveSmallOnesToTheFront().
@@ -1775,16 +1898,7 @@ test();
     const fullAnimation = assertClass(animations.at(2), FourierAnimation);
     const timer = fullAnimation.timer;
 
-    const bins = new Array<FourierTerm[]>();
-    const { keyframes, terms } = fullAnimation.base;
-    keyframes.forEach((termEndIndex, binEndIndex) => {
-      const binStartIndex = binEndIndex - 1;
-      if (binStartIndex >= 0) {
-        const termStartIndex = keyframes[binStartIndex];
-        const bin = terms.slice(termStartIndex, termEndIndex);
-        bins.push(bin);
-      }
-    });
+    const bins = fullAnimation.base.bins();
     console.log(bins);
     function show(timeInMS: number) {
       const { index, t } = timer.get(timeInMS);

@@ -102,6 +102,10 @@ g.frequencies[data-frequencies="red"] {
   display: none;
 }
 
+[data-frequencies="red"] {
+  display: none;
+}
+
 text.background {
   stroke-width: 0.7;
   stroke: rgba(255, 255, 255, 0);
@@ -130,30 +134,27 @@ path[data-live] {
 
 path[data-live].outline {
   stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1.75);
-  stroke: black;
+  stroke: none;
 }
 
 path[data-live].offset-blur {
   --angle: 40deg;
   --offset: calc(
-    var(--base-stroke-width) / var(--path-scale) * 4
+    var(--base-stroke-width) / var(--path-scale) * 9
   ); /* Reduced from 9 to a realistic offset */
   transform: translate(
     calc(var(--offset) * cos(var(--angle))),
     calc(var(--offset) * sin(var(--angle)))
   );
   stroke-width: calc(
-    var(--base-stroke-width) / var(--path-scale) * 3
+    var(--base-stroke-width) / var(--path-scale) * 5
   ); /* Slightly reduced for proportion */
-  stroke: var(--blur-color);
-  filter: blur(
-    calc(var(--base-stroke-width) / var(--path-scale) * 1)
-  ); /* Moderate blur */
+  stroke: color(from var(--blur-color) srgb r g b / 0.33);
   /*  mask: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.3) 100%); */ /* Natural fade */
 }
 text.chapter {
   font-size: 0.5px;
-  filter: drop-shadow(0px 0px 0.3px white);
+  filter: drop-shadow(0px 0px 0.3px black);
 }
 
 #lava-lamp-text text {

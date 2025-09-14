@@ -1239,7 +1239,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 59;
+  let todaysIndex = 60;
 
   // MARK: Locations
 
@@ -1448,9 +1448,9 @@ test();
       while (normalBins.length < desiredBinCount - 1) {
         let binSize: number;
         if (normalBins.length < 6) {
-          binSize = 1;
-        } else {
           binSize = 2;
+        } else {
+          binSize = 3;
         }
         const newBin = terms.splice(0, binSize);
         if (newBin.length != binSize) {

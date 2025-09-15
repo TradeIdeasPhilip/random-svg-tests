@@ -1809,18 +1809,18 @@ test();
     ].map((options) => make5(options));
     const largeGroupSpinners: typeof smallGroupSpinners = [];
     {
-      const left = 6;
-      const right = 16;
-      const across = 10;
+      const left = 6 - 0.5;
+      const right = 16 - 0.25;
+      const across = 7;
       const xIncrement = (right - left) / across;
-      const top = 4;
-      const bottom = 9;
-      const down = 5;
+      const top = 4 - 0.5;
+      const bottom = 9 - 0.25;
+      const down = 3;
       const yIncrement = (bottom - top) / down;
       for (let y = 0; y < down; y++) {
         for (let x = 0; x < across; x++) {
-          const centerX = left + x * xIncrement;
-          const centerY = top + y * yIncrement;
+          const centerX = left + (x + 0.5) * xIncrement;
+          const centerY = top + (y + 0.5) * yIncrement;
           const radius = 1 / 3;
           const options = { centerX, centerY, radius };
           const spinners = make5(options);

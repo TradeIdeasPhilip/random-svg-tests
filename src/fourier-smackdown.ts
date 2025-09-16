@@ -1253,7 +1253,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 61;
+  let todaysIndex = 62;
 
   // MARK: Locations
 
@@ -1266,7 +1266,7 @@ test();
   }
 
   const unit = 9 / 4;
-  const clientPortion = 0.8;
+  const clientPortion = 0.65;
 
   const baseInfo: {
     color: string;
@@ -1279,7 +1279,47 @@ test();
       destRect: circle(unit * clientPortion, unit, 2.75 * unit),
       index: todaysIndex,
     },
+    {
+      color: "n/a",
+      destRect: circle(
+        unit * clientPortion,
+        (unit + 16 / 2) / 2,
+        9 - 2.75 * unit
+      ),
+      index: todaysIndex,
+    },
+    {
+      color: "n/a",
+      destRect: circle(unit * clientPortion, 16 / 2, 2.75 * unit),
+      index: todaysIndex,
+    },
+    {
+      color: "n/a",
+      destRect: circle(
+        unit * clientPortion,
+        (16 - unit + 16 / 2) / 2,
+        9 - 2.75 * unit
+      ),
+      index: todaysIndex,
+    },
+    {
+      color: "n/a",
+      destRect: circle(unit * clientPortion, 16 - unit, 2.75 * unit),
+      index: todaysIndex,
+    },
   ];
+  const layoutInfo = {
+    radius: unit * clientPortion,
+    cx: [
+      unit,
+      (unit + 16 / 2) / 2,
+      16 / 2,
+      (16 - unit + 16 / 2) / 2,
+      16 - unit,
+    ],
+    cy: [9 - 2.75 * unit, 2.75 * unit],
+  };
+  console.log(layoutInfo);
 
   function showIndex(
     index: number,
@@ -1692,22 +1732,10 @@ test();
   const foregroundG = selectorQuery("g#foreground", SVGGElement);
   const chapterList = getById("chapterList", SVGTextElement);
   const lastIndex = baseInfo.length - 1;
-  const altColorPairs: {
-    light: string;
-    dark: string;
-  }[] = [
-    { light: "orange", dark: "darkOrange" },
-    { light: "Fuchsia ", dark: "purple" },
-    { light: "var(--pastel-coral)", dark: "var(--darker-coral)" },
-    { light: "var(--pastel-pink)", dark: "var(--darker-pink)" },
-    { light: "red", dark: "darkRed" },
-    { light: "white", dark: "black" },
-    { light: "var(--blue)", dark: "darkblue" },
-  ];
   for (const [base, fourier, { light, dark }, index] of zip(
     baseInfo,
     fourierInfo,
-    altColorPairs,
+    colorPairs,
     count()
   )) {
     if (false) {
@@ -1769,17 +1797,71 @@ test();
     console.log(fourierAnimation);
   }
 
+  /**
+   *
+   * @param options
+   * @returns A list of 5 spinner objects.
+   * The first in the list is on the top of the z-order.
+   * The colors come from the list of pastels.
+   */
+  function make5(options: {
+    centerX: number;
+    centerY: number;
+    radius: number;
+  }) {
+    return colorPairs
+      .map(({ dark }) => new MotionBlurSpinner({ ...options, color: dark }))
+      .reverse();
+  }
+
   if (true) {
-    // MARK: New Frequency Spinners.
-    function make5(options: {
-      centerX: number;
-      centerY: number;
-      radius: number;
-    }) {
-      return colorPairs
-        .map(({ dark }) => new MotionBlurSpinner({ ...options, color: dark }))
-        .reverse();
+    // MARK: 10 Frequency Spinners.
+    const radius = layoutInfo.radius / 4;
+    const cx = layoutInfo.cx;
+    const cy = layoutInfo.cy;
+    const yOffset = radius * 1.5;
+    const binsOfSpinners: MotionBlurSpinner[][] = [];
+    [-1, +1].forEach((row) => {
+      const centerY = cy[0] + row * yOffset;
+      [cx[0], cx[2], cx[4]].forEach((centerX) => {
+        binsOfSpinners.push(make5({ centerX, centerY, radius }));
+      });
+    });
+    [-1, +1].forEach((row) => {
+      const centerY = cy[1] + row * yOffset;
+      [cx[1], cx[3]].forEach((centerX) => {
+        binsOfSpinners.push(make5({ centerX, centerY, radius }));
+      });
+    });
+    if (binsOfSpinners.length != 10) {
+      throw new Error("wtf");
     }
+    const fullAnimation = assertClass(animations[0], FourierAnimation);
+    const timer = fullAnimation.timer;
+    const bins = fullAnimation.base.bins();
+    function show(timeInMS: number) {
+      const { index, t } = timer.get(timeInMS);
+      const cutoff = t >= 1 ? -1 : index;
+      const progressInRadians = t * FULL_CIRCLE;
+      for (const [bin, spinners, index] of zip(bins, binsOfSpinners, count())) {
+        if (index > cutoff) {
+          spinners.forEach((spinner) => {
+            spinner.hide();
+          });
+        } else {
+          for (const [term, spinner] of zip(bin, spinners)) {
+            const angleToDisplay =
+              progressInRadians * term.frequency + term.phase;
+            spinner.showRadians(angleToDisplay);
+          }
+        }
+      }
+    }
+    animations.push({ show });
+  }
+
+  if (false) {
+    // MARK: New Frequency Spinners.
     const fullAnimation = assertClass(animations[0], FourierAnimation);
     const timer = fullAnimation.timer;
     const bins = fullAnimation.base.bins();

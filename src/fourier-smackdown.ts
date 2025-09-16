@@ -768,7 +768,9 @@ function initScreenCapture(script: unknown) {
   return {
     source: "fourier-smackdown.ts",
     script,
-    seconds: 70, //+20 /* Add 20 seconds past the main action for my YouTube end screen */,
+    seconds:
+      70 +
+      20 /* Add 20 seconds past the main action for my YouTube end screen */,
     devicePixelRatio,
   };
 }
@@ -1253,7 +1255,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 62;
+  let todaysIndex = 63;
 
   // MARK: Locations
 
@@ -1492,9 +1494,9 @@ test();
       while (normalBins.length < desiredBinCount - 1) {
         let binSize: number;
         if (normalBins.length < 6) {
-          binSize = 2;
+          binSize = 1;
         } else {
-          binSize = 3;
+          binSize = 2;
         }
         const newBin = terms.splice(0, binSize);
         if (newBin.length != binSize) {
@@ -1731,11 +1733,21 @@ test();
   const animations = new Array<Showable>();
   const foregroundG = selectorQuery("g#foreground", SVGGElement);
   const chapterList = getById("chapterList", SVGTextElement);
+  const altColorPairs: {
+    light: string;
+    dark: string;
+  }[] = [
+    { light: "HotPink", dark: "red" },
+    { light: "white", dark: "gray" },
+    { light: "var(--blue)", dark: "blue" },
+    { light: "orange", dark: "darkOrange" },
+    { light: "Fuchsia ", dark: "DarkViolet" },
+  ];
   const lastIndex = baseInfo.length - 1;
   for (const [base, fourier, { light, dark }, index] of zip(
     baseInfo,
     fourierInfo,
-    colorPairs,
+    altColorPairs,
     count()
   )) {
     if (false) {

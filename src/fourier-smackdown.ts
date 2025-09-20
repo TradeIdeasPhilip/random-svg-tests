@@ -13,7 +13,7 @@ import {
   termsToParametricFunction,
 } from "./fourier-shared";
 import "./fourier-smackdown.css";
-import { panAndZoom, panAndZoomString } from "./transforms";
+import { panAndZoom, panAndZoomString, rectToRect, rehome } from "./transforms";
 import { PathBuilder, PathCaliper, PathShape } from "./path-shape";
 import {
   assertClass,
@@ -24,12 +24,16 @@ import {
   LinearFunction,
   makeBoundedLinear,
   makeLinear,
+  parseFloatX,
   positiveModulo,
   Random,
   ReadOnlyRect,
   zip,
 } from "phil-lib/misc";
 import { ease, getMod } from "./utility";
+import { resizeFont } from "./letters-base";
+import { roundCursiveFont } from "./hershey-fonts/hershey-fonts";
+import { LetterLayoutInfo, TextLayout } from "./letters-more";
 
 /**
  * Color Scheme:
@@ -391,7 +395,7 @@ class Background {
     context.drawImage(this.#baselineNoise, 0, 0);
     // Scale with solid color using multiply
     const phases = [0, FULL_CIRCLE / 3, FULL_CIRCLE * (2 / 3)]; // 0°, 120°, 240°
-    const period = 7000;
+    const period = 8000;
     const t = (((timeInMs + 20000) % period) / period) * FULL_CIRCLE; // Normalize to [0, 2π]
     const [r, g, b] = phases.map((phase) =>
       this.#brightnessRange(Math.sin(t + phase))
@@ -769,7 +773,7 @@ function initScreenCapture(script: unknown) {
     source: "fourier-smackdown.ts",
     script,
     seconds:
-      70 +
+      49 +
       20 /* Add 20 seconds past the main action for my YouTube end screen */,
     devicePixelRatio,
   };
@@ -1255,7 +1259,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 63;
+  let todaysIndex = 65;
 
   // MARK: Locations
 
@@ -1278,35 +1282,7 @@ test();
   }[] = [
     {
       color: "n/a",
-      destRect: circle(unit * clientPortion, unit, 2.75 * unit),
-      index: todaysIndex,
-    },
-    {
-      color: "n/a",
-      destRect: circle(
-        unit * clientPortion,
-        (unit + 16 / 2) / 2,
-        9 - 2.75 * unit
-      ),
-      index: todaysIndex,
-    },
-    {
-      color: "n/a",
-      destRect: circle(unit * clientPortion, 16 / 2, 2.75 * unit),
-      index: todaysIndex,
-    },
-    {
-      color: "n/a",
-      destRect: circle(
-        unit * clientPortion,
-        (16 - unit + 16 / 2) / 2,
-        9 - 2.75 * unit
-      ),
-      index: todaysIndex,
-    },
-    {
-      color: "n/a",
-      destRect: circle(unit * clientPortion, 16 - unit, 2.75 * unit),
+      destRect: circle(4, 8, 4.5),
       index: todaysIndex,
     },
   ];
@@ -1490,13 +1466,13 @@ test();
       const originalNumberOfTerms = terms.length;
       const normalBins: FourierTerm[][] = [];
       // Move the common terms to the front.
-      const desiredBinCount = 10;
+      const desiredBinCount = 7; //10;
       while (normalBins.length < desiredBinCount - 1) {
         let binSize: number;
         if (normalBins.length < 6) {
           binSize = 1;
         } else {
-          binSize = 2;
+          binSize = 3;
         }
         const newBin = terms.splice(0, binSize);
         if (newBin.length != binSize) {
@@ -1737,6 +1713,7 @@ test();
     light: string;
     dark: string;
   }[] = [
+    { light: "Magenta", dark: "black" },
     { light: "HotPink", dark: "red" },
     { light: "white", dark: "gray" },
     { light: "var(--blue)", dark: "blue" },
@@ -1809,6 +1786,134 @@ test();
     console.log(fourierAnimation);
   }
 
+  {
+    const canvas = getById("cga", HTMLCanvasElement);
+    // Background:
+    const context = canvas.getContext("2d")!;
+    // Map to 16x9
+    // But the edges will be cut off, it's really 12x9
+    // But the middle 12.
+    // Note that we are explicitly not maintaining the aspect ratio.
+    // Old pixels weren't square.
+    const srcRect: ReadOnlyRect = { x: 2, y: 0, width: 12, height: 9 };
+    const destRect: ReadOnlyRect = {
+      x: 0,
+      y: 0,
+      width: canvas.width,
+      height: canvas.height,
+    };
+    const baseTransform = rectToRect(srcRect, destRect);
+    const baseTransformMatrix = new DOMMatrix(baseTransform.transformString);
+    function resetBackground() {
+      context.reset();
+      context.fillStyle = "cyan";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    const mainSVG = getById("main", SVGSVGElement);
+    const mainPath = assertNonNullable(
+      selectorQueryAll("[data-live-index] path", SVGPathElement).at(-1)
+    );
+    const shadowPath = selectorQuery(
+      "[data-live-index] path.offset-blur",
+      SVGPathElement
+    );
+    /*
+    // Shadow:
+    context.fillStyle = "white";
+    context.filter = "url(#checkerboard-alpha)";
+    context.beginPath();
+    context.ellipse(8.25, 4.75, 4, 4, 0, 0, FULL_CIRCLE, false);
+    context.fill();
+    //context.fillRect(0, 0, canvas.width, canvas.height);
+    // Foreground:
+    context.fillStyle = "magenta";
+    context.filter = "url(#anti-anti-alias)";
+    context.beginPath();
+    context.ellipse(8, 4.5, 4, 4, 0, 0, FULL_CIRCLE, false);
+    context.fill();
+    */
+    const font = resizeFont(roundCursiveFont, 2);
+    const textLayout = new TextLayout(font);
+    const layoutInfo: LetterLayoutInfo[] = [];
+    layoutInfo.push(...textLayout.addText("Party", "left"));
+    textLayout.carriageReturn();
+    textLayout.lineFeed();
+    layoutInfo.push(...textLayout.addText(" like it’s"));
+    textLayout.carriageReturn();
+    textLayout.lineFeed();
+    layoutInfo.push(...textLayout.addText("  1983."));
+    const down = 1;
+    const left = 2.2;
+    let fullPathShape = PathShape.join(
+      layoutInfo.map((letter) => ({
+        shape: letter.description.shape,
+        Δx: letter.x + left,
+        Δy: letter.baseline + down,
+      }))
+    );
+    const lineTextParent = getById("line-text", SVGGElement);
+    const textElement = fullPathShape.makeElement(false);
+    const textPath = new Path2D(fullPathShape.rawPath);
+    lineTextParent.append(textElement);
+
+    const clipPathAnimation = canvas.animate(
+      [
+        {
+          clipPath: "rect(0% 100% 100% 0%)",
+          offset: 0,
+        },
+        {
+          clipPath: "rect(0% 100% 100% 100%)",
+          offset: 0.5,
+        },
+        {
+          clipPath: "rect(0% 0% 100% 0%)",
+          offset: 0.5,
+        },
+        {
+          clipPath: "rect(0% 100% 100% 0%)",
+          offset: 1,
+        },
+      ],
+      { duration: 9897, iterations: Infinity }
+    );
+    clipPathAnimation.pause();
+
+    function show(timeInMS: number) {
+      clipPathAnimation.currentTime = timeInMS;
+
+      const d = assertNonNullable(mainPath.getAttribute("d"));
+      const linePath = new Path2D(d);
+      function showPath(from: SVGPathElement, path: Path2D) {
+        const style = getComputedStyle(from);
+        const strokeWidth = style.strokeWidth;
+        const lineWidth = assertNonNullable(
+          parseFloatX(/^(.*)px$/.exec(strokeWidth)![1])
+        );
+        context.lineWidth = lineWidth;
+        context.lineCap = style.strokeLinecap as any;
+        // rehome can't be done in advance.  gave me the identity matrix for both when I tried.
+        // presumably getCTM() fails, but I didn't check.
+        const rehomed = rehome(from, mainSVG);
+        const transform = baseTransformMatrix.multiply(rehomed);
+        // I expect the final circle to fit in this rectangle perfectly.
+        context.setTransform(transform);
+        context.stroke(path);
+      }
+      resetBackground();
+      context.strokeStyle = "white";
+      context.filter = "url(#anti-anti-alias)";
+      showPath(textElement, textPath);
+      context.strokeStyle = "black";
+      context.filter = "url(#checkerboard-alpha)";
+      showPath(shadowPath, linePath);
+      context.strokeStyle = "magenta";
+      context.filter = "url(#anti-anti-alias)";
+      showPath(mainPath, linePath);
+    }
+    animations.push({ show });
+  }
+
   /**
    *
    * @param options
@@ -1826,7 +1931,7 @@ test();
       .reverse();
   }
 
-  if (true) {
+  if (false) {
     // MARK: 10 Frequency Spinners.
     const radius = layoutInfo.radius / 4;
     const cx = layoutInfo.cx;
@@ -2364,3 +2469,36 @@ test();
     */
   }
 }
+
+/**
+ * CGA \(320\times 200\) Mode Pixel Aspect Ratio
+ * The nominal pixel aspect ratio for CGA \(320\times 200\) mode is \(5:6\).
+ *  This means that each pixel is slightly taller than it is wide.
+ * This aspect ratio is cited in IBM's documentation, specifically in the BASIC \(1.10\) Reference.
+ *
+ * Aimed at 4k
+ * 3840 x 2160
+ *
+ * Each 80's pixel will be 2160 / 200 modern pixels tall.
+ * That's 10.8 pixels.  I'd rather us a integer.
+ * 10 pixels tall would leave an extra 160 modern pixels unused, 7.5%
+ * But then each 80's pixel would want to be 10 /6 * 5 = 8.3333 modern pixels across.
+ * The only way to get all integers would be to make each 80's pixel 6 x 5 in modern pixels.
+ * Height:  200*6 = 1200, 56% of what's available.
+ * Width: 320*5 = 1600, 42% of what's available, because cga is 4:3.
+ *
+ * Full size:
+ * Each 80's pixel takes 10.8 pixels (high) x 9 pixels (wide).
+ * Tell the css to grow it in a pixelated format.
+ * Let it figure out the fractions.
+ *
+ * Color palette:
+ * Mode 4, Palette 1, high intensity
+ * 0 – background, use black, #000000
+ * 11 – light cyan,  #00FFFF
+ * 13 – light magenta, #FF00FF
+ * 15 – white, #FFFFFF
+ *
+ * Use cyan for the background.  magenta for the foreground.  And transparent black for the shadow.
+ * If there's space, try writing the chapter number and/or adding a spinner in white.
+ */

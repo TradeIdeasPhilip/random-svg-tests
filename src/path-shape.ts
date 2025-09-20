@@ -1593,16 +1593,20 @@ export class PathShape {
   get cssPath() {
     return PathShape.cssifyPath(this.rawPath);
   }
-  makeElement() {
+  makeElement(useCss = true) {
     const pathElement = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "path"
     );
-    const cssPath = this.cssPath;
-    pathElement.style.d = cssPath;
-    if (pathElement.style.d == "") {
-      console.error(cssPath, pathElement);
-      throw new Error("wtf");
+    if (useCss) {
+      const cssPath = this.cssPath;
+      pathElement.style.d = cssPath;
+      if (pathElement.style.d == "") {
+        console.error(cssPath, pathElement);
+        throw new Error("wtf");
+      }
+    } else {
+      pathElement.setAttribute("d", this.rawPath);
     }
     return pathElement;
   }

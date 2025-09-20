@@ -102,7 +102,8 @@ g.frequencies[data-frequencies="red"] {
   display: none;
 }
 
-[data-frequencies="red"] {
+[data-frequencies="red"],
+#new-starfield {
   display: none;
 }
 
@@ -128,7 +129,7 @@ path[data-live] {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 1);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 5);
   stroke: var(--color);
 }
 
@@ -138,23 +139,26 @@ path[data-live].outline {
 }
 
 path[data-live].offset-blur {
-  --angle: 40deg;
+  --angle: 30deg;
   --offset: calc(
-    var(--base-stroke-width) / var(--path-scale) * 9
+    var(--base-stroke-width) / var(--path-scale) * 10
   ); /* Reduced from 9 to a realistic offset */
   transform: translate(
     calc(var(--offset) * cos(var(--angle))),
     calc(var(--offset) * sin(var(--angle)))
   );
   stroke-width: calc(
-    var(--base-stroke-width) / var(--path-scale) * 5
+    var(--base-stroke-width) / var(--path-scale) * 6
   ); /* Slightly reduced for proportion */
   stroke: color(from var(--blur-color) srgb r g b / 0.33);
   /*  mask: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.3) 100%); */ /* Natural fade */
 }
 text.chapter {
-  font-size: 0.5px;
+  font-size: 0.75px;
   filter: drop-shadow(0px 0px 0.3px black);
+}
+#chapterList {
+  transform: rotate(-90deg) translate(-8.75px, 6.75px);
 }
 
 #lava-lamp-text text {
@@ -219,4 +223,22 @@ body {
 
 [data-motion-blur-spinners] {
   --color: darkBlue;
+}
+
+canvas#cga {
+  position: absolute;
+  top: 0px;
+  left: calc(2 * var(--unit));
+  --height: calc(9 * var(--unit));
+  height: var(--height);
+  width: calc(4 / 3 * var(--height));
+  image-rendering: pixelated;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+
+#line-text path {
+  fill: none;
+  stroke: white;
+  stroke-linecap: round;
+  stroke-width: 0.25;
 }

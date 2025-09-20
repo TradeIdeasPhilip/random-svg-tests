@@ -4,14 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>👋 fourier-smackdown</title>
-    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತನಾಲ್-BVvd4Pgi.js"></script>
+    <script type="module" crossorigin src="./assets/ಇರ್ವತ್ತನಾಲ್-CJDTGOf2.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-BHUyxQfl.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-B8CxQsfg.js">
-    <link rel="modulepreload" crossorigin href="./assets/path-shape-DN4hoPl6.js">
-    <link rel="modulepreload" crossorigin href="./assets/fourier-shared-BneanVCb.js">
+    <link rel="modulepreload" crossorigin href="./assets/path-shape-DRm3ZWo5.js">
+    <link rel="modulepreload" crossorigin href="./assets/fourier-shared-BtRQghVL.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-Dgy6CMn3.js">
-    <link rel="stylesheet" crossorigin href="./assets/ಇರ್ವತ್ತನಾಲ್-DG-touyP.css">
+    <link rel="modulepreload" crossorigin href="./assets/letters-base-6l4xCC6y.js">
+    <link rel="modulepreload" crossorigin href="./assets/hershey-fonts-uaj_-gfn.js">
+    <link rel="modulepreload" crossorigin href="./assets/letters-more-C6AAduc2.js">
+    <link rel="stylesheet" crossorigin href="./assets/ಇರ್ವತ್ತನಾಲ್-B8C0mAeb.css">
   </head>
   <body>
     <canvas
@@ -33,6 +36,109 @@
       preserveAspectRatio="xMinYMin meet"
     >
       <defs>
+        <filter
+          id="anti-anti-alias"
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+          color-interpolation-filters="sRGB"
+        >
+          <feComponentTransfer>
+            <feFuncR type="identity" />
+            <feFuncG type="identity" />
+            <feFuncB type="identity" />
+            <feFuncA type="discrete" tableValues="0 1" />
+          </feComponentTransfer>
+        </filter>
+        <pattern
+          id="checkerboard"
+          width="2"
+          height="2"
+          patternUnits="userSpaceOnUse"
+        >
+          <rect x="0" y="0" width="1" height="1" fill="black" />
+          <rect x="1" y="1" width="1" height="1" fill="black" />
+        </pattern>
+        <filter
+          id="checkerboard-alpha-broken"
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+          color-interpolation-filters="sRGB"
+          filterUnits="userSpaceOnUse"
+        >
+          <feImage
+            xlink:href="#checkerboard"
+            width="2"
+            height="2"
+            result="pattern"
+          />
+          <!--         <feTile in="pattern" result="tiled" />
+          <feComposite
+            in="tiled"
+            in2="SourceGraphic"
+            operator="in"
+            result="checkerboard"
+          /> 
+          <feComponentTransfer in="checkerboard">
+            <feFuncR type="identity" />
+            <feFuncG type="identity" />
+            <feFuncB type="identity" />
+            <feFuncA type="discrete" tableValues="0 1" />
+          </feComponentTransfer>  -->
+        </filter>
+        <filter
+          id="checkerboard-alpha"
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+          color-interpolation-filters="sRGB"
+          filterUnits="userSpaceOnUse"
+        >
+          <!-- Create a 2x2 black pixel grid -->
+          <feFlood
+            flood-color="black"
+            flood-opacity="1"
+            x="0"
+            y="0"
+            width="1"
+            height="1"
+            result="pixel1"
+          />
+          <feFlood
+            flood-color="black"
+            flood-opacity="1"
+            x="1"
+            y="1"
+            width="1"
+            height="1"
+            result="pixel2"
+          />
+          <!-- Merge the two black pixels (other areas remain transparent) -->
+          <feMerge result="checkerboard">
+            <feMergeNode in="pixel1" />
+            <feMergeNode in="pixel2" />
+          </feMerge>
+          <!-- Tile the 2x2 checkerboard -->
+          <feTile in="checkerboard" result="tiled" />
+          <!-- Apply to source graphic's alpha -->
+          <feComposite
+            in="tiled"
+            in2="SourceGraphic"
+            operator="in"
+            result="dithered"
+          />
+          <!-- Anti-alias for pixelated effect -->
+          <feComponentTransfer in="dithered">
+            <feFuncR type="identity" />
+            <feFuncG type="identity" />
+            <feFuncB type="identity" />
+            <feFuncA type="discrete" tableValues="0 1" />
+          </feComponentTransfer>
+        </filter>
         <filter
           id="lava-lamp"
           color-interpolation-filters="sRGB"
@@ -465,11 +571,13 @@
         </g>
       </defs>
       <g id="panAndZoomMe">
+        <rect width="16" height="9" fill="black"></rect>
         <rect
           data-hide-background
-          width="16"
+          x="2"
+          width="12"
           height="9"
-          fill="url(#night-sky)"
+          fill="cyan"
         ></rect>
         <g id="new-starfield">
           <circle
@@ -480,6 +588,7 @@
             fill="url(#stellarGradient)"
           ></circle>
         </g>
+        <g id="line-text"></g>
         <g id="thumbnail-foreground" style="display: none">
           <text x="1" y="3.75" letter-spacing="0.2">
             <tspan>Abc</tspan>
@@ -568,11 +677,12 @@
             y="8.6"
             style="text-anchor: start; fill: white"
           >
-            #63 of 66
+            #65&nbsp; of&nbsp; 66
           </text>
         </g>
       </g>
     </svg>
     <div data-motion-blur-spinners></div>
+    <canvas id="cga" width="320" height="200"></canvas>
   </body>
 </html>

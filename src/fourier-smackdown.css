@@ -129,7 +129,7 @@ path[data-live] {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 5);
+  stroke-width: calc(var(--base-stroke-width) / var(--path-scale) * 4.5);
   stroke: var(--color);
 }
 
@@ -141,14 +141,14 @@ path[data-live].outline {
 path[data-live].offset-blur {
   --angle: 30deg;
   --offset: calc(
-    var(--base-stroke-width) / var(--path-scale) * 10
+    var(--base-stroke-width) / var(--path-scale) * 8
   ); /* Reduced from 9 to a realistic offset */
   transform: translate(
     calc(var(--offset) * cos(var(--angle))),
     calc(var(--offset) * sin(var(--angle)))
   );
   stroke-width: calc(
-    var(--base-stroke-width) / var(--path-scale) * 6
+    var(--base-stroke-width) / var(--path-scale) * 5
   ); /* Slightly reduced for proportion */
   stroke: color(from var(--blur-color) srgb r g b / 0.33);
   /*  mask: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.3) 100%); */ /* Natural fade */
@@ -240,5 +240,6 @@ canvas#cga {
   fill: none;
   stroke: white;
   stroke-linecap: round;
+  stroke-linejoin: round;
   stroke-width: 0.25;
 }

@@ -1259,7 +1259,7 @@ test();
 
   //let colorIndex = 7;
 
-  let todaysIndex = 65;
+  let todaysIndex = 64;
 
   // MARK: Locations
 
@@ -1282,7 +1282,12 @@ test();
   }[] = [
     {
       color: "n/a",
-      destRect: circle(4, 8, 4.5),
+      destRect: circle(2, 11.5, 2.5),
+      index: todaysIndex,
+    },
+    {
+      color: "n/a",
+      destRect: circle(2, 4.5, 6.6),
       index: todaysIndex,
     },
   ];
@@ -1714,6 +1719,7 @@ test();
     dark: string;
   }[] = [
     { light: "Magenta", dark: "black" },
+    { light: "Magenta", dark: "black" },
     { light: "HotPink", dark: "red" },
     { light: "white", dark: "gray" },
     { light: "var(--blue)", dark: "blue" },
@@ -1810,10 +1816,11 @@ test();
       context.fillRect(0, 0, canvas.width, canvas.height);
     }
     const mainSVG = getById("main", SVGSVGElement);
-    const mainPath = assertNonNullable(
-      selectorQueryAll("[data-live-index] path", SVGPathElement).at(-1)
+    const mainPaths = selectorQueryAll(
+      "[data-live-index] path.main",
+      SVGPathElement
     );
-    const shadowPath = selectorQuery(
+    const shadowPaths = selectorQueryAll(
       "[data-live-index] path.offset-blur",
       SVGPathElement
     );
@@ -1853,7 +1860,6 @@ test();
     );
     const lineTextParent = getById("line-text", SVGGElement);
     const textElement = fullPathShape.makeElement(false);
-    const textPath = new Path2D(fullPathShape.rawPath);
     lineTextParent.append(textElement);
 
     const clipPathAnimation = canvas.animate(
@@ -1882,9 +1888,9 @@ test();
     function show(timeInMS: number) {
       clipPathAnimation.currentTime = timeInMS;
 
-      const d = assertNonNullable(mainPath.getAttribute("d"));
-      const linePath = new Path2D(d);
-      function showPath(from: SVGPathElement, path: Path2D) {
+      function showPath(from: SVGPathElement) {
+        const d = assertNonNullable(from.getAttribute("d"));
+        const path = new Path2D(d);
         const style = getComputedStyle(from);
         const strokeWidth = style.strokeWidth;
         const lineWidth = assertNonNullable(
@@ -1892,6 +1898,7 @@ test();
         );
         context.lineWidth = lineWidth;
         context.lineCap = style.strokeLinecap as any;
+        context.lineJoin = style.strokeLinejoin as any;
         // rehome can't be done in advance.  gave me the identity matrix for both when I tried.
         // presumably getCTM() fails, but I didn't check.
         const rehomed = rehome(from, mainSVG);
@@ -1903,13 +1910,17 @@ test();
       resetBackground();
       context.strokeStyle = "white";
       context.filter = "url(#anti-anti-alias)";
-      showPath(textElement, textPath);
+      showPath(textElement);
       context.strokeStyle = "black";
       context.filter = "url(#checkerboard-alpha)";
-      showPath(shadowPath, linePath);
+      shadowPaths.forEach((shadowPath) => {
+        showPath(shadowPath);
+      });
       context.strokeStyle = "magenta";
       context.filter = "url(#anti-anti-alias)";
-      showPath(mainPath, linePath);
+      mainPaths.forEach((mainPath) => {
+        showPath(mainPath);
+      });
     }
     animations.push({ show });
   }

@@ -4,6 +4,7 @@ import {
   cursiveLetters,
   decoder,
   futuraLLetters,
+  indexOfQuestionMark,
   makeSmooth,
   roundCursiveFont,
 } from "./hershey-fonts/hershey-fonts";
@@ -63,6 +64,7 @@ cursiveLetters.forEach((cursiveLetter, index) => {
     { letter: futuraLLetter, summary: futuraLSummary },
   ].forEach(({ letter, summary }) => {
     const slop = 0;
+    const specialInstructions = index == indexOfQuestionMark ? "?" : undefined;
     samplesDiv.insertAdjacentHTML(
       "beforeend",
       `<svg viewBox="${summary.left}, ${summary.top}, ${
@@ -110,7 +112,7 @@ cursiveLetters.forEach((cursiveLetter, index) => {
       } L ${letter.rightSideBearing},${
         summary.bottom + slop
       }" /><path class="main" d="${
-        makeSmooth(letter.pathShape).rawPath
+        makeSmooth(letter.pathShape, specialInstructions).rawPath
       }"></path></svg>`
     );
   });
@@ -156,7 +158,7 @@ fixLetter("d", "ď");
 let fullMessage = "";
 
 //const layoutInfo = textLayout.addText("Like share and subscribe.","center");
-["Like", "shàre", "anď", "subsçribe"].forEach((word, index) => {
+["Like", "shàre", "anď", "subsçribe?"].forEach((word, index) => {
   const textLayout = new TextLayout(newFont);
   textLayout.rightMargin = 120;
   const layoutInfo = textLayout.addText(word, "center");

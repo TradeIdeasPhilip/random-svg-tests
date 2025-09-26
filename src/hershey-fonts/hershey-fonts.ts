@@ -108,10 +108,6 @@ export const futuraLLetters = futuraLCharacterDescriptions.map(
 // TODO similar with the capital Z in cursive.
 // In the debugger I clicked on segment 14 in the debugger, then I said merge with next.
 // Again, it looks better, but I don't know a rule.
-// TODO the ? is wrong.  The bottom segment of the top is short, but it should still be straight.
-// This breaks all of my heuristics.  I can't easily fix this without breaking other letters.
-// I think I'll need a more specific rule, maybe looking for this one letter!
-// This one is bad and can't be ignored.
 /**
  *
  * @param original
@@ -121,10 +117,8 @@ export const futuraLLetters = futuraLCharacterDescriptions.map(
  * This is good because the font often uses squares which should become circles.
  * @returns
  */
-export function makeSmooth(
-  original: PathShape,
-  angleCutoff = (FULL_CIRCLE / 4) * 1.01
-) {
+export function makeSmooth(original: PathShape, specialInstructions?: "?") {
+  const angleCutoff = (FULL_CIRCLE / 4) * 1.01;
   function makeSmoothConnected(originalCommands: readonly LCommand[]) {
     /**
      * Any L command longer than this is assumed to be straight.
@@ -275,14 +269,25 @@ export function makeSmooth(
         currentSegment = [];
       }
     }
+    if (specialInstructions === "?") {
+      debugger;
+    }
+
+    if (specialInstructions === "?" && currentSegment.length == 12) {
+      // Break the last segment of the top part of the ? into it's own piece.
+      // So it will be straight.
+      segments.push(currentSegment);
+      currentSegment = [];
+    }
+
     currentSegment.push(thisCommand);
   });
   if (currentSegment.length > 0) {
     segments.push(currentSegment);
   }
-  const segmentsWithCurves = segments.map((segment) =>
-    makeSmoothConnected(segment)
-  );
+  const segmentsWithCurves = segments.map((segment) => {
+    return makeSmoothConnected(segment);
+  });
   const result = new PathShape(segmentsWithCurves.flat());
   return result;
 }
@@ -325,6 +330,14 @@ export const decoder = [
   "~",
   "▮",
 ];
+export const indexOfQuestionMark = decoder.findIndex((value) => {
+  return value == "?";
+});
+if (decoder[indexOfQuestionMark] !== "?") {
+  throw new Error("wtf");
+}
+console.log("indexOfQuestionMark:", indexOfQuestionMark);
+("?");
 
 type RoundFontInputs = {
   readonly bottom: number;
@@ -364,7 +377,7 @@ function makeRoundFont(wholeFile: string, options: RoundFontInputs): Font {
       options.baseline
     );
     const roughShape = characterDescription.pathShape.transform(matrix);
-    const pathShape = makeSmooth(roughShape);
+    const pathShape = makeSmooth(roughShape, key == "?" ? "?" : undefined);
     const advance =
       characterDescription.rightSideBearing -
       characterDescription.leftSideBearing;

@@ -1,9 +1,4 @@
-import {
-  AnimationLoop,
-  getById,
-  selectorQuery,
-  selectorQueryAll,
-} from "phil-lib/client-misc";
+import { AnimationLoop, getById } from "phil-lib/client-misc";
 import "./style.css";
 import "./complex-fourier-series.css";
 import {
@@ -13,7 +8,12 @@ import {
   Point,
   QCommand,
 } from "./path-shape";
-import { makeTSplitter, makeTSplitterA } from "./utility";
+import {
+  makeTSplitter,
+  makeTSplitterA,
+  querySelector,
+  querySelectorAll,
+} from "./utility";
 import {
   assertClass,
   FIGURE_SPACE,
@@ -519,17 +519,17 @@ function panAndZoom(showThis: SVGGraphicsElement, inHere: SVGSVGElement) {
 class AnimateDistanceVsT {
   static readonly #instance = new this();
   readonly #svgElement = getById("distanceVsT", SVGSVGElement);
-  readonly #distanceCircle = selectorQuery(
+  readonly #distanceCircle = querySelector(
     "circle[data-distance]",
     SVGCircleElement,
     this.#svgElement
   );
-  readonly #pathElement = selectorQuery(
+  readonly #pathElement = querySelector(
     "path",
     SVGPathElement,
     this.#svgElement
   );
-  readonly #tCircle = selectorQuery("circle[data-t]", SVGCircleElement);
+  readonly #tCircle = querySelector("circle[data-t]", SVGCircleElement);
   private constructor() {
     new AnimationLoop((time) => {
       this.#distanceCircle.style.display = "none";
@@ -565,32 +565,32 @@ class AnimateRequestedVsReconstructed {
   readonly #svgElement = getById("requestedVsReconstructed", SVGSVGElement);
   readonly #requestedPath: SVGPathElement;
   readonly #reconstructedPaths: SVGPathElement[];
-  readonly #usingCircles = selectorQuery(
+  readonly #usingCircles = querySelector(
     "[data-using] [data-circles]",
     HTMLTableCellElement
   );
-  readonly #usingAmplitude = selectorQuery(
+  readonly #usingAmplitude = querySelector(
     "[data-using] [data-amplitude]",
     HTMLTableCellElement
   );
-  readonly #addingCircles = selectorQuery(
+  readonly #addingCircles = querySelector(
     "[data-adding] [data-circles]",
     HTMLTableCellElement
   );
-  readonly #addingAmplitude = selectorQuery(
+  readonly #addingAmplitude = querySelector(
     "[data-adding] [data-amplitude]",
     HTMLTableCellElement
   );
-  readonly #availableCircles = selectorQuery(
+  readonly #availableCircles = querySelector(
     "[data-available] [data-circles]",
     HTMLTableCellElement
   );
-  readonly #availableAmplitude = selectorQuery(
+  readonly #availableAmplitude = querySelector(
     "[data-available] [data-amplitude]",
     HTMLTableCellElement
   );
   private constructor() {
-    [this.#requestedPath, ...this.#reconstructedPaths] = selectorQueryAll(
+    [this.#requestedPath, ...this.#reconstructedPaths] = querySelectorAll(
       "path",
       SVGPathElement,
       2,
@@ -1019,7 +1019,7 @@ function addAnotherInput() {
   }
 };
 
-selectorQuery("#inputsGroup button", HTMLButtonElement).addEventListener(
+querySelector("#inputsGroup button", HTMLButtonElement).addEventListener(
   "click",
   () => {
     addAnotherInput();
@@ -1132,11 +1132,11 @@ addAnotherInput();
       if (index > 0) {
         codeSamplesHolder.insertAdjacentHTML("beforeend", template);
         const entireDiv = codeSamplesHolder.lastElementChild!;
-        const nameSpan = selectorQuery("span", HTMLSpanElement, entireDiv);
+        const nameSpan = querySelector("span", HTMLSpanElement, entireDiv);
         nameSpan.innerText = sample.name;
-        const codePre = selectorQuery("pre", HTMLPreElement, entireDiv);
+        const codePre = querySelector("pre", HTMLPreElement, entireDiv);
         codePre.innerText = sample.code;
-        const button = selectorQuery("button", HTMLButtonElement, entireDiv);
+        const button = querySelector("button", HTMLButtonElement, entireDiv);
         button.addEventListener("click", () => {
           sourceTextArea.value = sample.code;
           doItSoon();

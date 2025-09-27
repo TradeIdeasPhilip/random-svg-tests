@@ -1,4 +1,4 @@
-import { getById, selectorQueryAll } from "phil-lib/client-misc";
+import { getById } from "phil-lib/client-misc";
 import "./estimate-tangent-line.css";
 import {
   assertClass,
@@ -8,7 +8,7 @@ import {
   makeLinear,
   polarToRectangular,
 } from "phil-lib/misc";
-import { assertValidT, makeTSplitter } from "./utility";
+import { assertValidT, makeTSplitter, querySelectorAll } from "./utility";
 
 const mainSvg = getById("main", SVGSVGElement);
 const legend = getById("legend", SVGGElement);
@@ -26,7 +26,7 @@ const timeInput = getById("time", HTMLInputElement);
   bottom.classList.add("border");
 }
 
-const precisionIssuesText = selectorQueryAll(
+const precisionIssuesText = querySelectorAll(
   "[data-precisionIssues]",
   SVGTextElement,
   2,
@@ -231,7 +231,7 @@ function setScript(script: unknown) {
 {
   const updateTime = () => showFrame(timeInput.valueAsNumber);
   const updateScript = () => {
-    const newScript = selectorQueryAll(
+    const newScript = querySelectorAll(
       'input[name="script"]:checked',
       HTMLInputElement,
       1,
@@ -242,7 +242,7 @@ function setScript(script: unknown) {
   };
   updateScript();
   timeInput.addEventListener("input", updateTime);
-  selectorQueryAll('input[name="script"]', HTMLInputElement, 2).forEach(
+  querySelectorAll('input[name="script"]', HTMLInputElement, 2).forEach(
     (element) => element.addEventListener("click", updateScript)
   );
 }

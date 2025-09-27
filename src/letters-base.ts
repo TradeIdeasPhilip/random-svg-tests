@@ -161,3 +161,43 @@ export function describeFont(font: Font) {
   });
   return { normal, special };
 }
+
+/**
+ * Export a font as a simple JSON-able object.
+ *
+ * This is mostly aimed at my new graphics library and the Hershey fonts.
+ * https://github.com/TradeIdeasPhilip/handwriting-effect/tree/master/src/glib#g-lib
+ * There is no reason to decode and recreate those fonts the way we do every time I might want to use them.
+ * Instead, I build and test those fonts here in random-svg-tests, and export a file that doesn't need much work or magic to decode.
+ *
+ * Notice that resizeFont() will work perfectly on the Hershey fonts.
+ *
+ * makeLineFont() actually returns different things depending on its input, and resizeFont() is not enough to fix it.
+ * So I copied the entire makeLineFont() function to the new library, quirks and all.
+ * @param font To be exported.
+ * @returns A JSON friendly object with enough information to rebuild this font.
+ */
+export function fontToJSON(font: Font) {
+  const fontMetrics = (font.get("0") ?? pickAny(font))?.fontMetrics;
+  if (!fontMetrics) {
+    throw new Error("wtf");
+  }
+  const { top, bottom, spaceWidth, strokeWidth, defaultKerning, mHeight } =
+    fontMetrics;
+  const letters: { key: string; d: string; advance: number }[] = Array.from(
+    font,
+    ([key, descriptionOfLetter]) => {
+      const { d, advance } = descriptionOfLetter;
+      return { key, d, advance };
+    }
+  );
+  return {
+    top,
+    bottom,
+    spaceWidth,
+    strokeWidth,
+    kerning: defaultKerning,
+    mHeight,
+    letters,
+  };
+}

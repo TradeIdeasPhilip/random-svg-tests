@@ -1,11 +1,74 @@
 import {
   angleBetween,
+  assertClass,
   assertFinite,
   makeBoundedLinear,
   parseIntX,
   positiveModulo,
   sum,
 } from "phil-lib/misc";
+
+// TODO Mark selectorQuery() and selectorQueryAll() as deprecated, in favor of these.
+// I created the previously named versions by mistake.  I wasn't paying attention.
+
+/**
+ * This is a wrapper around `document.querySelectorAll()`.
+ * This is analogous to `getById()`.
+ *
+ * This includes a lot of assertions.
+ * These have good error messages aimed at a developer.
+ * The assumption is that you will run this very early in the main program and store the results in a constant.
+ * If there is a problem we want to catch it ASAP.
+ *
+ * You can set the min and max number of elements.
+ * That's another thing that's good to check early.
+ * The default range is 1 - Infinity.
+ * Set `min` to 0 to completely disable this test.
+ *
+ * @param selector What you are looking for.  E.g. `"[data-precisionIssues]"`
+ * @param ty The expected type of the items.  E.g. `SVGTextElement`
+ * @param min The minimum number of items allowed.  Defaults to 1.
+ * @param max The maximum number of items allowed.  Defaults to Infinity.
+ * @returns An array containing all of the objects that matches the selector.
+ * @throws If we don't get the right number of objects or if any of the objects have the wrong type.
+ */
+export function querySelectorAll<T extends Element>(
+  selector: string,
+  ty: { new (): T },
+  min = 1,
+  max = Infinity,
+  start: Pick<Document, "querySelectorAll"> = document
+): readonly T[] {
+  const result: T[] = [];
+  start.querySelectorAll(selector).forEach((element) => {
+    result.push(assertClass(element, ty));
+  });
+  if (result.length < min || result.length > max) {
+    throw new Error(
+      `Expecting "${selector}" to return [${min} - ${max}] instances of ${ty.name}, found ${result.length}.`
+    );
+  }
+  return result;
+}
+
+/**
+ * This is a wrapper around `document.querySelector()`.
+ *
+ * This looks for elements matching the query string.
+ * This ensures that exactly one element matches the query string, and that element has the expected type.
+ * @param selector What to search for.  E.g. `"#main p:first-child"`
+ * @param ty The expected type.  E.g. `HTMLParagraphElement`
+ * @param start Where to look for the element.  Defaults to `window.document`.
+ * @returns The new element.
+ * @throws If we don't find the object, we find multiple matching objects or we find an object of the wrong type.
+ */
+export function querySelector<T extends Element>(
+  selector: string,
+  ty: { new (): T },
+  start: Pick<Document, "querySelectorAll"> = document
+): T {
+  return querySelectorAll(selector, ty, 1, 1, start)[0];
+}
 
 export function averageAngle(angle1: number, angle2: number) {
   const between = angleBetween(angle1, angle2);

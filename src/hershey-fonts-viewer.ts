@@ -7,10 +7,13 @@ import {
   indexOfQuestionMark,
   makeSmooth,
   roundCursiveFont,
+  roundFuturaLFont,
 } from "./hershey-fonts/hershey-fonts";
-import { getById } from "phil-lib/client-misc";
+import { download, getById } from "phil-lib/client-misc";
 import { TextLayout } from "./letters-more";
 import { PathShape } from "./path-shape";
+import { querySelectorAll } from "./utility";
+import { Font, fontToJSON } from "./letters-base";
 
 const samplesDiv = getById("samples", HTMLDivElement);
 
@@ -158,7 +161,7 @@ fixLetter("d", "ď");
 let fullMessage = "";
 
 //const layoutInfo = textLayout.addText("Like share and subscribe.","center");
-["Like", "shàre", "anď", "subsçribe?"].forEach((word, index) => {
+["Like", "shàre", "anď", "subsçribe"].forEach((word, index) => {
   const textLayout = new TextLayout(newFont);
   textLayout.rightMargin = 120;
   const layoutInfo = textLayout.addText(word, "center");
@@ -185,6 +188,30 @@ layoutInfo.forEach(letterInfo => {
   convertedSvg.appendChild(element);
 });
 */
+
+querySelectorAll("button[data-download-font]", HTMLButtonElement).forEach(
+  (button) => {
+    const fontName = button.dataset.downloadFont;
+    let font: Font;
+    switch (fontName) {
+      case "Cursive": {
+        font = roundCursiveFont;
+        break;
+      }
+      case "Futura L": {
+        font = roundFuturaLFont;
+        break;
+      }
+      default: {
+        throw new Error("wtf");
+      }
+    }
+    const asJSON = JSON.stringify(fontToJSON(font));
+    button.addEventListener("click", () => {
+      download(`${fontName}.json`, asJSON);
+    });
+  }
+);
 
 /**
  * TODO

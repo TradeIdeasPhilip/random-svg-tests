@@ -1,7 +1,7 @@
 import "./style.css";
 import "./dx.css";
-import { getById, selectorQueryAll } from "phil-lib/client-misc";
-import { GetFrameNumber } from "./utility";
+import { getById } from "phil-lib/client-misc";
+import { GetFrameNumber, querySelectorAll } from "./utility";
 import {
   assertFinite,
   FULL_CIRCLE,
@@ -30,7 +30,7 @@ const dxSizeInput = getById("dxSize", HTMLInputElement);
   updateFromInput();
 }
 
-const colorStops = selectorQueryAll(
+const colorStops = querySelectorAll(
   "#radialGradient stop",
   SVGStopElement,
   2,
@@ -74,7 +74,7 @@ const colorInput = getById("color", HTMLInputElement);
 
 function setDxSize(newSize: number) {
   document.body.style.setProperty("--dx-size", `${newSize}px`);
-  selectorQueryAll(
+  querySelectorAll(
     '[data-equation="1"] .big-change-stroke',
     SVGLineElement,
     2,
@@ -84,7 +84,7 @@ function setDxSize(newSize: number) {
     const to = from + newSize;
     line.x2.baseVal.value = to;
   });
-  selectorQueryAll("rect[data-animate]", SVGRectElement).forEach(
+  querySelectorAll("rect[data-animate]", SVGRectElement).forEach(
     (rectElement) => {
       let adjustWidth = false;
       let adjustHeight = false;

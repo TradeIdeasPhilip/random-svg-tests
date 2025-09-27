@@ -1,11 +1,8 @@
 import "./style.css";
 import "./bug-splat.css";
-import {
-  AnimationLoop,
-  selectorQuery,
-  selectorQueryAll,
-} from "phil-lib/client-misc";
+import { AnimationLoop } from "phil-lib/client-misc";
 import { LinearFunction, makeLinear } from "phil-lib/misc";
+import { querySelector, querySelectorAll } from "./utility";
 
 // See result at:  https://www.youtube.com/watch?v=BgSACVlGmbg
 
@@ -21,7 +18,7 @@ function initScreenCapture(script: unknown) {
   };
 }
 
-const circleElement = selectorQuery("circle", SVGCircleElement);
+const circleElement = querySelector("circle", SVGCircleElement);
 
 function updateScale(t: number) {
   const scale = 2 ** (t * 4);
@@ -29,9 +26,9 @@ function updateScale(t: number) {
   circleElement.style.transform = transform;
 }
 
-const turbulenceElement = selectorQuery("feturbulence", SVGFETurbulenceElement);
+const turbulenceElement = querySelector("feturbulence", SVGFETurbulenceElement);
 
-const textElements = selectorQueryAll("text", SVGTextElement, 2, 2);
+const textElements = querySelectorAll("text", SVGTextElement, 2, 2);
 
 function setNumOctaves(numOctaves: number) {
   turbulenceElement.numOctaves.baseVal = numOctaves;

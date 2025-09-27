@@ -1,28 +1,24 @@
 import { FULL_CIRCLE, makeLinear } from "phil-lib/misc";
 import "./background.css";
-import {
-  AnimationLoop,
-  getById,
-  selectorQuery,
-  selectorQueryAll,
-} from "phil-lib/client-misc";
+import { AnimationLoop, getById } from "phil-lib/client-misc";
+import { querySelector, querySelectorAll } from "./utility";
 
 /**
  * This test shows how you can use noise similar to fourier-smackdown,
  * but without using a canvas.
- * 
+ *
  * I'm drawing an animated pattern very similar to the one in fourier-smackdown,
  * (I need to make them even closer, for a fair comparison.  TODO)
  * I'm paying more attention to the process to minimize the round-off errors.
  * The idea is that a single matrix multiply to put the noise into range is probably reasonable.
  * It seems promising, but not certain, to bring improvements.
- * 
+ *
  * I've also added some partial transparency using the `opacity` property.
  * The black line shows what happens when I use opacity on top of this changing background.
  * The middle background rectangle has the background noise and is partially transparent itself.
  * The idea is that the opacity is not subject to the same limitations as svg filters are,
  * and they are generally robust and easy to work with.
- * 
+ *
  * It's hard to say much from the transparency test so far.
  * It appears that things are changing very smoothly and without incident.
  * I probably wouldn't use this exact combination of effects.
@@ -32,13 +28,13 @@ import {
  * Maybe make a few key-frames, like the most extreme red, green or blue versions of the noise,
  * Then use transparency to interpolate between them.
  * This could make it easy to move from the primary colors theme to selected colors.
- * 
- * The orange gradient background looks great, 
+ *
+ * The orange gradient background looks great,
  * but is far too subtle to mean anything in this context.
  */
 
-const filter = selectorQuery("filter", SVGFilterElement);
-const turbulence = selectorQuery("feTurbulence", SVGFETurbulenceElement);
+const filter = querySelector("filter", SVGFilterElement);
+const turbulence = querySelector("feTurbulence", SVGFETurbulenceElement);
 const backgroundNoiseRect = getById("background-noise", SVGRectElement);
 const backgroundMultiplyRect = getById("background-multiply", SVGRectElement);
 
@@ -62,26 +58,26 @@ function incrementSeed() {
 }
 (window as any).incrementSeed = incrementSeed;
 
-const opacityAnimations = selectorQueryAll(
+const opacityAnimations = querySelectorAll(
   "[data-animate-opacity]",
   SVGElement
 );
 
-  const brightnessRange = makeLinear(
-    -1,
-    /* min value */ 0.2,
-    1,
-    /* max value */ 0.5
-  );
+const brightnessRange = makeLinear(
+  -1,
+  /* min value */ 0.2,
+  1,
+  /* max value */ 0.5
+);
 
 function showFrame(timeInMs: number) {
   {
-        const phases = [0, FULL_CIRCLE / 3, FULL_CIRCLE * (2 / 3)];
+    const phases = [0, FULL_CIRCLE / 3, FULL_CIRCLE * (2 / 3)];
     const period = 30000;
     /**
      * Normalize to [0, 2π]
      */
-    const t = ((timeInMs % period) / period) * FULL_CIRCLE; 
+    const t = ((timeInMs % period) / period) * FULL_CIRCLE;
     const [r, g, b] = phases.map((phase) =>
       brightnessRange(Math.sin(t + phase))
     );

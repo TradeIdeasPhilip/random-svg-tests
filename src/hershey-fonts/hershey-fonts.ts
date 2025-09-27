@@ -1,5 +1,6 @@
 import {
   FULL_CIRCLE,
+  NON_BREAKING_SPACE,
   angleBetween,
   assertNonNullable,
   initializedArray,
@@ -269,10 +270,6 @@ export function makeSmooth(original: PathShape, specialInstructions?: "?") {
         currentSegment = [];
       }
     }
-    if (specialInstructions === "?") {
-      debugger;
-    }
-
     if (specialInstructions === "?" && currentSegment.length == 12) {
       // Break the last segment of the top part of the ? into it's own piece.
       // So it will be straight.
@@ -292,7 +289,7 @@ export function makeSmooth(original: PathShape, specialInstructions?: "?") {
   return result;
 }
 export const decoder = [
-  " ",
+  NON_BREAKING_SPACE,
   "!",
   '"',
   "#",
@@ -362,7 +359,7 @@ function makeRoundFont(wholeFile: string, options: RoundFontInputs): Font {
     capitalTop: 0 - options.mHeight,
     defaultKerning: 0,
     mHeight: options.mHeight,
-    top: options.top,
+    top: options.top - options.baseline,
     strokeWidth: 1,
     spaceWidth: space.rightSideBearing - space.leftSideBearing,
   };
@@ -374,7 +371,7 @@ function makeRoundFont(wholeFile: string, options: RoundFontInputs): Font {
     const matrix = new DOMMatrix();
     matrix.translateSelf(
       -characterDescription.leftSideBearing,
-      options.baseline
+      -options.baseline
     );
     const roughShape = characterDescription.pathShape.transform(matrix);
     const pathShape = makeSmooth(roughShape, key == "?" ? "?" : undefined);
@@ -393,8 +390,8 @@ function makeRoundFont(wholeFile: string, options: RoundFontInputs): Font {
 
 export const roundCursiveFont = makeRoundFont(cursiveAsString, {
   baseline: 9,
-  bottom: 22,
-  top: -17,
+  bottom: 21,
+  top: -16,
   mHeight: 21,
 });
 export const roundFuturaLFont = makeRoundFont(futuraLAsString, {

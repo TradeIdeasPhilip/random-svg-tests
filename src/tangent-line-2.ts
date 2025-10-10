@@ -1,4 +1,4 @@
-import { getById, selectorQueryAll } from "phil-lib/client-misc";
+import { getById, querySelectorAll } from "phil-lib/client-misc";
 import "./style.css";
 import "./tangent-line-2.css";
 import {
@@ -30,7 +30,7 @@ function updateLegend() {
       return splitPosition / totalLength;
     }
   );
-  const stops = selectorQueryAll(
+  const stops = querySelectorAll(
     "#legendGradient stop",
     SVGStopElement,
     (breaks.length + 1) * 2,

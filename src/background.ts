@@ -1,7 +1,11 @@
 import { FULL_CIRCLE, makeLinear } from "phil-lib/misc";
 import "./background.css";
-import { AnimationLoop, getById } from "phil-lib/client-misc";
-import { querySelector, querySelectorAll } from "./utility";
+import {
+  AnimationLoop,
+  getById,
+  querySelector,
+  querySelectorAll,
+} from "phil-lib/client-misc";
 
 /**
  * This test shows how you can use noise similar to fourier-smackdown,

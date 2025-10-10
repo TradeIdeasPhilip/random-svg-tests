@@ -1,8 +1,8 @@
 import {
   AnimationLoop,
   getById,
-  selectorQuery,
-  selectorQueryAll,
+  querySelector,
+  querySelectorAll,
 } from "phil-lib/client-misc";
 import {
   Complex,
@@ -57,20 +57,20 @@ import { LetterLayoutInfo, TextLayout } from "./letters-more";
 
 function hideBackground() {
   document.body.style.backgroundColor = "transparent";
-  selectorQueryAll("[data-hide-background]", SVGElement).forEach(
+  querySelectorAll("[data-hide-background]", SVGElement).forEach(
     (element) => (element.style.display = "none")
   );
 }
 
 function onlyBackground() {
-  const backgroundElement = selectorQuery("[data-hide-background]", SVGElement);
+  const backgroundElement = querySelector("[data-hide-background]", SVGElement);
   backgroundElement.parentElement?.append(backgroundElement);
 }
 
 {
   // Background full of stars
   const random = Random.fromString("Pastel 41");
-  const original = selectorQuery("[data-favorite]", SVGCircleElement);
+  const original = querySelector("[data-favorite]", SVGCircleElement);
   const getR = makeLinear(0, 0.025, 2, 0.15);
   for (let i = 0; i < 150; i++) {
     const copy = assertClass(original.cloneNode(true), SVGCircleElement);
@@ -93,7 +93,7 @@ if (urlParameters.get("hide_background") == "1") {
 }
 
 {
-  const canvas = selectorQuery("canvas#cache", HTMLCanvasElement);
+  const canvas = querySelector("canvas#cache", HTMLCanvasElement);
   const context = canvas.getContext("2d")!;
   context.filter = "url(#watercolor)";
   const scale = 1;
@@ -104,7 +104,7 @@ if (urlParameters.get("hide_background") == "1") {
 const numberOfFourierSamples = 1024;
 
 class MotionBlurSpinner {
-  static readonly #parent = selectorQuery(
+  static readonly #parent = querySelector(
     "[data-motion-blur-spinners]",
     HTMLDivElement
   );
@@ -159,19 +159,19 @@ class FrequencySpinners {
   }[];
   constructor(parent: string | SVGGElement) {
     if (!(parent instanceof SVGGElement)) {
-      parent = selectorQuery(parent, SVGGElement);
+      parent = querySelector(parent, SVGGElement);
     }
-    this.#spinners = selectorQueryAll(
+    this.#spinners = querySelectorAll(
       "g.frequency",
       SVGGElement,
       0,
       Infinity,
       parent
     ).map((top) => {
-      const text = selectorQuery("text", SVGTextElement, top);
+      const text = querySelector("text", SVGTextElement, top);
       return {
         top,
-        oldSpinner: selectorQuery(".spinner", SVGPolygonElement, top),
+        oldSpinner: querySelector(".spinner", SVGPolygonElement, top),
         newSpinner:
           undefined! /*assertNonNullable(MotionBlurSpinner.available.shift())*/,
         text,
@@ -250,12 +250,12 @@ class Destination {
     readonly getTransform: (content: ReadOnlyRect) => DOMMatrix
   ) {
     this.#gElement = top;
-    this.#referencePath = selectorQuery(
+    this.#referencePath = querySelector(
       "[data-reference]",
       SVGPathElement,
       this.#gElement
     );
-    this.#livePath = selectorQueryAll(
+    this.#livePath = querySelectorAll(
       "[data-live]",
       SVGPathElement,
       1,
@@ -353,7 +353,7 @@ class Background {
     this.#canvas.getContext("2d", { colorSpace: "display-p3" })
   );
   #precomputeNoise(seed: number) {
-    selectorQuery("feTurbulence", SVGFETurbulenceElement).seed.baseVal = seed;
+    querySelector("feTurbulence", SVGFETurbulenceElement).seed.baseVal = seed;
     const noiseCanvas = document.createElement("canvas");
     noiseCanvas.width = 3840;
     noiseCanvas.height = 2160;
@@ -1309,7 +1309,7 @@ test();
     where: SVGTextElement | string = ".chapter"
   ) {
     if (typeof where === "string") {
-      where = selectorQuery(where, SVGTextElement);
+      where = querySelector(where, SVGTextElement);
     }
     where.innerHTML = `#${index} of ${ShapeMaker6.allPaths.length}`;
   }
@@ -1712,7 +1712,7 @@ test();
   }
 
   const animations = new Array<Showable>();
-  const foregroundG = selectorQuery("g#foreground", SVGGElement);
+  const foregroundG = querySelector("g#foreground", SVGGElement);
   const chapterList = getById("chapterList", SVGTextElement);
   const altColorPairs: {
     light: string;
@@ -1756,7 +1756,7 @@ test();
     const frequenciesG =
       search === undefined
         ? document.createElementNS("http://www.w3.org/2000/svg", "g")
-        : selectorQuery(
+        : querySelector(
             `g.frequencies[data-frequencies="${search}"]`,
             SVGGElement
           );
@@ -1764,13 +1764,13 @@ test();
       search === undefined
         ? foregroundG.appendChild(
             assertClass(
-              selectorQuery("defs g[data-fourier-top]", SVGGElement).cloneNode(
+              querySelector("defs g[data-fourier-top]", SVGGElement).cloneNode(
                 true
               ),
               SVGGElement
             )
           )
-        : selectorQuery(`[data-fourier-top="${search}"]`, SVGGElement);
+        : querySelector(`[data-fourier-top="${search}"]`, SVGGElement);
     top.style.setProperty("--color", light);
     top.style.setProperty("--blur-color", dark);
     const destination = new Destination(top, (content: ReadOnlyRect) =>
@@ -1816,11 +1816,11 @@ test();
       context.fillRect(0, 0, canvas.width, canvas.height);
     }
     const mainSVG = getById("main", SVGSVGElement);
-    const mainPaths = selectorQueryAll(
+    const mainPaths = querySelectorAll(
       "[data-live-index] path.main",
       SVGPathElement
     );
-    const shadowPaths = selectorQueryAll(
+    const shadowPaths = querySelectorAll(
       "[data-live-index] path.offset-blur",
       SVGPathElement
     );
@@ -2226,14 +2226,14 @@ test();
 
   if (false) {
     // MARK: Lava Lamp Animation
-    const randomnessElement = selectorQuery(
+    const randomnessElement = querySelector(
       "#lava-lamp feColorMatrix:first-of-type",
       SVGFEColorMatrixElement
     );
     const colorElements = [
-      selectorQuery('#lava-lamp feFuncR[type="discrete"]', SVGFEFuncRElement),
-      selectorQuery('#lava-lamp feFuncG[type="discrete"]', SVGFEFuncGElement),
-      selectorQuery('#lava-lamp feFuncB[type="discrete"]', SVGFEFuncBElement),
+      querySelector('#lava-lamp feFuncR[type="discrete"]', SVGFEFuncRElement),
+      querySelector('#lava-lamp feFuncG[type="discrete"]', SVGFEFuncGElement),
+      querySelector('#lava-lamp feFuncB[type="discrete"]', SVGFEFuncBElement),
     ];
     /**
      * Palette Idea 2: Cosmic Serenity
@@ -2392,7 +2392,7 @@ test();
   // MARK:  thumbnail
   if (urlParameters.get("thumbnail") == "1") {
     //foregroundG.style.display = "none";
-    //const thumbnailG = selectorQuery("g#thumbnail-foreground", SVGGElement);
+    //const thumbnailG = querySelector("g#thumbnail-foreground", SVGGElement);
     //thumbnailG.style.display = "";
     disableAnimationLoop = true;
     const paths = new Array<SVGElement>();
@@ -2414,18 +2414,18 @@ test();
 
     //showFrame(7000 * 4.15);
     //animations[1].show(5500);
-    selectorQueryAll("[data-reference]", SVGPathElement).forEach(
+    querySelectorAll("[data-reference]", SVGPathElement).forEach(
       (path) => (path.style.display = "none")
     );
 
-    selectorQueryAll("#new-starfield circle", SVGCircleElement).forEach(
+    querySelectorAll("#new-starfield circle", SVGCircleElement).forEach(
       (starElement) => {
         starElement.style.transform = "scale(3)";
         starElement.style.transformOrigin = `${starElement.cx.baseVal.value}px ${starElement.cy.baseVal.value}px`;
       }
     );
 
-    // const rectangles = selectorQueryAll("#starfield rect", SVGRectElement);
+    // const rectangles = querySelectorAll("#starfield rect", SVGRectElement);
     // rectangles[0].parentElement!.style.transform = "scale(3)";
     // rectangles.forEach((rectangle) => {
     //   rectangle.style.transformOrigin = `${50 / 3}% ${9}%`;
@@ -2444,7 +2444,7 @@ test();
     //     description.advance / 2,
     //     0
     //   ).rawPath;
-    //   const paths = selectorQueryAll(
+    //   const paths = querySelectorAll(
     //     `[data-fourier-top="${name}"] [data-live]`,
     //     SVGPathElement,
     //     2,
@@ -2455,7 +2455,7 @@ test();
     //   });
     // });
     /*
-    const live = selectorQueryAll("[data-live]", SVGPathElement);
+    const live = querySelectorAll("[data-live]", SVGPathElement);
     //live.forEach((element) => {
     // element.style.transform = "scale(1.15) rotate(22deg)";
     //});
@@ -2469,7 +2469,7 @@ test();
     //console.log(live[5].style.strokeWidth, live[5], live);
     */
     /*
-    selectorQueryAll("[data-fourier-top]", SVGGElement, 3, 3).forEach(
+    querySelectorAll("[data-fourier-top]", SVGGElement, 3, 3).forEach(
       (toGrow, index) => {
         const initialTransform = getComputedStyle(toGrow).transform;
         const translate = ["-0.05px, -0.05px", "-0.3px, 0px", "-0.1px, 0px"];

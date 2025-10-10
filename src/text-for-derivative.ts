@@ -2,14 +2,14 @@ import { makeLinear } from "phil-lib/misc";
 import "./text-for-derivative.css";
 import { GetFrameNumber } from "./utility";
 import { PathBuilder } from "./path-shape";
-import { getById, selectorQueryAll } from "phil-lib/client-misc";
+import { getById, querySelectorAll } from "phil-lib/client-misc";
 
 const getFrameNumber = new GetFrameNumber();
 
 const textGroups = [
-  selectorQueryAll("#main-text > g.top > text", SVGTextElement, 3, 3),
-  selectorQueryAll("#main-text > g.left > text", SVGTextElement, 3, 3),
-  selectorQueryAll("#main-text > g.right > text", SVGTextElement, 3, 3),
+  querySelectorAll("#main-text > g.top > text", SVGTextElement, 3, 3),
+  querySelectorAll("#main-text > g.left > text", SVGTextElement, 3, 3),
+  querySelectorAll("#main-text > g.right > text", SVGTextElement, 3, 3),
 ];
 
 const T_videoStart = getFrameNumber.fromMSF(0, 8, 30);

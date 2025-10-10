@@ -1,4 +1,4 @@
-import { AnimationLoop, getById, selectorQueryAll } from "phil-lib/client-misc";
+import { AnimationLoop, getById, querySelectorAll } from "phil-lib/client-misc";
 import { assertValidT, makeTSplitter } from "./utility";
 import "./show-text.css";
 import { TextLayout } from "./letters-more";
@@ -23,7 +23,7 @@ drawButton.addEventListener("click", () => {
 });
 
 function setUpText(text = inputTextArea.value) {
-  const alignment = selectorQueryAll(
+  const alignment = querySelectorAll(
     'input[name="align"]:checked',
     HTMLInputElement,
     1,

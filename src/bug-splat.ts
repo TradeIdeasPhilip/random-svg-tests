@@ -1,8 +1,11 @@
 import "./style.css";
 import "./bug-splat.css";
-import { AnimationLoop } from "phil-lib/client-misc";
+import {
+  AnimationLoop,
+  querySelector,
+  querySelectorAll,
+} from "phil-lib/client-misc";
 import { LinearFunction, makeLinear } from "phil-lib/misc";
-import { querySelector, querySelectorAll } from "./utility";
 
 // See result at:  https://www.youtube.com/watch?v=BgSACVlGmbg
 

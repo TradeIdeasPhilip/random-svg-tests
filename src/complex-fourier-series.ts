@@ -1,4 +1,9 @@
-import { AnimationLoop, getById } from "phil-lib/client-misc";
+import {
+  AnimationLoop,
+  getById,
+  querySelector,
+  querySelectorAll,
+} from "phil-lib/client-misc";
 import "./style.css";
 import "./complex-fourier-series.css";
 import {
@@ -8,12 +13,7 @@ import {
   Point,
   QCommand,
 } from "./path-shape";
-import {
-  makeTSplitter,
-  makeTSplitterA,
-  querySelector,
-  querySelectorAll,
-} from "./utility";
+import { makeTSplitter, makeTSplitterA } from "./utility";
 import {
   assertClass,
   FIGURE_SPACE,

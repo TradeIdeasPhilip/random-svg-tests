@@ -1,8 +1,8 @@
 import {
   AnimationLoop,
   getById,
-  selectorQuery,
-  selectorQueryAll,
+  querySelector,
+  querySelectorAll,
 } from "phil-lib/client-misc";
 import "./some4.css";
 import { ParametricFunction, PathShape } from "./path-shape";
@@ -231,12 +231,12 @@ class TaylorElements {
   readonly #bottomCenter: SVGCircleElement;
   readonly #path: SVGPathElement;
   constructor(readonly which: string) {
-    this.#center = selectorQuery(`[data-center="${which}"]`, SVGCircleElement);
-    this.#bottomCenter = selectorQuery(
+    this.#center = querySelector(`[data-center="${which}"]`, SVGCircleElement);
+    this.#bottomCenter = querySelector(
       `[data-circle-info="${which}"] [data-bottom-center]`,
       SVGCircleElement
     );
-    this.#path = selectorQuery(
+    this.#path = querySelector(
       `[data-reconstruction="${which}"]`,
       SVGPathElement
     );
@@ -904,31 +904,31 @@ class ScriptDispatcher {
 console.log("debugStuff", (window as any).debugStuff);
 
 {
-  const functionSelectElement = selectorQuery(
+  const functionSelectElement = querySelector(
     "#manual-controls select",
     HTMLSelectElement
   );
-  const numberOfTermsInputElement = selectorQuery(
+  const numberOfTermsInputElement = querySelector(
     "#manual-controls > input",
     HTMLInputElement
   );
-  const [fewerTermsButton, moreTermsButton] = selectorQueryAll(
+  const [fewerTermsButton, moreTermsButton] = querySelectorAll(
     "[data-term-stepper] button",
     HTMLButtonElement,
     2,
     2
   );
-  const numberOfTermsSpan = selectorQuery(
+  const numberOfTermsSpan = querySelector(
     "[data-term-stepper] span",
     HTMLSpanElement
   );
-  const x0Elements = selectorQueryAll(
+  const x0Elements = querySelectorAll(
     "#manual-controls > div[data-x0]",
     HTMLDivElement,
     3,
     3
   ).map((parent) => {
-    const [use, value] = selectorQueryAll(
+    const [use, value] = querySelectorAll(
       "input",
       HTMLInputElement,
       2,

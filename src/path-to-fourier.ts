@@ -1,4 +1,4 @@
-import { AnimationLoop, getById, selectorQuery } from "phil-lib/client-misc";
+import { AnimationLoop, getById, querySelector } from "phil-lib/client-misc";
 import {
   createScript,
   hasFixedContribution,
@@ -317,27 +317,27 @@ function initialize(options: Options) {
     addingAmplitude: formatAmplitude(scriptEntry.addingAmplitude),
     availableAmplitude: formatAmplitude(scriptEntry.availableAmplitude),
   }));
-  const usingCirclesElement = selectorQuery(
+  const usingCirclesElement = querySelector(
     "[data-using] [data-circles]",
     HTMLTableCellElement
   );
-  const usingAmplitudeElement = selectorQuery(
+  const usingAmplitudeElement = querySelector(
     "[data-using] [data-amplitude]",
     HTMLTableCellElement
   );
-  const addingCirclesElement = selectorQuery(
+  const addingCirclesElement = querySelector(
     "[data-adding] [data-circles]",
     HTMLTableCellElement
   );
-  const addingAmplitudeElement = selectorQuery(
+  const addingAmplitudeElement = querySelector(
     "[data-adding] [data-amplitude]",
     HTMLTableCellElement
   );
-  const availableCirclesElement = selectorQuery(
+  const availableCirclesElement = querySelector(
     "[data-available] [data-circles]",
     HTMLTableCellElement
   );
-  const availableAmplitudeElement = selectorQuery(
+  const availableAmplitudeElement = querySelector(
     "[data-available] [data-amplitude]",
     HTMLTableCellElement
   );

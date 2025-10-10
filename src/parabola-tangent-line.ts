@@ -1,8 +1,8 @@
 import {
   AnimationLoop,
   getById,
-  selectorQuery,
-  selectorQueryAll,
+  querySelector,
+  querySelectorAll,
 } from "phil-lib/client-misc";
 import "./parabola-tangent-line.css";
 import {
@@ -118,12 +118,12 @@ class GUI {
    */
   readonly #scale = getById("scale", SVGGElement);
   readonly #functionPath = getById("function", SVGPathElement);
-  readonly #estimateLine = selectorQuery("#singleEstimate", SVGLineElement);
-  readonly #estimateLines = selectorQueryAll(
+  readonly #estimateLine = querySelector("#singleEstimate", SVGLineElement);
+  readonly #estimateLines = querySelectorAll(
     "#estimateLines line",
     SVGLineElement
   );
-  readonly #marginOfErrorG = selectorQuery("#margin-of-error", SVGGElement);
+  readonly #marginOfErrorG = querySelector("#margin-of-error", SVGGElement);
   /**
    * (0, 0)
    */
@@ -134,7 +134,7 @@ class GUI {
   readonly #movingCircle: SVGCircleElement;
   private addBorders() {
     // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/paint-order
-    const originals = selectorQueryAll("svg#main text", SVGTextElement);
+    const originals = querySelectorAll("svg#main text", SVGTextElement);
     originals.forEach((original) => {
       const clone = assertClass(original.cloneNode(true), SVGTextElement);
       clone.classList.add("text-background");
@@ -149,7 +149,7 @@ class GUI {
    * That wouldn't be hard, but it's not required today.
    */
   private constructor() {
-    [this.#fixedCircle, this.#movingCircle] = selectorQueryAll(
+    [this.#fixedCircle, this.#movingCircle] = querySelectorAll(
       "circle.measurement-fill",
       SVGCircleElement,
       2,
@@ -172,8 +172,8 @@ class GUI {
       estimateLine.style.strokeDashoffset = (partitionSize * index).toString();
     });
     this.addBorders();
-    this.#blurMe = selectorQueryAll(".blur-me", SVGTSpanElement, 2, 2);
-    this.#shakeMe = selectorQueryAll(".shake-me", SVGTextElement, 2, 2);
+    this.#blurMe = querySelectorAll(".blur-me", SVGTSpanElement, 2, 2);
+    this.#shakeMe = querySelectorAll(".shake-me", SVGTextElement, 2, 2);
     this.update();
   }
   readonly #blurMe: readonly SVGTSpanElement[];
@@ -551,7 +551,7 @@ function addTools(svgElement: SVGSVGElement) {
   });
 }
 
-selectorQueryAll("svg", SVGSVGElement).forEach((svgElement) =>
+querySelectorAll("svg", SVGSVGElement).forEach((svgElement) =>
   addTools(svgElement)
 );
 

@@ -1,4 +1,4 @@
-import { getById, selectorQueryAll } from "phil-lib/client-misc";
+import { getById, querySelectorAll } from "phil-lib/client-misc";
 import "./tau.css";
 import { assertValidT, makeTSplitter } from "./utility";
 import {
@@ -43,20 +43,20 @@ const mainHandwriting: Animator = (() => {
 
 const danceElement = getById("dance", SVGGElement);
 const pointCount = 4;
-const danceLines = selectorQueryAll(
+const danceLines = querySelectorAll(
   "#dance line",
   SVGLineElement,
   pointCount,
   pointCount
 );
-const danceCircles = selectorQueryAll(
+const danceCircles = querySelectorAll(
   "#dance circle",
   SVGCircleElement,
   pointCount,
   pointCount
 );
 
-const dancingTauPath = selectorQueryAll(
+const dancingTauPath = querySelectorAll(
   "#dance .main-path",
   SVGPathElement,
   1,

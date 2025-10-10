@@ -9,10 +9,9 @@ import {
   roundCursiveFont,
   roundFuturaLFont,
 } from "./hershey-fonts/hershey-fonts";
-import { download, getById } from "phil-lib/client-misc";
+import { download, getById, querySelectorAll } from "phil-lib/client-misc";
 import { TextLayout } from "./letters-more";
 import { PathShape } from "./path-shape";
-import { querySelectorAll } from "./utility";
 import { Font, fontToJSON } from "./letters-base";
 
 const samplesDiv = getById("samples", HTMLDivElement);

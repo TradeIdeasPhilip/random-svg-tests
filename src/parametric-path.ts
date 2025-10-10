@@ -2,7 +2,7 @@ import {
   AnimationLoop,
   download,
   getById,
-  selectorQuery,
+  querySelector,
 } from "phil-lib/client-misc";
 import "./style.css";
 import "./parametric-path.css";
@@ -421,8 +421,8 @@ class SampleOutput {
     return this.#pathElement;
   }
   constructor(svgSelector: string) {
-    this.#svgElement = selectorQuery(svgSelector, SVGSVGElement);
-    this.#pathElement = selectorQuery(
+    this.#svgElement = querySelector(svgSelector, SVGSVGElement);
+    this.#pathElement = querySelector(
       "path:not([data-skip-auto-fill])",
       SVGPathElement,
       this.#svgElement
@@ -595,7 +595,7 @@ class ClipAndMaskSupport extends SampleOutput {
   readonly #maskPath: SVGPathElement;
   constructor() {
     super("#clipAndMaskSupport");
-    this.#maskPath = selectorQuery(
+    this.#maskPath = querySelector(
       "mask > path",
       SVGPathElement,
       this.svgElement
@@ -775,7 +775,7 @@ function addAnotherInput() {
   }
 };
 
-selectorQuery("#inputsGroup button", HTMLButtonElement).addEventListener(
+querySelector("#inputsGroup button", HTMLButtonElement).addEventListener(
   "click",
   () => {
     addAnotherInput();
@@ -940,11 +940,11 @@ addAnotherInput();
       if (index > 0) {
         codeSamplesHolder.insertAdjacentHTML("beforeend", template);
         const entireDiv = codeSamplesHolder.lastElementChild!;
-        const nameSpan = selectorQuery("span", HTMLSpanElement, entireDiv);
+        const nameSpan = querySelector("span", HTMLSpanElement, entireDiv);
         nameSpan.innerText = sample.name;
-        const codePre = selectorQuery("pre", HTMLPreElement, entireDiv);
+        const codePre = querySelector("pre", HTMLPreElement, entireDiv);
         codePre.innerText = sample.code;
-        const button = selectorQuery("button", HTMLButtonElement, entireDiv);
+        const button = querySelector("button", HTMLButtonElement, entireDiv);
         button.addEventListener("click", () => {
           sourceTextArea.value = sample.code;
           doItSoon();

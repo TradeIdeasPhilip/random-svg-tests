@@ -48,6 +48,7 @@ export default defineConfig({
         "двадцать два": resolve(__dirname, "hershey-fonts-viewer.html"),
         "ಇರ್ವತ್ತ ಮೂಜಿ": resolve(__dirname, "path-to-fourier.html"),
         ಇರ್ವತ್ತನಾಲ್: resolve(__dirname, "fourier-smackdown.html"),
+        "сүүрбэ биэс": resolve(__dirname, "colors.html"),
       },
       output: {
         // Disable code splitting by setting manualChunks to an empty object

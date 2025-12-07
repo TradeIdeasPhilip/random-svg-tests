@@ -1,5 +1,6 @@
-import "./colors.css"
+import "./colors.css";
 import { querySelector } from "phil-lib/client-misc";
+import { getOkLCHMaxChroma } from "colorizr";
 
 function hueToRgbPositive(hue: number): { r: number; g: number; b: number } {
   const h = ((hue % 360) + 360) % 360;
@@ -39,9 +40,9 @@ function hueToRgbPositive(hue: number): { r: number; g: number; b: number } {
 }
 
 /**
- * Maintain the hue.  
+ * Maintain the hue.
  * Scale all three channels equally.
- * Make the brightest channel 1.0. 
+ * Make the brightest channel 1.0.
  * @param hue In degrees.  0 = 360 = red, 120 = green, 240 = blue
  * @returns A color.  Values from 0 - 1
  */
@@ -49,9 +50,9 @@ function hueToBrightest(hue: number) {
   const base = hueToRgbPositive(hue);
   const brightest = Math.max(base.r, base.g, base.b);
   return {
-    r: (base.r / brightest) ,
-    g: (base.g / brightest) ,
-    b: (base.b / brightest) ,
+    r: base.r / brightest,
+    g: base.g / brightest,
+    b: base.b / brightest,
   };
 }
 
@@ -70,7 +71,7 @@ function grayscaleToPalette(
   BASE: { r: number; g: number; b: number }
 ): string {
   // Clamp
-  const v = Math.max(0, Math.min(255, value));
+  const v = Math.max(0, Math.min(1, value));
 
   // Compute luminance of base color
   const baseLuminance = 0.299 * BASE.r + 0.587 * BASE.g + 0.114 * BASE.b;
@@ -80,11 +81,11 @@ function grayscaleToPalette(
 
   if (v > baseLuminance) {
     // Brighter: interpolate to white
-    const whitePercent = (v - baseLuminance) / (1 - baseLuminance)*100 ;
+    const whitePercent = ((v - baseLuminance) / (1 - baseLuminance)) * 100;
     return `color-mix(in srgb, white ${whitePercent}%, ${baseColor})`;
   } else {
     // Darker: interpolate to black
-    const baseColorPercent = v / baseLuminance * 100;
+    const baseColorPercent = (v / baseLuminance) * 100;
     return `color-mix(in srgb-linear, ${baseColor} ${baseColorPercent}%, black)`;
   }
 }
@@ -100,9 +101,11 @@ function fromHueValue(hue: number, value: number) {
 }
 (window as any).fromHueValue = fromHueValue;
 
-const canvas = querySelector("canvas", HTMLCanvasElement);
+const myCanvas = querySelector("canvas#mine", HTMLCanvasElement);
+const libraryCanvas = querySelector("canvas#library", HTMLCanvasElement);
 
 function drawPalette() {
+  const canvas = myCanvas;
   const { height, width } = canvas;
   const context = canvas.getContext("2d")!;
   for (let x = 0; x < width; x++) {
@@ -119,6 +122,41 @@ function drawPalette() {
 }
 
 drawPalette();
+
+/**
+ * Returns a fully saturated, perceptually correct CSS color string
+ * for any hue + lightness/value (0–1).
+ * Uses OKLCH — modern, native, beautiful.
+ */
+export function hueToCssColor(hue: number, lightness: number): string {
+  const h = ((hue % 360) + 360) % 360;
+
+  // lightness in OKLCH is 0–1 (same as your input)
+  const l = Math.max(0, Math.min(1, lightness));
+
+  // Get the maximum possible chroma for this hue + lightness
+  const c = getOkLCHMaxChroma({ l, h, c: 0.25404 });
+
+  // Optional: add alpha = 1 (or let caller pass it)
+  return `oklch(${l.toFixed(4)} ${c.toFixed(4)} ${h.toFixed(2)}deg)`;
+}
+
+function drawPalette1() {
+  const canvas = libraryCanvas;
+  const { height, width } = canvas;
+  const context = canvas.getContext("2d")!;
+  for (let x = 0; x < width; x++) {
+    const hue = (x * 360) / width;
+    for (let y = 0; y < height; y++) {
+      const minValue = 0.4;
+      const maxValue = 0.95;
+      const value = (y * (maxValue - minValue)) / (height - 1) + minValue;
+      context.fillStyle = hueToCssColor(hue, value);
+      context.fillRect(x, y, 1, 1);
+    }
+  }
+}
+drawPalette1();
 
 /*
 let output = [];

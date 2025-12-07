@@ -9,12 +9,13 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "typescript": "^5.2.2",
-    "vite": "^6.3.5"
+    "typescript": "^5.2.2"
   },
   "dependencies": {
+    "colorizr": "^3.0.8",
     "fft-js": "^0.0.12",
     "phil-lib": "^1.7.0",
-    "roughjs": "^4.6.6"
+    "roughjs": "^4.6.6",
+    "vite": "^7.2.6"
   }
 }

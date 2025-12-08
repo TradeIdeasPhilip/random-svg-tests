@@ -2,12 +2,15 @@ import "./colors.css";
 import { querySelector } from "phil-lib/client-misc";
 import { getOkLCHMaxChroma } from "colorizr";
 
+const RED_VALUE = 0.299;
+const GREEN_VALUE = 0.587;
+const BLUE_VALUE = 0.114;
+
 function hueToRgbPositive(hue: number): { r: number; g: number; b: number } {
   const h = ((hue % 360) + 360) % 360;
   const c = 0.8; // fixed for L=10%, S=100%
   const hPrime = h / 60;
   const x = c * (1 - Math.abs((hPrime % 2) - 1));
-  const m = -0; // fixed offset
 
   let r1 = 0,
     g1 = 0,
@@ -33,9 +36,9 @@ function hueToRgbPositive(hue: number): { r: number; g: number; b: number } {
   }
 
   return {
-    r: Math.max(0, r1 + m),
-    g: Math.max(0, g1 + m),
-    b: Math.max(0, b1 + m),
+    r: Math.max(0, r1 /* / RED_VALUE */),
+    g: Math.max(0, g1 /* / GREEN_VALUE */),
+    b: Math.max(0, b1 /* / BLUE_VALUE */),
   };
 }
 
@@ -74,7 +77,8 @@ function grayscaleToPalette(
   const v = Math.max(0, Math.min(1, value));
 
   // Compute luminance of base color
-  const baseLuminance = 0.299 * BASE.r + 0.587 * BASE.g + 0.114 * BASE.b;
+  const baseLuminance =
+    RED_VALUE * BASE.r + GREEN_VALUE * BASE.g + BLUE_VALUE * BASE.b;
 
   const baseColor = `color(srgb-linear ${BASE.r} ${BASE.g} ${BASE.b})`;
   // color-mix(in srgb-linear, color(srgb-linear 0 1 0) 5%, black) is very dark green
@@ -82,7 +86,7 @@ function grayscaleToPalette(
   if (v > baseLuminance) {
     // Brighter: interpolate to white
     const whitePercent = ((v - baseLuminance) / (1 - baseLuminance)) * 100;
-    return `color-mix(in srgb, white ${whitePercent}%, ${baseColor})`;
+    return `color-mix(in srgb-linear, white ${whitePercent}%, ${baseColor})`;
   } else {
     // Darker: interpolate to black
     const baseColorPercent = (v / baseLuminance) * 100;
@@ -158,10 +162,21 @@ function drawPalette1() {
 }
 drawPalette1();
 
-/*
-let output = [];
-for (let hue = 0; hue < 360; hue += 5) {
-  output.push({ hue, ...hueToRgbPositive(hue) });
+{
+  const svg = querySelector("svg", SVGSVGElement);
+  const colors = [
+    0 /* red */, 1 /* orange */, 2 /* yellow */, 4 /* lime */, 6 /* cyan */,
+    7 /* azure */, 8 /* blue */, 9 /* violet */, 10 /* magenta */,
+  ];
+  colors.forEach((numerator, index) => {
+    const circle = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "circle"
+    );
+    circle.cx.baseVal.value = index + 0.5;
+    circle.cy.baseVal.value = 0.5;
+    circle.r.baseVal.value = 0.3;
+    circle.style.fill = `hwb(${((360 / 12) * numerator).toFixed(2)}deg 0% 0%)`;
+    svg.append(circle);
+  });
 }
-console.table(output);
-*/

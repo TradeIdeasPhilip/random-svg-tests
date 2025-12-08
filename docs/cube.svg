@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32px" height="32px" viewBox="0 0 4 4"
+>
+  <path d="M0,1 L3,1 L3,4 L0,4 Z" fill="red"></path>
+  <path d="M0,1 L3,1 L4,0 L1,0 Z" fill="limegreen"></path>
+  <path d="M3,1 L4,0 L4,3 L3,4 Z" fill="rgb(0, 128, 255)"></path>
+</svg>

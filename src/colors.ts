@@ -71,7 +71,7 @@ function hueToBrightest(hue: number) {
  */
 function grayscaleToPalette(
   value: number,
-  BASE: { r: number; g: number; b: number }
+  BASE: { r: number; g: number; b: number },
 ): string {
   // Clamp
   const v = Math.max(0, Math.min(1, value));
@@ -163,20 +163,70 @@ function drawPalette1() {
 drawPalette1();
 
 {
-  const svg = querySelector("svg", SVGSVGElement);
   const colors = [
-    0 /* red */, 1 /* orange */, 2 /* yellow */, 4 /* lime */, 6 /* cyan */,
-    7 /* azure */, 8 /* blue */, 9 /* violet */, 10 /* magenta */,
+    0 /* red */,
+    1 /* orange */,
+    "#d8d800" /* 2 yellow */,
+    "#0e0" /* 4 lime */,
+    "#00d8d8" /* 6 cyan */,
+    7 /* azure */,
+    "rgb(32, 64, 255)" /* 8 blue */,
+    9 /* violet */,
+    10 /* magenta */,
   ];
-  colors.forEach((numerator, index) => {
-    const circle = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "circle"
-    );
-    circle.cx.baseVal.value = index + 0.5;
-    circle.cy.baseVal.value = 0.5;
-    circle.r.baseVal.value = 0.3;
-    circle.style.fill = `hwb(${((360 / 12) * numerator).toFixed(2)}deg 0% 0%)`;
-    svg.append(circle);
+  ["svg#black-background", "svg#white-background"].forEach((selectorString) => {
+    const svg = querySelector(selectorString, SVGSVGElement);
+    colors.forEach((value, index) => {
+      const color =
+        typeof value == "string"
+          ? value
+          : `hwb(${((360 / 12) * value).toFixed(2)}deg 0% 0%)`;
+      const circle = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "circle",
+      );
+      circle.cx.baseVal.value = index + 0.5;
+      circle.cy.baseVal.value = 0.5;
+      circle.r.baseVal.value = 0.3;
+      circle.style.fill = color;
+      svg.append(circle);
+      const thinLine = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "line",
+      );
+      thinLine.x1.baseVal.value = index + 0.2;
+      thinLine.x2.baseVal.value = index + 0.8;
+      thinLine.y1.baseVal.value = 1.2;
+      thinLine.y2.baseVal.value = 1.8;
+      thinLine.style.stroke = color;
+      thinLine.style.strokeWidth = "0.02";
+      svg.append(thinLine);
+      const thickLine = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "line",
+      );
+      thickLine.x1.baseVal.value = index + 0.8;
+      thickLine.x2.baseVal.value = index + 0.2;
+      thickLine.y1.baseVal.value = 1.2;
+      thickLine.y2.baseVal.value = 1.8;
+      thickLine.style.stroke = color;
+      thickLine.style.strokeWidth = "0.1";
+      svg.append(thickLine);
+      const text = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "text",
+      );
+      text.style.fill = color;
+      text.style.fontSize = "0.25px";
+      //text.style. dominantBaseline="central";
+      text.style.textAnchor = "middle";
+      text.textContent = "Philip";
+      text.setAttribute("x", (index + 0.5).toString());
+      text.setAttribute("y", "2.5");
+      text.style.transform = "rotate(-45deg)";
+      text.style.transformBox = "fill-box";
+      text.style.transformOrigin = "center";
+      svg.append(text);
+    });
   });
 }

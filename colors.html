@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -26,14 +26,14 @@
       <i>so</i> quickly, and those secondary colors are
       <i>way</i> overrepresented.
     </p>
-    <svg viewBox="0 0 9 1">
-      <rect width="9" height="1"></rect>
+    <svg viewBox="0 0 9 3" id="black-background">
+      <rect width="9" height="3"></rect>
     </svg>
     <p>
-      These 9 circles show a closely related idea. This time I picked the colors
-      by hand. They are all full intensity colors. I included all three primary
-      colors and all three secondary colors. I also included 3 of the 6 tertiary
-      colors: <span style="color: #ff8000">orange</span>,
+      The 9 circles above show a closely related idea. This time I picked the
+      colors by hand. They are all full intensity colors. I included all three
+      primary colors and all three secondary colors. I also included 3 of the 6
+      tertiary colors: <span style="color: #ff8000">orange</span>,
       <span style="color: #0080ff">azure</span>, and
       <span style="color: #8000ff">violet</span>. I left out
       <span style="color: #ff0080">rose</span> because it looked too much like
@@ -45,6 +45,52 @@
       >
       because they are almost identical to
       <span style="color: lime; background-color: black">lime</span>.
+    </p>
+    <p>
+      <u><b>Update:</b></u> I tweaked these <i>slightly</i> to make the apparent brightness
+      more consistent. And I added more testing. The next image is identical
+      except that I replaced the black background with a white one.
+    </p>
+    <svg viewBox="0 0 9 3" id="white-background">
+      <rect width="9" height="3" fill="white"></rect>
+    </svg>
+    <p>
+      Below you can see all 12 primary, secondary, and tertiary colors in their
+      brightest form:
+    </p>
+    <svg viewBox="0 0 12 1" id="all-tertiary">
+      <rect width="12" height="1" fill="white"></rect>
+      <circle style="fill: rgb(255, 0, 0)" cx="0.5" cy="0.5" r="0.3"></circle>
+      <circle style="fill: rgb(255, 128, 0)" cx="1.5" cy="0.5" r="0.3"></circle>
+      <circle style="fill: rgb(255, 255, 0)" cx="2.5" cy="0.5" r="0.3"></circle>
+      <circle style="fill: rgb(128, 255, 0)" cx="3.5" cy="0.5" r="0.3"></circle>
+      <circle style="fill: rgb(0, 255, 0)" cx="4.5" cy="0.5" r="0.3"></circle>
+      <circle style="fill: rgb(0, 255, 128)" cx="5.5" cy="0.5" r="0.3"></circle>
+      <circle style="fill: rgb(0, 255, 255)" cx="6.5" cy="0.5" r="0.3"></circle>
+      <circle style="fill: rgb(0, 128, 255)" cx="7.5" cy="0.5" r="0.3"></circle>
+      <circle style="fill: rgb(0, 0, 255)" cx="8.5" cy="0.5" r="0.3"></circle>
+      <circle style="fill: rgb(128, 0, 255)" cx="9.5" cy="0.5" r="0.3"></circle>
+      <circle
+        style="fill: rgb(255, 0, 255)"
+        cx="10.5"
+        cy="0.5"
+        r="0.3"
+      ></circle>
+      <circle
+        style="fill: rgb(255, 0, 128)"
+        cx="11.5"
+        cy="0.5"
+        r="0.3"
+      ></circle>
+    </svg>
+    <p
+      style="
+        background-color: yellow;
+        color: color(display-p3 1 1 0);
+        font-size: 500%;
+      "
+    >
+      Can you see this?
     </p>
   </body>
 </html>

@@ -23,6 +23,10 @@ import futuraLAsString from "./futural.jhf?raw";
 // It's probably not worth it.  Use futuraL with a thicker stroke, instead.
 import futuraMAsString from "./futuram.jhf?raw";
 
+import timesRAsString from "./timesr.jhf?raw";
+import scriptCAsString from "./scriptc.jhf?raw";
+import gothicEngAsString from "./gothiceng.jhf?raw";
+
 import { DescriptionOfLetter, Font, FontMetrics } from "../letters-base";
 
 /**
@@ -178,6 +182,33 @@ export const hersheyFonts: HersheyFont[] = [
     9,
   ),
   cursive,
+  new HersheyFont(
+    "Times Roman",
+    timesRAsString,
+    ASCII_decoder,
+    17,
+    -17,
+    21,
+    9,
+  ),
+  new HersheyFont(
+    "Script C",
+    scriptCAsString,
+    ASCII_decoder,
+    17,
+    -17,
+    21,
+    9,
+  ),
+  new HersheyFont(
+    "Gothic English",
+    gothicEngAsString,
+    ASCII_decoder,
+    17,
+    -17,
+    21,
+    9,
+  ),
 ];
 
 /**

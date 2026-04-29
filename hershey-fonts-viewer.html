@@ -15,6 +15,11 @@
       These characters were built to be stroked, not filled. And I have a lot of
       effects I can do on a path that is stroked, not filled.
     </p>
+    <form id="font-selector" method="get">
+      <label>Left: <select name="left"></select></label>
+      <label>Right: <select name="right"></select></label>
+      <button type="submit">Compare</button>
+    </form>
     <h2>Samples</h2>
     <div id="samples"></div>
     <h2>Converted</h2>
@@ -25,10 +30,6 @@
       preserveAspectRatio="xMidYMid meet"
       style="max-width: 100vmin; overflow: visible"
     ></svg>
-    <p>
-      Download:
-      <button data-download-font="Cursive">Cursive</button> or
-      <button data-download-font="Futura L">Futura L</button>.
-    </p>
+    <p>Download: <span id="download-buttons"></span></p>
   </body>
 </html>

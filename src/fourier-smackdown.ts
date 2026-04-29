@@ -32,7 +32,7 @@ import {
 } from "phil-lib/misc";
 import { ease, getMod } from "./utility";
 import { resizeFont } from "./letters-base";
-import { roundCursiveFont } from "./hershey-fonts/hershey-fonts";
+import { cursive } from "./hershey-fonts/hershey-fonts";
 import { LetterLayoutInfo, TextLayout } from "./letters-more";
 
 /**
@@ -1839,7 +1839,7 @@ test();
     context.ellipse(8, 4.5, 4, 4, 0, 0, FULL_CIRCLE, false);
     context.fill();
     */
-    const font = resizeFont(roundCursiveFont, 2);
+    const font = resizeFont(cursive.font, 2);
     const textLayout = new TextLayout(font);
     const layoutInfo: LetterLayoutInfo[] = [];
     layoutInfo.push(...textLayout.addText("Party", "left"));

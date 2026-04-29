@@ -1,133 +1,188 @@
 import "./style.css";
 import "./hershey-fonts-viewer.css";
 import {
-  cursiveLetters,
-  decoder,
-  futuraLLetters,
-  indexOfQuestionMark,
-  makeSmooth,
-  roundCursiveFont,
-  roundFuturaLFont,
+  cursive,
+  HersheyFont,
+  hersheyFonts,
 } from "./hershey-fonts/hershey-fonts";
-import { download, getById, querySelectorAll } from "phil-lib/client-misc";
+import { download, getById } from "phil-lib/client-misc";
 import { TextLayout } from "./letters-more";
 import { PathShape } from "./path-shape";
-import { Font, fontToJSON } from "./letters-base";
+import { fontToJSON } from "./letters-base";
+import { pickAny, zip } from "phil-lib/misc";
 
 const samplesDiv = getById("samples", HTMLDivElement);
 
-function summarize(font: typeof cursiveLetters) {
-  const lefts = font
+function summarize(font: HersheyFont) {
+  const lefts = font.raw
     .flatMap((letter) => [letter.left, letter.leftSideBearing])
     .filter((value) => isFinite(value));
   const left = Math.min(...lefts);
-  const rights = font
+  const rights = font.raw
     .flatMap((letter) => [letter.right, letter.rightSideBearing])
     .filter((value) => isFinite(value));
   const right = Math.max(...rights);
   const top = Math.min(
-    ...font.map((letter) => letter.top).filter((value) => isFinite(value))
+    ...font.raw.map((letter) => letter.top).filter((value) => isFinite(value)),
   );
   const bottom = Math.max(
-    ...font.map((letter) => letter.bottom).filter((value) => isFinite(value))
+    ...font.raw
+      .map((letter) => letter.bottom)
+      .filter((value) => isFinite(value)),
   );
-  const count = font.length;
-  return { top, bottom, left, right, count };
+  const count = font.raw.length;
+  const capitalTop =
+    pickAny(font.font)!.fontMetrics.capitalTop + font.originalBaseline;
+  const baseline = font.originalBaseline;
+  return { top, bottom, left, right, count, capitalTop, baseline };
 }
 
-const cursiveSummary = {
-  baseline: 9,
-  capitalTop: -12,
-  ...summarize(cursiveLetters),
-};
-const futuraLSummary = {
-  baseline: 9,
-  capitalTop: -12,
-  ...summarize(futuraLLetters),
-};
+const params = new URLSearchParams(location.search);
+const leftParam = parseInt(params.get("left") ?? "");
+const rightParam = parseInt(params.get("right") ?? "");
+const leftValid =
+  Number.isInteger(leftParam) &&
+  leftParam >= 0 &&
+  leftParam < hersheyFonts.length;
+const rightValid =
+  Number.isInteger(rightParam) &&
+  rightParam >= 0 &&
+  rightParam < hersheyFonts.length;
+const leftIndex = leftValid && rightValid ? leftParam : 0;
+const rightIndex = leftValid && rightValid ? rightParam : 2;
+const leftFont = hersheyFonts[leftIndex];
+const rightFont = hersheyFonts[rightIndex];
+
+const fontSelector = getById("font-selector", HTMLFormElement);
+(["left", "right"] as const).forEach((name) => {
+  const select = fontSelector.elements.namedItem(name) as HTMLSelectElement;
+  const currentIndex = name === "left" ? leftIndex : rightIndex;
+  hersheyFonts.forEach((font, i) => {
+    const option = document.createElement("option");
+    option.value = String(i);
+    option.textContent = font.name;
+    if (i === currentIndex) option.selected = true;
+    select.appendChild(option);
+  });
+});
+
+function htmlEscape(s: string) {
+  return s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
 
 samplesDiv.insertAdjacentHTML(
   "beforeend",
-  `<div></div><div>Cursive</div><div>Smooth Cursive</div><div>Futura L</div><div>Smooth Futura L</div><div></div><div>${JSON.stringify(
-    cursiveSummary
-  )}</div><div></div><div>${JSON.stringify(futuraLSummary)}</div><div></div>`
+  `<div></div><div>${htmlEscape(leftFont.name)}</div><div>Smooth ${htmlEscape(leftFont.name)}</div><div>${htmlEscape(rightFont.name)}</div><div>Smooth ${htmlEscape(rightFont.name)}</div><div></div><div>${JSON.stringify(
+    summarize(leftFont),
+    undefined,
+    1,
+  )}</div><div></div><div>${JSON.stringify(summarize(rightFont), undefined, 1)}</div><div></div>`,
 );
 
-// MARK: Draw SVGs
+function getNext<T>(generator: Generator<T>): T | undefined {
+  // TODO it seems like the problem is the return type of zip().
+  // Just generator.next().value should be enough but that gives me a type of `any`.
+  const next = generator.next();
+  if (next.done) {
+    return undefined;
+  } else {
+    return next.value;
+  }
+}
 
-cursiveLetters.forEach((cursiveLetter, index) => {
+// MARK: Draw SVGs
+const leftSummary = summarize(leftFont);
+const rightSummary = summarize(rightFont);
+const leftIterator = zip(leftFont.raw, leftFont.font.entries());
+const rightIterator = zip(rightFont.raw, rightFont.font.entries());
+while (true) {
+  const left = getNext(leftIterator);
+  const right = getNext(rightIterator);
+  if (left === undefined && right === undefined) {
+    break;
+  }
   samplesDiv.insertAdjacentHTML(
     "beforeend",
-    `<div class="character">${decoder[index] ?? "⁉️"}</div>`
+    `<div class="character">${(left ?? right)![1][0]}</div>`,
   );
-  const futuraLLetter = futuraLLetters[index];
   [
-    { letter: cursiveLetter, summary: cursiveSummary },
-    { letter: futuraLLetter, summary: futuraLSummary },
+    { letter: left, summary: leftSummary },
+    { letter: right, summary: rightSummary },
   ].forEach(({ letter, summary }) => {
     const slop = 0;
-    const specialInstructions = index == indexOfQuestionMark ? "?" : undefined;
-    samplesDiv.insertAdjacentHTML(
-      "beforeend",
-      `<svg viewBox="${summary.left}, ${summary.top}, ${
-        summary.right - summary.left
-      }, ${
-        summary.bottom - summary.top
-      }" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"><path class="axes" d="M 0,${
-        summary.top - slop
-      } L 0,${summary.bottom + slop} M ${summary.left - slop},0 L ${
-        summary.right + slop
-      },0 M ${summary.left - slop},${summary.baseline} L ${
-        summary.right + slop
-      },${summary.baseline} M ${summary.left - slop},${summary.capitalTop} L ${
-        summary.right + slop
-      },${summary.capitalTop}" /><path class="left" d="M ${
-        letter.leftSideBearing
-      },${summary.top - slop} L ${letter.leftSideBearing},${
-        summary.bottom + slop
-      }" /><path class="right" d="M ${letter.rightSideBearing},${
-        summary.top - slop
-      } L ${letter.rightSideBearing},${
-        summary.bottom + slop
-      }" /><path class="main" d="${letter.pathShape.rawPath}"></path></svg>`
-    );
-    samplesDiv.insertAdjacentHTML(
-      "beforeend",
-      `<svg viewBox="${summary.left}, ${summary.top}, ${
-        summary.right - summary.left
-      }, ${
-        summary.bottom - summary.top
-      }" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"><path class="axes" d="M 0,${
-        summary.top - slop
-      } L 0,${summary.bottom + slop} M ${summary.left - slop},0 L ${
-        summary.right + slop
-      },0 M ${summary.left - slop},${summary.baseline} L ${
-        summary.right + slop
-      },${summary.baseline} M ${summary.left - slop},${summary.capitalTop} L ${
-        summary.right + slop
-      },${summary.capitalTop}" /><path class="left" d="M ${
-        letter.leftSideBearing
-      },${summary.top - slop} L ${letter.leftSideBearing},${
-        summary.bottom + slop
-      }" /><path class="right" d="M ${letter.rightSideBearing},${
-        summary.top - slop
-      } L ${letter.rightSideBearing},${
-        summary.bottom + slop
-      }" /><path class="main" d="${
-        makeSmooth(letter.pathShape, specialInstructions).rawPath
-      }"></path></svg>`
-    );
+    if (!letter) {
+      samplesDiv.insertAdjacentHTML("beforeend", "<div></div><div></div>");
+    } else {
+      {
+        const rawLetter = letter[0];
+        samplesDiv.insertAdjacentHTML(
+          "beforeend",
+          `<svg viewBox="${summary.left}, ${summary.top}, ${
+            summary.right - summary.left
+          }, ${
+            summary.bottom - summary.top
+          }" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"><path class="axes" d="M 0,${
+            summary.top - slop
+          } L 0,${summary.bottom + slop} M ${summary.left - slop},0 L ${
+            summary.right + slop
+          },0 M ${summary.left - slop},${summary.baseline} L ${
+            summary.right + slop
+          },${summary.baseline} M ${summary.left - slop},${summary.capitalTop} L ${
+            summary.right + slop
+          },${summary.capitalTop}" /><path class="left" d="M ${
+            rawLetter.leftSideBearing
+          },${summary.top - slop} L ${rawLetter.leftSideBearing},${
+            summary.bottom + slop
+          }" /><path class="right" d="M ${rawLetter.rightSideBearing},${
+            summary.top - slop
+          } L ${rawLetter.rightSideBearing},${
+            summary.bottom + slop
+          }" /><path class="main" d="${rawLetter.pathShape.rawPath}"></path></svg>`,
+        );
+      }
+      {
+        const descriptionOfLetter = letter[1][1];
+        const maxWidth = summary.right - summary.left;
+        const offset = (maxWidth - descriptionOfLetter.advance) / 2;
+        descriptionOfLetter.fontMetrics.top;
+        samplesDiv.insertAdjacentHTML(
+          "beforeend",
+          `<svg viewBox="${0}, ${descriptionOfLetter.fontMetrics.top}, ${
+            maxWidth
+          }, ${
+            descriptionOfLetter.fontMetrics.bottom -
+            descriptionOfLetter.fontMetrics.top
+          }" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"><path class="axes" d="M ${0 - slop},${0} L ${
+            maxWidth + slop
+          },${0} M ${0 - slop},${descriptionOfLetter.fontMetrics.capitalTop} L ${
+            maxWidth + slop
+          },${descriptionOfLetter.fontMetrics.capitalTop}" /><path class="left" d="M ${offset},${descriptionOfLetter.fontMetrics.top - slop} L ${offset},${
+            descriptionOfLetter.fontMetrics.bottom + slop
+          }" /><path class="right" d="M ${offset + descriptionOfLetter.advance},${
+            descriptionOfLetter.fontMetrics.top - slop
+          } L ${offset + descriptionOfLetter.advance},${
+            descriptionOfLetter.fontMetrics.bottom + slop
+          }" /><path class="main" d="${
+            descriptionOfLetter.shape.translate(offset, 0).rawPath
+          }"></path></svg>`,
+        );
+      }
+    }
   });
-});
+}
 
 const convertedSvg = getById("converted", SVGSVGElement);
 
 /**
  * Remove the dot from the top of the i's.
  */
-const newFont = new Map(roundCursiveFont);
+const newFont = new Map(cursive.font);
 {
-  const originalI = roundCursiveFont.get("i")!;
+  const originalI = cursive.font.get("i")!;
   const newPathShape = originalI.shape.splitOnMove()[1];
   const newI = originalI.reshape(newPathShape);
   newFont.set("i", newI);
@@ -171,7 +226,7 @@ let fullMessage = "";
       shape: letter.description.shape,
       Δx: letter.x,
       Δy: letter.baseline + down,
-    }))
+    })),
   );
   if (index % 2) {
     fullPathShape = fullPathShape.reverse();
@@ -188,50 +243,21 @@ layoutInfo.forEach(letterInfo => {
 });
 */
 
-querySelectorAll("button[data-download-font]", HTMLButtonElement).forEach(
-  (button) => {
-    const fontName = button.dataset.downloadFont;
-    let font: Font;
-    switch (fontName) {
-      case "Cursive": {
-        font = roundCursiveFont;
-        break;
-      }
-      case "Futura L": {
-        font = roundFuturaLFont;
-        break;
-      }
-      default: {
-        throw new Error("wtf");
-      }
-    }
-    const asJSON = JSON.stringify(fontToJSON(font));
-    button.addEventListener("click", () => {
-      download(`${fontName}.json`, asJSON);
-    });
-  }
-);
+const downloadButtons = getById("download-buttons", HTMLSpanElement);
+hersheyFonts.forEach((hersheyFont) => {
+  const button = document.createElement("button");
+  button.textContent = hersheyFont.name;
+  const asJSON = JSON.stringify(fontToJSON(hersheyFont.font));
+  button.addEventListener("click", () => {
+    download(`${hersheyFont.name}.json`, asJSON);
+  });
+  downloadButtons.appendChild(button);
+});
 
 /**
- * TODO
- * The TextLayout class still has issues.
- * IT's an improvement over the previous version and a step in the right direction.
- * Centering is incomplete at best.
- *
- * Proposal:
- * ParagraphLayout class.
- * It does not expect it be reset.
- * It does not expect you to mess with x and y in the middle of the work.
- * When you are done with the paragraph you tell it how to align the content.
- * left, center, right or justify.
- *
- * It will return objects as you add text, like TextLayout does.
- * But it will remember all of the objects that is has been returning.
- * It will need that to do the text alignment.
- * We can also use that in two other functions.
- * One to create a single PathShape out of all of the letters.
- * And maybe one to create all of the elements and add them to an SVG.
- * Both taking care of the location of each letter.
+ * Note:  The TextLayout class is old and has issues.
+ * See https://github.com/TradeIdeasPhilip/canvas-recorder/blob/master/src/glib/paragraph-layout.ts
+ * for a much newer iteration of the same idea.
  *
  * Speaking of the location of each letter.
  * We have a function for joining multiple paths and adjusting their positions at the same time.

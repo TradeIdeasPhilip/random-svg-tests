@@ -29,6 +29,8 @@
 
 path.main {
   stroke: black;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 path.axes {

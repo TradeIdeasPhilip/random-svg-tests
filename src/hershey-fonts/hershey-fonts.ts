@@ -15,7 +15,170 @@ import cursiveAsString from "./cursive.jhf?raw";
 
 // curl https://media.unpythonic.net/emergent-files/software/hershey/futural.jhf> src/hersey-fonts/futural.jhf
 import futuraLAsString from "./futural.jhf?raw";
+
+// Not very interesting.
+// Seems to be a dark version of futuraL.
+// It uses two adjacent strokes to make things darker.
+// That doesn't work perfectly yet and would need more work.
+// It's probably not worth it.  Use futuraL with a thicker stroke, instead.
+import futuraMAsString from "./futuram.jhf?raw";
+
 import { DescriptionOfLetter, Font, FontMetrics } from "../letters-base";
+
+/**
+ * See https://github.com/TradeIdeasPhilip/canvas-recorder/tree/master/src/glib
+ * for the most current way that I use these.
+ *
+ * I export the files as JSON.
+ * I sometimes tweak the JSON by hand.
+ * I have routines that read the JSON file instead of rebuilding from scratch each time.
+ */
+
+/**
+ * Mostly internal.
+ * See {@link HersheyFont.raw}.
+ */
+export type RawLetter = {
+  readonly pathShape: PathShape;
+  readonly left: number;
+  readonly right: number;
+  readonly top: number;
+  readonly bottom: number;
+  readonly leftSideBearing: number;
+  readonly rightSideBearing: number;
+};
+
+/**
+ * A font read from a *.jhf file and converted into a more convenient format.
+ */
+export class HersheyFont {
+  /**
+   *
+   * @param name Something human readable.
+   * @param wholeFile The contents of the original `*.jhf` file.
+   * Possibly from `import futuraLAsString from "./futural.jhf?raw";`
+   * @param decoder An array of unicode characters.
+   * The nth character in this list corresponds to the nth glyph in `wholeFile`.
+   * The number of glyphs and the size of this decoder must match or this will throw an `Error`.
+   * @param bottom
+   * @param top
+   * @param mHeight
+   * @param baseline I use 0 for my baseline.  The input uses 0 for the center.
+   */
+  constructor(
+    readonly name: string,
+    wholeFile: string,
+    decoder: readonly string[],
+    bottom: number,
+    top: number,
+    mHeight: number,
+    baseline: number,
+  ) {
+    this.raw = splitCharacters(wholeFile).map((encodedDescription) =>
+      parseCharacterDescription(encodedDescription),
+    );
+    this.font = makeRoundFont(
+      this.raw,
+      { baseline, bottom, mHeight, top },
+      decoder,
+    );
+    this.originalBaseline = baseline;
+  }
+  readonly originalBaseline: number;
+  /**
+   * This shows the letters before they have been completely processed.
+   * This is aimed in my internal tools.
+   * See {@link font} for the preferred way to use this font.
+   */
+  readonly raw: readonly RawLetter[];
+  readonly font: Font;
+}
+
+const ASCII_decoder = [
+  NON_BREAKING_SPACE,
+  "!",
+  '"',
+  "#",
+  "$",
+  "%",
+  "&",
+  "’",
+  "(",
+  ")",
+  "*",
+  "+",
+  ",",
+  "-",
+  ".",
+  "/",
+  ...initializedArray(10, (n) => String.fromCharCode(n + "0".charCodeAt(0))),
+  ":",
+  ";",
+  "<",
+  "=",
+  ">",
+  "?",
+  "@",
+  ...initializedArray(26, (n) => String.fromCharCode(n + "A".charCodeAt(0))),
+  "[",
+  "\\",
+  "]",
+  "^",
+  "_",
+  "‘",
+  ...initializedArray(26, (n) => String.fromCharCode(n + "a".charCodeAt(0))),
+  "{",
+  "|",
+  "}",
+  "~",
+  "▮",
+];
+
+/**
+ * This is known in the original as Futura L.
+ * L, I eventually realized, is for light.
+ * Futura M, medium, is a thing, but it doesn't work well.
+ * In our system it's better to change the line weight to make things darker.
+ * The L version works perfectly, so *now* I'm *just* calling it "Futura".
+ *
+ * See {@link hersheyFonts} for the complete list.
+ */
+export const futura = new HersheyFont(
+  "Futura",
+  futuraLAsString,
+  ASCII_decoder,
+  17,
+  -17,
+  21,
+  9,
+);
+/**
+ * Standard Hershey cursive font.
+ *
+ * See {@link hersheyFonts} for the complete list.
+ */
+export const cursive = new HersheyFont(
+  "Cursive",
+  cursiveAsString,
+  ASCII_decoder,
+  21,
+  -16,
+  21,
+  9,
+);
+export const hersheyFonts: HersheyFont[] = [
+  futura,
+  new HersheyFont(
+    "Futura Bold",
+    futuraMAsString,
+    ASCII_decoder,
+    17,
+    -17,
+    21,
+    9,
+  ),
+  cursive,
+];
 
 /**
  * Split the input file into records.
@@ -38,9 +201,6 @@ function splitCharacters(wholeFile: string): string[] {
   });
   return result;
 }
-
-const cursiveCharacterDescriptions = splitCharacters(cursiveAsString);
-const futuraLCharacterDescriptions = splitCharacters(futuraLAsString);
 
 function parseCharacterDescription(characterDescription: string) {
   const LEFT_SIDE_BEARING_INDEX = 8;
@@ -93,13 +253,6 @@ function parseCharacterDescription(characterDescription: string) {
   };
 }
 
-export const cursiveLetters = cursiveCharacterDescriptions.map(
-  (characterDescription) => parseCharacterDescription(characterDescription)
-);
-export const futuraLLetters = futuraLCharacterDescriptions.map(
-  (characterDescription) => parseCharacterDescription(characterDescription)
-);
-
 // TODO the top of the 2 looks funny.  Where it changes from straight to curved.
 // I took a closer look in the debugger.
 // There were no problems with the angles.
@@ -118,7 +271,7 @@ export const futuraLLetters = futuraLCharacterDescriptions.map(
  * This is good because the font often uses squares which should become circles.
  * @returns
  */
-export function makeSmooth(original: PathShape, specialInstructions?: "?") {
+function makeSmooth(original: PathShape, specialInstructions?: "?") {
   const angleCutoff = (FULL_CIRCLE / 4) * 1.01;
   function makeSmoothConnected(originalCommands: readonly LCommand[]) {
     /**
@@ -139,7 +292,7 @@ export function makeSmooth(original: PathShape, specialInstructions?: "?") {
           } else {
             const newOutgoingAngle = averageAngle(
               thisCommand.outgoingAngle,
-              nextCommand.incomingAngle
+              nextCommand.incomingAngle,
             );
             const difference = newOutgoingAngle - thisCommand.outgoingAngle;
             const newIncomingAngle = thisCommand.incomingAngle - difference;
@@ -149,7 +302,7 @@ export function makeSmooth(original: PathShape, specialInstructions?: "?") {
               newIncomingAngle,
               thisCommand.x,
               thisCommand.y,
-              newOutgoingAngle
+              newOutgoingAngle,
             );
           }
         } else if (!nextCommand) {
@@ -159,7 +312,7 @@ export function makeSmooth(original: PathShape, specialInstructions?: "?") {
           } else {
             const newIncomingAngle = averageAngle(
               previousCommand.outgoingAngle,
-              thisCommand.incomingAngle
+              thisCommand.incomingAngle,
             );
             const difference = newIncomingAngle - thisCommand.incomingAngle;
             const newOutgoingAngle = thisCommand.incomingAngle - difference;
@@ -169,18 +322,18 @@ export function makeSmooth(original: PathShape, specialInstructions?: "?") {
               newIncomingAngle,
               thisCommand.x,
               thisCommand.y,
-              newOutgoingAngle
+              newOutgoingAngle,
             );
           }
         } else {
           // Command in the middle.
           const incomingAngle = averageAngle(
             thisCommand.incomingAngle,
-            previousCommand.outgoingAngle
+            previousCommand.outgoingAngle,
           );
           const outgoingAngle = averageAngle(
             thisCommand.outgoingAngle,
-            nextCommand.incomingAngle
+            nextCommand.incomingAngle,
           );
           const proposed = QCommand.angles(
             thisCommand.x0,
@@ -188,7 +341,7 @@ export function makeSmooth(original: PathShape, specialInstructions?: "?") {
             incomingAngle,
             thisCommand.x,
             thisCommand.y,
-            outgoingAngle
+            outgoingAngle,
           );
           if (proposed.creationInfo.success) {
             return proposed;
@@ -196,7 +349,7 @@ export function makeSmooth(original: PathShape, specialInstructions?: "?") {
             return undefined;
           }
         }
-      }
+      },
     );
     alteredCommands.forEach((thisCommand, index) => {
       if (!thisCommand) {
@@ -228,7 +381,7 @@ export function makeSmooth(original: PathShape, specialInstructions?: "?") {
         incomingAngle,
         thisCommand.x,
         thisCommand.y,
-        outgoingAngle
+        outgoingAngle,
       );
       if (secondTry.creationInfo.success) {
         // If this works, use it.
@@ -239,7 +392,7 @@ export function makeSmooth(original: PathShape, specialInstructions?: "?") {
       }
     });
     const result = alteredCommands.map((alteredCommand, index) =>
-      alteredCommand ? alteredCommand : originalCommands[index]
+      alteredCommand ? alteredCommand : originalCommands[index],
     );
     return result;
   }
@@ -263,7 +416,10 @@ export function makeSmooth(original: PathShape, specialInstructions?: "?") {
         previousCommand.x != thisCommand.x0 ||
         previousCommand.y != thisCommand.y0 ||
         Math.abs(
-          angleBetween(previousCommand.outgoingAngle, thisCommand.incomingAngle)
+          angleBetween(
+            previousCommand.outgoingAngle,
+            thisCommand.incomingAngle,
+          ),
         ) > angleCutoff
       ) {
         segments.push(currentSegment);
@@ -288,54 +444,6 @@ export function makeSmooth(original: PathShape, specialInstructions?: "?") {
   const result = new PathShape(segmentsWithCurves.flat());
   return result;
 }
-export const decoder = [
-  NON_BREAKING_SPACE,
-  "!",
-  '"',
-  "#",
-  "$",
-  "%",
-  "&",
-  "’",
-  "(",
-  ")",
-  "*",
-  "+",
-  ",",
-  "-",
-  ".",
-  "/",
-  ...initializedArray(10, (n) => String.fromCharCode(n + "0".charCodeAt(0))),
-  ":",
-  ";",
-  "<",
-  "=",
-  ">",
-  "?",
-  "@",
-  ...initializedArray(26, (n) => String.fromCharCode(n + "A".charCodeAt(0))),
-  "[",
-  "\\",
-  "]",
-  "^",
-  "_",
-  "‘",
-  ...initializedArray(26, (n) => String.fromCharCode(n + "a".charCodeAt(0))),
-  "{",
-  "|",
-  "}",
-  "~",
-  "▮",
-];
-export const indexOfQuestionMark = decoder.findIndex((value) => {
-  return value == "?";
-});
-if (decoder[indexOfQuestionMark] !== "?") {
-  throw new Error("wtf");
-}
-console.log("indexOfQuestionMark:", indexOfQuestionMark);
-("?");
-
 type RoundFontInputs = {
   readonly bottom: number;
   readonly top: number;
@@ -343,10 +451,11 @@ type RoundFontInputs = {
   readonly baseline: number;
 };
 
-function makeRoundFont(wholeFile: string, options: RoundFontInputs): Font {
-  const characterDescriptions = splitCharacters(wholeFile).map(
-    (encodedDescription) => parseCharacterDescription(encodedDescription)
-  );
+function makeRoundFont(
+  characterDescriptions: readonly RawLetter[],
+  options: RoundFontInputs,
+  decoder: readonly string[],
+): Font {
   if (characterDescriptions.length != decoder.length) {
     // TODO
     // The two fonts I looked at both have the same characters in the same positions.
@@ -366,12 +475,12 @@ function makeRoundFont(wholeFile: string, options: RoundFontInputs): Font {
   const result: Font = new Map();
   for (const [key, characterDescription] of zip(
     decoder,
-    characterDescriptions
+    characterDescriptions,
   )) {
     const matrix = new DOMMatrix();
     matrix.translateSelf(
       -characterDescription.leftSideBearing,
-      -options.baseline
+      -options.baseline,
     );
     const roughShape = characterDescription.pathShape.transform(matrix);
     const pathShape = makeSmooth(roughShape, key == "?" ? "?" : undefined);
@@ -381,22 +490,9 @@ function makeRoundFont(wholeFile: string, options: RoundFontInputs): Font {
     const descriptionOfLetter = new DescriptionOfLetter(
       pathShape,
       advance,
-      fontMetrics
+      fontMetrics,
     );
     result.set(key, descriptionOfLetter);
   }
   return result;
 }
-
-export const roundCursiveFont = makeRoundFont(cursiveAsString, {
-  baseline: 9,
-  bottom: 21,
-  top: -16,
-  mHeight: 21,
-});
-export const roundFuturaLFont = makeRoundFont(futuraLAsString, {
-  baseline: 9,
-  bottom: 17,
-  top: -17,
-  mHeight: 21,
-});

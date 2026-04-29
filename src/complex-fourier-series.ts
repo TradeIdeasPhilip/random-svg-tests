@@ -22,7 +22,6 @@ import {
   Random,
 } from "phil-lib/misc";
 import { lerpPoints } from "./math-to-path";
-import { cursiveLetters, futuraLLetters } from "./hershey-fonts/hershey-fonts";
 import {
   createScript,
   samplesFromParametric,
@@ -142,8 +141,6 @@ export const support = {
   },
   referencePath: new PathCaliper(),
   samples,
-  cursiveLetters,
-  futuraLLetters,
   /**
    * How much detail to use when displaying the output.
    * If you see pink and dark red lines, try using more samples.

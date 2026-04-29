@@ -5,17 +5,16 @@
     <link rel="icon" type="image/svg+xml" href="./square wave icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hershey Fonts</title>
-    <script type="module" crossorigin src="./assets/двадцать два-BD2WxMAM.js"></script>
+    <script type="module" crossorigin src="./assets/двадцать два-BGe_4IPN.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-BtlbED_5.js">
     <link rel="modulepreload" crossorigin href="./assets/misc-37UFysM4.js">
     <link rel="modulepreload" crossorigin href="./assets/path-shape-d9K0Htb1.js">
     <link rel="modulepreload" crossorigin href="./assets/utility-CxYprhq3.js">
-    <link rel="modulepreload" crossorigin href="./assets/letters-base-Bwug51Eg.js">
-    <link rel="modulepreload" crossorigin href="./assets/hershey-fonts-Ds9T3qxh.js">
+    <link rel="modulepreload" crossorigin href="./assets/letters-more-sfh433Tw.js">
+    <link rel="modulepreload" crossorigin href="./assets/hershey-fonts-BOA9JFu4.js">
     <link rel="modulepreload" crossorigin href="./assets/client-misc-DWH6r4ST.js">
-    <link rel="modulepreload" crossorigin href="./assets/letters-more-C7bK-aWW.js">
-    <link rel="stylesheet" crossorigin href="./assets/двадцать два-B6ME1Ys-.css">
+    <link rel="stylesheet" crossorigin href="./assets/двадцать два-BRnd0H7h.css">
     <link rel="stylesheet" crossorigin href="./assets/style-DQ03UEvS.css">
   </head>
   <body>
@@ -26,6 +25,11 @@
       These characters were built to be stroked, not filled. And I have a lot of
       effects I can do on a path that is stroked, not filled.
     </p>
+    <form id="font-selector" method="get">
+      <label>Left: <select name="left"></select></label>
+      <label>Right: <select name="right"></select></label>
+      <button type="submit">Compare</button>
+    </form>
     <h2>Samples</h2>
     <div id="samples"></div>
     <h2>Converted</h2>
@@ -36,10 +40,6 @@
       preserveAspectRatio="xMidYMid meet"
       style="max-width: 100vmin; overflow: visible"
     ></svg>
-    <p>
-      Download:
-      <button data-download-font="Cursive">Cursive</button> or
-      <button data-download-font="Futura L">Futura L</button>.
-    </p>
+    <p>Download: <span id="download-buttons"></span></p>
   </body>
 </html>
